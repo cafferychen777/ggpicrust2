@@ -17,6 +17,11 @@ hello <- function() {
   print("Hello, world!")
 }
 library(devtools)
-use_git()
-#> ✔ Initialising Git repo
-#> ✔ Adding '.Rhistory', '.Rdata', '.httr-oauth', '.DS_Store' to '.gitignore'
+
+
+
+# 安装 CRAN 版的 {renv}
+install.packages("renv")
+
+# 初始化环境
+renv::init()
