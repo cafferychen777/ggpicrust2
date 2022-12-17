@@ -4,6 +4,10 @@
 # ggpicrust2
 
 <!-- badges: start -->
+
+[![Codecov test
+coverage](https://codecov.io/gh/cafferychen777/ggpicrust2/branch/main/graph/badge.svg)](https://app.codecov.io/gh/cafferychen777/ggpicrust2?branch=main)
+[![R-CMD-check](https://github.com/cafferychen777/ggpicrust2/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/cafferychen777/ggpicrust2/actions/workflows/R-CMD-check.yaml)
 <!-- badges: end -->
 
 The goal of ggpicrust2 is to …
