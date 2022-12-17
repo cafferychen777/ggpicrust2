@@ -1,12 +1,12 @@
 Package: ggpicrust2
 Type: Package
 Title: Make Picrust2 Output Analysis and Visualization Easier
-Version: 0.1.0
+Version: 0.2.0
 Author: Chen(Caffery) Yang
 Maintainer: Chen(Caffery) Yang <cafferychen7850@gmail.com>
 Description: More about what it does (maybe more than one line)
     Use four spaces when indenting paragraphs within the Description.
-License: What license is it under?
+License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
-usethis::use_package(package = "ggplot2", type = "Imports")
+usethis: :use_package(package = "ggplot2", type = "Imports")
