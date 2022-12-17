@@ -10,7 +10,10 @@ coverage](https://codecov.io/gh/cafferychen777/ggpicrust2/branch/main/graph/badg
 [![R-CMD-check](https://github.com/cafferychen777/ggpicrust2/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/cafferychen777/ggpicrust2/actions/workflows/R-CMD-check.yaml)
 <!-- badges: end -->
 
-The goal of ggpicrust2 is to …
+The goal of ggpicrust2 is to make picrust2 output analysis and
+visualization easier
+
+Topics Resources
 
 ## Installation
 
