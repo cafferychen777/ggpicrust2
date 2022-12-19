@@ -1,11 +1,16 @@
 #file="/Users/apple/Microbiome/C9orf72/Code And Data/picrust2_out/KO_metagenome_out/pred_metagenome_unstrat.tsv/pred_metagenome_unstrat.tsv"
-ko2kegg_abundance <- function(df, file){
+ko2kegg_abundance <- function(file){
+  file_format <- substr(file, nchar(file)-3, nchar(file))
+  switch(file_format,
+         ".txt" = abundance <- read_delim(file, delim = "\t", escape_double = FALSE, trim_ws = TRUE),
+         ".tsv" = abundance <- read_delim(file, delim = "\t", escape_double = FALSE, trim_ws = TRUE),
+         ".csv" = abundance <- read_delim(file, delim = "\t", escape_double = FALSE, trim_ws = TRUE),
+         stop("Error: Please input file as .tsv, .txt or .csv\nThe best input file is what you get from picrust2 output file 'pred_metagenome_unstrat.tsv'"))
   message("Calculation may take a long time, please be patient.")
   library(readr)
   library(dplyr)
   library(tidyr)
   library(tibble)
-  abundance <- read_delim(file, delim = "\t", escape_double = FALSE, trim_ws = TRUE)
   load("/Users/apple/Microbiome/ggpicrust2/ggpicrust2/data/kegg_reference.RData")
   sample_names <- colnames(abundance)[-1]
   kegg_names <- ko_to_kegg_reference[,1]
