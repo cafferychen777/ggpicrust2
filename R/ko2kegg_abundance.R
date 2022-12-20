@@ -28,5 +28,6 @@ ko2kegg_abundance <- function(file){
   }
   kegg_abundance <- kegg_abundance[rowSums(kegg_abundance) != 0, ]
   message("The kegg pathway with zero abundance in all the different samples has been removed.")
+  kegg_abundance <- as.data.frame(kegg_abundance)
   return(kegg_abundance)
 }
