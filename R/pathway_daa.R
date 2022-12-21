@@ -200,7 +200,25 @@ pathway_daa <-
         p_values <- limma_voom_Fit$p.value[, 2]
       },
       "metagenomeSeq" = {
-
+        metagenomeSeq_list <- list()
+        metagenomeSeq_list[[1]] <- abundance
+        metagenomeSeq_list[[2]] <- as.data.frame(rownames(abundance))
+        metagenomeSeq_metadata_df <- metadata_df
+        rownames(metagenomeSeq_metadata_df) <-
+          metagenomeSeq_metadata_df[, matching_columns]
+        metagenomeSeq_metadata_df <- select(metagenomeSeq_metadata_df, -matching_columns)
+        metagenomeSeq_colnames <- colnames(metagenomeSeq_metadata_df)
+        metagenomeSeq_colnames[metagenomeSeq_colnames == group] <- "Group_group_nonsense_"
+        colnames(metagenomeSeq_metadata_df) <- metagenomeSeq_colnames
+        metagenomeSeq_phenotypeData <- AnnotatedDataFrame(metagenomeSeq_metadata_df)
+        metagenomeSeq_taxa <- data.frame(OTU = rownames(abundance))
+        rownames(metagenomeSeq_taxa) <- rownames(abundance)
+        metagenomeSeq_OTUdata <- AnnotatedDataFrame(metagenomeSeq_taxa)
+        metagenomeSeq_object <- newMRexperiment(metagenomeSeq_list[[1]],phenoData=metagenomeSeq_phenotypeData)
+        metagenomeSeq_object <- cumNorm(metagenomeSeq_object, p = cumNormStatFast(metagenomeSeq_object))
+        metagenomeSeq_mod <- model.matrix(~Group_group_nonsense_, data = pData(metagenomeSeq_object))
+        metagenomeSeq_results <- fitFeatureModel(metagenomeSeq_object, metagenomeSeq_mod)
+        p_values <- metagenomeSeq_results@pvalues
       },
       "Lefser" = { # Lefser only for two groups.
         if (length(Level) != 2) {
