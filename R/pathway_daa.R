@@ -52,8 +52,8 @@ pathway_daa <-
           require("ALDEx2")
         }
         ALDEx2_abundance <- round(abundance)
-        switch(length(Level),
-               2 = {
+        switch(length(Level)==2,
+               "TRUE" = {
                  ALDEx2_object <-
                    aldex.clr(
                      ALDEx2_abundance,
