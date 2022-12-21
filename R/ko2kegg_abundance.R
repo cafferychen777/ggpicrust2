@@ -31,7 +31,7 @@ ko2kegg_abundance <- function(file) {
   library(dplyr)
   library(tidyr)
   library(tibble)
-  load("/Users/apple/Microbiome/ggpicrust2/ggpicrust2/data/kegg_reference.RData")
+  load(system.file("extdata", "kegg_reference.RData", package = "ggpicrust2"))
   sample_names <- colnames(abundance)[-1]
   kegg_names <- ko_to_kegg_reference[, 1]
   kegg_abundance <-

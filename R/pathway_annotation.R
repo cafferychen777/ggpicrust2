@@ -36,14 +36,14 @@ pathway_annotation <- function(file, pathway) {
     )
   switch(pathway,
     "KO" = {
-      load("/Users/apple/Microbiome/ggpicrust2/ggpicrust2/data/KO_reference.RData")
+      load(system.file("extdata", "KO_reference.RData", package = "ggpicrust2"))
       for (i in 1:nrow(abundance)) {
         abundance[i, 2] <-
           KO_reference[KO_reference[, 1] %in% abundance[i, 1], 5][1]
       }
     },
     "EC" = {
-      load("/Users/apple/Microbiome/ggpicrust2/ggpicrust2/data/EC_reference.RData")
+      load(system.file("extdata", "EC_reference.RData", package = "ggpicrust2"))
       for (i in 1:nrow(abundance)) {
         abundance[i, 2] <-
           EC_reference[EC_reference[, 1] %in% abundance[i, 1], 2]
@@ -51,9 +51,7 @@ pathway_annotation <- function(file, pathway) {
       message("EC description may appear to be duplicated")
     },
     "MetaCyc" = {
-      load(
-        "/Users/apple/Microbiome/ggpicrust2/ggpicrust2/data/MetaCyc_reference.RData"
-      )
+      load(system.file("extdata", "MetaCyc_reference.RData", package = "ggpicrust2"))
       for (i in 1:nrow(abundance)) {
         abundance[i, 2] <-
           MetaCyc_reference[MetaCyc_reference[, 1] %in% abundance[i, 1], 2]
