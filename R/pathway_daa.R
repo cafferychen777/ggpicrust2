@@ -151,7 +151,7 @@ pathway_daa <-
         rownames(LinDA_metadata_df) <-
           LinDA_metadata_df[, matching_columns]
         LinDA_metadata_df <- select(LinDA_metadata_df, -matching_columns)
-        LinDA_results <- linda(
+        LinDA_results <- MicrobiomeStat::linda(
           abundance,
           LinDA_metadata_df,
           formula = "~Group_group_nonsense_",
