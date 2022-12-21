@@ -1,7 +1,4 @@
 pathway_annotation <- function(file, pathway) {
-  library(dplyr)
-  library(tibble)
-  library(readr)
   file_format <- substr(file, nchar(file) - 3, nchar(file))
   switch(file_format,
     ".txt" = abundance <-
@@ -37,14 +34,14 @@ pathway_annotation <- function(file, pathway) {
   switch(pathway,
     "KO" = {
       load(system.file("extdata", "KO_reference.RData", package = "ggpicrust2"))
-      for (i in 1:nrow(abundance)) {
+      for (i in seq_len(nrow(abundance))) {
         abundance[i, 2] <-
           KO_reference[KO_reference[, 1] %in% abundance[i, 1], 5][1]
       }
     },
     "EC" = {
       load(system.file("extdata", "EC_reference.RData", package = "ggpicrust2"))
-      for (i in 1:nrow(abundance)) {
+      for (i in seq_len(nrow(abundance))) {
         abundance[i, 2] <-
           EC_reference[EC_reference[, 1] %in% abundance[i, 1], 2]
       }
@@ -52,7 +49,7 @@ pathway_annotation <- function(file, pathway) {
     },
     "MetaCyc" = {
       load(system.file("extdata", "MetaCyc_reference.RData", package = "ggpicrust2"))
-      for (i in 1:nrow(abundance)) {
+      for (i in seq_len(nrow(abundance))) {
         abundance[i, 2] <-
           MetaCyc_reference[MetaCyc_reference[, 1] %in% abundance[i, 1], 2]
       }
