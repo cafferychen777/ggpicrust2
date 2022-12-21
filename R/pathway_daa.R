@@ -5,7 +5,8 @@ metadata <- read_delim("~/Microbiome/C9orf72/Code And Data/new_metadata.txt",
                        trim_ws = TRUE)
 
 
-
+#abundance: df, rownames:pathway, colnames:samples
+#metadata: tibble, sample_names single a column
 pathway_daa <-
   function(abundance,
            metadata,
@@ -14,6 +15,9 @@ pathway_daa <-
            select = c(),
            p.adjust = "BH",
            maaslin2_reference = NULL) {
+    if (!is_tibble(metadata)){
+      metadata <- as_tibble(metadata)
+    }
     sample_names <- colnames(abundance)
     matches <-
       lapply(metadata, function(x)
@@ -37,59 +41,41 @@ pathway_daa <-
     metadata <- metadata[metadata_order, ]
     metadata_mat <- as.matrix(metadata)
     metadata_df <- as.data.frame(metadata)
-    Group <- factor(as.matrix(metadata[, group]))
+    Group <- factor(metadata_mat[,group])
     Level <- names(table(Group))
     switch(
       daa_method,
       "ALDEx2" = {
-        library(ALDEx2)
-        abundance <- round(abundance)
+        if (!require("ALDEx2")) {
+          install.packages("ALDEx2")
+          require("ALDEx2")
+        }
+        ALDEx2_abundance <- round(abundance)
         switch(length(Level),
                2 = {
-                 clr_abundance <-
+                 ALDEx2_object <-
                    aldex.clr(
-                     abundance,
+                     ALDEx2_abundance,
                      Group,
                      mc.samples = 256,
                      denom = "all",
                      verbose = F
                    )
                  p_values <-
-                   aldex.ttest(clr_abundance,
+                   aldex.ttest(ALDEx2_object,
                                paired.test = FALSE,
                                verbose = FALSE)[, c(1, 3)]
                }, {
-                 clr_abundance <-
+                 ALDEx2_object <-
                    aldex.clr(
-                     abundance,
+                     ALDEx2_abundance,
                      Group,
-                     mc.samples = 32,
+                     mc.samples = 256,
                      denom = "all",
                      verbose = F
                    )
-                 p_values <- aldex.kw(clr_abundance)[, c(1, 3)]
+                 p_values <- aldex.kw(ALDEx2_object)[, c(1, 3)]
                })
-      },
-      "ANCOMBC" = {
-        library(SummarizedExperiment)
-        assays = SimpleList(counts = b)
-        metadata_df <- as.data.frame(metadata)
-        tax_tab = matrix(rep("unknown", nrow(b) * 7),
-                         nrow = nrow(b),
-                         ncol = 7)
-        rownames(tax_tab) = rownames(b)
-        colnames(tax_tab) = c("Kingdom",
-                              "Phylum",
-                              "Class",
-                              "Order",
-                              "Family",
-                              "Genus",
-                              "Species")
-        tax_tab = DataFrame(tax_tab)
-        tse = TreeSummarizedExperiment(assays = assays,
-                                       colData = metadata_df,
-                                       rowData = tax_table)
-        pseq = makePhyloseqFromTreeSummarizedExperiment(tse)
       },
       "DESeq2" = {
         if (!require("DESeq2")) {
@@ -123,58 +109,87 @@ pathway_daa <-
         p_values <- DESeq2_results_mat
       },
       "Maaslin2" = {
+        if (!require("ALDEx2")) {
+          if (!require("BiocManager", quietly = TRUE))
+            install.packages("BiocManager")
+          BiocManager::install("Maaslin2")
+          require("Maaslin2")
+        }
         Maaslin2_abundance_mat <- abundance_mat
         Maaslin2_abundance_mat <- t(Maaslin2_abundance_mat)
         Maaslin2_metadata_df <- metadata_df
         rownames(Maaslin2_metadata_df) <-
           Maaslin2_metadata_df[, matching_columns]
-        Maaslin2_metadata_df <- Maaslin2_metadata_df[, -1]
+        Maaslin2_metadata_df <- select(Maaslin2_metadata_df,-matching_columns)
         switch(length(Level),
                2 = {
                  Maaslin2 <- Maaslin2(
                    Maaslin2_abundance_mat,
-                   metadata_df,
-                   output = "DAA example",
+                   Maaslin2_metadata_df,
+                   output = paste0("Maaslin2_results_", group),
                    transform = "AST",
                    fixed_effects = group,
-                   reference = names(table(metadata_df[, group])),
+                   reference = Level,
                    normalization = "TSS",
                    standardize = TRUE,
                    min_prevalence = 0.1
                  )
                }, {
                  Maaslin2 <- Maaslin2(
-                   abundance_mat,
-                   metadata_df,
-                   output = "DAA example",
+                   Maaslin2_abundance_mat,
+                   Maaslin2_metadata_df,
+                   output = paste0("Maaslin2_results_", group),
                    transform = "AST",
                    fixed_effects = group,
-                   reference = paste0(group, maaslin2_reference),
+                   reference = paste0(group,",",maaslin2_reference),
                    #In case of multiple groups, be sure to specify the baseline reference
                    normalization = "TSS",
                    standardize = TRUE,
                    min_prevalence = 0.1
                  )
                })
+        message(
+          paste0(
+            "You can view the full analysis results and logs in the current default file location: ",
+            getwd(),
+            "/Maaslin2_results_",
+            group
+          )
+        )
         p_values <- Maaslin2$results$pval
       },
       "LinDA" = {
+        if (!require("LinDA")) {
+          if (!require("devtools")) {
+            install.packages("devtools")
+            require("devtools")
+          }
+          devtools::install_github("zhouhj1994/LinDA")
+          require("LinDA")
+        }
         LinDA_metadata_df <- metadata_df
         LinDA_colnames <- colnames(LinDA_metadata_df)
         LinDA_colnames[LinDA_colnames == group] = "Group_group_nonsense_"
         colnames(LinDA_metadata_df) <-  LinDA_colnames
+        rownames(LinDA_metadata_df) <-
+          LinDA_metadata_df[, matching_columns]
+        LinDA_metadata_df <- select(LinDA_metadata_df,-matching_columns)
         LinDA_results <- linda(
           abundance,
           LinDA_metadata_df,
           formula = '~Group_group_nonsense_',
           alpha = 0.05,
-          prev.filter = 0,
-          mean.abund.filter = 0
         )
         LinDA_results$output
+        #在多组时需要整理输出结论
       },
       "edgeR" = {
-        library(edgeR)
+        if (!require("edgeR")) {
+          if (!require("BiocManager", quietly = TRUE))
+            install.packages("BiocManager")
+          BiocManager::install("edgeR")
+          require("edgeR")
+        }
         edgeR_abundance_mat <- t(round(abundance_mat))
         edgeR_object <-
           DGEList(counts = edgeR_abundance_mat, group = Group)
@@ -206,15 +221,42 @@ pathway_daa <-
 
       },
       "limma voom" = {
-        library(edgeR)
-        library(limma)
-        edgeR_abundance_mat <- t(round(abundance_mat))
+        if (!require("edgeR")) {
+          if (!require("BiocManager", quietly = TRUE))
+            install.packages("BiocManager")
+          BiocManager::install("edgeR")
+          require("edgeR")
+        }
+        if (!require("limma")) {
+          if (!require("BiocManager", quietly = TRUE))
+            install.packages("BiocManager")
+          BiocManager::install("limma")
+          require("limma")
+        }
+        edgeR_abundance_mat <- round(abundance_mat)
         edgeR_object <-
           DGEList(counts = edgeR_abundance_mat, group = Group)
         edgeR_object <- calcNormFactors(edgeR_object)
         limma_voom_Fit <- lmFit(voom(edgeR_object))
         limma_voom_Fit <- eBayes(limma_voom_Fit)
-        p_values <- limma_voom_Fit$p.value
+        p_values <- limma_voom_Fit$p.value[,2]
+      },
+      "metagenomeSeq" = {
+
+      },
+      "Lefser" = { #Lefser only for two groups.
+        if (length(Level)!=2){
+          stop("Lefser only support two groups comparison.")
+        }
+        if (!require("lefser")) {
+          if (!require("BiocManager", quietly = TRUE))
+            install.packages("BiocManager")
+          BiocManager::install("lefser")
+          require("lefser")
+        }
+        Lefser_object <- SummarizedExperiment(assays = list(counts = abundance),colData = metadata_df)
+        Lefser_results <- lefser(se1, groupCol = "Enviroment")
+        lefserPlot(Lefser_results,colors = c("#7fb1d3", "#fdb462"),trim.names=FALSE)
       }
     )
 
