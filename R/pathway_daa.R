@@ -1,8 +1,6 @@
 
 
-metadata <- read_delim("~/Microbiome/C9orf72/Code And Data/new_metadata.txt",
-                       delim = "\t", escape_double = FALSE,
-                       trim_ws = TRUE)
+# metadata <- read_delim("~/Microbiome/C9orf72/Code And Data/new_metadata.txt",delim = "\t", escape_double = FALSE,trim_ws = TRUE)
 
 
 #abundance: df, rownames:pathway, colnames:samples
