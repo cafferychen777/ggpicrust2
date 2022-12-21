@@ -12,7 +12,7 @@ pathway_daa <-
            metadata,
            group,
            daa_method,
-           select = c(),
+           select = NULL,
            p.adjust = "BH",
            maaslin2_reference = NULL) {
     if (!is_tibble(metadata)){
@@ -25,11 +25,12 @@ pathway_daa <-
     matching_columns <-
       names(metadata)[sapply(matches, function(x)
         length(x) == length(sample_names))]
-    switch(length(select),
-           0 = {
+    length_select <- length(select)
+    switch(is.null(select),
+           "TRUE" = {
              abundance <- abundance
            },
-           {
+           "FALSE" = {
              abundance <- abundance[, colnames(abundance) %in% select]
              metadata <-
                metadata[as.matrix(metadata[, matching_columns]) %in% select,]
