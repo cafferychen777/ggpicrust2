@@ -18,10 +18,14 @@ Imports:
     dplyr,
     edgeR,
     ggplot2,
+    glmnet,
     limma,
     Maaslin2,
     MicrobiomeStat,
     readr,
+    rstan,
+    stats,
+    SummarizedExperiment,
     tibble
 Depends: 
     tidyverse

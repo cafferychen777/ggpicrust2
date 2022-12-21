@@ -1,10 +1,3 @@
-
-
-# metadata <- read_delim("~/Microbiome/C9orf72/Code And Data/new_metadata.txt",delim = "\t", escape_double = FALSE,trim_ws = TRUE)
-
-
-#abundance: df, rownames:pathway, colnames:samples
-#metadata: tibble, sample_names single a column
 pathway_daa <-
   function(abundance,
            metadata,
@@ -13,26 +6,28 @@ pathway_daa <-
            select = NULL,
            p.adjust = "BH",
            maaslin2_reference = NULL) {
-    if (!is_tibble(metadata)){
+    if (!is_tibble(metadata)) {
       metadata <- as_tibble(metadata)
     }
     sample_names <- colnames(abundance)
     matches <-
-      lapply(metadata, function(x)
-        intersect(sample_names, x))
+      lapply(metadata, function(x) {
+        intersect(sample_names, x)
+      })
     matching_columns <-
-      names(metadata)[sapply(matches, function(x)
-        length(x) == length(sample_names))]
-    length_select <- length(select)
+      names(metadata)[sapply(matches, function(x) {
+        length(x) == length(sample_names)
+      })]
     switch(is.null(select),
-           "TRUE" = {
-             abundance <- abundance
-           },
-           "FALSE" = {
-             abundance <- abundance[, colnames(abundance) %in% select]
-             metadata <-
-               metadata[as.matrix(metadata[, matching_columns]) %in% select,]
-           })
+      "TRUE" = {
+        abundance <- abundance
+      },
+      "FALSE" = {
+        abundance <- abundance[, colnames(abundance) %in% select]
+        metadata <-
+          metadata[as.matrix(metadata[, matching_columns]) %in% select, ]
+      }
+    )
     sample_names <- colnames(abundance)
     abundance_mat <- as.matrix(abundance)
     metadata_order <-
@@ -40,49 +35,51 @@ pathway_daa <-
     metadata <- metadata[metadata_order, ]
     metadata_mat <- as.matrix(metadata)
     metadata_df <- as.data.frame(metadata)
-    Group <- factor(metadata_mat[,group])
+    Group <- factor(metadata_mat[, group])
     Level <- names(table(Group))
-    switch(
-      daa_method,
+    switch(daa_method,
       "ALDEx2" = {
         ALDEx2_abundance <- round(abundance)
-        switch(length(Level)==2,
-               "TRUE" = {
-                 ALDEx2_object <-
-                   aldex.clr(
-                     ALDEx2_abundance,
-                     Group,
-                     mc.samples = 256,
-                     denom = "all",
-                     verbose = F
-                   )
-                 p_values <-
-                   aldex.ttest(ALDEx2_object,
-                               paired.test = FALSE,
-                               verbose = FALSE)[, c(1, 3)]
-               }, {
-                 ALDEx2_object <-
-                   aldex.clr(
-                     ALDEx2_abundance,
-                     Group,
-                     mc.samples = 256,
-                     denom = "all",
-                     verbose = F
-                   )
-                 p_values <- aldex.kw(ALDEx2_object)[, c(1, 3)]
-               })
+        switch(length(Level) == 2,
+          "TRUE" = {
+            ALDEx2_object <-
+              aldex.clr(
+                ALDEx2_abundance,
+                Group,
+                mc.samples = 256,
+                denom = "all",
+                verbose = F
+              )
+            p_values <-
+              aldex.ttest(ALDEx2_object,
+                paired.test = FALSE,
+                verbose = FALSE
+              )[, c(1, 3)]
+          },
+          {
+            ALDEx2_object <-
+              aldex.clr(
+                ALDEx2_abundance,
+                Group,
+                mc.samples = 256,
+                denom = "all",
+                verbose = FALSE
+              )
+            p_values <- aldex.kw(ALDEx2_object)[, c(1, 3)]
+          }
+        )
       },
       "DESeq2" = {
         DESeq2_metadata <- metadata_df
         DESeq2_abundance_mat <- abundance_mat
         DESeq2_colnames <- colnames(DESeq2_metadata)
-        DESeq2_colnames[DESeq2_colnames == group] = "Group_group_nonsense"
-        colnames(DESeq2_metadata) <-  DESeq2_colnames
+        DESeq2_colnames[DESeq2_colnames == group] <- "Group_group_nonsense"
+        colnames(DESeq2_metadata) <- DESeq2_colnames
         DESeq2_object <-
           DESeqDataSetFromMatrix(
             countData = DESeq2_abundance_mat,
             colData = DESeq2_metadata,
-            design = ~ Group_group_nonsense
+            design = ~Group_group_nonsense
           )
         DESeq2_object <-
           estimateSizeFactors(DESeq2_object, type = "poscounts")
@@ -91,8 +88,9 @@ pathway_daa <-
         DESeq2_results_tibble <- as_tibble(DESeq2_results)
         DESeq2_results_tibble <-
           DESeq2_results_tibble %>% add_column(.,
-                                               pathway = rownames(DESeq2_results),
-                                               .before = 1)
+            pathway = rownames(DESeq2_results),
+            .before = 1
+          )
         DESeq2_results_tibble <- DESeq2_results_tibble[, c(1, 6)]
         DESeq2_results_mat <- as.matrix(DESeq2_results_tibble)
         rownames(DESeq2_results_mat) <- DESeq2_results_mat[, 1]
@@ -105,34 +103,36 @@ pathway_daa <-
         Maaslin2_metadata_df <- metadata_df
         rownames(Maaslin2_metadata_df) <-
           Maaslin2_metadata_df[, matching_columns]
-        Maaslin2_metadata_df <- select(Maaslin2_metadata_df,-matching_columns)
-        switch(length(Level)==2,
-               "TRUE" = {
-                 Maaslin2 <- Maaslin2(
-                   Maaslin2_abundance_mat,
-                   Maaslin2_metadata_df,
-                   output = paste0("Maaslin2_results_", group),
-                   transform = "AST",
-                   fixed_effects = group,
-                   reference = Level,
-                   normalization = "TSS",
-                   standardize = TRUE,
-                   min_prevalence = 0.1
-                 )
-               }, {
-                 Maaslin2 <- Maaslin2(
-                   Maaslin2_abundance_mat,
-                   Maaslin2_metadata_df,
-                   output = paste0("Maaslin2_results_", group),
-                   transform = "AST",
-                   fixed_effects = group,
-                   reference = paste0(group,",",maaslin2_reference),
-                   #In case of multiple groups, be sure to specify the baseline reference
-                   normalization = "TSS",
-                   standardize = TRUE,
-                   min_prevalence = 0.1
-                 )
-               })
+        Maaslin2_metadata_df <- select(Maaslin2_metadata_df, -matching_columns)
+        switch(length(Level) == 2,
+          "TRUE" = {
+            Maaslin2 <- Maaslin2(
+              Maaslin2_abundance_mat,
+              Maaslin2_metadata_df,
+              output = paste0("Maaslin2_results_", group),
+              transform = "AST",
+              fixed_effects = group,
+              reference = Level,
+              normalization = "TSS",
+              standardize = TRUE,
+              min_prevalence = 0.1
+            )
+          },
+          {
+            Maaslin2 <- Maaslin2(
+              Maaslin2_abundance_mat,
+              Maaslin2_metadata_df,
+              output = paste0("Maaslin2_results_", group),
+              transform = "AST",
+              fixed_effects = group,
+              reference = paste0(group, ",", maaslin2_reference),
+              # In case of multiple groups, be sure to specify the baseline reference
+              normalization = "TSS",
+              standardize = TRUE,
+              min_prevalence = 0.1
+            )
+          }
+        )
         message(
           paste0(
             "You can view the full analysis results and logs in the current default file location: ",
@@ -146,19 +146,19 @@ pathway_daa <-
       "LinDA" = {
         LinDA_metadata_df <- metadata_df
         LinDA_colnames <- colnames(LinDA_metadata_df)
-        LinDA_colnames[LinDA_colnames == group] = "Group_group_nonsense_"
-        colnames(LinDA_metadata_df) <-  LinDA_colnames
+        LinDA_colnames[LinDA_colnames == group] <- "Group_group_nonsense_"
+        colnames(LinDA_metadata_df) <- LinDA_colnames
         rownames(LinDA_metadata_df) <-
           LinDA_metadata_df[, matching_columns]
-        LinDA_metadata_df <- select(LinDA_metadata_df,-matching_columns)
+        LinDA_metadata_df <- select(LinDA_metadata_df, -matching_columns)
         LinDA_results <- linda(
           abundance,
           LinDA_metadata_df,
-          formula = '~Group_group_nonsense_',
+          formula = "~Group_group_nonsense_",
           alpha = 0.05,
         )
         LinDA_results$output
-        #在多组时需要整理输出结论
+        # 在多组时需要整理输出结论
       },
       "edgeR" = {
         edgeR_abundance_mat <- t(round(abundance_mat))
@@ -168,28 +168,28 @@ pathway_daa <-
         edgeR_object <-
           estimateCommonDisp(edgeR_object, verbose = T)
         length_Level <- length(Level)
-        switch(length_Level==2,
-               "TRUE" = {
-                 edgeR_results <- exactTest(edgeR_object, pair = c(1, 2))
-                 p_values <-
-                   as.matrix(edgeR_results$table)[, -c(1, 2)]
-               },
-               {
-                 edgeR_results <- list()
-                 numbers <- 1:length(Level)
-                 combinations <- combn(numbers, 2)
-                 for (j in 1:sum(1:(length(Level)-1))){
-                   DGEExact <- exactTest(edgeR_object, pair = combinations[,j])
-                   edgeR_results[[j]] <- tibble(
-                     pathway = rownames(DGEExact$table),
-                     Group1 = DGEExact$comparison[1],
-                     Group2 = DGEExact$comparison[2],
-                     PValue = DGEExact$table$PValue
-                   )
-                 }
-                 edgeR_results <- bind_rows(edgeR_results)
-               })
-
+        switch(length_Level == 2,
+          "TRUE" = {
+            edgeR_results <- exactTest(edgeR_object, pair = c(1, 2))
+            p_values <-
+              as.matrix(edgeR_results$table)[, -c(1, 2)]
+          },
+          {
+            edgeR_results <- list()
+            numbers <- 1:length(Level)
+            combinations <- combn(numbers, 2)
+            for (j in 1:sum(1:(length(Level) - 1))) {
+              DGEExact <- exactTest(edgeR_object, pair = combinations[, j])
+              edgeR_results[[j]] <- tibble(
+                pathway = rownames(DGEExact$table),
+                Group1 = DGEExact$comparison[1],
+                Group2 = DGEExact$comparison[2],
+                PValue = DGEExact$table$PValue
+              )
+            }
+            edgeR_results <- bind_rows(edgeR_results)
+          }
+        )
       },
       "limma voom" = {
         edgeR_abundance_mat <- round(abundance_mat)
@@ -198,27 +198,26 @@ pathway_daa <-
         edgeR_object <- calcNormFactors(edgeR_object)
         limma_voom_Fit <- lmFit(voom(edgeR_object))
         limma_voom_Fit <- eBayes(limma_voom_Fit)
-        p_values <- limma_voom_Fit$p.value[,2]
+        p_values <- limma_voom_Fit$p.value[, 2]
       },
       "metagenomeSeq" = {
 
       },
-      "Lefser" = { #Lefser only for two groups.
-        if (length(Level)!=2){
+      "Lefser" = { # Lefser only for two groups.
+        if (length(Level) != 2) {
           stop("Lefser only support two groups comparison.")
         }
         BiocManager::install("lefser")
-        Lefser_object <- SummarizedExperiment(assays = list(counts = abundance),colData = metadata_df)
+        Lefser_object <- SummarizedExperiment(assays = list(counts = abundance), colData = metadata_df)
         Lefser_results <- lefser(se1, groupCol = "Enviroment")
-        lefserPlot(Lefser_results,colors = c("#7fb1d3", "#fdb462"),trim.names=FALSE)
+        lefserPlot(Lefser_results, colors = c("#7fb1d3", "#fdb462"), trim.names = FALSE)
       }
     )
 
 
 
 
-    switch(
-      p.adjust,
+    switch(p.adjust,
       "BH" = {
         adjusted_p_values <- p.adjust(p_values, method = "BH")
       },
@@ -257,7 +256,6 @@ pathway_daa <-
         model <- cv.glmnet(x, y, family = "binomial")
         # 计算系数
         coefs <- coef(model, s = "lambda.min")
-
       }
     )
   }

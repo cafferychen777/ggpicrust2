@@ -1,7 +1,6 @@
 ko2kegg_abundance <- function(file) {
   file_format <- substr(file, nchar(file) - 3, nchar(file))
-  switch(
-    file_format,
+  switch(file_format,
     ".txt" = abundance <-
       read_delim(
         file,
@@ -37,8 +36,9 @@ ko2kegg_abundance <- function(file) {
   kegg_names <- ko_to_kegg_reference[, 1]
   kegg_abundance <-
     matrix(NA,
-           nrow = nrow(kegg_names),
-           ncol = length(sample_names))
+      nrow = nrow(kegg_names),
+      ncol = length(sample_names)
+    )
   colnames(kegg_abundance) <- sample_names
   rownames(kegg_abundance) <- as.matrix(kegg_names)
   for (i in seq_len(nrow(kegg_abundance))) {
