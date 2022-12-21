@@ -10,5 +10,12 @@ License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
 usethis:
-Suggests: 
 RoxygenNote: 7.2.3
+Imports: 
+    devtools,
+    dplyr,
+    ggplot2,
+    readr,
+    tibble
+Depends: 
+    tidyverse
