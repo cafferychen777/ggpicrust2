@@ -38,4 +38,5 @@ Imports:
     SummarizedExperiment,
     tibble
 Depends: 
+    R (>= 2.10),
     tidyverse
