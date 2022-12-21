@@ -1,0 +1,4 @@
+Question1: Error in base::nchar(wide_chars$test, type = "width") : lazy-load database '/Library/Frameworks/R.framework/Versions/4.2/Resources/library/cli/R/sysdata.rdb' is corrupt
+
+Solution1: 
+

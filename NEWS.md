@@ -1,4 +1,4 @@
-# ggpicrust2 (development version)
+# ggpicrust2 1.0.1
 
 # ggpicrust2 1.0.0
 
