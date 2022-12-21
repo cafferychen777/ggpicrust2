@@ -158,7 +158,6 @@ pathway_daa <-
           alpha = 0.05,
         )
         LinDA_results$output
-        # 在多组时需要整理输出结论
       },
       "edgeR" = {
         edgeR_abundance_mat <- t(round(abundance_mat))
@@ -176,7 +175,7 @@ pathway_daa <-
           },
           {
             edgeR_results <- list()
-            numbers <- 1:length(Level)
+            numbers <- seq_along(Level)
             combinations <- combn(numbers, 2)
             for (j in 1:sum(1:(length(Level) - 1))) {
               DGEExact <- exactTest(edgeR_object, pair = combinations[, j])
