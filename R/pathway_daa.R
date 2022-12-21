@@ -45,10 +45,6 @@ pathway_daa <-
     switch(
       daa_method,
       "ALDEx2" = {
-        if (!require("ALDEx2")) {
-          install.packages("ALDEx2")
-          require("ALDEx2")
-        }
         ALDEx2_abundance <- round(abundance)
         switch(length(Level)==2,
                "TRUE" = {
@@ -77,10 +73,6 @@ pathway_daa <-
                })
       },
       "DESeq2" = {
-        if (!require("DESeq2")) {
-          install.packages("DESeq2")
-          require("DESeq2")
-        }
         DESeq2_metadata <- metadata_df
         DESeq2_abundance_mat <- abundance_mat
         DESeq2_colnames <- colnames(DESeq2_metadata)
@@ -108,19 +100,12 @@ pathway_daa <-
         p_values <- DESeq2_results_mat
       },
       "Maaslin2" = {
-        if (!require("ALDEx2")) {
-          if (!require("BiocManager", quietly = TRUE))
-            install.packages("BiocManager")
-          BiocManager::install("Maaslin2")
-          require("Maaslin2")
-        }
         Maaslin2_abundance_mat <- abundance_mat
         Maaslin2_abundance_mat <- t(Maaslin2_abundance_mat)
         Maaslin2_metadata_df <- metadata_df
         rownames(Maaslin2_metadata_df) <-
           Maaslin2_metadata_df[, matching_columns]
         Maaslin2_metadata_df <- select(Maaslin2_metadata_df,-matching_columns)
-
         switch(length(Level)==2,
                "TRUE" = {
                  Maaslin2 <- Maaslin2(
@@ -159,14 +144,6 @@ pathway_daa <-
         p_values <- Maaslin2$results$pval
       },
       "LinDA" = {
-        if (!require("LinDA")) {
-          if (!require("devtools")) {
-            install.packages("devtools")
-            require("devtools")
-          }
-          devtools::install_github("zhouhj1994/LinDA")
-          require("LinDA")
-        }
         LinDA_metadata_df <- metadata_df
         LinDA_colnames <- colnames(LinDA_metadata_df)
         LinDA_colnames[LinDA_colnames == group] = "Group_group_nonsense_"
@@ -184,12 +161,6 @@ pathway_daa <-
         #在多组时需要整理输出结论
       },
       "edgeR" = {
-        if (!require("edgeR")) {
-          if (!require("BiocManager", quietly = TRUE))
-            install.packages("BiocManager")
-          BiocManager::install("edgeR")
-          require("edgeR")
-        }
         edgeR_abundance_mat <- t(round(abundance_mat))
         edgeR_object <-
           DGEList(counts = edgeR_abundance_mat, group = Group)
@@ -221,18 +192,6 @@ pathway_daa <-
 
       },
       "limma voom" = {
-        if (!require("edgeR")) {
-          if (!require("BiocManager", quietly = TRUE))
-            install.packages("BiocManager")
-          BiocManager::install("edgeR")
-          require("edgeR")
-        }
-        if (!require("limma")) {
-          if (!require("BiocManager", quietly = TRUE))
-            install.packages("BiocManager")
-          BiocManager::install("limma")
-          require("limma")
-        }
         edgeR_abundance_mat <- round(abundance_mat)
         edgeR_object <-
           DGEList(counts = edgeR_abundance_mat, group = Group)
@@ -248,12 +207,7 @@ pathway_daa <-
         if (length(Level)!=2){
           stop("Lefser only support two groups comparison.")
         }
-        if (!require("lefser")) {
-          if (!require("BiocManager", quietly = TRUE))
-            install.packages("BiocManager")
-          BiocManager::install("lefser")
-          require("lefser")
-        }
+        BiocManager::install("lefser")
         Lefser_object <- SummarizedExperiment(assays = list(counts = abundance),colData = metadata_df)
         Lefser_results <- lefser(se1, groupCol = "Enviroment")
         lefserPlot(Lefser_results,colors = c("#7fb1d3", "#fdb462"),trim.names=FALSE)

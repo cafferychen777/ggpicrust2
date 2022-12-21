@@ -4,17 +4,23 @@ Title: Make Picrust2 Output Analysis and Visualization Easier
 Version: 0.2.0
 Author: Chen(Caffery) Yang
 Maintainer: Chen(Caffery) Yang <cafferychen7850@gmail.com>
-Description: More about what it does (maybe more than one line)
-    Use four spaces when indenting paragraphs within the Description.
+Description: The ggpicrust2 package makes it easy to analyze and visualize Picrust2 output. It offers pre     -defined plots and functions to generate statistical plots about microbiome functional predictions,      as well as customization options. Plus, with its one-click feature to generate publication-level         plots, you can save time and create professional-grade figures with ease. Try the ggpicrust2 package     to streamline your Picrust2 analysis and visualization process.
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
 usethis:
 RoxygenNote: 7.2.3
 Imports: 
+    ALDEx2,
+    BiocManager,
+    DESeq2,
     devtools,
     dplyr,
+    edgeR,
     ggplot2,
+    limma,
+    Maaslin2,
+    MicrobiomeStat,
     readr,
     tibble
 Depends: 
