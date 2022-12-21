@@ -2,3 +2,7 @@ Question1: Error in base::nchar(wide_chars$test, type = "width") : lazy-load dat
 
 Solution1: 
 
+``` R
+remove.packages("ggpicrust2");install.packages("ggpicrust2")
+```
+
