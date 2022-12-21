@@ -122,8 +122,9 @@ pathway_daa <-
         rownames(Maaslin2_metadata_df) <-
           Maaslin2_metadata_df[, matching_columns]
         Maaslin2_metadata_df <- select(Maaslin2_metadata_df,-matching_columns)
-        switch(length(Level),
-               2 = {
+
+        switch(length(Level)==2,
+               "TRUE" = {
                  Maaslin2 <- Maaslin2(
                    Maaslin2_abundance_mat,
                    Maaslin2_metadata_df,
@@ -198,8 +199,8 @@ pathway_daa <-
         edgeR_object <-
           estimateCommonDisp(edgeR_object, verbose = T)
         length_Level <- length(Level)
-        switch(length_Level,
-               2 = {
+        switch(length_Level==2,
+               "TRUE" = {
                  edgeR_results <- exactTest(edgeR_object, pair = c(1, 2))
                  p_values <-
                    as.matrix(edgeR_results$table)[, -c(1, 2)]
