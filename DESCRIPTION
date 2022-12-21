@@ -10,7 +10,7 @@ License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
 usethis: :use_package(package = "ggplot2", type = "Imports")
-use_package(package = "SummarizedExperiment", type = "Imports")
+:use_package(package = "SummarizedExperiment", type = "Imports")
 Suggests: 
     covr
 RoxygenNote: 7.2.3
