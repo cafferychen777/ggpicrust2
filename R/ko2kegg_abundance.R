@@ -41,8 +41,8 @@ ko2kegg_abundance <- function(file) {
            ncol = length(sample_names))
   colnames(kegg_abundance) <- sample_names
   rownames(kegg_abundance) <- as.matrix(kegg_names)
-  for (i in 1:nrow(kegg_abundance)) {
-    for (j in 1:ncol(kegg_abundance)) {
+  for (i in seq_len(nrow(kegg_abundance))) {
+    for (j in seq_len(ncol(kegg_abundance))) {
       kegg_name <- rownames(kegg_abundance)[i]
       sample_name <- colnames(kegg_abundance)[j]
       ko_to_kegg <-
@@ -52,7 +52,7 @@ ko2kegg_abundance <- function(file) {
         sum(abundance[as.matrix(abundance[, 1]) %in% ko_to_kegg, sample_name])
     }
   }
-  kegg_abundance <- kegg_abundance[rowSums(kegg_abundance) != 0,]
+  kegg_abundance <- kegg_abundance[rowSums(kegg_abundance) != 0, ]
   message("The kegg pathway with zero abundance in all the different samples has been removed.")
   kegg_abundance <- as.data.frame(kegg_abundance)
   return(kegg_abundance)
