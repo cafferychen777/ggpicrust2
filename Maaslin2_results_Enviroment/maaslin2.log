@@ -1,0 +1,297 @@
+2022-12-22 18:10:03 INFO::Writing function arguments to log file
+2022-12-22 18:10:03 DEBUG::Function arguments
+2022-12-22 18:10:03 DEBUG::Output folder: Maaslin2_results_Enviroment
+2022-12-22 18:10:03 DEBUG::Min Abundance: 0.000000
+2022-12-22 18:10:03 DEBUG::Min Prevalence: 0.100000
+2022-12-22 18:10:03 DEBUG::Normalization: TSS
+2022-12-22 18:10:03 DEBUG::Transform: AST
+2022-12-22 18:10:03 DEBUG::Analysis method: LM
+2022-12-22 18:10:03 DEBUG::Max significance: 0.250000
+2022-12-22 18:10:03 DEBUG::Random effects:
+2022-12-22 18:10:03 DEBUG::Fixed effects: Enviroment
+2022-12-22 18:10:03 DEBUG::Correction method: BH
+2022-12-22 18:10:03 DEBUG::Standardize: TRUE
+2022-12-22 18:10:03 DEBUG::Cores: 1
+2022-12-22 18:10:03 INFO::Verifying options selected are valid
+2022-12-22 18:10:03 INFO::Determining format of input files
+2022-12-22 18:10:03 INFO::Input format is data samples as rows and metadata samples as rows
+2022-12-22 18:10:03 DEBUG::A total of 50 samples were found in both the data and metadata
+2022-12-22 18:10:03 DEBUG::Reordering data/metadata to use same sample ordering
+2022-12-22 18:10:03 INFO::Formula for fixed effects: expr ~  Enviroment
+2022-12-22 18:10:03 INFO::Filter data based on min abundance and min prevalence
+2022-12-22 18:10:03 INFO::Total samples in data: 50
+2022-12-22 18:10:03 INFO::Min samples required with min abundance for a feature not to be filtered: 5.000000
+2022-12-22 18:10:03 INFO::Total filtered features: 2
+2022-12-22 18:10:03 INFO::Filtered feature names from abundance and prevalence filtering:
+2022-12-22 18:10:03 INFO::Total filtered features with variance filtering: 0
+2022-12-22 18:10:03 INFO::Filtered feature names from variance filtering:
+2022-12-22 18:10:03 INFO::Running selected normalization method: TSS
+2022-12-22 18:10:03 INFO::Applying z-score to standardize continuous metadata
+2022-12-22 18:10:03 INFO::Running selected transform method: AST
+2022-12-22 18:10:03 INFO::Running selected analysis method: LM
+2022-12-22 18:10:04 INFO::Fitting model to feature number 1, ko05340
+2022-12-22 18:10:04 INFO::Fitting model to feature number 2, ko00564
+2022-12-22 18:10:04 INFO::Fitting model to feature number 3, ko00680
+2022-12-22 18:10:04 INFO::Fitting model to feature number 4, ko00562
+2022-12-22 18:10:04 INFO::Fitting model to feature number 5, ko03030
+2022-12-22 18:10:04 INFO::Fitting model to feature number 6, ko00561
+2022-12-22 18:10:04 INFO::Fitting model to feature number 7, ko00440
+2022-12-22 18:10:04 INFO::Fitting model to feature number 8, ko00250
+2022-12-22 18:10:04 INFO::Fitting model to feature number 9, ko00740
+2022-12-22 18:10:04 INFO::Fitting model to feature number 10, ko04940
+2022-12-22 18:10:04 INFO::Fitting model to feature number 11, ko00010
+2022-12-22 18:10:04 INFO::Fitting model to feature number 12, ko05412
+2022-12-22 18:10:04 INFO::Fitting model to feature number 13, ko00195
+2022-12-22 18:10:04 INFO::Fitting model to feature number 14, ko03450
+2022-12-22 18:10:04 INFO::Fitting model to feature number 15, ko00760
+2022-12-22 18:10:04 INFO::Fitting model to feature number 16, ko00920
+2022-12-22 18:10:04 INFO::Fitting model to feature number 17, ko00311
+2022-12-22 18:10:04 INFO::Fitting model to feature number 18, ko00310
+2022-12-22 18:10:04 INFO::Fitting model to feature number 19, ko04146
+2022-12-22 18:10:04 INFO::Fitting model to feature number 20, ko00600
+2022-12-22 18:10:04 INFO::Fitting model to feature number 21, ko04141
+2022-12-22 18:10:04 INFO::Fitting model to feature number 22, ko04142
+2022-12-22 18:10:04 INFO::Fitting model to feature number 23, ko00604
+2022-12-22 18:10:04 INFO::Fitting model to feature number 24, ko04260
+2022-12-22 18:10:04 INFO::Fitting model to feature number 25, ko05142
+2022-12-22 18:10:04 INFO::Fitting model to feature number 26, ko00513
+2022-12-22 18:10:04 INFO::Fitting model to feature number 27, ko04973
+2022-12-22 18:10:04 INFO::Fitting model to feature number 28, ko00510
+2022-12-22 18:10:04 INFO::Fitting model to feature number 29, ko04974
+2022-12-22 18:10:04 INFO::Fitting model to feature number 30, ko00450
+2022-12-22 18:10:04 INFO::Fitting model to feature number 31, ko01051
+2022-12-22 18:10:04 INFO::Fitting model to feature number 32, ko00565
+2022-12-22 18:10:04 INFO::Fitting model to feature number 33, ko00524
+2022-12-22 18:10:04 INFO::Fitting model to feature number 34, ko00300
+2022-12-22 18:10:04 INFO::Fitting model to feature number 35, ko05222
+2022-12-22 18:10:04 INFO::Fitting model to feature number 36, ko05416
+2022-12-22 18:10:04 INFO::Fitting model to feature number 37, ko00260
+2022-12-22 18:10:04 INFO::Fitting model to feature number 38, ko00190
+2022-12-22 18:10:04 INFO::Fitting model to feature number 39, ko03440
+2022-12-22 18:10:04 INFO::Fitting model to feature number 40, ko00750
+2022-12-22 18:10:04 INFO::Fitting model to feature number 41, ko00950
+2022-12-22 18:10:04 INFO::Fitting model to feature number 42, ko00592
+2022-12-22 18:10:04 INFO::Fitting model to feature number 43, ko00591
+2022-12-22 18:10:04 INFO::Fitting model to feature number 44, ko00590
+2022-12-22 18:10:04 INFO::Fitting model to feature number 45, ko00061
+2022-12-22 18:10:04 INFO::Fitting model to feature number 46, ko03070
+2022-12-22 18:10:04 INFO::Fitting model to feature number 47, ko00253
+2022-12-22 18:10:04 INFO::Fitting model to feature number 48, ko03060
+2022-12-22 18:10:04 INFO::Fitting model to feature number 49, ko00380
+2022-12-22 18:10:04 INFO::Fitting model to feature number 50, ko00500
+2022-12-22 18:10:04 INFO::Fitting model to feature number 51, ko05120
+2022-12-22 18:10:04 INFO::Fitting model to feature number 52, ko04964
+2022-12-22 18:10:04 INFO::Fitting model to feature number 53, ko04962
+2022-12-22 18:10:04 INFO::Fitting model to feature number 54, ko00625
+2022-12-22 18:10:04 INFO::Fitting model to feature number 55, ko00627
+2022-12-22 18:10:04 INFO::Fitting model to feature number 56, ko00626
+2022-12-22 18:10:04 INFO::Fitting model to feature number 57, ko00621
+2022-12-22 18:10:04 INFO::Fitting model to feature number 58, ko00620
+2022-12-22 18:10:04 INFO::Fitting model to feature number 59, ko00623
+2022-12-22 18:10:04 INFO::Fitting model to feature number 60, ko00622
+2022-12-22 18:10:04 INFO::Fitting model to feature number 61, ko00270
+2022-12-22 18:10:04 INFO::Fitting model to feature number 62, ko00940
+2022-12-22 18:10:04 INFO::Fitting model to feature number 63, ko00941
+2022-12-22 18:10:04 INFO::Fitting model to feature number 64, ko01053
+2022-12-22 18:10:04 INFO::Fitting model to feature number 65, ko00100
+2022-12-22 18:10:04 INFO::Fitting model to feature number 66, ko05016
+2022-12-22 18:10:04 INFO::Fitting model to feature number 67, ko00071
+2022-12-22 18:10:04 INFO::Fitting model to feature number 68, ko00072
+2022-12-22 18:10:04 INFO::Fitting model to feature number 69, ko05219
+2022-12-22 18:10:04 INFO::Fitting model to feature number 70, ko05215
+2022-12-22 18:10:04 INFO::Fitting model to feature number 71, ko05211
+2022-12-22 18:10:04 INFO::Fitting model to feature number 72, ko05210
+2022-12-22 18:10:04 INFO::Fitting model to feature number 73, ko01055
+2022-12-22 18:10:04 INFO::Fitting model to feature number 74, ko04910
+2022-12-22 18:10:04 INFO::Fitting model to feature number 75, ko00531
+2022-12-22 18:10:04 INFO::Fitting model to feature number 76, ko00360
+2022-12-22 18:10:04 INFO::Fitting model to feature number 77, ko00633
+2022-12-22 18:10:04 INFO::Fitting model to feature number 78, ko00630
+2022-12-22 18:10:04 INFO::Fitting model to feature number 79, ko00363
+2022-12-22 18:10:04 INFO::Fitting model to feature number 80, ko00364
+2022-12-22 18:10:04 INFO::Fitting model to feature number 81, ko04115
+2022-12-22 18:10:04 INFO::Fitting model to feature number 82, ko00121
+2022-12-22 18:10:04 INFO::Fitting model to feature number 83, ko04914
+2022-12-22 18:10:04 INFO::Fitting model to feature number 84, ko00430
+2022-12-22 18:10:04 INFO::Fitting model to feature number 85, ko02010
+2022-12-22 18:10:04 INFO::Fitting model to feature number 86, ko00130
+2022-12-22 18:10:04 INFO::Fitting model to feature number 87, ko03050
+2022-12-22 18:10:04 INFO::Fitting model to feature number 88, ko00361
+2022-12-22 18:10:04 INFO::Fitting model to feature number 89, ko00040
+2022-12-22 18:10:04 INFO::Fitting model to feature number 90, ko00730
+2022-12-22 18:10:04 INFO::Fitting model to feature number 91, ko00362
+2022-12-22 18:10:04 INFO::Fitting model to feature number 92, ko01040
+2022-12-22 18:10:04 INFO::Fitting model to feature number 93, ko00603
+2022-12-22 18:10:04 INFO::Fitting model to feature number 94, ko03018
+2022-12-22 18:10:04 INFO::Fitting model to feature number 95, ko00281
+2022-12-22 18:10:04 INFO::Fitting model to feature number 96, ko00280
+2022-12-22 18:10:04 INFO::Fitting model to feature number 97, ko03013
+2022-12-22 18:10:04 INFO::Fitting model to feature number 98, ko04626
+2022-12-22 18:10:04 INFO::Fitting model to feature number 99, ko05200
+2022-12-22 18:10:04 INFO::Fitting model to feature number 100, ko00601
+2022-12-22 18:10:04 INFO::Fitting model to feature number 101, ko00312
+2022-12-22 18:10:04 INFO::Fitting model to feature number 102, ko05020
+2022-12-22 18:10:04 INFO::Fitting model to feature number 103, ko05143
+2022-12-22 18:10:04 INFO::Fitting model to feature number 104, ko00523
+2022-12-22 18:10:04 INFO::Fitting model to feature number 105, ko00520
+2022-12-22 18:10:04 INFO::Fitting model to feature number 106, ko00521
+2022-12-22 18:10:04 INFO::Fitting model to feature number 107, ko05146
+2022-12-22 18:10:04 INFO::Fitting model to feature number 108, ko05145
+2022-12-22 18:10:04 INFO::Fitting model to feature number 109, ko00052
+2022-12-22 18:10:04 INFO::Fitting model to feature number 110, ko00053
+2022-12-22 18:10:04 INFO::Fitting model to feature number 111, ko00051
+2022-12-22 18:10:04 INFO::Fitting model to feature number 112, ko00401
+2022-12-22 18:10:04 INFO::Fitting model to feature number 113, ko00400
+2022-12-22 18:10:04 INFO::Fitting model to feature number 114, ko04020
+2022-12-22 18:10:04 INFO::Fitting model to feature number 115, ko00350
+2022-12-22 18:10:04 INFO::Fitting model to feature number 116, ko00480
+2022-12-22 18:10:04 INFO::Fitting model to feature number 117, ko00643
+2022-12-22 18:10:04 INFO::Fitting model to feature number 118, ko00642
+2022-12-22 18:10:04 INFO::Fitting model to feature number 119, ko00640
+2022-12-22 18:10:04 INFO::Fitting model to feature number 120, ko00720
+2022-12-22 18:10:04 INFO::Fitting model to feature number 121, ko00960
+2022-12-22 18:10:04 INFO::Fitting model to feature number 122, ko02020
+2022-12-22 18:10:04 INFO::Fitting model to feature number 123, ko00120
+2022-12-22 18:10:04 INFO::Fitting model to feature number 124, ko03008
+2022-12-22 18:10:04 INFO::Fitting model to feature number 125, ko05414
+2022-12-22 18:10:04 INFO::Fitting model to feature number 126, ko00290
+2022-12-22 18:10:04 INFO::Fitting model to feature number 127, ko04614
+2022-12-22 18:10:04 INFO::Fitting model to feature number 128, ko03410
+2022-12-22 18:10:04 INFO::Fitting model to feature number 129, ko05010
+2022-12-22 18:10:05 INFO::Fitting model to feature number 130, ko05012
+2022-12-22 18:10:05 INFO::Fitting model to feature number 131, ko00980
+2022-12-22 18:10:05 INFO::Fitting model to feature number 132, ko00410
+2022-12-22 18:10:05 INFO::Fitting model to feature number 133, ko00983
+2022-12-22 18:10:05 INFO::Fitting model to feature number 134, ko05150
+2022-12-22 18:10:05 INFO::Fitting model to feature number 135, ko00791
+2022-12-22 18:10:05 INFO::Fitting model to feature number 136, ko00790
+2022-12-22 18:10:05 INFO::Fitting model to feature number 137, ko00020
+2022-12-22 18:10:05 INFO::Fitting model to feature number 138, ko00710
+2022-12-22 18:10:05 INFO::Fitting model to feature number 139, ko02060
+2022-12-22 18:10:05 INFO::Fitting model to feature number 140, ko00340
+2022-12-22 18:10:05 INFO::Fitting model to feature number 141, ko00785
+2022-12-22 18:10:05 INFO::Fitting model to feature number 142, ko00550
+2022-12-22 18:10:05 INFO::Fitting model to feature number 143, ko00650
+2022-12-22 18:10:05 INFO::Fitting model to feature number 144, ko02030
+2022-12-22 18:10:05 INFO::Fitting model to feature number 145, ko03320
+2022-12-22 18:10:05 INFO::Fitting model to feature number 146, ko04612
+2022-12-22 18:10:05 INFO::Fitting model to feature number 147, ko04621
+2022-12-22 18:10:05 INFO::Fitting model to feature number 148, ko04622
+2022-12-22 18:10:05 INFO::Fitting model to feature number 149, ko00910
+2022-12-22 18:10:05 INFO::Fitting model to feature number 150, ko00460
+2022-12-22 18:10:05 INFO::Fitting model to feature number 151, ko00830
+2022-12-22 18:10:05 INFO::Fitting model to feature number 152, ko00780
+2022-12-22 18:10:05 INFO::Fitting model to feature number 153, ko00511
+2022-12-22 18:10:05 INFO::Fitting model to feature number 154, ko00970
+2022-12-22 18:10:05 INFO::Fitting model to feature number 155, ko00030
+2022-12-22 18:10:05 INFO::Fitting model to feature number 156, ko04972
+2022-12-22 18:10:05 INFO::Fitting model to feature number 157, ko00230
+2022-12-22 18:10:05 INFO::Fitting model to feature number 158, ko04122
+2022-12-22 18:10:05 INFO::Fitting model to feature number 159, ko00540
+2022-12-22 18:10:05 INFO::Fitting model to feature number 160, ko05014
+2022-12-22 18:10:05 INFO::Fitting model to feature number 161, ko00660
+2022-12-22 18:10:05 INFO::Fitting model to feature number 162, ko03020
+2022-12-22 18:10:05 INFO::Fitting model to feature number 163, ko00982
+2022-12-22 18:10:05 INFO::Fitting model to feature number 164, ko03010
+2022-12-22 18:10:05 INFO::Fitting model to feature number 165, ko00140
+2022-12-22 18:10:05 INFO::Fitting model to feature number 166, ko05100
+2022-12-22 18:10:05 INFO::Fitting model to feature number 167, ko00860
+2022-12-22 18:10:05 INFO::Fitting model to feature number 168, ko05410
+2022-12-22 18:10:05 INFO::Fitting model to feature number 169, ko00330
+2022-12-22 18:10:05 INFO::Fitting model to feature number 170, ko00908
+2022-12-22 18:10:05 INFO::Fitting model to feature number 171, ko04930
+2022-12-22 18:10:05 INFO::Fitting model to feature number 172, ko03430
+2022-12-22 18:10:05 INFO::Fitting model to feature number 173, ko00906
+2022-12-22 18:10:05 INFO::Fitting model to feature number 174, ko00900
+2022-12-22 18:10:05 INFO::Fitting model to feature number 175, ko00903
+2022-12-22 18:10:05 INFO::Fitting model to feature number 176, ko00471
+2022-12-22 18:10:05 INFO::Fitting model to feature number 177, ko00472
+2022-12-22 18:10:05 INFO::Fitting model to feature number 178, ko00473
+2022-12-22 18:10:05 INFO::Fitting model to feature number 179, ko05111
+2022-12-22 18:10:05 INFO::Fitting model to feature number 180, ko04210
+2022-12-22 18:10:05 INFO::Fitting model to feature number 181, ko00240
+2022-12-22 18:10:05 INFO::Fitting model to feature number 182, ko04011
+2022-12-22 18:10:05 INFO::Fitting model to feature number 183, ko00944
+2022-12-22 18:10:05 INFO::Fitting model to feature number 184, ko04113
+2022-12-22 18:10:05 INFO::Fitting model to feature number 185, ko04070
+2022-12-22 18:10:05 INFO::Fitting model to feature number 186, ko03420
+2022-12-22 18:10:05 INFO::Fitting model to feature number 187, ko00770
+2022-12-22 18:10:05 INFO::Fitting model to feature number 188, ko02040
+2022-12-22 18:10:05 INFO::Fitting model to feature number 189, ko00670
+2022-12-22 18:10:05 INFO::Fitting model to feature number 190, ko04920
+2022-12-22 18:10:05 INFO::Fitting model to feature number 191, ko00930
+2022-12-22 18:10:05 INFO::Fitting model to feature number 192, ko04112
+2022-12-22 18:10:05 INFO::Counting total values for each feature
+2022-12-22 18:10:05 WARNING::Deleting existing residuals file: Maaslin2_results_Enviroment/residuals.rds
+2022-12-22 18:10:05 INFO::Writing residuals to file Maaslin2_results_Enviroment/residuals.rds
+2022-12-22 18:10:05 WARNING::Deleting existing fitted file: Maaslin2_results_Enviroment/fitted.rds
+2022-12-22 18:10:05 INFO::Writing fitted values to file Maaslin2_results_Enviroment/fitted.rds
+2022-12-22 18:10:05 INFO::Writing all results to file (ordered by increasing q-values): Maaslin2_results_Enviroment/all_results.tsv
+2022-12-22 18:10:05 INFO::Writing the significant results (those which are less than or equal to the threshold of 0.250000 ) to file (ordered by increasing q-values): Maaslin2_results_Enviroment/significant_results.tsv
+2022-12-22 18:10:05 INFO::Writing heatmap of significant results to file: Maaslin2_results_Enviroment/heatmap.pdf
+2022-12-22 18:10:05 INFO::Writing association plots (one for each significant association) to output folder: Maaslin2_results_Enviroment
+2022-12-22 18:10:05 INFO::Plotting associations from most to least significant, grouped by metadata
+2022-12-22 18:10:05 INFO::Plotting data for metadata number 1, Enviroment
+2022-12-22 18:10:05 INFO::Creating boxplot for categorical data, Enviroment vs ko04260
+2022-12-22 18:10:05 INFO::Creating boxplot for categorical data, Enviroment vs ko05012
+2022-12-22 18:10:05 INFO::Creating boxplot for categorical data, Enviroment vs ko05222
+2022-12-22 18:10:05 INFO::Creating boxplot for categorical data, Enviroment vs ko05416
+2022-12-22 18:10:06 INFO::Creating boxplot for categorical data, Enviroment vs ko05016
+2022-12-22 18:10:06 INFO::Creating boxplot for categorical data, Enviroment vs ko05210
+2022-12-22 18:10:06 INFO::Creating boxplot for categorical data, Enviroment vs ko04115
+2022-12-22 18:10:06 INFO::Creating boxplot for categorical data, Enviroment vs ko05146
+2022-12-22 18:10:07 INFO::Creating boxplot for categorical data, Enviroment vs ko05145
+2022-12-22 18:10:07 INFO::Creating boxplot for categorical data, Enviroment vs ko05010
+2022-12-22 18:10:07 INFO::Creating boxplot for categorical data, Enviroment vs ko00592
+2022-12-22 18:10:08 INFO::Creating boxplot for categorical data, Enviroment vs ko00601
+2022-12-22 18:10:08 INFO::Creating boxplot for categorical data, Enviroment vs ko00190
+2022-12-22 18:10:08 INFO::Creating boxplot for categorical data, Enviroment vs ko00720
+2022-12-22 18:10:08 INFO::Creating boxplot for categorical data, Enviroment vs ko00540
+2022-12-22 18:10:08 INFO::Creating boxplot for categorical data, Enviroment vs ko00591
+2022-12-22 18:10:09 INFO::Creating boxplot for categorical data, Enviroment vs ko00363
+2022-12-22 18:10:09 INFO::Creating boxplot for categorical data, Enviroment vs ko00030
+2022-12-22 18:10:09 INFO::Creating boxplot for categorical data, Enviroment vs ko00100
+2022-12-22 18:10:09 INFO::Creating boxplot for categorical data, Enviroment vs ko05200
+2022-12-22 18:10:10 INFO::Creating boxplot for categorical data, Enviroment vs ko00450
+2022-12-22 18:10:10 INFO::Creating boxplot for categorical data, Enviroment vs ko04113
+2022-12-22 18:10:10 INFO::Creating boxplot for categorical data, Enviroment vs ko05111
+2022-12-22 18:10:10 INFO::Creating boxplot for categorical data, Enviroment vs ko04146
+2022-12-22 18:10:11 INFO::Creating boxplot for categorical data, Enviroment vs ko00130
+2022-12-22 18:10:11 INFO::Creating boxplot for categorical data, Enviroment vs ko00020
+2022-12-22 18:10:11 INFO::Creating boxplot for categorical data, Enviroment vs ko00510
+2022-12-22 18:10:12 INFO::Creating boxplot for categorical data, Enviroment vs ko00500
+2022-12-22 18:10:12 INFO::Creating boxplot for categorical data, Enviroment vs ko03070
+2022-12-22 18:10:12 INFO::Creating boxplot for categorical data, Enviroment vs ko00281
+2022-12-22 18:10:12 INFO::Creating boxplot for categorical data, Enviroment vs ko00360
+2022-12-22 18:10:13 INFO::Creating boxplot for categorical data, Enviroment vs ko04974
+2022-12-22 18:10:13 INFO::Creating boxplot for categorical data, Enviroment vs ko00590
+2022-12-22 18:10:13 INFO::Creating boxplot for categorical data, Enviroment vs ko05014
+2022-12-22 18:10:14 INFO::Creating boxplot for categorical data, Enviroment vs ko00780
+2022-12-22 18:10:14 INFO::Creating boxplot for categorical data, Enviroment vs ko03320
+2022-12-22 18:10:14 INFO::Creating boxplot for categorical data, Enviroment vs ko04141
+2022-12-22 18:10:14 INFO::Creating boxplot for categorical data, Enviroment vs ko00620
+2022-12-22 18:10:15 INFO::Creating boxplot for categorical data, Enviroment vs ko00623
+2022-12-22 18:10:15 INFO::Creating boxplot for categorical data, Enviroment vs ko00730
+2022-12-22 18:10:15 INFO::Creating boxplot for categorical data, Enviroment vs ko04210
+2022-12-22 18:10:15 INFO::Creating boxplot for categorical data, Enviroment vs ko04070
+2022-12-22 18:10:15 INFO::Creating boxplot for categorical data, Enviroment vs ko04964
+2022-12-22 18:10:15 INFO::Creating boxplot for categorical data, Enviroment vs ko04920
+2022-12-22 18:10:16 INFO::Creating boxplot for categorical data, Enviroment vs ko03450
+2022-12-22 18:10:16 INFO::Creating boxplot for categorical data, Enviroment vs ko00440
+2022-12-22 18:10:16 INFO::Creating boxplot for categorical data, Enviroment vs ko00513
+2022-12-22 18:10:16 INFO::Creating boxplot for categorical data, Enviroment vs ko03020
+2022-12-22 18:10:16 INFO::Creating boxplot for categorical data, Enviroment vs ko00561
+2022-12-22 18:10:17 INFO::Creating boxplot for categorical data, Enviroment vs ko05412
+2022-12-22 18:10:17 INFO::Creating boxplot for categorical data, Enviroment vs ko00920
+2022-12-22 18:10:17 INFO::Creating boxplot for categorical data, Enviroment vs ko04020
+2022-12-22 18:10:17 INFO::Creating boxplot for categorical data, Enviroment vs ko05414
+2022-12-22 18:10:17 INFO::Creating boxplot for categorical data, Enviroment vs ko04972
+2022-12-22 18:10:17 INFO::Creating boxplot for categorical data, Enviroment vs ko00950
+2022-12-22 18:10:18 INFO::Creating boxplot for categorical data, Enviroment vs ko01055
+2022-12-22 18:10:18 INFO::Creating boxplot for categorical data, Enviroment vs ko02010
+2022-12-22 18:10:18 INFO::Creating boxplot for categorical data, Enviroment vs ko00052
+2022-12-22 18:10:18 INFO::Creating boxplot for categorical data, Enviroment vs ko00790
+2022-12-22 18:10:18 INFO::Creating boxplot for categorical data, Enviroment vs ko05410
+2022-12-22 18:10:19 INFO::Creating boxplot for categorical data, Enviroment vs ko00960
+2022-12-22 18:10:19 INFO::Creating boxplot for categorical data, Enviroment vs ko00908
+2022-12-22 18:10:19 INFO::Creating boxplot for categorical data, Enviroment vs ko00670
