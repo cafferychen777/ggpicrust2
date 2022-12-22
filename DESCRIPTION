@@ -27,6 +27,7 @@ Imports:
     ggplot2,
     ggprism,
     glmnet,
+    lefser,
     limma,
     Maaslin2,
     magrittr,
