@@ -1,3 +1,11 @@
+#' Title
+#'
+#' @param file
+#'
+#' @return
+#' @export
+#'
+#' @examples
 ko2kegg_abundance <- function(file) {
   file_format <- substr(file, nchar(file) - 3, nchar(file))
   switch(file_format,

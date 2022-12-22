@@ -1,3 +1,17 @@
+#' Title
+#'
+#' @param abundance
+#' @param metadata
+#' @param group
+#' @param daa_method
+#' @param select
+#' @param p.adjust
+#' @param maaslin2_reference
+#'
+#' @return
+#' @export
+#'
+#' @examples
 pathway_daa <-
   function(abundance,
            metadata,

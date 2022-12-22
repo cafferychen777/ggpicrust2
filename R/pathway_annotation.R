@@ -1,3 +1,12 @@
+#' Title
+#'
+#' @param file
+#' @param pathway
+#'
+#' @return
+#' @export
+#'
+#' @examples
 pathway_annotation <- function(file, pathway) {
   file_format <- substr(file, nchar(file) - 3, nchar(file))
   switch(file_format,
