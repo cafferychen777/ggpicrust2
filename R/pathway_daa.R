@@ -39,17 +39,17 @@ pathway_daa <-
            "FALSE" = {
              abundance <- abundance[, colnames(abundance) %in% select]
              metadata <-
-               metadata[as.matrix(metadata[, matching_columns]) %in% select, ]
+               metadata[as.matrix(metadata[, matching_columns]) %in% select,]
            })
     sample_names <- colnames(abundance)
     abundance_mat <- as.matrix(abundance)
     metadata_order <-
       match(sample_names, as.matrix(metadata[, matching_columns]))
-    metadata <- metadata[metadata_order, ]
+    metadata <- metadata[metadata_order,]
     metadata_mat <- as.matrix(metadata)
     metadata_df <- as.data.frame(metadata)
     Group <- factor(metadata_mat[, group])
-    Level <- names(table(Group))
+    Level <- levels(Group)
     length_Level <- length(Level)
     switch(
       daa_method,
@@ -63,7 +63,7 @@ pathway_daa <-
                      Group,
                      mc.samples = 256,
                      denom = "all",
-                     verbose = F
+                     verbose = FALSE
                    )
                  ALDEx2_results <-
                    aldex.ttest(ALDEx2_object,
@@ -76,8 +76,8 @@ pathway_daa <-
                        rep("ALDEx2_Welch’s t test", nrow(ALDEx2_results)),
                        rep("ALDEx2_Wilcoxon rank test", nrow(ALDEx2_results))
                      ),
-                     group1 = rep(names(table(Group))[1], 2 * nrow(ALDEx2_results)),
-                     group2 = rep(names(table(Group))[2], 2 * nrow(ALDEx2_results)),
+                     group1 = rep(Level[1], 2 * nrow(ALDEx2_results)),
+                     group2 = rep(Level[2], 2 * nrow(ALDEx2_results)),
                      p_values = c(ALDEx2_results$we.ep, ALDEx2_results$wi.ep)
                    )
                },
@@ -104,7 +104,7 @@ pathway_daa <-
                  for (k in 1:length_Level) {
                    p_values_df <-
                      cbind(p_values_df[, 1:(1 + k)],
-                           rep(names(table(Group))[k], 2 * nrow(ALDEx2_results)),
+                           rep(Level[k], 2 * nrow(ALDEx2_results)),
                            p_values_df$p_values)
                  }
                  colnames(p_values_df)[3:(3 + length_Level)] <-
@@ -124,7 +124,7 @@ pathway_daa <-
         DESeq2_combinations <-
           combn(unique(DESeq2_metadata[, "Group_group_nonsense"]), 2)
         DESeq2_results <- list()
-        for (i in 1:ncol(DESeq2_combinations)) {
+        for (i in seq_len(ncol(DESeq2_combinations))) {
           j <- DESeq2_combinations[, i]
           DESeq2_sub_group <-
             DESeq2_metadata$Group_group_nonsense %in% j
@@ -149,7 +149,7 @@ pathway_daa <-
           as.matrix(do.call(rbind, DESeq2_results))
         DESeq2_combinations_matrix_t <- t(DESeq2_combinations)
         DESeq2_group_matrix <- matrix(ncol = 2)
-        for (i in 1:length(DESeq2_results_nrow)) {
+        for (i in seq_len(DESeq2_results_nrow)) {
           DESeq2_group_matrix <-
             rbind(matrix(
               rep(DESeq2_combinations_matrix_t[i,], times = DESeq2_results_nrow[i]),
@@ -194,8 +194,8 @@ pathway_daa <-
                    cbind(
                      feature = Maaslin2_results$results$feature,
                      method = "Maaslin2",
-                     group1 = names(table(Group))[1],
-                     group2 = names(table(Group))[2],
+                     group1 = Level[1],
+                     group2 = Level[2],
                      p_values = Maaslin2$results$pval
                    )
                  p_values_df <- as.data.frame(p_values_matrix)
@@ -243,6 +243,13 @@ pathway_daa <-
           select(LinDA_metadata_df, -matching_columns)
         LinDA_metadata_df$Group_group_nonsense_ <-
           factor(LinDA_metadata_df$Group_group_nonsense_)
+        if (length_Level != 2) {
+          if (is.null(reference)) {
+            stop("If you use the LinDA or limma voom, you should give a reference.")
+          }
+          LinDA_metadata_df$Group_group_nonsense_ <-
+            relevel(LinDA_metadata_df$Group_group_nonsense_, ref = reference)
+        }
         LinDA_metadata_df$Group_group_nonsense_ <-
           relevel(LinDA_metadata_df$Group_group_nonsense_, ref = reference)
         LinDA_results <- MicrobiomeStat::linda(abundance,
@@ -271,7 +278,7 @@ pathway_daa <-
           DGEList(counts = edgeR_abundance_mat, group = Group)
         edgeR_object <- edgeR::calcNormFactors(edgeR_object)
         edgeR_object <-
-          estimateCommonDisp(edgeR_object, verbose = T)
+          estimateCommonDisp(edgeR_object, verbose = TRUE)
         switch(length_Level == 2,
                "TRUE" = {
                  edgeR_results <- exactTest(edgeR_object, pair = c(1, 2))
@@ -306,9 +313,19 @@ pathway_daa <-
       },
       "limma voom" = {
         limma_voom_abundance_mat <- round(abundance_mat)
-        Group <- relevel(Group, ref = reference)
+        switch(length_Level != 2,
+               "TRUE" = {
+                 if (is.null(reference)) {
+                   stop("If you use the LinDA or limma voom, you should give a reference.")
+                 }
+                 Group <- relevel(Group, ref = reference)
+               },
+               {
+                 reference <- Level[1]
+                 Group <- relevel(Group, ref = reference)
+               })
         limma_voom_object <-
-          DGEList(counts = edgeR_abundance_mat, group = Group)
+          DGEList(counts = limma_voom_abundance_mat, group = Group)
         limma_voom_object <-
           edgeR::calcNormFactors(limma_voom_object)
         limma_voom_Fit <- lmFit(voom(limma_voom_object))
@@ -321,7 +338,7 @@ pathway_daa <-
             group2 = rep(substr(
               colnames(limma_voom_Fit$p.value)[-1], 6, nchar(colnames(limma_voom_Fit$p.value)[-1])
             ), each = nrow(abundance)),
-            p_values = c(limma_voom_Fit$p.value[, -1])
+            p_values = c(limma_voom_Fit$p.value[,-1])
           )
         p_values_df <- as.data.frame(p_values_matrix)
       },
@@ -341,7 +358,7 @@ pathway_daa <-
           rownames(metagenomeSeq_metadata_df) <-
             metagenomeSeq_metadata_df[, matching_columns]
           metagenomeSeq_metadata_df <-
-            select(metagenomeSeq_metadata_df, -matching_columns)
+            select(metagenomeSeq_metadata_df,-matching_columns)
           metagenomeSeq_colnames <-
             colnames(metagenomeSeq_metadata_df)
           metagenomeSeq_colnames[metagenomeSeq_colnames == group] <-
@@ -434,6 +451,7 @@ pathway_daa <-
           p.adjust(p_values_df$p_values, method = "none")
       }
     )
-    daa_results_df <- cbind(p_values_df,adj_method="BH",p_adjust=adjusted_p_values)
+    daa_results_df <-
+      cbind(p_values_df, adj_method = "BH", p_adjust = adjusted_p_values)
     return(daa_results_df)
   }

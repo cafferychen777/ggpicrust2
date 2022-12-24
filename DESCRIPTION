@@ -23,6 +23,7 @@ Imports:
     devtools,
     dplyr,
     edgeR,
+    funrar,
     GGally,
     ggplot2,
     ggprism,
