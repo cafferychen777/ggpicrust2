@@ -2,8 +2,9 @@ pathway_errorbar <-
   function(abundance,
            daa_results_df,
            Group,
+           ko_to_kegg = FALSE,
            p_values_threshold = 0.05,
-           order = "pathway_class",
+           order = "group",
            select = NULL,
            p_value_bar = TRUE,
            colors = NULL,
@@ -19,6 +20,13 @@ pathway_errorbar <-
         daa_results_filtered_df[daa_results_filtered_df$feature %in% select,]
     } else {
       daa_results_filtered_sub_df <- daa_results_filtered_df
+    }
+    if (nrow(daa_results_filtered_sub_df) > 30) {
+      stop(
+        paste0(
+          "The feature with statistically significane are more than 30, the visualization will be terrible.\n Please use select to reduce the number.\n Now you have ",
+          paste(daa_results_filtered_sub_df$feature, collapse = ","))
+        )
     }
     errorbar_sub_abundance_mat <-
       errorbar_abundance_mat[rownames(errorbar_abundance_mat) %in% daa_results_filtered_sub_df$feature, ]
@@ -135,12 +143,9 @@ pathway_errorbar <-
       scale_fill_manual(values = c(colors[1], colors[2])) +
       scale_color_manual(values = c(colors[1], colors[2])) +
       theme_prism() +
-      scale_x_continuous(
-        expand = c(0, 0),
-        guide = "prism_offset_minor",
-        limits = c(0, 0.03375004)
-      ) +
-      scale_y_discrete(labels = rev(daa_results_filtered_sub_df$pathway_name)) +
+      scale_x_continuous(expand = c(0, 0),
+                         guide = "prism_offset_minor", ) +
+      scale_y_discrete(labels = rev(daa_results_filtered_sub_df[, x_lab])) +
       labs(x = "Relative Abundance(%)", y = NULL) +
       theme(
         axis.ticks.y = element_blank(),
@@ -170,11 +175,48 @@ pathway_errorbar <-
         plot.margin = margin(0, 0.5, 0.5, 0, unit = "cm")
       ) + coord_cartesian(clip = "off")
 
+    if (ko_to_kegg = TRUE) {
+      bar_errorbar_data <- bar_errorbar$data
+      bar_errorbar_aes_x <-
+        ggiraphExtra::getMapping(object$mapping, "x")
+      bar_errorbar_aes_y <-
+        ggiraphExtra::getMapping(object$mapping, "y")
+      bar_errorbar_data_x <- data[, c(bar_errorbar_aes_x)]
+      bar_errorbar_data_y <- data[, c(bar_errorbar_aes_y)]
+      pathway_class_group <-
+        daa_results_filtered_sub_df$pathway_class %>%
+        table() %>%
+        data.frame()
+      start <-
+        c(1, rev(pathway_class_group$Freq)[1:(length(pathway_class_group$Freq) - 1)]) %>%
+        cumsum()
+      end <- cumsum(rev(pathway_class_group$Freq))
+      ymin <- start - 1 / 2
+      ymax <- end + 1 / 2
+      nPoints <- length(start)
+      pCol <- useMyCol('stallion', n = nPoints)
+      pFill <- useMyCol('stallion', n = nPoints)
+      for (i in 1:nPoints)  {
+        bar_errorbar <- bar_errorbar +
+          ggplot2::annotation_custom(
+            grob = grid::rectGrob(
+              gp = grid::gpar(
+                col = pCol[i],
+                fill = pFill[i],
+                lty = NULL,
+                lwd = NULL,
+                alpha = 0.2
+              )
+            ),
+            xmin = ggplot2::unit(-2, 'native'),
+            xmax = ggplot2::unit(0, 'native'),
+            ymin = ggplot2::unit(ymin[i], 'native'),
+            ymax = ggplot2::unit(ymax[i], 'native')
+          )
+      }
+    }
 
-    ggsave("bar_errorbar.pdf",
-           bar_errorbar,
-           width = 8,
-           height = 6)
+
 
 
 
@@ -229,41 +271,46 @@ pathway_errorbar <-
            width = 8,
            height = 6)
 
-    pathway_class_y <- (ymax + ymin) / 2 -0.5
-    pathway_class_plot_df <-
-      as.data.frame(
-        cbind(
-          nonsense = "nonsense",
-          pathway_class_y = pathway_class_y,
-          pathway_class = rev(unique(
-            daa_results_filtered_sub_df$pathway_class
-          ))
+
+
+    if (ko_to_kegg = TRUE) {
+      pathway_class_y <- (ymax + ymin) / 2 - 0.5
+      pathway_class_plot_df <-
+        as.data.frame(
+          cbind(
+            nonsense = "nonsense",
+            pathway_class_y = pathway_class_y,
+            pathway_class = rev(unique(
+              daa_results_filtered_sub_df$pathway_class
+            ))
+          )
         )
-      )
-    pathway_class_plot_df$pathway_class_y <-
-      as.numeric(pathway_class_plot_df$pathway_class_y)
-    pathway_class_annotation <-
-      pathway_class_plot_df %>% ggplot(aes(nonsense, pathway_class_y)) + geom_text(
-        aes(nonsense, pathway_class_y, label = pathway_class),
-        size = 3.5,
-        color = "black",
-        fontface = "bold",
-        family = "sans"
-      ) +
-      scale_y_discrete(position = "right") +
-      theme_prism() +
-      theme(
-        axis.ticks = element_blank(),
-        axis.line = element_blank(),
-        panel.grid.major.y = element_blank(),
-        panel.grid.major.x = element_blank(),
-        panel.background = element_blank(),
-        axis.text = element_blank(),
-        plot.margin = unit(c(0, 0.2, 0, 0), "cm"),
-        axis.title.y =  element_blank(),
-        axis.title.x = element_blank(),
-        legend.position = "non"
-      )
+      pathway_class_plot_df$pathway_class_y <-
+        as.numeric(pathway_class_plot_df$pathway_class_y)
+      pathway_class_annotation <-
+        pathway_class_plot_df %>% ggplot(aes(nonsense, pathway_class_y)) + geom_text(
+          aes(nonsense, pathway_class_y, label = pathway_class),
+          size = 3.5,
+          color = "black",
+          fontface = "bold",
+          family = "sans"
+        ) +
+        scale_y_discrete(position = "right") +
+        theme_prism() +
+        theme(
+          axis.ticks = element_blank(),
+          axis.line = element_blank(),
+          panel.grid.major.y = element_blank(),
+          panel.grid.major.x = element_blank(),
+          panel.background = element_blank(),
+          axis.text = element_blank(),
+          plot.margin = unit(c(0, 0.2, 0, 0), "cm"),
+          axis.title.y =  element_blank(),
+          axis.title.x = element_blank(),
+          legend.position = "non"
+        )
+    }
+
 
 
 
@@ -306,9 +353,17 @@ pathway_errorbar <-
         legend.position = "non"
       )
     if (p_value_bar == TRUE) {
-      combination_bar_plot <-
-        bar_errorbar + p_values_bar + p_annotation + plot_layout(ncol = 3, width = c(2.3, 0.7, 0.3))
-    } else {
+      if (ko_to_kegg == TRUE) {
+        combination_bar_plot <-
+          pathway_class_annotation + bar_errorbar + p_values_bar + p_annotation + plot_layout(ncol = 4, width =
+                                                                                                c(1, 1.5, 0.5, 0.1))
+      }
+      else{
+        combination_bar_plot <-
+          bar_errorbar + p_values_bar + p_annotation + plot_layout(ncol = 3, width = c(2.3, 0.7, 0.3))
+      }
+    }
+    else{
       combination_bar_plot <-
         bar_errorbar + p_annotation + plot_layout(ncol = 2, width = c(2.5,  0.2))
     }
