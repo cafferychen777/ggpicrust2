@@ -1,7 +1,7 @@
 Package: ggpicrust2
 Type: Package
 Title: Make Picrust2 Output Analysis and Visualization Easier
-Version: 1.1.1
+Version: 1.2.0
 Author: Chen(Caffery) Yang
 Maintainer: Chen(Caffery) Yang <cafferychen7850@gmail.com>
 Description: The ggpicrust2 package makes it easy to analyze and visualize Picrust2 output. 
