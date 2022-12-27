@@ -14,10 +14,10 @@ pathway_errorbar <-
     }
     errorbar_abundance_mat <- as.matrix(abundance)
     daa_results_filtered_df <-
-      daa_results_df[daa_results_df$p_adjust < p_values_threshold, ]
+      daa_results_df[daa_results_df$p_adjust < p_values_threshold,]
     if (!is.null(select)) {
       daa_results_filtered_sub_df <-
-        daa_results_filtered_df[daa_results_filtered_df$feature %in% select,]
+        daa_results_filtered_df[daa_results_filtered_df$feature %in% select, ]
     } else {
       daa_results_filtered_sub_df <- daa_results_filtered_df
     }
@@ -25,13 +25,12 @@ pathway_errorbar <-
       stop(
         paste0(
           "The feature with statistically significane are more than 30, the visualization will be terrible.\n Please use select to reduce the number.\n Now you have ",
-          paste(daa_results_filtered_sub_df$feature, collapse = ","))
+          paste(daa_results_filtered_sub_df$feature, collapse = ",")
         )
+      )
     }
     errorbar_sub_abundance_mat <-
-      errorbar_abundance_mat[rownames(errorbar_abundance_mat) %in% daa_results_filtered_sub_df$feature, ]
-    errorbar_sub_abundance_mat <-
-      errorbar_sub_abundance_mat[rownames(daa_results_filtered_sub_df),]
+      errorbar_abundance_mat[rownames(errorbar_abundance_mat) %in% daa_results_filtered_sub_df$feature,]
     errorbar_sub_relative_abundance_mat <-
       make_relative(errorbar_sub_abundance_mat)
     error_bar_matrix <-
@@ -42,7 +41,7 @@ pathway_errorbar <-
       )
     error_bar_df <- as.data.frame(error_bar_matrix)
     error_bar_pivot_longer_df <-
-      pivot_longer(error_bar_df, -c(sample, group))
+      pivot_longer(error_bar_df,-c(sample, group))
     error_bar_pivot_longer_tibble <-
       mutate(error_bar_pivot_longer_df, group = as.factor(group))
     error_bar_pivot_longer_tibble$sample <-
@@ -69,13 +68,13 @@ pathway_errorbar <-
         for (i in levels(error_bar_pivot_longer_tibble_summarised$name)) {
           error_bar_pivot_longer_tibble_summarised_sub <-
             error_bar_pivot_longer_tibble_summarised[error_bar_pivot_longer_tibble_summarised$name ==
-                                                       i, ]
+                                                       i,]
           pro_group <-
             error_bar_pivot_longer_tibble_summarised_sub[error_bar_pivot_longer_tibble_summarised_sub$mean ==
-                                                           max(error_bar_pivot_longer_tibble_summarised_sub$mean), ]$group
+                                                           max(error_bar_pivot_longer_tibble_summarised_sub$mean),]$group
           pro_group <- as.vector(pro_group)
           daa_results_filtered_sub_df[daa_results_filtered_sub_df$feature ==
-                                        i, ]$pro <- pro_group
+                                        i,]$pro <- pro_group
         }
         order <-
           order(daa_results_filtered_sub_df$pro,
@@ -95,7 +94,7 @@ pathway_errorbar <-
       }
     )
     daa_results_filtered_sub_df <-
-      daa_results_filtered_sub_df[order, ]
+      daa_results_filtered_sub_df[order,]
     error_bar_pivot_longer_tibble_summarised_ordered <-
       data.frame(
         name = NULL,
@@ -108,21 +107,26 @@ pathway_errorbar <-
         rbind(
           error_bar_pivot_longer_tibble_summarised_ordered,
           error_bar_pivot_longer_tibble_summarised[error_bar_pivot_longer_tibble_summarised$name ==
-                                                     i, ]
+                                                     i,]
         )
     }
     levels(error_bar_pivot_longer_tibble_summarised_ordered$name) <-
       rev(daa_results_filtered_sub_df$feature)
-    error_bar_pivot_longer_tibble_summarised_ordered$pathway_name <-
-      rep(daa_results_filtered_sub_df$pathway_name, each = length(levels(
+    error_bar_pivot_longer_tibble_summarised_ordered[, x_lab] <-
+      rep(daa_results_filtered_sub_df[, x_lab], each = length(levels(
         factor(error_bar_pivot_longer_tibble_summarised_ordered$group)
       )))
-    error_bar_pivot_longer_tibble_summarised_ordered$pathway_class <-
-      rep(daa_results_filtered_sub_df$pathway_class, each = length(levels(
-        factor(error_bar_pivot_longer_tibble_summarised_ordered$group)
-      )))
-    levels(error_bar_pivot_longer_tibble_summarised_ordered$pathway_name) <-
-      rev(daa_results_filtered_sub_df$pathway_name)
+    if (ko_to_kegg == TRUE) {
+      error_bar_pivot_longer_tibble_summarised_ordered$pathway_class <-
+        rep(daa_results_filtered_sub_df$pathway_class,
+            each = length(levels(
+              factor(error_bar_pivot_longer_tibble_summarised_ordered$group)
+            )))
+    }
+    error_bar_pivot_longer_tibble_summarised_ordered[, x_lab] <-
+      factor(as.matrix(error_bar_pivot_longer_tibble_summarised_ordered[, x_lab]))
+    levels(error_bar_pivot_longer_tibble_summarised_ordered[, x_lab]) <-
+      rev(daa_results_filtered_sub_df[, x_lab])
 
 
 
@@ -144,8 +148,9 @@ pathway_errorbar <-
       scale_color_manual(values = c(colors[1], colors[2])) +
       theme_prism() +
       scale_x_continuous(expand = c(0, 0),
-                         guide = "prism_offset_minor", ) +
-      scale_y_discrete(labels = rev(daa_results_filtered_sub_df[, x_lab])) +
+                         guide = "prism_offset_minor",) +
+      #scale_y_discrete(labels = rev(daa_results_filtered_sub_df[, x_lab])) +
+      scale_y_discrete(labels = x_lab) +
       labs(x = "Relative Abundance(%)", y = NULL) +
       theme(
         axis.ticks.y = element_blank(),
@@ -175,7 +180,13 @@ pathway_errorbar <-
         plot.margin = margin(0, 0.5, 0.5, 0, unit = "cm")
       ) + coord_cartesian(clip = "off")
 
-    if (ko_to_kegg = TRUE) {
+
+
+
+
+
+
+    if (ko_to_kegg == TRUE) {
       bar_errorbar_data <- bar_errorbar$data
       bar_errorbar_aes_x <-
         ggiraphExtra::getMapping(object$mapping, "x")
@@ -266,14 +277,11 @@ pathway_errorbar <-
         legend.position = "non"
       ) +
       coord_flip()
-    ggsave("p_values_bar.pdf",
-           p_values_bar,
-           width = 8,
-           height = 6)
 
 
 
-    if (ko_to_kegg = TRUE) {
+
+    if (ko_to_kegg == TRUE) {
       pathway_class_y <- (ymax + ymin) / 2 - 0.5
       pathway_class_plot_df <-
         as.data.frame(
