@@ -1,3 +1,23 @@
+#' Title
+#'
+#' @param file
+#' @param metadata
+#' @param group
+#' @param pathway
+#' @param daa_method
+#' @param ko_to_kegg
+#' @param p.adjust
+#' @param order
+#' @param p_values_bar
+#' @param x_lab
+#' @param select
+#' @param reference
+#' @param colors
+#'
+#' @return
+#' @export
+#'
+#' @examples
 ggpicrust2 <-
   function(file,
            metadata,
@@ -28,59 +48,70 @@ ggpicrust2 <-
                  p.adjust = p.adjust,
                  reference = reference,
                )
-    if (x_lab == "pathway_name") {
-      daa_results_df  <-
-        pathway_annotation(daa_results_df = daa_results_df)
-    }
-    j <- 1
-    for (i in unique(daa_results_df$method)) {
-      daa_sub_method_results_df <- daa_results_df[daa_results_df[,"method"] == i,]
-      combination_bar_plot <-
-        pathway_errorbar(
-          abundance,
-          daa_sub_method_results_df,
-          metadata[, group],
-          ko_to_kegg = ko_to_kegg,
-          order = "pathway_class",
-          colors = colors,
-          x_lab = x_lab
-        )
-      print(combination_bar_plot)
-      message(paste0("No.", j, " plot is method ", i))
-    }
+             if (x_lab == "pathway_name") {
+               daa_results_df  <-
+                 pathway_annotation(daa_results_df = daa_results_df)
+             }
+             j <- 1
+             for (i in unique(daa_results_df$method)) {
+               daa_sub_method_results_df <-
+                 daa_results_df[daa_results_df[, "method"] == i, ]
+               combination_bar_plot <-
+                 pathway_errorbar(
+                   abundance,
+                   daa_sub_method_results_df,
+                   metadata[, group],
+                   ko_to_kegg = ko_to_kegg,
+                   order = "pathway_class",
+                   colors = colors,
+                   x_lab = x_lab
+                 )
+               print(combination_bar_plot)
+               message(paste0("No.", j, " plot is method ", i))
+             }
+             return(daa_results_df)
            },
-    "FALSE" = {
-      abundance <-
-        read_delim(
-          file,
-          delim = "\t",
-          escape_double = FALSE,
-          trim_ws = TRUE
-        )
-      abundance <- column_to_rownames(abundance, var = "function")
-      daa_results_df <-
-        pathway_daa(abundance = abundance,
-                    metadata = metadata,
-                    group = group,
-                    daa_method = daa_method,
-                    select = select,
-                    p.adjust = p.adjust,
-                    reference = reference)
-      daa_results_df <- pathway_annotation(pathway = pathway, ko_to_kegg = FALSE, daa_results_df = daa_results_df)
-      for (i in unique(daa_results_df$method)) {
-        daa_sub_method_results_df <- daa_results_df[daa_results_df[,"method"] == i,]
-        combination_bar_plot <-
-          pathway_errorbar(
-            abundance,
-            daa_sub_method_results_df,
-            metadata[, group],
-            ko_to_kegg = ko_to_kegg,
-            order = order,
-            colors = colors,
-            x_lab = x_lab
-          )
-        print(combination_bar_plot)
-        message(paste0("No.", j, " plot is method ", i))
-      }
-    })
+           "FALSE" = {
+             abundance <-
+               read_delim(
+                 file,
+                 delim = "\t",
+                 escape_double = FALSE,
+                 trim_ws = TRUE
+               )
+             abundance <- column_to_rownames(abundance, var = "function")
+             daa_results_df <-
+               pathway_daa(
+                 abundance = abundance,
+                 metadata = metadata,
+                 group = group,
+                 daa_method = daa_method,
+                 select = select,
+                 p.adjust = p.adjust,
+                 reference = reference
+               )
+             daa_results_df <-
+               pathway_annotation(
+                 pathway = pathway,
+                 ko_to_kegg = FALSE,
+                 daa_results_df = daa_results_df
+               )
+             for (i in unique(daa_results_df$method)) {
+               daa_sub_method_results_df <-
+                 daa_results_df[daa_results_df[, "method"] == i, ]
+               combination_bar_plot <-
+                 pathway_errorbar(
+                   abundance,
+                   daa_sub_method_results_df,
+                   metadata[, group],
+                   ko_to_kegg = ko_to_kegg,
+                   order = order,
+                   colors = colors,
+                   x_lab = x_lab
+                 )
+               print(combination_bar_plot)
+               message(paste0("No.", j, " plot is method ", i))
+             }
+             return(daa_results_df)
+           })
   }

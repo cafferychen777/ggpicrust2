@@ -9,6 +9,13 @@ pathway_errorbar <-
            p_value_bar = TRUE,
            colors = NULL,
            x_lab = NULL) {
+    if (is.null(x_lab)){
+      if (ko_to_kegg == TRUE){
+        x_lab <- "pathway_name"
+      }else{
+        x_lab <- "description"
+      }
+    }
     if (is.null(colors)) {
       colors <- c("#d93c3e", "#3685bc", "#87ceeb")
     }
@@ -110,21 +117,24 @@ pathway_errorbar <-
                                                      i,]
         )
     }
-    error_bar_pivot_longer_tibble_summarised_ordered[, x_lab] <-
-      rep(daa_results_filtered_sub_df[, x_lab], each = length(levels(
-        factor(error_bar_pivot_longer_tibble_summarised_ordered$group)
-      )))
+    if (ko_to_kegg == FALSE){
+      error_bar_pivot_longer_tibble_summarised_ordered[, x_lab] <-
+        rep(daa_results_filtered_sub_df[, x_lab], each = length(levels(
+          factor(error_bar_pivot_longer_tibble_summarised_ordered$group)
+        )))
+    }
+
 
     # levels(error_bar_pivot_longer_tibble_summarised_ordered$name) <-
     #   rev(daa_results_filtered_sub_df$feature)
     #
-    # if (ko_to_kegg == TRUE) {
-    #   error_bar_pivot_longer_tibble_summarised_ordered$pathway_class <-
-    #     rep(daa_results_filtered_sub_df$pathway_class,
-    #         each = length(levels(
-    #           factor(error_bar_pivot_longer_tibble_summarised_ordered$group)
-    #         )))
-    # }
+    if (ko_to_kegg == TRUE) {
+      error_bar_pivot_longer_tibble_summarised_ordered$pathway_class <-
+        rep(daa_results_filtered_sub_df$pathway_class,
+            each = length(levels(
+              factor(error_bar_pivot_longer_tibble_summarised_ordered$group)
+            )))
+    }
     error_bar_pivot_longer_tibble_summarised_ordered$name <- factor(error_bar_pivot_longer_tibble_summarised_ordered$name, levels = rev(daa_results_filtered_sub_df$feature))
 
     #error_bar_pivot_longer_tibble_summarised_ordered$order <- rep(0:(nrow(daa_results_filtered_sub_df)-1),each=2)

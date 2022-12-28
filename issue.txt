@@ -6,3 +6,14 @@ Solution1:
 remove.packages("ggpicrust2");install.packages("ggpicrust2")
 ```
 
+Question2: ERROR: dependencies ‘jjAnno’, ‘lefser’ are not available for package ‘ggpicrust2’
+
+Solution2:
+
+```r
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+BiocManager::install("lefser")
+devtools::install_github("junjunlab/jjAnno")
+```
+
