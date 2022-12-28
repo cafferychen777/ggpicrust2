@@ -2,8 +2,9 @@ Package: ggpicrust2
 Type: Package
 Title: Make Picrust2 Output Analysis and Visualization Easier
 Version: 1.2.1
-Author: Chen(Caffery) Yang
-Maintainer: Chen(Caffery) Yang <cafferychen7850@gmail.com>
+Authors@R: c(
+    person("Chen", "Yang", email = "cafferychen7850@gmail.com", role = c("aut", "cre")),
+    person("Liangliang", "Zhang", email = "lxz716@case.edu ", role = "aut"))
 Description: The ggpicrust2 package makes it easy to analyze and visualize Picrust2 output. 
     It offers pre-defined plots and functions to generate statistical plots about microbiome functional predictions, as well as customization options. 
     Plus, with its one-click feature to generate publication-level plots, you can save time and create professional-grade figures with ease. 

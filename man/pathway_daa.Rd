@@ -11,11 +11,11 @@ pathway_daa(
   daa_method,
   select = NULL,
   p.adjust = "BH",
-  maaslin2_reference = NULL
+  reference = NULL
 )
 }
 \arguments{
-\item{maaslin2_reference}{}
+\item{reference}{}
 }
 \description{
 Title
