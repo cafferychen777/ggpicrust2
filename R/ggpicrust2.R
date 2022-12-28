@@ -46,7 +46,7 @@ ggpicrust2 <-
                  daa_method = daa_method,
                  select = select,
                  p.adjust = p.adjust,
-                 reference = reference,
+                 reference = reference
                )
              if (x_lab == "pathway_name") {
                daa_results_df  <-
