@@ -1,3 +1,20 @@
+#' Title
+#'
+#' @param abundance
+#' @param daa_results_df
+#' @param Group
+#' @param ko_to_kegg
+#' @param p_values_threshold
+#' @param order
+#' @param select
+#' @param p_value_bar
+#' @param colors
+#' @param x_lab
+#'
+#' @return
+#' @export
+#'
+#' @examples
 pathway_errorbar <-
   function(abundance,
            daa_results_df,

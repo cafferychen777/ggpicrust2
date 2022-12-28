@@ -50,7 +50,7 @@ ggpicrust2 <-
                )
              if (x_lab == "pathway_name") {
                daa_results_df  <-
-                 pathway_annotation(daa_results_df = daa_results_df)
+                 pathway_annotation(daa_results_df = daa_results_df,ko_to_kegg = TRUE)
              }
              j <- 1
              for (i in unique(daa_results_df$method)) {
