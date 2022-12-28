@@ -8,7 +8,7 @@ pathway_errorbar <-
            select = NULL,
            p_value_bar = TRUE,
            colors = NULL,
-           x_lab = "pathway_name") {
+           x_lab = NULL) {
     if (is.null(colors)) {
       colors <- c("#d93c3e", "#3685bc", "#87ceeb")
     }
@@ -110,26 +110,24 @@ pathway_errorbar <-
                                                      i,]
         )
     }
-    levels(error_bar_pivot_longer_tibble_summarised_ordered$name) <-
-      rev(daa_results_filtered_sub_df$feature)
     error_bar_pivot_longer_tibble_summarised_ordered[, x_lab] <-
       rep(daa_results_filtered_sub_df[, x_lab], each = length(levels(
         factor(error_bar_pivot_longer_tibble_summarised_ordered$group)
       )))
-    if (ko_to_kegg == TRUE) {
-      error_bar_pivot_longer_tibble_summarised_ordered$pathway_class <-
-        rep(daa_results_filtered_sub_df$pathway_class,
-            each = length(levels(
-              factor(error_bar_pivot_longer_tibble_summarised_ordered$group)
-            )))
-    }
-    error_bar_pivot_longer_tibble_summarised_ordered[, x_lab] <-
-      factor(as.matrix(error_bar_pivot_longer_tibble_summarised_ordered[, x_lab]))
-    levels(error_bar_pivot_longer_tibble_summarised_ordered[, x_lab]) <-
-      rev(daa_results_filtered_sub_df[, x_lab])
 
+    # levels(error_bar_pivot_longer_tibble_summarised_ordered$name) <-
+    #   rev(daa_results_filtered_sub_df$feature)
+    #
+    # if (ko_to_kegg == TRUE) {
+    #   error_bar_pivot_longer_tibble_summarised_ordered$pathway_class <-
+    #     rep(daa_results_filtered_sub_df$pathway_class,
+    #         each = length(levels(
+    #           factor(error_bar_pivot_longer_tibble_summarised_ordered$group)
+    #         )))
+    # }
+    error_bar_pivot_longer_tibble_summarised_ordered$name <- factor(error_bar_pivot_longer_tibble_summarised_ordered$name, levels = rev(daa_results_filtered_sub_df$feature))
 
-
+    #error_bar_pivot_longer_tibble_summarised_ordered$order <- rep(0:(nrow(daa_results_filtered_sub_df)-1),each=2)
     bar_errorbar <-
       ggplot(error_bar_pivot_longer_tibble_summarised_ordered,
              aes(mean, name, fill = group)) +
@@ -149,8 +147,7 @@ pathway_errorbar <-
       theme_prism() +
       scale_x_continuous(expand = c(0, 0),
                          guide = "prism_offset_minor",) +
-      #scale_y_discrete(labels = rev(daa_results_filtered_sub_df[, x_lab])) +
-      scale_y_discrete(labels = x_lab) +
+      scale_y_discrete(labels = rev(daa_results_filtered_sub_df[, x_lab])) +
       labs(x = "Relative Abundance(%)", y = NULL) +
       theme(
         axis.ticks.y = element_blank(),
@@ -179,6 +176,7 @@ pathway_errorbar <-
         legend.box.just = "right",
         plot.margin = margin(0, 0.5, 0.5, 0, unit = "cm")
       ) + coord_cartesian(clip = "off")
+
 
 
 
@@ -370,8 +368,7 @@ pathway_errorbar <-
         combination_bar_plot <-
           bar_errorbar + p_values_bar + p_annotation + plot_layout(ncol = 3, width = c(2.3, 0.7, 0.3))
       }
-    }
-    else{
+    }else{
       combination_bar_plot <-
         bar_errorbar + p_annotation + plot_layout(ncol = 2, width = c(2.5,  0.2))
     }

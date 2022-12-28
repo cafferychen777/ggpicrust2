@@ -11,12 +11,11 @@ ggpicrust2 <-
            x_lab = "pathway_name",
            select = NULL,
            reference = NULL,
-           p_values_bar = TRUE,
            colors = NULL)
   {
     switch(ko_to_kegg,
            "TRUE" = {
-             if (ko_to_kegg = TRUE) {
+             if (ko_to_kegg == TRUE) {
                abundance <- ko2kegg_abundance(file)
              }
              daa_results_df <-
@@ -83,6 +82,5 @@ ggpicrust2 <-
         print(combination_bar_plot)
         message(paste0("No.", j, " plot is method ", i))
       }
-      pathway_errorbar(abundance = abundance, metadata = metadata, Group = metadata[,group], order = order, )
     })
   }
