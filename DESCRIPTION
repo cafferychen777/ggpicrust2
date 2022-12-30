@@ -9,6 +9,8 @@ Description: The ggpicrust2 package makes it easy to analyze and visualize Picru
     It offers pre-defined plots and functions to generate statistical plots about microbiome functional predictions, as well as customization options. 
     Plus, with its one-click feature to generate publication-level plots, you can save time and create professional-grade figures with ease. 
     Try the ggpicrust2 package to streamline your Picrust2 analysis and visualization process.
+BugReports: https://github.com/cafferychen777/ggpicrust2/pulls
+URL: https://github.com/cafferychen777/ggpicrust2
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true

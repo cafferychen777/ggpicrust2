@@ -8,12 +8,19 @@
 [![Codecov test
 coverage](https://codecov.io/gh/cafferychen777/ggpicrust2/branch/main/graph/badge.svg)](https://app.codecov.io/gh/cafferychen777/ggpicrust2?branch=main)
 [![R-CMD-check](https://github.com/cafferychen777/ggpicrust2/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/cafferychen777/ggpicrust2/actions/workflows/R-CMD-check.yaml)
+
 <!-- badges: end -->
 
-The goal of ggpicrust2 is to make picrust2 output analysis and
-visualization easier
-
-Topics Resources
+ggpicrust2 is a comprehensive package that integrates pathway
+name/description annotations, ten of the most advanced differential
+abundance (DA) methods, and visualization of DA results. It offers a
+comprehensive solution for analyzing and interpreting the results of
+picrust2 functional prediction in a seamless and intuitive way. Whether
+you are a researcher, data scientist, or bioinformatician, ggpicrust2
+can help you better understand the underlying biological processes and
+mechanisms at play in your picrust2 output data. So if you are
+interested in exploring the output data of picrust2, ggpicrust2 is the
+tool you need.
 
 ## Installation
 
@@ -25,27 +32,65 @@ You can install the development version of ggpicrust2 from
 devtools::install_github("cafferychen777/ggpicrust2")
 ```
 
-## Example
+We are actively preparing to upload the package to bioconductor.
 
-This is a basic example which shows you how to solve a common problem:
+## Workflow
+
+The easiest way to analyze the picrust2 output is using ggpicrust2()
+function. The entire pipeline can be run with ggpicrust2() function.
+
+ggpicrust2() integrates ko abundance to kegg pathway abundance convert,
+annotation of pathway, differential abundance (DA) analysis, DA results
+visualization.
 
 ``` r
-library(ggpicrust2)
-## basic example code
-```
+#If you want to analysis kegg pathway abundance instead of ko within the pathway. You should turn ko_to_kegg to TRUE. The gene groups typically have the more explainable description.
+metadata <-
+  read_delim(
+    "~/Microbiome/C9orf72/Code And Data/new_metadata.txt",
+    delim = "\t",
+    escape_double = FALSE,
+    trim_ws = TRUE
+  )
+group <- "Enviroment"
+daa_results_df <-
+  ggpicrust2(
+    file = "/Users/apple/Microbiome/C9orf72/Code And Data/picrust2_out/KO_metagenome_out/pred_metagenome_unstrat.tsv/pred_metagenome_unstrat.tsv",
+    metadata = metadata,
+    group = "Enviroment",
+    pathway = "KO",
+    daa_method = "ALDEx2",
+    order = "pathway_class",
+    ko_to_kegg = TRUE,
+    x_lab = "pathway_name",
+    p.adjust = "BH",
+    select = NULL,
+    reference = NULL
+  )
 
-What is special about using `README.Rmd` instead of just `README.md`?
-You can include R chunks like so:
-
-``` r
-summary(cars)
-#>      speed           dist       
-#>  Min.   : 4.0   Min.   :  2.00  
-#>  1st Qu.:12.0   1st Qu.: 26.00  
-#>  Median :15.0   Median : 36.00  
-#>  Mean   :15.4   Mean   : 42.98  
-#>  3rd Qu.:19.0   3rd Qu.: 56.00  
-#>  Max.   :25.0   Max.   :120.00
+#If you want to analysis the EC. MetaCyc. KO without conversions. You should turn ko_to_kegg to FALSE.
+metadata <-
+  read_delim(
+    "~/Microbiome/C9orf72/Code And Data/new_metadata.txt",
+    delim = "\t",
+    escape_double = FALSE,
+    trim_ws = TRUE
+  )
+group <- "Enviroment"
+daa_results_df <-
+  ggpicrust2(
+    file = "//Users/apple/Microbiome/C9orf72/Code And Data/picrust2_out/EC_metagenome_out/pred_metagenome_unstrat.tsv/pred_metagenome_unstrat.tsv",
+    metadata = metadata,
+    group = "Enviroment",
+    pathway = "EC",
+    daa_method = "ALDEx2",
+    order = "pathway_class",
+    ko_to_kegg = FALSE,
+    x_lab = "description",
+    p.adjust = "BH",
+    select = NULL,
+    reference = NULL
+  )
 ```
 
 You’ll still need to render `README.Rmd` regularly, to keep `README.md`
