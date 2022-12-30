@@ -19,9 +19,21 @@
     <loc>/news/index.html</loc>
   </url>
   <url>
+    <loc>/reference/ggpicrust2.html</loc>
+  </url>
+  <url>
     <loc>/reference/index.html</loc>
   </url>
   <url>
+    <loc>/reference/ko2kegg_abundance.html</loc>
+  </url>
+  <url>
+    <loc>/reference/pathway_annotation.html</loc>
+  </url>
+  <url>
     <loc>/reference/pathway_daa.html</loc>
+  </url>
+  <url>
+    <loc>/reference/pathway_errorbar.html</loc>
   </url>
 </urlset>

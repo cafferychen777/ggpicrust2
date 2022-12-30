@@ -32,7 +32,7 @@
     
     <a class="navbar-brand me-2" href="index.html">ggpicrust2</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.2.1</small>
 
     
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -52,7 +52,14 @@
         <input type="search" class="form-control me-sm-2" aria-label="Toggle navigation" name="search-input" data-search-index="search.json" id="search-input" placeholder="Search for" autocomplete="off">
 </form>
 
-      <ul class="navbar-nav"></ul>
+      <ul class="navbar-nav">
+<li class="nav-item">
+  <a class="external-link nav-link" href="https://github.com/cafferychen777/ggpicrust2/" aria-label="github">
+    <span class="fab fa fab fa-github fa-lg"></span>
+     
+  </a>
+</li>
+      </ul>
 </div>
 
     
@@ -64,8 +71,8 @@
 </h1></div>
 <!-- badges: start -->
 
-<p>The goal of ggpicrust2 is to make picrust2 output analysis and visualization easier</p>
-<p>Topics Resources</p>
+<!-- badges: end -->
+<p>ggpicrust2 is a comprehensive package that integrates pathway name/description annotations, ten of the most advanced differential abundance (DA) methods, and visualization of DA results. It offers a comprehensive solution for analyzing and interpreting the results of picrust2 functional prediction in a seamless and intuitive way. Whether you are a researcher, data scientist, or bioinformatician, ggpicrust2 can help you better understand the underlying biological processes and mechanisms at play in your picrust2 output data. So if you are interested in exploring the output data of picrust2, ggpicrust2 is the tool you need.</p>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
@@ -73,30 +80,79 @@
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># install.packages("devtools")</span></span>
 <span><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"cafferychen777/ggpicrust2"</span><span class="op">)</span></span></code></pre></div>
+<p>We are actively preparing to upload the package to bioconductor.</p>
 </div>
 <div class="section level2">
-<h2 id="example">Example<a class="anchor" aria-label="anchor" href="#example"></a>
+<h2 id="workflow">Workflow<a class="anchor" aria-label="anchor" href="#workflow"></a>
 </h2>
-<p>This is a basic example which shows you how to solve a common problem:</p>
+<p>The easiest way to analyze the picrust2 output is using ggpicrust2() function. The entire pipeline can be run with ggpicrust2() function.</p>
+<p>ggpicrust2() integrates ko abundance to kegg pathway abundance conversion, annotation of pathway, differential abundance (DA) analysis, DA results visualization.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">ggpicrust2</span><span class="op">)</span></span>
-<span><span class="co">## basic example code</span></span></code></pre></div>
-<p>What is special about using <code>README.Rmd</code> instead of just <code>README.md</code>? You can include R chunks like so:</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">cars</span><span class="op">)</span></span>
-<span><span class="co">#&gt;      speed           dist       </span></span>
-<span><span class="co">#&gt;  Min.   : 4.0   Min.   :  2.00  </span></span>
-<span><span class="co">#&gt;  1st Qu.:12.0   1st Qu.: 26.00  </span></span>
-<span><span class="co">#&gt;  Median :15.0   Median : 36.00  </span></span>
-<span><span class="co">#&gt;  Mean   :15.4   Mean   : 42.98  </span></span>
-<span><span class="co">#&gt;  3rd Qu.:19.0   3rd Qu.: 56.00  </span></span>
-<span><span class="co">#&gt;  Max.   :25.0   Max.   :120.00</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="co">#If you want to analysis kegg pathway abundance instead of ko within the pathway. You should turn ko_to_kegg to TRUE. </span></span>
+<span><span class="co">#The kegg pathway typically have the more explainable description.</span></span>
+<span><span class="va">metadata</span> <span class="op">&lt;-</span></span>
+<span>  <span class="fu">read_delim</span><span class="op">(</span></span>
+<span>    <span class="st">"~/Microbiome/C9orf72/Code And Data/new_metadata.txt"</span>,</span>
+<span>    delim <span class="op">=</span> <span class="st">"\t"</span>,</span>
+<span>    escape_double <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>    trim_ws <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span>  <span class="op">)</span></span>
+<span><span class="va">group</span> <span class="op">&lt;-</span> <span class="st">"Enviroment"</span></span>
+<span><span class="va">daa_results_df</span> <span class="op">&lt;-</span></span>
+<span>  <span class="fu"><a href="reference/ggpicrust2.html">ggpicrust2</a></span><span class="op">(</span></span>
+<span>    file <span class="op">=</span> <span class="st">"/Users/apple/Microbiome/C9orf72/Code And Data/picrust2_out/KO_metagenome_out/pred_metagenome_unstrat.tsv/pred_metagenome_unstrat.tsv"</span>,</span>
+<span>    metadata <span class="op">=</span> <span class="va">metadata</span>,</span>
+<span>    group <span class="op">=</span> <span class="st">"Enviroment"</span>,</span>
+<span>    pathway <span class="op">=</span> <span class="st">"KO"</span>,</span>
+<span>    daa_method <span class="op">=</span> <span class="st">"ALDEx2"</span>,</span>
+<span>    order <span class="op">=</span> <span class="st">"pathway_class"</span>,</span>
+<span>    ko_to_kegg <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>    x_lab <span class="op">=</span> <span class="st">"pathway_name"</span>,</span>
+<span>    p.adjust <span class="op">=</span> <span class="st">"BH"</span>,</span>
+<span>    select <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>    reference <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  <span class="op">)</span></span>
+<span><span class="co">#The visualization will be published in viewer.</span></span>
+<span></span>
+<span><span class="co">#If you want to analysis the EC. MetaCyc. KO without conversions. You should turn ko_to_kegg to FALSE.</span></span>
+<span><span class="va">metadata</span> <span class="op">&lt;-</span></span>
+<span>  <span class="fu">read_delim</span><span class="op">(</span></span>
+<span>    <span class="st">"~/Microbiome/C9orf72/Code And Data/new_metadata.txt"</span>,</span>
+<span>    delim <span class="op">=</span> <span class="st">"\t"</span>,</span>
+<span>    escape_double <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>    trim_ws <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span>  <span class="op">)</span></span>
+<span><span class="va">group</span> <span class="op">&lt;-</span> <span class="st">"Enviroment"</span></span>
+<span><span class="va">daa_results_df</span> <span class="op">&lt;-</span></span>
+<span>  <span class="fu"><a href="reference/ggpicrust2.html">ggpicrust2</a></span><span class="op">(</span></span>
+<span>    file <span class="op">=</span> <span class="st">"//Users/apple/Microbiome/C9orf72/Code And Data/picrust2_out/EC_metagenome_out/pred_metagenome_unstrat.tsv/pred_metagenome_unstrat.tsv"</span>,</span>
+<span>    metadata <span class="op">=</span> <span class="va">metadata</span>,</span>
+<span>    group <span class="op">=</span> <span class="st">"Enviroment"</span>,</span>
+<span>    pathway <span class="op">=</span> <span class="st">"EC"</span>,</span>
+<span>    daa_method <span class="op">=</span> <span class="st">"ALDEx2"</span>,</span>
+<span>    order <span class="op">=</span> <span class="st">"pathway_class"</span>,</span>
+<span>    ko_to_kegg <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>    x_lab <span class="op">=</span> <span class="st">"description"</span>,</span>
+<span>    p.adjust <span class="op">=</span> <span class="st">"BH"</span>,</span>
+<span>    select <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>    reference <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  <span class="op">)</span></span>
+<span><span class="co">#The visualization will be published in viewer.</span></span></code></pre></div>
+<p><embed src="/Users/apple/Microbiome/ggpicrust2/ggpicrust2/docs/reference/figures/pathway_errorbar.pdf"></embed></p>
 <p>You’ll still need to render <code>README.Rmd</code> regularly, to keep <code>README.md</code> up-to-date. <code><a href="https://devtools.r-lib.org/reference/build_rmd.html" class="external-link">devtools::build_readme()</a></code> is handy for this. You could also use GitHub Actions to re-render <code>README.Rmd</code> every time you push. An example workflow can be found here: <a href="https://github.com/r-lib/actions/tree/v1/examples" class="external-link uri">https://github.com/r-lib/actions/tree/v1/examples</a>.</p>
 <p>You can also embed plots, for example:</p>
 <p>In that case, don’t forget to commit and push the resulting figure files, so they display on GitHub and CRAN.</p>
 </div>
 </div>
-  </main><aside class="col-md-3"><div class="license">
+  </main><aside class="col-md-3"><div class="links">
+<h2 data-toc-skip>Links</h2>
+<ul class="list-unstyled">
+<li><a href="https://github.com/cafferychen777/ggpicrust2/" class="external-link">Browse source code</a></li>
+<li><a href="https://github.com/cafferychen777/ggpicrust2/pulls" class="external-link">Report a bug</a></li>
+</ul>
+</div>
+
+<div class="license">
 <h2 data-toc-skip>License</h2>
 <ul class="list-unstyled">
 <li><a href="LICENSE.html">Full license</a></li>
@@ -115,8 +171,8 @@
 <div class="developers">
 <h2 data-toc-skip>Developers</h2>
 <ul class="list-unstyled">
-<li>Chen Yang <br><small class="roles"> Maintainer </small>  </li>
-<li><a href="authors.html">More about authors...</a></li>
+<li>Chen Yang <br><small class="roles"> Author, maintainer </small>  </li>
+<li>Liangliang Zhang <br><small class="roles"> Author </small>  </li>
 </ul>
 </div>
 
@@ -134,7 +190,7 @@
 
     <footer><div class="pkgdown-footer-left">
   <p></p>
-<p>Developed by Chen Yang.</p>
+<p>Developed by Chen Yang, Liangliang Zhang.</p>
 </div>
 
 <div class="pkgdown-footer-right">
