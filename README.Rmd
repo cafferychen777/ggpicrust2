@@ -40,9 +40,9 @@ The easiest way to analyze the picrust2 output is using ggpicrust2() function. T
 
 ggpicrust2() integrates ko abundance to kegg pathway abundance conversion, annotation of pathway, differential abundance (DA) analysis, DA results visualization.
 
-![](docs/reference/figures/ggpicrust2%20fig1.jpeg)
+![](https://github.com/cafferychen777/ggpicrust2/blob/main/reference/figures/ggpicrust2%2520fig1.jpeg)
 
-![](docs/reference/figures/ggpicrust2%20fig2.jpeg)
+![](https://github.com/cafferychen777/ggpicrust2/blob/main/reference/figures/ggpicrust2%2520fig2.jpeg)
 
 ```{r ggpicrust2(), eval = FALSE}
 #If you want to analysis kegg pathway abundance instead of ko within the pathway. You should turn ko_to_kegg to TRUE.
@@ -101,9 +101,9 @@ daa_results_df <-
 
 The typical output of the ggpicrust2 is like this.
 
-![](docs/reference/figures/pathway_errorbar.jpg)
+![](https://github.com/cafferychen777/ggpicrust2/blob/main/reference/figures/pathway_errorbar.jpg)
 
-```{r ,echo = FALSE}
+```{r ,echo = FALSE,eval=FALSE}
 table1 <-read.csv(file="/Users/apple/Microbiome/ggpicrust2/ggpicrust2/docs/reference/table/ggpicrust2 table1.csv")
 pander::pander(table1[,-10])
 ```
