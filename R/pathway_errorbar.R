@@ -230,8 +230,11 @@ pathway_errorbar <-
       ymin <- start - 1 / 2
       ymax <- end + 1 / 2
       nPoints <- length(start)
-      pCol <- useMyCol('stallion', n = nPoints)
-      pFill <- useMyCol('stallion', n = nPoints)
+      pCol <- c("#D51F26","#272E6A","#208A42","#89288F","#F47D2B",
+                 "#FEE500","#8A9FD1","#C06CAB","#E6C2DC","#90D5E4",
+                 "#89C75F","#F37B7D","#9983BD","#D24B27","#3BBCA8",
+                 "#6E4B9E","#0C727C", "#7E1416","#D8A767","#3D3D3D")[1:nPoints]
+      pFill <- pCol
       for (i in 1:nPoints)  {
         bar_errorbar <- bar_errorbar +
           ggplot2::annotation_custom(

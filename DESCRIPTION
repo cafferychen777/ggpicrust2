@@ -33,7 +33,6 @@ Imports:
     ggprism,
     glmnet,
     grid,
-    jjAnno,
     KEGGREST,
     lefser,
     limma,
