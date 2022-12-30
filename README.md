@@ -44,7 +44,8 @@ annotation of pathway, differential abundance (DA) analysis, DA results
 visualization.
 
 ``` r
-#If you want to analysis kegg pathway abundance instead of ko within the pathway. You should turn ko_to_kegg to TRUE. The gene groups typically have the more explainable description.
+#If you want to analysis kegg pathway abundance instead of ko within the pathway. You should turn ko_to_kegg to TRUE. 
+#The kegg pathway typically have the more explainable description.
 metadata <-
   read_delim(
     "~/Microbiome/C9orf72/Code And Data/new_metadata.txt",
@@ -67,6 +68,7 @@ daa_results_df <-
     select = NULL,
     reference = NULL
   )
+#The visualization will be published in viewer.
 
 #If you want to analysis the EC. MetaCyc. KO without conversions. You should turn ko_to_kegg to FALSE.
 metadata <-
@@ -91,6 +93,7 @@ daa_results_df <-
     select = NULL,
     reference = NULL
   )
+#The visualization will be published in viewer.
 ```
 
 You’ll still need to render `README.Rmd` regularly, to keep `README.md`
