@@ -40,8 +40,12 @@ The easiest way to analyze the picrust2 output is using ggpicrust2() function. T
 
 ggpicrust2() integrates ko abundance to kegg pathway abundance conversion, annotation of pathway, differential abundance (DA) analysis, DA results visualization.
 
+![](docs/reference/figures/ggpicrust2%20fig1.jpeg)
+
+![](docs/reference/figures/ggpicrust2%20fig2.jpeg)
+
 ```{r ggpicrust2(), eval = FALSE}
-#If you want to analysis kegg pathway abundance instead of ko within the pathway. You should turn ko_to_kegg to TRUE. 
+#If you want to analysis kegg pathway abundance instead of ko within the pathway. You should turn ko_to_kegg to TRUE.
 #The kegg pathway typically have the more explainable description.
 metadata <-
   read_delim(
@@ -93,7 +97,16 @@ daa_results_df <-
 #The visualization will be published in viewer.
 ```
 
-![](/Users/apple/Microbiome/ggpicrust2/ggpicrust2/docs/reference/figures/pathway_errorbar.pdf)
+## Output
+
+The typical output of the ggpicrust2 is like this.
+
+![](docs/reference/figures/pathway_errorbar.jpg)
+
+```{r ,echo = FALSE}
+table1 <-read.csv(file="/Users/apple/Microbiome/ggpicrust2/ggpicrust2/docs/reference/table/ggpicrust2 table1.csv")
+pander::pander(table1[,-10])
+```
 
 You'll still need to render `README.Rmd` regularly, to keep `README.md` up-to-date. `devtools::build_readme()` is handy for this. You could also use GitHub Actions to re-render `README.Rmd` every time you push. An example workflow can be found here: <https://github.com/r-lib/actions/tree/v1/examples>.
 

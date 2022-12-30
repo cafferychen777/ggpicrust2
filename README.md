@@ -43,8 +43,12 @@ ggpicrust2() integrates ko abundance to kegg pathway abundance
 conversion, annotation of pathway, differential abundance (DA) analysis,
 DA results visualization.
 
+![](docs/reference/figures/ggpicrust2%20fig1.jpeg)
+
+![](docs/reference/figures/ggpicrust2%20fig2.jpeg)
+
 ``` r
-#If you want to analysis kegg pathway abundance instead of ko within the pathway. You should turn ko_to_kegg to TRUE. 
+#If you want to analysis kegg pathway abundance instead of ko within the pathway. You should turn ko_to_kegg to TRUE.
 #The kegg pathway typically have the more explainable description.
 metadata <-
   read_delim(
@@ -96,7 +100,42 @@ daa_results_df <-
 #The visualization will be published in viewer.
 ```
 
-![](/Users/apple/Microbiome/ggpicrust2/ggpicrust2/docs/reference/figures/pathway_errorbar.pdf)
+## Output
+
+The typical output of the ggpicrust2 is like this.
+
+![](docs/reference/figures/pathway_errorbar.jpg)
+
+|    X    | feature |   method   |      group1      |    group2    | p_values  |
+|:-------:|:-------:|:----------:|:----------------:|:------------:|:---------:|
+| ko04260 | ko04260 | limma voom | Pro-inflammatory | Pro-survival | 0.0001246 |
+| ko05222 | ko05222 | limma voom | Pro-inflammatory | Pro-survival | 0.0007871 |
+| ko05416 | ko05416 | limma voom | Pro-inflammatory | Pro-survival | 0.0007871 |
+| ko00190 | ko00190 | limma voom | Pro-inflammatory | Pro-survival | 0.003097  |
+| ko00592 | ko00592 | limma voom | Pro-inflammatory | Pro-survival | 0.004485  |
+| ko00591 | ko00591 | limma voom | Pro-inflammatory | Pro-survival | 0.003034  |
+
+Table continues below
+
+| adj_method | p_adjust |          pathway_name           |
+|:----------:|:--------:|:-------------------------------:|
+|     BH     | 0.008059 |   Cardiac muscle contraction    |
+|     BH     | 0.01527  |     Small cell lung cancer      |
+|     BH     | 0.01527  |        Viral myocarditis        |
+|     BH     | 0.04292  |    Oxidative phosphorylation    |
+|     BH     | 0.04582  | alpha-Linolenic acid metabolism |
+|     BH     | 0.04292  |    Linoleic acid metabolism     |
+
+Table continues below
+
+|             pathway_class              |           pathway_map           |
+|:--------------------------------------:|:-------------------------------:|
+| Organismal Systems; Circulatory system |   Cardiac muscle contraction    |
+| Human Diseases; Cancer: specific types |     Small cell lung cancer      |
+| Human Diseases; Cardiovascular disease |        Viral myocarditis        |
+|     Metabolism; Energy metabolism      |    Oxidative phosphorylation    |
+|      Metabolism; Lipid metabolism      | alpha-Linolenic acid metabolism |
+|      Metabolism; Lipid metabolism      |    Linoleic acid metabolism     |
 
 You’ll still need to render `README.Rmd` regularly, to keep `README.md`
 up-to-date. `devtools::build_readme()` is handy for this. You could also
