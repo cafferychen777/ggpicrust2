@@ -87,8 +87,8 @@
 </h2>
 <p>The easiest way to analyze the picrust2 output is using ggpicrust2() function. The entire pipeline can be run with ggpicrust2() function.</p>
 <p>ggpicrust2() integrates ko abundance to kegg pathway abundance conversion, annotation of pathway, differential abundance (DA) analysis, DA results visualization.</p>
-<p><img src="docs/reference/figures/ggpicrust2%20fig1.jpeg"></p>
-<p><img src="docs/reference/figures/ggpicrust2%20fig2.jpeg"></p>
+<p><img src="https://github.com/cafferychen777/ggpicrust2/blob/main/reference/figures/ggpicrust2%2520fig1.jpeg"></p>
+<p><img src="https://github.com/cafferychen777/ggpicrust2/blob/main/reference/figures/ggpicrust2%2520fig2.jpeg"></p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co">#If you want to analysis kegg pathway abundance instead of ko within the pathway. You should turn ko_to_kegg to TRUE.</span></span>
 <span><span class="co">#The kegg pathway typically have the more explainable description.</span></span>
@@ -145,152 +145,7 @@
 <h2 id="output">Output<a class="anchor" aria-label="anchor" href="#output"></a>
 </h2>
 <p>The typical output of the ggpicrust2 is like this.</p>
-<p><img src="docs/reference/figures/pathway_errorbar.jpg"></p>
-<table class="table">
-<colgroup>
-<col width="12%">
-<col width="12%">
-<col width="16%">
-<col width="24%">
-<col width="19%">
-<col width="15%">
-</colgroup>
-<thead><tr class="header">
-<th align="center">X</th>
-<th align="center">feature</th>
-<th align="center">method</th>
-<th align="center">group1</th>
-<th align="center">group2</th>
-<th align="center">p_values</th>
-</tr></thead>
-<tbody>
-<tr class="odd">
-<td align="center">ko04260</td>
-<td align="center">ko04260</td>
-<td align="center">limma voom</td>
-<td align="center">Pro-inflammatory</td>
-<td align="center">Pro-survival</td>
-<td align="center">0.0001246</td>
-</tr>
-<tr class="even">
-<td align="center">ko05222</td>
-<td align="center">ko05222</td>
-<td align="center">limma voom</td>
-<td align="center">Pro-inflammatory</td>
-<td align="center">Pro-survival</td>
-<td align="center">0.0007871</td>
-</tr>
-<tr class="odd">
-<td align="center">ko05416</td>
-<td align="center">ko05416</td>
-<td align="center">limma voom</td>
-<td align="center">Pro-inflammatory</td>
-<td align="center">Pro-survival</td>
-<td align="center">0.0007871</td>
-</tr>
-<tr class="even">
-<td align="center">ko00190</td>
-<td align="center">ko00190</td>
-<td align="center">limma voom</td>
-<td align="center">Pro-inflammatory</td>
-<td align="center">Pro-survival</td>
-<td align="center">0.003097</td>
-</tr>
-<tr class="odd">
-<td align="center">ko00592</td>
-<td align="center">ko00592</td>
-<td align="center">limma voom</td>
-<td align="center">Pro-inflammatory</td>
-<td align="center">Pro-survival</td>
-<td align="center">0.004485</td>
-</tr>
-<tr class="even">
-<td align="center">ko00591</td>
-<td align="center">ko00591</td>
-<td align="center">limma voom</td>
-<td align="center">Pro-inflammatory</td>
-<td align="center">Pro-survival</td>
-<td align="center">0.003034</td>
-</tr>
-</tbody>
-</table>
-<p>Table continues below</p>
-<table class="table">
-<thead><tr class="header">
-<th align="center">adj_method</th>
-<th align="center">p_adjust</th>
-<th align="center">pathway_name</th>
-</tr></thead>
-<tbody>
-<tr class="odd">
-<td align="center">BH</td>
-<td align="center">0.008059</td>
-<td align="center">Cardiac muscle contraction</td>
-</tr>
-<tr class="even">
-<td align="center">BH</td>
-<td align="center">0.01527</td>
-<td align="center">Small cell lung cancer</td>
-</tr>
-<tr class="odd">
-<td align="center">BH</td>
-<td align="center">0.01527</td>
-<td align="center">Viral myocarditis</td>
-</tr>
-<tr class="even">
-<td align="center">BH</td>
-<td align="center">0.04292</td>
-<td align="center">Oxidative phosphorylation</td>
-</tr>
-<tr class="odd">
-<td align="center">BH</td>
-<td align="center">0.04582</td>
-<td align="center">alpha-Linolenic acid metabolism</td>
-</tr>
-<tr class="even">
-<td align="center">BH</td>
-<td align="center">0.04292</td>
-<td align="center">Linoleic acid metabolism</td>
-</tr>
-</tbody>
-</table>
-<p>Table continues below</p>
-<table class="table">
-<colgroup>
-<col width="54%">
-<col width="45%">
-</colgroup>
-<thead><tr class="header">
-<th align="center">pathway_class</th>
-<th align="center">pathway_map</th>
-</tr></thead>
-<tbody>
-<tr class="odd">
-<td align="center">Organismal Systems; Circulatory system</td>
-<td align="center">Cardiac muscle contraction</td>
-</tr>
-<tr class="even">
-<td align="center">Human Diseases; Cancer: specific types</td>
-<td align="center">Small cell lung cancer</td>
-</tr>
-<tr class="odd">
-<td align="center">Human Diseases; Cardiovascular disease</td>
-<td align="center">Viral myocarditis</td>
-</tr>
-<tr class="even">
-<td align="center">Metabolism; Energy metabolism</td>
-<td align="center">Oxidative phosphorylation</td>
-</tr>
-<tr class="odd">
-<td align="center">Metabolism; Lipid metabolism</td>
-<td align="center">alpha-Linolenic acid metabolism</td>
-</tr>
-<tr class="even">
-<td align="center">Metabolism; Lipid metabolism</td>
-<td align="center">Linoleic acid metabolism</td>
-</tr>
-</tbody>
-</table>
+<p><img src="https://github.com/cafferychen777/ggpicrust2/blob/main/reference/figures/pathway_errorbar.jpg"></p>
 <p>You’ll still need to render <code>README.Rmd</code> regularly, to keep <code>README.md</code> up-to-date. <code><a href="https://devtools.r-lib.org/reference/build_rmd.html" class="external-link">devtools::build_readme()</a></code> is handy for this. You could also use GitHub Actions to re-render <code>README.Rmd</code> every time you push. An example workflow can be found here: <a href="https://github.com/r-lib/actions/tree/v1/examples" class="external-link uri">https://github.com/r-lib/actions/tree/v1/examples</a>.</p>
 <p>You can also embed plots, for example:</p>
 <p>In that case, don’t forget to commit and push the resulting figure files, so they display on GitHub and CRAN.</p>
