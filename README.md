@@ -39,9 +39,9 @@ We are actively preparing to upload the package to bioconductor.
 The easiest way to analyze the picrust2 output is using ggpicrust2()
 function. The entire pipeline can be run with ggpicrust2() function.
 
-ggpicrust2() integrates ko abundance to kegg pathway abundance convert,
-annotation of pathway, differential abundance (DA) analysis, DA results
-visualization.
+ggpicrust2() integrates ko abundance to kegg pathway abundance
+conversion, annotation of pathway, differential abundance (DA) analysis,
+DA results visualization.
 
 ``` r
 #If you want to analysis kegg pathway abundance instead of ko within the pathway. You should turn ko_to_kegg to TRUE. 
@@ -96,7 +96,7 @@ daa_results_df <-
 #The visualization will be published in viewer.
 ```
 
-![](https://github.com/cafferychen777/ggpicrust2/blob/main/figures/pathway_errorbar.pdf)
+![](/Users/apple/Microbiome/ggpicrust2/ggpicrust2/docs/reference/figures/pathway_errorbar.pdf)
 
 You’ll still need to render `README.Rmd` regularly, to keep `README.md`
 up-to-date. `devtools::build_readme()` is handy for this. You could also
