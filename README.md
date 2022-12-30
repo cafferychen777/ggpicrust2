@@ -96,6 +96,8 @@ daa_results_df <-
 #The visualization will be published in viewer.
 ```
 
+![](https://github.com/cafferychen777/ggpicrust2/blob/main/figures/pathway_errorbar.pdf)
+
 You’ll still need to render `README.Rmd` regularly, to keep `README.md`
 up-to-date. `devtools::build_readme()` is handy for this. You could also
 use GitHub Actions to re-render `README.Rmd` every time you push. An
