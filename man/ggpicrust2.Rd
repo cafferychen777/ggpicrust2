@@ -2,7 +2,7 @@
 % Please edit documentation in R/ggpicrust2.R
 \name{ggpicrust2}
 \alias{ggpicrust2}
-\title{Title}
+\title{function which integrates pathway name/description annotations, ten of the most advanced differential abundance (DA) methods, and visualization of DA results.}
 \usage{
 ggpicrust2(
   file,
@@ -21,8 +21,35 @@ ggpicrust2(
 )
 }
 \arguments{
-\item{colors}{}
+\item{file}{A character, address to store picrust2 export files}
+
+\item{metadata}{A tibble, consisting of samples information}
+
+\item{group}{A character, group name}
+
+\item{pathway}{A character, consisting of "EC", "KO", "MetaCyc"}
+
+\item{daa_method}{A character, choosing the da method}
+
+\item{ko_to_kegg}{A charachter to control if converting ko abundance to kegg abundance}
+
+\item{p.adjust}{A character, the method of adjust p}
+
+\item{order}{A character to control the main plot rows' order}
+
+\item{p_values_bar}{A character to control if the main plot has the p_values_bar}
+
+\item{x_lab}{A character to control x_lab name}
+
+\item{select}{A vector consisting of pathway names}
+
+\item{reference}{A character, several of da methods need a reference group level}
+
+\item{colors}{A vector consisting of colors number}
+}
+\value{
+daa.results.df
 }
 \description{
-Title
+function which integrates pathway name/description annotations, ten of the most advanced differential abundance (DA) methods, and visualization of DA results.
 }

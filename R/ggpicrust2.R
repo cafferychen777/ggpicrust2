@@ -1,20 +1,20 @@
-#' Title
+#' function which integrates pathway name/description annotations, ten of the most advanced differential abundance (DA) methods, and visualization of DA results.
 #'
-#' @param file
-#' @param metadata
-#' @param group
-#' @param pathway
-#' @param daa_method
-#' @param ko_to_kegg
-#' @param p.adjust
-#' @param order
-#' @param p_values_bar
-#' @param x_lab
-#' @param select
-#' @param reference
-#' @param colors
+#' @param file A character, address to store picrust2 export files
+#' @param metadata A tibble, consisting of samples information
+#' @param group A character, group name
+#' @param pathway A character, consisting of "EC", "KO", "MetaCyc"
+#' @param daa_method A character, choosing the da method
+#' @param ko_to_kegg A charachter to control if converting ko abundance to kegg abundance
+#' @param p.adjust A character, the method of adjust p
+#' @param order A character to control the main plot rows' order
+#' @param p_values_bar A character to control if the main plot has the p_values_bar
+#' @param x_lab A character to control x_lab name
+#' @param select A vector consisting of pathway names
+#' @param reference A character, several of da methods need a reference group level
+#' @param colors A vector consisting of colors number
 #'
-#' @return
+#' @return daa.results.df
 #' @export
 #'
 #' @examples

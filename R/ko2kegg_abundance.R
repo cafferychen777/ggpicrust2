@@ -1,8 +1,8 @@
 #' Title
 #'
-#' @param file
+#' @param file A character, address to store KO abundance in picrust2 export files
 #'
-#' @return
+#' @return A data frame, kegg_abundance
 #' @export
 #'
 #' @examples

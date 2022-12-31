@@ -1,18 +1,18 @@
-#' Title
+#' visualization of predictional functional pathway DA results
 #'
-#' @param abundance
-#' @param daa_results_df
-#' @param Group
-#' @param ko_to_kegg
-#' @param p_values_threshold
-#' @param order
-#' @param select
-#' @param p_value_bar
-#' @param colors
-#' @param x_lab
+#' @param abundance A data frame, pathway is its row name, sample is its row name
+#' @param daa_results_df A data frame, output of pathway_daa
+#' @param Group A dataframe or a vector, such as metadata$group
+#' @param ko_to_kegg A charachter to control if converting ko abundance to kegg abundance
+#' @param p_values_threshold A numerir
+#' @param order A character to control the main plot rows' order
+#' @param select A vector consisting of pathway names
+#' @param p_value_bar A character to control if the main plot has the p_values_bar
+#' @param colors A vector consisting of colors number
+#' @param x_lab A character to control x_lab name
 #'
-#' @return
-#' @export
+#' @return A figure
+#' @export A return
 #'
 #' @examples
 pathway_errorbar <-

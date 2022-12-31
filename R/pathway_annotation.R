@@ -1,8 +1,8 @@
-#' Title
+#' Pathway information annotation of "EC", "KO", "MetaCyc" pathway
 #'
-#' @param file
-#' @param pathway
-#' @param daa_results_df
+#' @param file A character, address to store picrust2 export files
+#' @param pathway A character, consisting of "EC", "KO", "MetaCyc"
+#' @param daa_results_df A data frame, output of pathway_daa
 #'
 #' @return
 #' @export

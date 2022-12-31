@@ -2,7 +2,7 @@
 % Please edit documentation in R/pathway_daa.R
 \name{pathway_daa}
 \alias{pathway_daa}
-\title{Title}
+\title{Predictional functional patwhay differential abundance (DA)}
 \usage{
 pathway_daa(
   abundance,
@@ -15,8 +15,23 @@ pathway_daa(
 )
 }
 \arguments{
-\item{reference}{}
+\item{abundance}{A data frame, predicted functional pathway abundance}
+
+\item{metadata}{A tibble, consisting of samples information}
+
+\item{group}{A character, group name}
+
+\item{daa_method}{A character, choosing the da method}
+
+\item{select}{A vector consisting of pathway names}
+
+\item{p.adjust}{A character, the method of adjust p}
+
+\item{reference}{A character, several of da methods need a reference group level}
+}
+\value{
+daa_results_df
 }
 \description{
-Title
+Predictional functional patwhay differential abundance (DA)
 }

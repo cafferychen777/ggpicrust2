@@ -7,7 +7,10 @@
 ko2kegg_abundance(file)
 }
 \arguments{
-\item{file}{}
+\item{file}{A character, address to store KO abundance in picrust2 export files}
+}
+\value{
+A data frame, kegg_abundance
 }
 \description{
 Title

@@ -2,7 +2,7 @@
 % Please edit documentation in R/pathway_errorbar.R
 \name{pathway_errorbar}
 \alias{pathway_errorbar}
-\title{Title}
+\title{visualization of predictional functional pathway DA results}
 \usage{
 pathway_errorbar(
   abundance,
@@ -18,8 +18,29 @@ pathway_errorbar(
 )
 }
 \arguments{
-\item{x_lab}{}
+\item{abundance}{A data frame, pathway is its row name, sample is its row name}
+
+\item{daa_results_df}{A data frame, output of pathway_daa}
+
+\item{Group}{A dataframe or a vector, such as metadata$group}
+
+\item{ko_to_kegg}{A charachter to control if converting ko abundance to kegg abundance}
+
+\item{p_values_threshold}{A numerir}
+
+\item{order}{A character to control the main plot rows' order}
+
+\item{select}{A vector consisting of pathway names}
+
+\item{p_value_bar}{A character to control if the main plot has the p_values_bar}
+
+\item{colors}{A vector consisting of colors number}
+
+\item{x_lab}{A character to control x_lab name}
+}
+\value{
+A figure
 }
 \description{
-Title
+visualization of predictional functional pathway DA results
 }

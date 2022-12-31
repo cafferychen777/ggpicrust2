@@ -1,14 +1,14 @@
-#' Title
+#' Predictional functional patwhay differential abundance (DA)
 #'
-#' @param abundance
-#' @param metadata
-#' @param group
-#' @param daa_method
-#' @param select
-#' @param p.adjust
-#' @param reference
+#' @param abundance A data frame, predicted functional pathway abundance
+#' @param metadata A tibble, consisting of samples information
+#' @param group A character, group name
+#' @param daa_method A character, choosing the da method
+#' @param select A vector consisting of pathway names
+#' @param p.adjust A character, the method of adjust p
+#' @param reference A character, several of da methods need a reference group level
 #'
-#' @return
+#' @return daa_results_df
 #' @export
 #'
 #' @examples

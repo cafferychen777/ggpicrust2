@@ -2,7 +2,7 @@
 % Please edit documentation in R/pathway_annotation.R
 \name{pathway_annotation}
 \alias{pathway_annotation}
-\title{Title}
+\title{Pathway information annotation of "EC", "KO", "MetaCyc" pathway}
 \usage{
 pathway_annotation(
   file = NULL,
@@ -12,8 +12,12 @@ pathway_annotation(
 )
 }
 \arguments{
-\item{daa_results_df}{}
+\item{file}{A character, address to store picrust2 export files}
+
+\item{pathway}{A character, consisting of "EC", "KO", "MetaCyc"}
+
+\item{daa_results_df}{A data frame, output of pathway_daa}
 }
 \description{
-Title
+Pathway information annotation of "EC", "KO", "MetaCyc" pathway
 }
