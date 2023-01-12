@@ -87,8 +87,8 @@
 </h2>
 <p>The easiest way to analyze the picrust2 output is using ggpicrust2() function. The entire pipeline can be run with ggpicrust2() function.</p>
 <p>ggpicrust2() integrates ko abundance to kegg pathway abundance conversion, annotation of pathway, differential abundance (DA) analysis, DA results visualization.</p>
-<p><img src="https://github.com/cafferychen777/ggpicrust2/blob/main/reference/figures/ggpicrust2%2520fig1.jpeg"></p>
-<p><img src="https://github.com/cafferychen777/ggpicrust2/blob/main/reference/figures/ggpicrust2%2520fig2.jpeg"></p>
+<p><img src="https://cafferychen777.github.io/ggpicrust2/reference/figures/ggpicrust2%20fig1.jpeg"></p>
+<p><img src="https://cafferychen777.github.io/ggpicrust2/reference/figures/ggpicrust2%20fig2.jpeg"></p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co">#If you want to analysis kegg pathway abundance instead of ko within the pathway. You should turn ko_to_kegg to TRUE.</span></span>
 <span><span class="co">#The kegg pathway typically have the more explainable description.</span></span>
@@ -145,10 +145,119 @@
 <h2 id="output">Output<a class="anchor" aria-label="anchor" href="#output"></a>
 </h2>
 <p>The typical output of the ggpicrust2 is like this.</p>
-<p><img src="https://github.com/cafferychen777/ggpicrust2/blob/main/reference/figures/pathway_errorbar.jpg"></p>
+<p><img src="https://raw.githubusercontent.com/cafferychen777/ggpicrust2/main/reference/figures/pathway_errorbar.jpg"></p>
 <p>You’ll still need to render <code>README.Rmd</code> regularly, to keep <code>README.md</code> up-to-date. <code><a href="https://devtools.r-lib.org/reference/build_rmd.html" class="external-link">devtools::build_readme()</a></code> is handy for this. You could also use GitHub Actions to re-render <code>README.Rmd</code> every time you push. An example workflow can be found here: <a href="https://github.com/r-lib/actions/tree/v1/examples" class="external-link uri">https://github.com/r-lib/actions/tree/v1/examples</a>.</p>
-<p>You can also embed plots, for example:</p>
-<p>In that case, don’t forget to commit and push the resulting figure files, so they display on GitHub and CRAN.</p>
+</div>
+<div class="section level2">
+<h2 id="function-details">function details<a class="anchor" aria-label="anchor" href="#function-details"></a>
+</h2>
+<div class="section level3">
+<h3 id="ko2kegg_abundance">ko2kegg_abundance()<a class="anchor" aria-label="anchor" href="#ko2kegg_abundance"></a>
+</h3>
+<p>KEGG Orthology(KO) is a classification system developed by the Kyoto Encyclopedia of Genes and Genomes (KEGG) data-base(Kanehisa et al., 2022). It uses a hierarchical structure to classify enzymes based on the reactions they catalyze. To better understand pathways’ role in different groups and classify the pathways, the KO abundance table needs to be converted to KEGG pathway abundance. But PICRUSt2 removes the function from PICRUSt. ko2kegg_abundance() can help convert the table.</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Sample usage of the ko2kegg_abundance function</span></span>
+<span></span>
+<span><span class="co"># Assume that the KO abundance table is stored in a file named "ko_abundance.tsv"</span></span>
+<span></span>
+<span><span class="va">ko_abundance_file</span> <span class="op">&lt;-</span> <span class="st">"ko_abundance.tsv"</span></span>
+<span></span>
+<span><span class="va">kegg_abundance</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/ko2kegg_abundance.html">ko2kegg_abundance</a></span><span class="op">(</span><span class="va">ko_abundance_file</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># The resulting kegg_abundance data frame can now be used for further analysis and visualization.</span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="pathway_daa">pathway_daa()<a class="anchor" aria-label="anchor" href="#pathway_daa"></a>
+</h3>
+<p>Differential abundance(DA) analysis plays a major role in PICRUSt2 downstream analysis. pathway_daa() integrates almost all DA methods applicable to the predicted functional profile which there excludes ANCOM and ANCOMBC. It includes ALDEx2(Fernandes et al., 2013), DEseq2(Love et al., 2014), Maaslin2(Mallick et al., 2021), Lin-DA(Zhou et al., 2022), edgeR(Robinson et al., 2010) , limma voom(Ritchie et al., 2015), metagenomeSeq(Paulson et al., 2013), lefser(Segata et al., 2011).</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co">#the abundance table is better to be data.frame rather than tibble</span></span>
+<span><span class="co">#you can use ko2_kegg_abundance output</span></span>
+<span><span class="va">abundance</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/ko2kegg_abundance.html">ko2kegg_abundance</a></span><span class="op">(</span><span class="va">ko_abundance_file</span><span class="op">)</span></span>
+<span><span class="va">metadata</span> <span class="op">&lt;-</span></span>
+<span>  <span class="fu">read_delim</span><span class="op">(</span></span>
+<span>    <span class="st">"~/Microbiome/C9orf72/Code And Data/new_metadata.txt"</span>,</span>
+<span>    delim <span class="op">=</span> <span class="st">"\t"</span>,</span>
+<span>    escape_double <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>    trim_ws <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span>  <span class="op">)</span></span>
+<span><span class="va">group</span> <span class="op">&lt;-</span> <span class="st">"Enviroment"</span></span>
+<span><span class="co">#daa_method default is "ALDex2"</span></span>
+<span><span class="va">daa_results_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/pathway_daa.html">pathway_daa</a></span><span class="op">(</span>abundance <span class="op">=</span> <span class="va">abundance</span>,</span>
+<span>           metadata <span class="op">=</span> <span class="va">metadata</span>,</span>
+<span>           group <span class="op">=</span> <span class="va">group</span> ,</span>
+<span>           daa_method <span class="op">=</span> <span class="st">"limma voom"</span>,</span>
+<span>           select <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>           p.adjust <span class="op">=</span> <span class="st">"BH"</span>,</span>
+<span>           reference <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span>
+<span><span class="co">#If you group levels &gt;3 and want to use the LinDA or limma voom, you should give a reference.</span></span>
+<span><span class="va">metadata</span> <span class="op">&lt;-</span></span>
+<span>  <span class="fu">read_delim</span><span class="op">(</span></span>
+<span>    <span class="st">"~/Microbiome/C9orf72/Code And Data/new_metadata.txt"</span>,</span>
+<span>    delim <span class="op">=</span> <span class="st">"\t"</span>,</span>
+<span>    escape_double <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>    trim_ws <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span>  <span class="op">)</span></span>
+<span><span class="va">group</span> <span class="op">&lt;-</span> <span class="st">"Group"</span></span>
+<span><span class="va">daa_results_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/pathway_daa.html">pathway_daa</a></span><span class="op">(</span>abundance <span class="op">=</span> <span class="va">abundance</span>,</span>
+<span>           metadata <span class="op">=</span> <span class="va">metadata</span>,</span>
+<span>           group <span class="op">=</span> <span class="va">group</span> ,</span>
+<span>           daa_method <span class="op">=</span> <span class="st">"limma voom"</span>,</span>
+<span>           select <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>           p.adjust <span class="op">=</span> <span class="st">"BH"</span>,</span>
+<span>           reference <span class="op">=</span> <span class="st">"Harvard BRI"</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="pathway_annotation">pathway_annotation<a class="anchor" aria-label="anchor" href="#pathway_annotation"></a>
+</h3>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">daa_results_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/pathway_annotation.html">pathway_annotation</a></span><span class="op">(</span>pathway <span class="op">=</span> <span class="st">"KO"</span>, daa_results_df <span class="op">=</span> <span class="va">daa_results_df</span>, ko_to_kegg <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="pathway_errorbar">pathway_errorbar<a class="anchor" aria-label="anchor" href="#pathway_errorbar"></a>
+</h3>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="reference/pathway_errorbar.html">pathway_errorbar</a></span><span class="op">(</span>abundance <span class="op">=</span> <span class="va">abundance</span>,</span>
+<span>           daa_results_df <span class="op">=</span> <span class="va">daa_results_df</span>,</span>
+<span>           Group <span class="op">=</span> <span class="va">metadata</span><span class="op">$</span><span class="va">Enviroment</span>,</span>
+<span>           ko_to_kegg <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>           p_values_threshold <span class="op">=</span> <span class="fl">0.05</span>,</span>
+<span>           order <span class="op">=</span> <span class="st">"group"</span>,</span>
+<span>           select <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>           p_value_bar <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>           colors <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>           x_lab <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="pathway_heatmap">pathway_heatmap<a class="anchor" aria-label="anchor" href="#pathway_heatmap"></a>
+</h3>
+<p>pathway_heatmap() can visualize the patterns in PICRUSt2 output data, which can be useful for identifying trends or highlighting areas of in-terest.</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">abundance</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/ko2kegg_abundance.html">ko2kegg_abundance</a></span><span class="op">(</span><span class="va">ko_abundance_file</span><span class="op">)</span></span>
+<span><span class="va">metadata</span> <span class="op">&lt;-</span></span>
+<span>  <span class="fu">read_delim</span><span class="op">(</span></span>
+<span>    <span class="st">"~/Microbiome/C9orf72/Code And Data/new_metadata.txt"</span>,</span>
+<span>    delim <span class="op">=</span> <span class="st">"\t"</span>,</span>
+<span>    escape_double <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>    trim_ws <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span>  <span class="op">)</span></span>
+<span><span class="va">group</span> <span class="op">&lt;-</span> <span class="st">"Enviroment"</span></span>
+<span><span class="fu">pathway_heatmap</span><span class="op">(</span>abundance <span class="op">=</span> <span class="va">abundance</span>, metadata <span class="op">=</span> <span class="va">metadata</span>, group <span class="op">=</span> <span class="va">group</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="pathway_pca">pathway_pca()<a class="anchor" aria-label="anchor" href="#pathway_pca"></a>
+</h3>
+<p>pathway_pca() can show the difference after dimensional reduction by PCA.</p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># generate example abundance matrix and metadata dataframe</span></span>
+<span><span class="va">abundance</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">200</span><span class="op">)</span>, ncol <span class="op">=</span> <span class="fl">20</span><span class="op">)</span></span>
+<span><span class="va">metadata</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>Group <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"A"</span>, <span class="st">"B"</span><span class="op">)</span>, each <span class="op">=</span> <span class="fl">10</span><span class="op">)</span>,</span>
+<span>                       Treatment <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"X"</span>, <span class="st">"Y"</span><span class="op">)</span>, <span class="fl">10</span><span class="op">)</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># perform PCA and create plot</span></span>
+<span><span class="va">pathway_pca_plot</span> <span class="op">&lt;-</span> <span class="fu">pathway_pca</span><span class="op">(</span>abundance <span class="op">=</span> <span class="va">abundance</span>, metadata <span class="op">=</span> <span class="va">metadata</span>, group <span class="op">=</span> <span class="st">"Group"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">pathway_pca_plot</span><span class="op">)</span></span></code></pre></div>
+</div>
 </div>
 </div>
   </main><aside class="col-md-3"><div class="links">
