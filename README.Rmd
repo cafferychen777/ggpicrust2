@@ -101,7 +101,7 @@ daa_results_df <-
 
 The typical output of the ggpicrust2 is like this.
 
-![](https://raw.githubusercontent.com/cafferychen777/ggpicrust2/main/reference/figures/pathway_errorbar.jpg)
+![](https://cafferychen777.github.io/ggpicrust2/reference/figures/pathway_errorbar.jpg)
 
 ```{r ,echo = FALSE,eval=FALSE}
 table1 <-read.csv(file="/Users/apple/Microbiome/ggpicrust2/ggpicrust2/docs/reference/table/ggpicrust2 table1.csv")

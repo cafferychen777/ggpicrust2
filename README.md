@@ -104,7 +104,7 @@ daa_results_df <-
 
 The typical output of the ggpicrust2 is like this.
 
-![](https://raw.githubusercontent.com/cafferychen777/ggpicrust2/main/reference/figures/pathway_errorbar.jpg)
+![](https://cafferychen777.github.io/ggpicrust2/reference/figures/pathway_errorbar.jpg)
 
 You’ll still need to render `README.Rmd` regularly, to keep `README.md`
 up-to-date. `devtools::build_readme()` is handy for this. You could also

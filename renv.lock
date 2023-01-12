@@ -522,14 +522,6 @@
         "Rcpp"
       ]
     },
-    "RcppParallel": {
-      "Package": "RcppParallel",
-      "Version": "5.1.5",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "f3e94e34ff656a7c8336ce01207bc2b8",
-      "Requirements": []
-    },
     "RcppZiggurat": {
       "Package": "RcppZiggurat",
       "Version": "0.1.6",
@@ -584,17 +576,6 @@
       "Repository": "CRAN",
       "Hash": "2042cd9759cc89a453c4aefef0ce9aae",
       "Requirements": []
-    },
-    "StanHeaders": {
-      "Package": "StanHeaders",
-      "Version": "2.21.0-7",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "0459d4dd7a8c239be18469a30c23dd4b",
-      "Requirements": [
-        "RcppEigen",
-        "RcppParallel"
-      ]
     },
     "SummarizedExperiment": {
       "Package": "SummarizedExperiment",
@@ -955,16 +936,6 @@
       "Requirements": [
         "rematch",
         "tibble"
-      ]
-    },
-    "checkmate": {
-      "Package": "checkmate",
-      "Version": "2.1.0",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "147e4db6909d8814bb30f671b49d7e06",
-      "Requirements": [
-        "backports"
       ]
     },
     "chemometrics": {
@@ -1649,15 +1620,21 @@
     },
     "ggrepel": {
       "Package": "ggrepel",
-      "Version": "0.9.2",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "610af35a68a1e8a40f05aad45871e719",
+      "Version": "0.9.2.9999",
+      "Source": "GitHub",
+      "RemoteType": "github",
+      "RemoteHost": "api.github.com",
+      "RemoteRepo": "ggrepel",
+      "RemoteUsername": "slowkow",
+      "RemoteRef": "HEAD",
+      "RemoteSha": "e9bcb756d6f7ee9e3bbb160672bc693dea15bd02",
+      "Hash": "c13e9047b25e63716fe1eb7c27a99e9e",
       "Requirements": [
         "Rcpp",
         "ggplot2",
         "rlang",
-        "scales"
+        "scales",
+        "withr"
       ]
     },
     "gh": {
@@ -1776,16 +1753,6 @@
         "KernSmooth",
         "caTools",
         "gtools"
-      ]
-    },
-    "gridExtra": {
-      "Package": "gridExtra",
-      "Version": "2.3",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "7d7f283939f563670a697165b2cf5560",
-      "Requirements": [
-        "gtable"
       ]
     },
     "gss": {
@@ -1950,14 +1917,6 @@
       "Hash": "6154ec2223172bce8162d4153cda21f7",
       "Requirements": []
     },
-    "inline": {
-      "Package": "inline",
-      "Version": "0.3.19",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "1deaf1de3eac7e1d3377954b3a283652",
-      "Requirements": []
-    },
     "insight": {
       "Package": "insight",
       "Version": "0.18.8",
@@ -1981,25 +1940,6 @@
       "Repository": "CRAN",
       "Hash": "8954069286b4b2b0d023d1b288dce978",
       "Requirements": []
-    },
-    "jjAnno": {
-      "Package": "jjAnno",
-      "Version": "0.0.3",
-      "Source": "GitHub",
-      "RemoteType": "github",
-      "RemoteHost": "api.github.com",
-      "RemoteRepo": "jjAnno",
-      "RemoteUsername": "junjunlab",
-      "RemoteRef": "HEAD",
-      "RemoteSha": "977f6f9735f2915a838963717cf96ecef5d8932b",
-      "Hash": "673bb0babafd083627ba871dd396a2d2",
-      "Requirements": [
-        "dplyr",
-        "ggiraphExtra",
-        "ggplot2",
-        "magick",
-        "magrittr"
-      ]
     },
     "jquerylib": {
       "Package": "jquerylib",
@@ -2176,17 +2116,6 @@
       "Hash": "fbef2ca79e23f11e033e89317b4c4770",
       "Requirements": []
     },
-    "loo": {
-      "Package": "loo",
-      "Version": "2.5.1",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "31b53df2593afd03a4969ae028c437b1",
-      "Requirements": [
-        "checkmate",
-        "matrixStats"
-      ]
-    },
     "lpsymphony": {
       "Package": "lpsymphony",
       "Version": "1.26.2",
@@ -2208,18 +2137,6 @@
       "Requirements": [
         "generics",
         "timechange"
-      ]
-    },
-    "magick": {
-      "Package": "magick",
-      "Version": "2.7.3",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "56fbad418aa50939ed8c3028126af8d7",
-      "Requirements": [
-        "Rcpp",
-        "curl",
-        "magrittr"
       ]
     },
     "magrittr": {
@@ -3091,25 +3008,6 @@
       "Hash": "1de7ab598047a87bba48434ba35d497d",
       "Requirements": []
     },
-    "rstan": {
-      "Package": "rstan",
-      "Version": "2.21.7",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "62745645aadeb276b67ddb9f0993cfeb",
-      "Requirements": [
-        "BH",
-        "Rcpp",
-        "RcppEigen",
-        "RcppParallel",
-        "StanHeaders",
-        "ggplot2",
-        "gridExtra",
-        "inline",
-        "loo",
-        "pkgbuild"
-      ]
-    },
     "rstudioapi": {
       "Package": "rstudioapi",
       "Version": "0.14",
@@ -3363,10 +3261,15 @@
     },
     "stringr": {
       "Package": "stringr",
-      "Version": "1.5.0",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "671a4d384ae9d32fc47a14e98bfa3dc8",
+      "Version": "1.5.0.9000",
+      "Source": "GitHub",
+      "RemoteType": "github",
+      "RemoteHost": "api.github.com",
+      "RemoteRepo": "stringr",
+      "RemoteUsername": "tidyverse",
+      "RemoteRef": "HEAD",
+      "RemoteSha": "e4601f7fdb125faafbd028cb9e32d23ef2d1efed",
+      "Hash": "f6011de065db447fe87edd27d518cbee",
       "Requirements": [
         "cli",
         "glue",
@@ -3461,19 +3364,25 @@
     },
     "tidyr": {
       "Package": "tidyr",
-      "Version": "1.2.1",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "cdb403db0de33ccd1b6f53b83736efa8",
+      "Version": "1.2.1.9001",
+      "Source": "GitHub",
+      "RemoteType": "github",
+      "RemoteHost": "api.github.com",
+      "RemoteRepo": "tidyr",
+      "RemoteUsername": "tidyverse",
+      "RemoteRef": "HEAD",
+      "RemoteSha": "134f8e50323a9d540a74604e3f7273e3dcf74e61",
+      "Hash": "7c10c00b500de58a2a3483e75bdede7b",
       "Requirements": [
+        "cli",
         "cpp11",
         "dplyr",
-        "ellipsis",
         "glue",
         "lifecycle",
         "magrittr",
         "purrr",
         "rlang",
+        "stringr",
         "tibble",
         "tidyselect",
         "vctrs"
