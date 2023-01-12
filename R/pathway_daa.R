@@ -73,7 +73,7 @@ pathway_daa <-
                    data.frame(
                      feature = rep(rownames(ALDEx2_results), 2),
                      method = c(
-                       rep("ALDEx2_Welch’s t test", nrow(ALDEx2_results)),
+                       rep("ALDEx2_Welch's t test", nrow(ALDEx2_results)),
                        rep("ALDEx2_Wilcoxon rank test", nrow(ALDEx2_results))
                      ),
                      group1 = rep(Level[1], 2 * nrow(ALDEx2_results)),
