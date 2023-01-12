@@ -78,7 +78,7 @@ pathway_annotation <-
     }
     if (!is.null(daa_results_df)) {
       if (ko_to_kegg == FALSE) {
-        daa_results_df$description <- "nonsense"
+        daa_results_df$description <- NA
         switch(
           pathway,
           "KO" = {
@@ -109,10 +109,10 @@ pathway_annotation <-
       } else {
         daa_results_filtered_df <-
           daa_results_df[daa_results_df$p_adjust < 0.05, ]
-        daa_results_filtered_df$pathway_name <- "nonsense"
-        daa_results_filtered_df$pathway_description <- "nonsense"
-        daa_results_filtered_df$pathway_class <- "nonsense"
-        daa_results_filtered_df$pathway_map <- "nonsense"
+        daa_results_filtered_df$pathway_name <- NA
+        daa_results_filtered_df$pathway_description <- NA
+        daa_results_filtered_df$pathway_class <- NA
+        daa_results_filtered_df$pathway_map <- NA
         keggGet_results <- list()
         message(
           "We are connecting to the KEGG database to get the latest results, please wait patiently."
