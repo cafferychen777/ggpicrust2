@@ -391,16 +391,16 @@ pathway_errorbar <-
     if (p_value_bar == TRUE) {
       if (ko_to_kegg == TRUE) {
         combination_bar_plot <-
-          pathway_class_annotation + bar_errorbar + p_values_bar + p_annotation + plot_layout(ncol = 4, width =
+          pathway_class_annotation + bar_errorbar + p_values_bar + p_annotation + plot_layout(ncol = 4, widths =
                                                                                                 c(1, 1.5, 0.5, 0.1))
       }
       else{
         combination_bar_plot <-
-          bar_errorbar + p_values_bar + p_annotation + plot_layout(ncol = 3, width = c(2.3, 0.7, 0.3))
+          bar_errorbar + p_values_bar + p_annotation + plot_layout(ncol = 3, widths = c(2.3, 0.7, 0.3))
       }
     }else{
       combination_bar_plot <-
-        bar_errorbar + p_annotation + plot_layout(ncol = 2, width = c(2.5,  0.2))
+        bar_errorbar + p_annotation + plot_layout(ncol = 2, widths = c(2.5,  0.2))
     }
     return(combination_bar_plot)
   }
