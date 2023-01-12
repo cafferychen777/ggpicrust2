@@ -1,3 +1,13 @@
+#' Title
+#'
+#' @param abundance A data frame, predicted functional pathway abundance
+#' @param metadata A tibble, consisting of samples information
+#' @param group A character, group name
+#'
+#' @return
+#' @export
+#'
+#' @examples
 pathway_heatmap <- function(abundance, metadata, group){
   order <- metadata[order(metadata$Enviroment),]$sample_name
   new_abundance <- abundance %>% rownames_to_column()%>% pivot_longer(-rowname)

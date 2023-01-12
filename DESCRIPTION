@@ -41,10 +41,10 @@ Imports:
     MicrobiomeStat,
     patchwork,
     readr,
-    rstan,
     stats,
     SummarizedExperiment,
-    tibble
+    tibble,
+    tidyr
 Depends: 
     R (>= 2.10),
     tidyverse

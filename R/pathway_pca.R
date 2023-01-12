@@ -1,8 +1,8 @@
 #' Title
 #'
-#' @param abundance
-#' @param metadata
-#' @param group
+#' @param abundance A data frame, predicted functional pathway abundance
+#' @param metadata A tibble, consisting of samples information
+#' @param group A character, group name
 #'
 #' @return
 #' @export
