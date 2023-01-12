@@ -3,7 +3,7 @@
 #' @param file A character, address to store picrust2 export files
 #' @param pathway A character, consisting of "EC", "KO", "MetaCyc"
 #' @param daa_results_df A data frame, output of pathway_daa
-#' @param ko_to_kegg A boolen value, decide if convert ko abundance to kegg pathway abundance
+#' @param ko_to_kegg A character, decide if convert ko abundance to kegg pathway abundance
 #'
 #' @return
 #' @export
