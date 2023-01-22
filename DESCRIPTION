@@ -18,6 +18,7 @@ usethis:
 RoxygenNote: 7.2.3
 Imports: 
     ALDEx2,
+    aplot,
     base,
     Biobase,
     BiocGenerics,
@@ -33,6 +34,7 @@ Imports:
     ggiraphExtra,
     ggplot2,
     ggprism,
+    ggplotify,
     glmnet,
     grid,
     KEGGREST,

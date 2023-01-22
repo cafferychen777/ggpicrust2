@@ -18,7 +18,7 @@ pathway_heatmap <- function(abundance, metadata, group){
     scale_y_discrete(expand=c(0,0),position="left")+
     scale_x_discrete(expand=c(0,0))+
     scale_fill_gradientn(colours = c("#273b68", "#2190bc","#32b7d2","#62c3c3","#95d1b6","#cbdea7","#fbefa6"))+
-    theme(axis.text.x=element_text(color="black",angle=90,vjust=0.5,size=8,hjust=1),
+    theme(axis.text.x=element_blank(),
           axis.text.y=element_blank(),
           axis.ticks = element_blank(),
           axis.text = element_text(color="black",size=10,face = "bold"),

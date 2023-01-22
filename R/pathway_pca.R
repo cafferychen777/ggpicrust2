@@ -26,8 +26,8 @@ pathway_pca <- function(abundance, metadata, group){
           panel.grid.minor = element_blank(),
           panel.background = element_blank(),
           axis.text = element_text(color="black",size=10,face = "bold"),
-          legend.text = element_text(size = 8, face = "bold"),
-          legend.title = element_text(size = 10, face = "bold"))
+          legend.text = element_text(size = 16, face = "bold"),
+          legend.title = element_text(size = 16, face = "bold"))
 
   Fig1a.taxa.pc1.density <-
     ggplot(pca) +

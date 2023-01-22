@@ -35,10 +35,6 @@ ko2kegg_abundance <- function(file) {
     )
   )
   message("Calculation may take a long time, please be patient.")
-  library(readr)
-  library(dplyr)
-  library(tidyr)
-  library(tibble)
   load(system.file("extdata", "kegg_reference.RData", package = "ggpicrust2"))
   sample_names <- colnames(abundance)[-1]
   kegg_names <- ko_to_kegg_reference[, 1]

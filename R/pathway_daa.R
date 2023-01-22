@@ -16,7 +16,7 @@ pathway_daa <-
   function(abundance,
            metadata,
            group,
-           daa_method,
+           daa_method = "ALDEx2",
            select = NULL,
            p.adjust = "BH",
            reference = NULL) {
@@ -250,8 +250,6 @@ pathway_daa <-
           LinDA_metadata_df$Group_group_nonsense_ <-
             relevel(LinDA_metadata_df$Group_group_nonsense_, ref = reference)
         }
-        LinDA_metadata_df$Group_group_nonsense_ <-
-          relevel(LinDA_metadata_df$Group_group_nonsense_, ref = reference)
         LinDA_results <- MicrobiomeStat::linda(abundance,
                                                LinDA_metadata_df,
                                                formula = "~Group_group_nonsense_",
