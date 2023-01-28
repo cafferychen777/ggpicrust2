@@ -9,6 +9,8 @@
 #'
 #' @examples
 pathway_heatmap <- function(abundance, metadata, group){
+  abundance <- make_relative(as.matrix(abundance))
+  abundance <- as.data.frame(abundance)
   order <- metadata[order(metadata$Enviroment),]$sample_name
   new_abundance <- abundance %>% rownames_to_column()%>% pivot_longer(-rowname)
   new_abundance$name <- factor(new_abundance$name, levels = order)
@@ -23,7 +25,7 @@ pathway_heatmap <- function(abundance, metadata, group){
           axis.ticks = element_blank(),
           axis.text = element_text(color="black",size=10,face = "bold"),
           legend.title = element_blank(),
-          legend.text = element_text(size=8,color="black"))+
+          legend.text = element_blank())+
     guides(fill=guide_colorbar(direction = "vertical",reverse = F,barwidth = unit(.6, "cm"),
                                barheight = unit(18.5,"cm")))
 }
