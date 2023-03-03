@@ -6,7 +6,7 @@
 #' @param daa_method a character specifying the method for differential abundance analysis, default is "ALDEx2"
 #' @param select a vector containing pathway names for analysis, if NULL all pathways are included, default is NULL
 #' @param p.adjust a character specifying the method for p-value adjustment, default is "BH"
-#' @param reference a character specifying the reference group level, required for several differential abundance analysis methods, default is NULL
+#' @param reference a character specifying the reference group level, required for several differential abundance analysis methods such as LinDA and limme voom, default is NULL
 #'
 #' @return  a data frame containing the differential abundance analysis results.
 #' @export
@@ -21,11 +21,11 @@ pathway_daa <-
            p.adjust = "BH",
            reference = NULL) {
     if (!is_tibble(metadata)) {
-      metadata <- as_tibble(metadata)
+      metadata <- tibble::as_tibble(metadata)
     }
     sample_names <- colnames(abundance)
     matches <-
-      lapply(metadata, function(x) {
+      base::lapply(metadata, function(x) {
         intersect(sample_names, x)
       })
     matching_columns <-

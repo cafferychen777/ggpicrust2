@@ -1,3 +1,0 @@
-metadata_df <- read.table("/Users/apple/Microbiome/C9orf72/Code And Data/new_metadata.txt", header = TRUE, sep = "\t", row.names = 1, check.names = FALSE)
-abundance <- read.table("/Users/apple/Microbiome/C9orf72/Code And Data/picrust2_out/KO_metagenome_out/pred_metagenome_unstrat.tsv/pred_metagenome_unstrat.tsv", header = TRUE, sep = "\t", row.names = 1, check.names = FALSE) 
-pathway_daa(abundance,metadata_df)
