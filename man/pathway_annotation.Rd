@@ -17,6 +17,8 @@ pathway_annotation(
 \item{pathway}{A character, consisting of "EC", "KO", "MetaCyc"}
 
 \item{daa_results_df}{A data frame, output of pathway_daa}
+
+\item{ko_to_kegg}{A character, decide if convert ko abundance to kegg pathway abundance}
 }
 \description{
 Pathway information annotation of "EC", "KO", "MetaCyc" pathway

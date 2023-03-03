@@ -2,7 +2,7 @@
 % Please edit documentation in R/ko2kegg_abundance.R
 \name{ko2kegg_abundance}
 \alias{ko2kegg_abundance}
-\title{Title}
+\title{Title This function converts the KO abundance in picrust2 export files to KEGG pathway abundance}
 \usage{
 ko2kegg_abundance(file)
 }
@@ -13,5 +13,5 @@ ko2kegg_abundance(file)
 A data frame, kegg_abundance
 }
 \description{
-Title
+Title This function converts the KO abundance in picrust2 export files to KEGG pathway abundance
 }

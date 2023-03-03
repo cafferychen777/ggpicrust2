@@ -8,29 +8,29 @@ pathway_daa(
   abundance,
   metadata,
   group,
-  daa_method,
+  daa_method = "ALDEx2",
   select = NULL,
   p.adjust = "BH",
   reference = NULL
 )
 }
 \arguments{
-\item{abundance}{A data frame, predicted functional pathway abundance}
+\item{abundance}{a data frame containing predicted functional pathway abundance}
 
-\item{metadata}{A tibble, consisting of samples information}
+\item{metadata}{a tibble containing samples information}
 
-\item{group}{A character, group name}
+\item{group}{a character specifying the group name for differential abundance analysis}
 
-\item{daa_method}{A character, choosing the da method}
+\item{daa_method}{a character specifying the method for differential abundance analysis, default is "ALDEx2"}
 
-\item{select}{A vector consisting of pathway names}
+\item{select}{a vector containing pathway names for analysis, if NULL all pathways are included, default is NULL}
 
-\item{p.adjust}{A character, the method of adjust p}
+\item{p.adjust}{a character specifying the method for p-value adjustment, default is "BH"}
 
-\item{reference}{A character, several of da methods need a reference group level}
+\item{reference}{a character specifying the reference group level, required for several differential abundance analysis methods, default is NULL}
 }
 \value{
-daa_results_df
+a data frame containing the differential abundance analysis results.
 }
 \description{
 Predictional functional patwhay differential abundance (DA)

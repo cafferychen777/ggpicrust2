@@ -20,7 +20,6 @@ Imports:
     ALDEx2,
     aplot,
     base,
-    Biobase,
     BiocGenerics,
     BiocManager,
     ComplexHeatmap,
@@ -31,7 +30,6 @@ Imports:
     edgeR,
     funrar,
     GGally,
-    ggiraphExtra,
     ggplot2,
     ggprism,
     ggplotify,
@@ -50,10 +48,12 @@ Imports:
     SummarizedExperiment,
     tibble,
     tidyr,
-    utils
+    utils,
+    tidyverse
 Depends: 
     R (>= 2.10),
     tidyverse
 Suggests: 
+    covr,
     testthat (>= 3.0.0)
 Config/testthat/edition: 3

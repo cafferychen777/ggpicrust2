@@ -1,60 +1,77 @@
-#' Title
+#' Perform Principal Component Analysis (PCA) on functional pathway abundance data and create visualizations of the PCA results.
 #'
-#' @param abundance A data frame, predicted functional pathway abundance
-#' @param metadata A tibble, consisting of samples information
-#' @param group A character, group name
-#'
-#' @return
+#' @param abundance A data frame, predicted functional pathway abundance.
+#' @param metadata A tibble, consisting of sample information.
+#' @param group A character, group name.
+#' @return A ggplot object showing the PCA results.
 #' @export
+#' @import ggplot2
+#' @importFrom stats prcomp
+#' @importFrom ggforce aplot insert_top insert_right
+#' @importFrom ggplotify as.ggplot
+#' @importFrom scales expansion
 #'
 #' @examples
+#' pathway_pca(abundance, metadata, "Group")
 pathway_pca <- function(abundance, metadata, group){
+  # due to NSE notes in R CMD check
+  PC1 = PC2 = Group = NULL
+  # Perform PCA on the abundance data, keeping the first two principal components
   pca_axis <- prcomp(t(abundance), center = TRUE, scale = TRUE)$x[,1:2]
+
+  # Calculate the proportion of total variation explained by each PC
   pca_proportion <- prcomp(t(abundance), center = TRUE, scale = TRUE)$sdev[1:2]/sum(prcomp(t(abundance), center = TRUE, scale = TRUE)$sdev)*100
+
+  # Combine the PCA results with the metadata information
   pca <- cbind(pca_axis, metadata[,group])
   pca$Group <- pca[,group]
-  Fig1a.taxa.pca <- ggplot(pca,aes(PC1,PC2))+
-    geom_point(size=2,aes(color=Group),show.legend = T)+
-    scale_color_manual(values=c("#d93c3e", "#3685bc"))+
-    stat_ellipse(aes(color = Group),fill="white",geom = "polygon",
+
+  # Create a ggplot object for the PCA scatter plot
+  Fig1a.taxa.pca <- ggplot2::ggplot(pca,ggplot2::aes(PC1,PC2))+
+    ggplot2::geom_point(size=2,ggplot2::aes(color=Group),show.legend = T)+
+    ggplot2::scale_color_manual(values=c("#d93c3e", "#3685bc"))+
+    ggplot2::stat_ellipse(ggplot2::aes(color = Group),fill="white",geom = "polygon",
                  level=0.95,alpha = 0.01,show.legend = F)+
-    labs(x=paste0("PC1(",round(pca_proportion[1],1),"%)"),y=paste0("PC1(",round(pca_proportion[2],1),"%)"),color = group)+
-    theme_classic()+
-    theme(axis.line=element_line(colour = "black"),
-          axis.title=element_text(color="black",face = "bold"),
-          panel.grid.major = element_blank(),
-          panel.grid.minor = element_blank(),
-          panel.background = element_blank(),
-          axis.text = element_text(color="black",size=10,face = "bold"),
-          legend.text = element_text(size = 16, face = "bold"),
-          legend.title = element_text(size = 16, face = "bold"))
+    ggplot2::labs(x=paste0("PC1(",round(pca_proportion[1],1),"%)"),y=paste0("PC1(",round(pca_proportion[2],1),"%)"),color = group)+
+    ggplot2::theme_classic()+
+    ggplot2::theme(axis.line=ggplot2::element_line(colour = "black"),
+          axis.title=ggplot2::element_text(color="black",face = "bold"),
+          panel.grid.major = ggplot2::element_blank(),
+          panel.grid.minor = ggplot2::element_blank(),
+          panel.background = ggplot2::element_blank(),
+          axis.text = ggplot2::element_text(color="black",size=10,face = "bold"),
+          legend.text = ggplot2::element_text(size = 16, face = "bold"),
+          legend.title = ggplot2::element_text(size = 16, face = "bold"))
 
+  # Create a ggplot object for the density plot of PC1
+  # Plot the density of PC1 colored by Group
   Fig1a.taxa.pc1.density <-
-    ggplot(pca) +
-    geom_density(aes(x=PC1, group=Group, fill=Group),
-                 color="black", alpha=1,position = 'identity',
-                 show.legend = F) +
-    scale_fill_manual(values=c("#d93c3e", "#3685bc")) +
-    scale_y_discrete(expand = c(0,0.001))+
-    labs(x=NULL,y=NULL)+
-    theme_classic() +
-    theme(axis.text.x=element_blank(),
-          axis.ticks.x = element_blank())
-
-  Fig1a.taxa.pc2.density <-
-    ggplot(pca) +
-    geom_density(aes(x=PC2, group=Group, fill=Group),
+    ggplot2::ggplot(pca) +
+    ggplot2::geom_density(ggplot2::aes(x=PC1, group=Group, fill=Group), # Plot the density of PC1
                  color="black", alpha=1, position = 'identity',show.legend = F) +
-    scale_fill_manual(values=c("#d93c3e", "#3685bc")) +
-    theme_classic()+
-    scale_y_discrete(expand = c(0,0.001))+
-    labs(x=NULL,y=NULL)+
-    theme(axis.text.y=element_blank(),
-          axis.ticks.y=element_blank())+
-    coord_flip()
+    ggplot2::scale_fill_manual(values=c("#d93c3e", "#3685bc")) + # Manually set the fill color for each group
+    ggplot2::theme_classic() + # Set the classic theme
+    ggplot2::scale_y_discrete(expand = c(0,0.001)) + # Scale the y-axis with a small expansion to improve appearance
+    ggplot2::labs(x=NULL, y=NULL) + # Remove x and y labels
+    ggplot2::theme(axis.text.x=ggplot2::element_blank(), # Remove x axis text
+          axis.ticks.x = ggplot2::element_blank()) # Remove x axis ticks
 
+  # Plot the density of PC2 colored by Group
+  Fig1a.taxa.pc2.density <-
+    ggplot2::ggplot(pca) +
+    ggplot2::geom_density(ggplot2::aes(x=PC2, group=Group, fill=Group), # Plot the density of PC2
+                 color="black", alpha=1, position = 'identity',show.legend = F) +
+    ggplot2::scale_fill_manual(values=c("#d93c3e", "#3685bc")) + # Manually set the fill color for each group
+    ggplot2::theme_classic() + # Set the classic theme
+    ggplot2::scale_y_discrete(expand = c(0,0.001)) + # Scale the y-axis with a small expansion to improve appearance
+    ggplot2::labs(x=NULL, y=NULL) + # Remove x and y labels
+    ggplot2::theme(axis.text.y = ggplot2::element_blank(), # Remove y axis text
+          axis.ticks.y = ggplot2::element_blank()) + # Remove y axis ticks
+    ggplot2::coord_flip() # Flip the plot to change it from a horizontal to a vertical orientation
+
+  # Combine the two plots into a single plot with the PC1 plot on top and the PC2 plot on the right
   Fig1a.taxa.pca %>%
-    insert_top(Fig1a.taxa.pc1.density,height = 0.3) %>%
-    insert_right(Fig1a.taxa.pc2.density,width=0.3) %>%
-    as.ggplot()
+    aplot::insert_top(Fig1a.taxa.pc1.density, height = 0.3) %>% # Insert the PC1 plot on top with a height of 0.3
+    aplot::insert_right(Fig1a.taxa.pc2.density, width=0.3) %>% # Insert the PC2 plot on the right with a width of 0.3
+    ggplotify::as.ggplot() # Convert the combined plot to a ggplot object
 }

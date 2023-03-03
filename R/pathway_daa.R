@@ -1,14 +1,14 @@
 #' Predictional functional patwhay differential abundance (DA)
 #'
-#' @param abundance A data frame, predicted functional pathway abundance
-#' @param metadata A tibble, consisting of samples information
-#' @param group A character, group name
-#' @param daa_method A character, choosing the da method
-#' @param select A vector consisting of pathway names
-#' @param p.adjust A character, the method of adjust p
-#' @param reference A character, several of da methods need a reference group level
+#' @param abundance a data frame containing predicted functional pathway abundance
+#' @param metadata a tibble containing samples information
+#' @param group a character specifying the group name for differential abundance analysis
+#' @param daa_method a character specifying the method for differential abundance analysis, default is "ALDEx2"
+#' @param select a vector containing pathway names for analysis, if NULL all pathways are included, default is NULL
+#' @param p.adjust a character specifying the method for p-value adjustment, default is "BH"
+#' @param reference a character specifying the reference group level, required for several differential abundance analysis methods, default is NULL
 #'
-#' @return daa_results_df
+#' @return  a data frame containing the differential abundance analysis results.
 #' @export
 #'
 #' @examples
@@ -450,6 +450,6 @@ pathway_daa <-
       }
     )
     daa_results_df <-
-      cbind(p_values_df, adj_method = "BH", p_adjust = adjusted_p_values)
+      cbind(p_values_df, adj_method = p.adjust, p_adjust = adjusted_p_values)
     return(daa_results_df)
   }

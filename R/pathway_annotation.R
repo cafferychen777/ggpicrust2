@@ -14,13 +14,12 @@ pathway_annotation <-
            pathway = NULL,
            daa_results_df = NULL,
            ko_to_kegg = FALSE) {
-    if (is.null(file) & is.null(daa_results_df)) {
+    if (is.null(file) && is.null(daa_results_df)) {
       stop("Please input the picrust2 output or results of pathway_daa daa_results_df")
     }
     if (!is.null(file)) {
       file_format <- substr(file, nchar(file) - 3, nchar(file))
-      switch(
-        file_format,
+      switch(file_format,
         ".txt" = abundance <-
           read_delim(
             file,
@@ -47,10 +46,11 @@ pathway_annotation <-
         )
       )
       abundance <-
-        abundance %>% add_column(description = rep(NA, length = nrow(abundance)),
-                                 .after = 1)
-      switch(
-        pathway,
+        abundance %>% add_column(
+          description = rep(NA, length = nrow(abundance)),
+          .after = 1
+        )
+      switch(pathway,
         "KO" = {
           load(system.file("extdata", "KO_reference.RData", package = "ggpicrust2"))
           for (i in seq_len(nrow(abundance))) {
@@ -80,8 +80,7 @@ pathway_annotation <-
     if (!is.null(daa_results_df)) {
       if (ko_to_kegg == FALSE) {
         daa_results_df$description <- NA
-        switch(
-          pathway,
+        switch(pathway,
           "KO" = {
             load(system.file("extdata", "KO_reference.RData", package = "ggpicrust2"))
             for (i in seq_len(nrow(daa_results_df))) {
@@ -125,15 +124,17 @@ pathway_annotation <-
         }
         if (nrow(daa_results_filtered_df) <= 10) {
           for (i in seq_len(nrow(daa_results_filtered_df))) {
-            a = 0
+            a <- 0
             repeat {
-              tryCatch({
-                keggGet_results[[i]] <-
-                  KEGGREST::keggGet(daa_results_filtered_df$feature[i])
-                a = 1
-              }, error = function(e) {
-                a = 0
-              })
+              tryCatch(
+                {
+                  keggGet_results[[i]] <-
+                    KEGGREST::keggGet(daa_results_filtered_df$feature[i])
+                  a <- 1
+                },
+                error = function(e) {
+                }
+              )
               if (a == 1) {
                 break
               }
@@ -148,8 +149,8 @@ pathway_annotation <-
               keggGet_results[[i]][[1]]$PATHWAY_MAP
           }
         }
-        if (nrow(daa_results_filtered_df) > 10 &
-            nrow(daa_results_filtered_df) < 99) {
+        if (nrow(daa_results_filtered_df) > 10 &&
+          nrow(daa_results_filtered_df) < 99) {
           n <-
             length(c(seq(
               10, nrow(daa_results_filtered_df), 10
@@ -161,7 +162,7 @@ pathway_annotation <-
             if (i %% 10 == 0) {
               keggGet_results[[j]] <-
                 KEGGREST::keggGet(daa_results_filtered_df$feature[seq(i -
-                                                                        9, i, 1)])
+                  9, i, 1)])
               # for (k in seq(i - 9, i, 1)) {
               #   if (k %% 10 == 0) {
               #     daa_results_filtered_df[k, ]$pathway_name <-
@@ -183,10 +184,10 @@ pathway_annotation <-
               #       keggGet_results[[j]][[k %% 10]]$PATHWAY_MAP
               #   }
               # }
-            } else{
+            } else {
               keggGet_results[[j]] <-
                 KEGGREST::keggGet(daa_results_filtered_df$feature[seq(nrow(daa_results_filtered_df) %/% 10 *
-                                                                        10 + 1, i, 1)])
+                  10 + 1, i, 1)])
               # for (k in seq(nrow(daa_results_filtered_df) %/% 10 * 10 +
               #               1, i, 1)) {
               #   daa_results_filtered_df[k, ]$pathway_name <-
@@ -207,7 +208,7 @@ pathway_annotation <-
               daa_results_filtered_df[daa_results_filtered_df$feature == keggGet_results[[k]][[j]]$ENTRY, ]$pathway_name <-
                 keggGet_results[[k]][[j]]$NAME[1]
               daa_results_filtered_df[daa_results_filtered_df$feature ==
-                                        keggGet_results[[k]][[j]]$ENTRY, ]$pathway_description <-
+                keggGet_results[[k]][[j]]$ENTRY, ]$pathway_description <-
                 keggGet_results[[k]][[j]]$DESCRIPTION[1]
               daa_results_filtered_df[daa_results_filtered_df$feature == keggGet_results[[k]][[j]]$ENTRY, ]$pathway_class <-
                 keggGet_results[[k]][[j]]$CLASS[1]
