@@ -24,6 +24,8 @@ Imports:
     cowplot,
     DESeq2,
     devtools,
+    BiocGenerics,
+    BiocManager,
     dplyr,
     edgeR,
     funrar,
