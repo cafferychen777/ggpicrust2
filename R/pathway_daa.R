@@ -122,7 +122,7 @@ pathway_daa <-
         DESeq2_metadata[, "Group_group_nonsense"] <-
           factor(DESeq2_metadata[, "Group_group_nonsense"])
         DESeq2_combinations <-
-          combn(unique(DESeq2_metadata[, "Group_group_nonsense"]), 2)
+          utils::combn(unique(DESeq2_metadata[, "Group_group_nonsense"]), 2)
         DESeq2_results <- list()
         for (i in seq_len(ncol(DESeq2_combinations))) {
           j <- DESeq2_combinations[, i]
@@ -293,7 +293,7 @@ pathway_daa <-
                {
                  edgeR_results <- list()
                  edgeR_numbers <- seq_along(Level)
-                 edgeR_combinations <- combn(edgeR_numbers, 2)
+                 edgeR_combinations <- utils::combn(edgeR_numbers, 2)
                  for (j in 1:sum(1:(length_Level - 1))) {
                    DGEExact <- exactTest(edgeR_object, pair = edgeR_combinations[, j])
                    edgeR_results[[j]] <- cbind(
@@ -341,7 +341,7 @@ pathway_daa <-
         p_values_df <- as.data.frame(p_values_matrix)
       },
       "metagenomeSeq" = {
-        metagenomeSeq_combinations <- combn(Level, 2)
+        metagenomeSeq_combinations <- utils::combn(Level, 2)
         metagenomeSeq_results_list <- list()
         for (i in seq_len(ncol(metagenomeSeq_combinations))) {
           sub_metadata_df <-
@@ -388,7 +388,7 @@ pathway_daa <-
       }
       ,
       "Lefser" = {
-        Lefser_combinations <- combn(Level, 2)
+        Lefser_combinations <- utils::combn(Level, 2)
         Lefser_results <- list()
         Lefser_metadata_df <- metadata_df
         for (i in seq_len(ncol(Lefser_combinations))) {
