@@ -10,7 +10,7 @@
     
     <a class="navbar-brand me-2" href="../index.html">ggpicrust2</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.2.2.9001</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.2.3.9000</small>
 
     
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -55,7 +55,7 @@
 <span>  <span class="va">abundance</span>,</span>
 <span>  <span class="va">metadata</span>,</span>
 <span>  <span class="va">group</span>,</span>
-<span>  <span class="va">daa_method</span>,</span>
+<span>  daa_method <span class="op">=</span> <span class="st">"ALDEx2"</span>,</span>
 <span>  select <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  p.adjust <span class="op">=</span> <span class="st">"BH"</span>,</span>
 <span>  reference <span class="op">=</span> <span class="cn">NULL</span></span>
@@ -65,38 +65,38 @@
     <div class="section level2">
     <h2 id="arguments">Arguments<a class="anchor" aria-label="anchor" href="#arguments"></a></h2>
     <dl><dt>abundance</dt>
-<dd><p>A data frame, predicted functional pathway abundance</p></dd>
+<dd><p>a data frame containing predicted functional pathway abundance</p></dd>
 
 
 <dt>metadata</dt>
-<dd><p>A tibble, consisting of samples information</p></dd>
+<dd><p>a tibble containing samples information</p></dd>
 
 
 <dt>group</dt>
-<dd><p>A character, group name</p></dd>
+<dd><p>a character specifying the group name for differential abundance analysis</p></dd>
 
 
 <dt>daa_method</dt>
-<dd><p>A character, choosing the da method</p></dd>
+<dd><p>a character specifying the method for differential abundance analysis, default is "ALDEx2"</p></dd>
 
 
 <dt>select</dt>
-<dd><p>A vector consisting of pathway names</p></dd>
+<dd><p>a vector containing pathway names for analysis, if NULL all pathways are included, default is NULL</p></dd>
 
 
 <dt>p.adjust</dt>
-<dd><p>A character, the method of adjust p</p></dd>
+<dd><p>a character specifying the method for p-value adjustment, default is "BH"</p></dd>
 
 
 <dt>reference</dt>
-<dd><p>A character, several of da methods need a reference group level</p></dd>
+<dd><p>a character specifying the reference group level, required for several differential abundance analysis methods, default is NULL</p></dd>
 
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     
 
-<p>daa_results_df</p>
+<p>a data frame containing the differential abundance analysis results.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc"><h2>On this page</h2>
