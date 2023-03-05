@@ -11,14 +11,14 @@
 #' ko2kegg_abundance(file = "path/to/pred_metagenome_unstrat.tsv")
 #'
 #' @export
-function (file) 
+ko2kegg_abundance <- function (file)
 {
     file_format <- substr(file, nchar(file) - 3, nchar(file))
-    switch(file_format, .txt = abundance <- read_delim(file, 
-        delim = "\t", escape_double = FALSE, trim_ws = TRUE), 
-        .tsv = abundance <- read_delim(file, delim = "\t", escape_double = FALSE, 
-            trim_ws = TRUE), .csv = abundance <- read_delim(file, 
-            delim = "\t", escape_double = FALSE, trim_ws = TRUE), 
+    switch(file_format, .txt = abundance <- read_delim(file,
+        delim = "\t", escape_double = FALSE, trim_ws = TRUE),
+        .tsv = abundance <- read_delim(file, delim = "\t", escape_double = FALSE,
+            trim_ws = TRUE), .csv = abundance <- read_delim(file,
+            delim = "\t", escape_double = FALSE, trim_ws = TRUE),
         stop("Error: Please input file as .tsv, .txt or .csv\nThe best input file is what you get from picrust2 output file 'pred_metagenome_unstrat.tsv'"))
     message("Calculation may take a long time, please be patient.")
     load(system.file("extdata", "kegg_reference.RData", package = "ggpicrust2"))
@@ -31,14 +31,14 @@ function (file)
         for (j in seq_len(ncol(kegg_abundance))) {
             kegg_name <- rownames(kegg_abundance)[i]
             sample_name <- colnames(kegg_abundance)[j]
-            ko_to_kegg <- ko_to_kegg_reference[ko_to_kegg_reference[, 
+            ko_to_kegg <- ko_to_kegg_reference[ko_to_kegg_reference[,
                 1] == kegg_name, -1]
             ko_to_kegg <- ko_to_kegg[!is.na(ko_to_kegg)]
-            kegg_abundance[i, j] <- sum(abundance[as.matrix(abundance[, 
+            kegg_abundance[i, j] <- sum(abundance[as.matrix(abundance[,
                 1]) %in% ko_to_kegg, sample_name])
         }
     }
-    kegg_abundance <- kegg_abundance[rowSums(kegg_abundance) != 
+    kegg_abundance <- kegg_abundance[rowSums(kegg_abundance) !=
         0, ]
     message("The kegg pathway with zero abundance in all the different samples has been removed.")
     kegg_abundance <- as.data.frame(kegg_abundance)
