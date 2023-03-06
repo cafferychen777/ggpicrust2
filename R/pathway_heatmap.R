@@ -22,12 +22,12 @@ pathway_heatmap <- function(abundance, metadata, group) {
   rel_df <- as.data.frame(rel_abundance)
 
   # Order the samples based on the environment information
-  ordered_metadata <- metadata[order(metadata$Environment), ]
+  ordered_metadata <- metadata[order(metadata[,group]), ]
   order <- ordered_metadata$sample_name
 
   # Convert the abundance data frame to a long format
-  long_df <- rel_df %>% 
-    tibble::rownames_to_column() %>% 
+  long_df <- rel_df %>%
+    tibble::rownames_to_column() %>%
     tidyr::pivot_longer(cols = -rowname, names_to = "Sample", values_to = "Value")
 
   # Set the order of the samples in the heatmap
@@ -58,8 +58,8 @@ pathway_heatmap <- function(abundance, metadata, group) {
       fill = ggplot2::guide_colorbar(
         direction = "vertical",
         reverse = F,
-        barwidth = scales::unit(0.6, "cm"),
-        barheight = scales::unit(18.5, "cm")
+        barwidth = unit(0.6, "cm"),
+        barheight = unit(18.5, "cm")
       )
     )
 
