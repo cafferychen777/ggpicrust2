@@ -69,7 +69,7 @@ pathway_daa <-
                    aldex.ttest(ALDEx2_object,
                                paired.test = FALSE,
                                verbose = FALSE)
-                 p_values_df <-
+                 p_values_df <<-
                    data.frame(
                      feature = rep(rownames(ALDEx2_results), 2),
                      method = c(
@@ -102,7 +102,7 @@ pathway_daa <-
                      p_values = c(ALDEx2_results$kw.ep, ALDEx2_results$glm.ep)
                    )
                  for (k in 1:length_Level) {
-                   p_values_df <-
+                   p_values_df <<-
                      cbind(p_values_df[, 1:(1 + k)],
                            rep(Level[k], 2 * nrow(ALDEx2_results)),
                            p_values_df$p_values)
@@ -131,6 +131,7 @@ pathway_daa <-
           DESeq2_metadata_sub <- DESeq2_metadata[DESeq2_sub_group,]
           DESeq2_abundance_mat_sub <-
             DESeq2_abundance_mat[, DESeq2_sub_group]
+          DESeq2_abundance_mat_sub <- round(DESeq2_abundance_mat_sub)
           DESeq2_object <-
             DESeqDataSetFromMatrix(
               countData = DESeq2_abundance_mat_sub,
@@ -149,7 +150,7 @@ pathway_daa <-
           as.matrix(do.call(rbind, DESeq2_results))
         DESeq2_combinations_matrix_t <- t(DESeq2_combinations)
         DESeq2_group_matrix <- matrix(ncol = 2)
-        for (i in seq_len(DESeq2_results_nrow)) {
+        for (i in 1:length(DESeq2_results_nrow)) {
           DESeq2_group_matrix <-
             rbind(matrix(
               rep(DESeq2_combinations_matrix_t[i,], times = DESeq2_results_nrow[i]),
@@ -167,7 +168,7 @@ pathway_daa <-
             DESeq2_group_matrix,
             p_values = as.vector(DESeq2_results_matrix[, "pvalue"])
           )
-        p_values_df <- as.data.frame(p_values_matrix)
+        p_values_df <<- as.data.frame(p_values_matrix)
       },
       "Maaslin2" = {
         Maaslin2_abundance_mat <- abundance_mat
@@ -220,7 +221,7 @@ pathway_daa <-
                      group2 = reference,
                      p_values = Maaslin2$results$pval
                    )
-                 p_values_df <- as.data.frame(p_values_matrix)
+                 p_values_df <<- as.data.frame(p_values_matrix)
                })
         message(
           paste0(
@@ -268,7 +269,7 @@ pathway_daa <-
             )
         }
         p_values_matrix <- as.matrix(do.call(rbind, LinDA_results))
-        p_values_df <- as.data.frame(p_values_matrix)
+        p_values_df <<- as.data.frame(p_values_matrix)
       },
       "edgeR" = {
         edgeR_abundance_mat <- round(abundance_mat)
@@ -306,7 +307,7 @@ pathway_daa <-
                  }
                  p_values_matrix <-
                    as.matrix(do.call(rbind, edgeR_results))
-                 p_values_df <- as.data.frame(p_values_matrix)
+                 p_values_df <<- as.data.frame(p_values_matrix)
                })
       },
       "limma voom" = {
@@ -338,7 +339,7 @@ pathway_daa <-
             ), each = nrow(abundance)),
             p_values = c(limma_voom_Fit$p.value[,-1])
           )
-        p_values_df <- as.data.frame(p_values_matrix)
+        p_values_df <<- as.data.frame(p_values_matrix)
       },
       "metagenomeSeq" = {
         metagenomeSeq_combinations <- utils::combn(Level, 2)
@@ -384,7 +385,7 @@ pathway_daa <-
         }
         p_values_matrix <-
           as.matrix(do.call(rbind, p_values_list))
-        p_values_df <- as.data.frame(p_values_matrix)
+        p_values_df <<- as.data.frame(p_values_matrix)
       }
       ,
       "Lefser" = {
@@ -420,7 +421,7 @@ pathway_daa <-
               effect_scores = lefser(Lefser_object, groupCol = "Group_group_nonsense_")$scores
             )
         }
-        p_values_matrix <-
+        p_values_matrix <<-
           as.matrix(do.call(rbind, Lefser_results))
       }
     )
