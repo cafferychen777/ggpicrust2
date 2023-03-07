@@ -177,7 +177,7 @@ pathway_daa <-
         rownames(Maaslin2_metadata_df) <-
           Maaslin2_metadata_df[, matching_columns]
         Maaslin2_metadata_df <-
-          select(Maaslin2_metadata_df, -matching_columns)
+          dplyr::select(Maaslin2_metadata_df, -matching_columns)
         switch(length_Level == 2,
                "TRUE" = {
                  Maaslin2_results <- Maaslin2(
@@ -197,7 +197,7 @@ pathway_daa <-
                      method = "Maaslin2",
                      group1 = Level[1],
                      group2 = Level[2],
-                     p_values = Maaslin2$results$pval
+                     p_values = Maaslin2_results$results$pval
                    )
                  p_values_df <- as.data.frame(p_values_matrix)
                },
@@ -219,7 +219,7 @@ pathway_daa <-
                      method = "Maaslin2",
                      group1 = Maaslin2_results$results$value,
                      group2 = reference,
-                     p_values = Maaslin2$results$pval
+                     p_values = Maaslin2_results$results$pval
                    )
                  p_values_df <<- as.data.frame(p_values_matrix)
                })
@@ -241,7 +241,7 @@ pathway_daa <-
         rownames(LinDA_metadata_df) <-
           LinDA_metadata_df[, matching_columns]
         LinDA_metadata_df <-
-          select(LinDA_metadata_df, -matching_columns)
+          dplyr::select(LinDA_metadata_df, -matching_columns)
         LinDA_metadata_df$Group_group_nonsense_ <-
           factor(LinDA_metadata_df$Group_group_nonsense_)
         if (length_Level != 2) {
@@ -256,17 +256,30 @@ pathway_daa <-
                                                formula = "~Group_group_nonsense_",
                                                alpha = 0.05,
         )$output
-        for (i in 1:length(LinDA_results)) {
-          LinDA_results[[i]] <-
-            cbind(
-              feature = rownames(LinDA_results[[i]]),
-              method = "LinDA",
-              group1 = substr(names(LinDA_results)[i], 22, stop = nchar(names(
-                LinDA_results
-              )[i])),
-              group2 = reference,
-              p_values = LinDA_results[[i]]$pvalue
-            )
+        if (length_Level != 2){
+          for (i in 1:length(LinDA_results)) {
+            LinDA_results[[i]] <-
+              cbind(
+                feature = rownames(LinDA_results[[i]]),
+                method = "LinDA",
+                group1 = substr(names(LinDA_results)[i], 22, stop = nchar(names(
+                  LinDA_results
+                )[i])),
+                group2 = reference,
+                p_values = LinDA_results[[i]]$pvalue
+              )
+          }
+        }else{
+          for (i in 1:length(LinDA_results)) {
+            LinDA_results[[i]] <-
+              cbind(
+                feature = rownames(LinDA_results[[i]]),
+                method = "LinDA",
+                group1 = Level[1],
+                group2 = Level[2],
+                p_values = LinDA_results[[i]]$pvalue
+              )
+          }
         }
         p_values_matrix <- as.matrix(do.call(rbind, LinDA_results))
         p_values_df <<- as.data.frame(p_values_matrix)
@@ -312,17 +325,15 @@ pathway_daa <-
       },
       "limma voom" = {
         limma_voom_abundance_mat <- round(abundance_mat)
-        switch(length_Level != 2,
-               "TRUE" = {
-                 if (is.null(reference)) {
-                   stop("If you use the LinDA or limma voom, you should give a reference.")
-                 }
-                 Group <- relevel(Group, ref = reference)
-               },
-               {
-                 reference <- Level[1]
-                 Group <- relevel(Group, ref = reference)
-               })
+        if (length_Level != 2){
+          if (is.null(reference)) {
+            stop("If you use the LinDA or limma voom, you should give a reference.")
+          }
+          Group <- relevel(Group, ref = reference)
+        }else{
+          reference <- Level[1]
+          Group <- relevel(Group, ref = reference)
+        }
         limma_voom_object <-
           DGEList(counts = limma_voom_abundance_mat, group = Group)
         limma_voom_object <-
@@ -421,11 +432,12 @@ pathway_daa <-
               effect_scores = lefser(Lefser_object, groupCol = "Group_group_nonsense_")$scores
             )
         }
-        p_values_matrix <<-
+        p_values_matrix <-
           as.matrix(do.call(rbind, Lefser_results))
+        p_values_df <<- as.data.frame(p_values_matrix)
+        return(p_values_df)
       }
     )
-    if (daa_method != "lefser"){
       switch(
         p.adjust,
         "BH" = {
@@ -454,8 +466,4 @@ pathway_daa <-
       daa_results_df <-
         cbind(p_values_df, adj_method = p.adjust, p_adjust = adjusted_p_values)
       return(daa_results_df)
-    }
-    else{
-      return(p_values_matrix)
-    }
   }
