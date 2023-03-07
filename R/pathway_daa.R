@@ -425,32 +425,37 @@ pathway_daa <-
           as.matrix(do.call(rbind, Lefser_results))
       }
     )
-    switch(
-      p.adjust,
-      "BH" = {
-        adjusted_p_values <- p.adjust(p_values_df$p_values, method = "BH")
-      },
-      "holm" = {
-        adjusted_p_values <- p.adjust(p_values_df$p_values, method = "holm")
-      },
-      "bonferroni" = {
-        adjusted_p_values <-
-          p.adjust(p_values_df$p_values, method = "bonferroni")
-      },
-      "hochberg" = {
-        adjusted_p_values <-
-          p.adjust(p_values_df$p_values, method = "hochberg")
-      },
-      "fdr" = {
-        adjusted_p_values <-
-          p.adjust(p_values_df$p_values, method = "fdr")
-      },
-      "none" = {
-        adjusted_p_values <-
-          p.adjust(p_values_df$p_values, method = "none")
-      }
-    )
-    daa_results_df <-
-      cbind(p_values_df, adj_method = p.adjust, p_adjust = adjusted_p_values)
-    return(daa_results_df)
+    if (daa_method != "lefser"){
+      switch(
+        p.adjust,
+        "BH" = {
+          adjusted_p_values <- p.adjust(p_values_df$p_values, method = "BH")
+        },
+        "holm" = {
+          adjusted_p_values <- p.adjust(p_values_df$p_values, method = "holm")
+        },
+        "bonferroni" = {
+          adjusted_p_values <-
+            p.adjust(p_values_df$p_values, method = "bonferroni")
+        },
+        "hochberg" = {
+          adjusted_p_values <-
+            p.adjust(p_values_df$p_values, method = "hochberg")
+        },
+        "fdr" = {
+          adjusted_p_values <-
+            p.adjust(p_values_df$p_values, method = "fdr")
+        },
+        "none" = {
+          adjusted_p_values <-
+            p.adjust(p_values_df$p_values, method = "none")
+        }
+      )
+      daa_results_df <-
+        cbind(p_values_df, adj_method = p.adjust, p_adjust = adjusted_p_values)
+      return(daa_results_df)
+    }
+    else{
+      return(p_values_matrix)
+    }
   }
