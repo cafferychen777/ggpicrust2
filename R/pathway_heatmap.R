@@ -22,24 +22,27 @@ pathway_heatmap <- function(abundance, metadata, group) {
   rel_df <- as.data.frame(rel_abundance)
 
   # Order the samples based on the environment information
-  ordered_metadata <- metadata[order(metadata[,group]), ]
+  ordered_metadata <- metadata[order(metadata[, group]),]
   order <- ordered_metadata$sample_name
 
   # Convert the abundance data frame to a long format
   long_df <- rel_df %>%
     tibble::rownames_to_column() %>%
-    tidyr::pivot_longer(cols = -rowname, names_to = "Sample", values_to = "Value")
+    tidyr::pivot_longer(cols = -rowname,
+                        names_to = "Sample",
+                        values_to = "Value")
 
   # Set the order of the samples in the heatmap
   long_df$Sample <- factor(long_df$Sample, levels = order)
 
   # Create the heatmap using ggplot
-  p <- ggplot2::ggplot(data = long_df, mapping = ggplot2::aes(x = Sample, y = rowname, fill = Value)) +
+  p <-
+    ggplot2::ggplot(data = long_df,
+                    mapping = ggplot2::aes(x = Sample, y = rowname, fill = Value)) +
     ggplot2::geom_tile() +
-    ggplot2::scale_fill_gradientn(
-      colours = c("#273b68", "#2190bc", "#32b7d2", "#62c3c3", "#95d1b6", "#cbdea7", "#fbefa6"),
-      na.value = "white"
-    ) +
+    ggplot2::scale_fill_gradientn(colours = c("#4575b4",
+                                                       "#f7f7f7",
+                                                       "#d73027")) +
     ggplot2::labs(x = NULL, y = NULL) +
     ggplot2::scale_y_discrete(expand = c(0, 0), position = "left") +
     ggplot2::scale_x_discrete(expand = c(0, 0)) +
@@ -48,7 +51,11 @@ pathway_heatmap <- function(abundance, metadata, group) {
       axis.text.x = ggplot2::element_blank(),
       axis.text.y = ggplot2::element_blank(),
       axis.ticks = ggplot2::element_blank(),
-      axis.text = ggplot2::element_text(color = "black", size = 10, face = "bold"),
+      axis.text = ggplot2::element_text(
+        color = "black",
+        size = 10,
+        face = "bold"
+      ),
       legend.title = ggplot2::element_blank(),
       legend.text = ggplot2::element_blank(),
       panel.background = ggplot2::element_blank()
