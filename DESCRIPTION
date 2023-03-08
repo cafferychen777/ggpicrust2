@@ -49,7 +49,9 @@ Imports:
     tibble,
     tidyr,
     utils,
-    tidyverse
+    tidyverse,
+    ggforce,
+    scales
 Depends: 
     R (>= 2.10),
     tidyverse

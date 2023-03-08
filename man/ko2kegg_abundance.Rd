@@ -2,16 +2,17 @@
 % Please edit documentation in R/ko2kegg_abundance.R
 \name{ko2kegg_abundance}
 \alias{ko2kegg_abundance}
-\title{Title This function converts the KO abundance in picrust2 export files to KEGG pathway abundance}
+\title{Convert KO abundance in picrust2 export files to KEGG pathway abundance}
 \usage{
 ko2kegg_abundance(file)
 }
 \arguments{
-\item{file}{A character, address to store KO abundance in picrust2 export files}
+\item{file}{A character, the address of the file containing KO abundance in picrust2 export format}
 }
 \value{
-A data frame, kegg_abundance
+A data frame, kegg_abundance, with KEGG pathway abundance values
 }
 \description{
-Title This function converts the KO abundance in picrust2 export files to KEGG pathway abundance
+This function takes a file containing KO abundance in picrust2 export format and converts it to KEGG pathway abundance.
+The file should be in .tsv, .txt or .csv format.
 }

@@ -2,15 +2,14 @@
 % Please edit documentation in R/pathway_pca.R
 \name{pathway_pca}
 \alias{pathway_pca}
-\title{pathway_pca is a function that performs Principal Component Analysis (PCA) on a functional pathway abundance data. 
-It also creates visualizations of the PCA results.}
+\title{Perform Principal Component Analysis (PCA) on functional pathway abundance data and create visualizations of the PCA results.}
 \usage{
 pathway_pca(abundance, metadata, group)
 }
 \arguments{
 \item{abundance}{A data frame, predicted functional pathway abundance.}
 
-\item{metadata}{A tibble, consisting of samples information.}
+\item{metadata}{A tibble, consisting of sample information.}
 
 \item{group}{A character, group name.}
 }
@@ -18,6 +17,5 @@ pathway_pca(abundance, metadata, group)
 A ggplot object showing the PCA results.
 }
 \description{
-pathway_pca is a function that performs Principal Component Analysis (PCA) on a functional pathway abundance data. 
-It also creates visualizations of the PCA results.
+Perform Principal Component Analysis (PCA) on functional pathway abundance data and create visualizations of the PCA results.
 }

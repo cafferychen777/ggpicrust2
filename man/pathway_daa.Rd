@@ -27,7 +27,7 @@ pathway_daa(
 
 \item{p.adjust}{a character specifying the method for p-value adjustment, default is "BH"}
 
-\item{reference}{a character specifying the reference group level, required for several differential abundance analysis methods, default is NULL}
+\item{reference}{a character specifying the reference group level, required for several differential abundance analysis methods such as LinDA, limme voom and Maaslin2, default is NULL}
 }
 \value{
 a data frame containing the differential abundance analysis results.

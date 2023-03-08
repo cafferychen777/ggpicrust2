@@ -8,7 +8,7 @@
 #' @return A data frame, kegg_abundance, with KEGG pathway abundance values
 #'
 #' @examples
-#' ko2kegg_abundance(file = "path/to/pred_metagenome_unstrat.tsv")
+#'
 #'
 #' @export
 ko2kegg_abundance <- function (file)

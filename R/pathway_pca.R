@@ -5,14 +5,8 @@
 #' @param group A character, group name.
 #' @return A ggplot object showing the PCA results.
 #' @export
-#' @import ggplot2
-#' @importFrom stats prcomp
-#' @importFrom ggforce aplot insert_top insert_right
-#' @importFrom ggplotify as.ggplot
-#' @importFrom scales expansion
 #'
 #' @examples
-#' pathway_pca(abundance, metadata, "Group")
 pathway_pca <- function(abundance, metadata, group){
   # due to NSE notes in R CMD check
   PC1 = PC2 = Group = NULL

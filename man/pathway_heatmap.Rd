@@ -7,11 +7,11 @@
 pathway_heatmap(abundance, metadata, group)
 }
 \arguments{
-\item{abundance}{A data frame, predicted functional pathway abundance}
+\item{abundance}{A matrix or data frame of pathway abundance data, where rows correspond to samples and columns correspond to pathways.}
 
-\item{metadata}{A tibble, consisting of samples information}
+\item{metadata}{A data frame of metadata, where each row corresponds to a sample and each column corresponds to a metadata variable.}
 
-\item{group}{A character, group name}
+\item{group}{A character string specifying the column name in the metadata data frame that contains the group variable.}
 }
 \value{
 A ggplot heatmap object

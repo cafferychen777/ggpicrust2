@@ -12,7 +12,7 @@
 #' @param x_lab a character string to be used as the x-axis label in the figure, which defaults to "description" for KO IDs and "pathway_name" for KEGG pathway IDs.
 #'
 #' @return A figure
-#' @export A return
+#' @export
 #'
 #' @examples
 
