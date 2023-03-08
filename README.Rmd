@@ -15,11 +15,6 @@ knitr::opts_chunk$set(
 
 # ggpicrust2
 
-<!-- badges: start -->
-
-[![Codecov test coverage](https://codecov.io/gh/cafferychen777/ggpicrust2/branch/main/graph/badge.svg)](https://app.codecov.io/gh/cafferychen777/ggpicrust2?branch=main) [![R-CMD-check](https://github.com/cafferychen777/ggpicrust2/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/cafferychen777/ggpicrust2/actions/workflows/R-CMD-check.yaml)
-[![R-CMD-check](https://github.com/cafferychen777/ggpicrust2/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/cafferychen777/ggpicrust2/actions/workflows/R-CMD-check.yaml)
-<!-- badges: end -->
 
 ggpicrust2 is a comprehensive package that integrates pathway name/description annotations, ten of the most advanced differential abundance (DA) methods, and visualization of DA results. It offers a comprehensive solution for analyzing and interpreting the results of picrust2 functional prediction in a seamless and intuitive way. Whether you are a researcher, data scientist, or bioinformatician, ggpicrust2 can help you better understand the underlying biological processes and mechanisms at play in your picrust2 output data. So if you are interested in exploring the output data of picrust2, ggpicrust2 is the tool you need.
 
