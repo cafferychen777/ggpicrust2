@@ -80,7 +80,7 @@ pathway_daa <-
               p_values = c(ALDEx2_results$we.ep, ALDEx2_results$wi.ep)
             )
         } else {
-          messgae("ALDEx2 takes a long time to complete the calculation, please wait patiently.")
+          #messgae("ALDEx2 takes a long time to complete the calculation, please wait patiently.")
           ALDEx2_object <-
             aldex.clr(
               ALDEx2_abundance,
