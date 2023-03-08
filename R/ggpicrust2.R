@@ -66,7 +66,7 @@ ggpicrust2 <- function(file,
                    x_lab = x_lab # Label for the x-axis
                  )
                print(combination_bar_plot) # Print the combination bar plot
-               message(paste0("No.", j, " plot is method ", i)) # Message indicating the plot and the method used
+               #message(paste0("No.", j, " plot is method ", i)) # Message indicating the plot and the method used
              }
              return(daa_results_df) # Return the results data frame
            },
@@ -107,7 +107,7 @@ ggpicrust2 <- function(file,
                    x_lab = x_lab # Label for the x-axis
                  )
                print(combination_bar_plot) # Print the combination bar plot
-               message(paste0("No.", j, " plot is method ", i)) # Message indicating the plot and the method used
+               #message(paste0("No.", j, " plot is method ", i)) # Message indicating the plot and the method used
              }
              return(daa_results_df) # Return the results data frame
            })

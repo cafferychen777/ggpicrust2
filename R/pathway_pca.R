@@ -26,10 +26,20 @@ pathway_pca <- function(abundance, metadata, group){
   pca <- cbind(pca_axis, metadata[,group])
   pca$Group <- pca[,group]
 
+  levels <- length(levels(factor(pca$Group)))
+
+
+
+  colors_choices <- c("#d93c3e", "#3685bc","#208A42","#89288F","#F47D2B",
+             "#FEE500","#8A9FD1","#C06CAB","#E6C2DC","#90D5E4",
+             "#89C75F","#F37B7D","#9983BD","#D24B27","#3BBCA8",
+             "#6E4B9E","#0C727C", "#7E1416","#D8A767","#3D3D3D")[1:levels]
+
+
   # Create a ggplot object for the PCA scatter plot
   Fig1a.taxa.pca <- ggplot2::ggplot(pca,ggplot2::aes(PC1,PC2))+
     ggplot2::geom_point(size=2,ggplot2::aes(color=Group),show.legend = T)+
-    ggplot2::scale_color_manual(values=c("#d93c3e", "#3685bc"))+
+    ggplot2::scale_color_manual(values=colors_choices)+
     ggplot2::stat_ellipse(ggplot2::aes(color = Group),fill="white",geom = "polygon",
                  level=0.95,alpha = 0.01,show.legend = F)+
     ggplot2::labs(x=paste0("PC1(",round(pca_proportion[1],1),"%)"),y=paste0("PC1(",round(pca_proportion[2],1),"%)"),color = group)+
@@ -49,7 +59,7 @@ pathway_pca <- function(abundance, metadata, group){
     ggplot2::ggplot(pca) +
     ggplot2::geom_density(ggplot2::aes(x=PC1, group=Group, fill=Group), # Plot the density of PC1
                  color="black", alpha=1, position = 'identity',show.legend = F) +
-    ggplot2::scale_fill_manual(values=c("#d93c3e", "#3685bc")) + # Manually set the fill color for each group
+    ggplot2::scale_fill_manual(values=colors_choices) + # Manually set the fill color for each group
     ggplot2::theme_classic() + # Set the classic theme
     ggplot2::scale_y_discrete(expand = c(0,0.001)) + # Scale the y-axis with a small expansion to improve appearance
     ggplot2::labs(x=NULL, y=NULL) + # Remove x and y labels
@@ -61,7 +71,7 @@ pathway_pca <- function(abundance, metadata, group){
     ggplot2::ggplot(pca) +
     ggplot2::geom_density(ggplot2::aes(x=PC2, group=Group, fill=Group), # Plot the density of PC2
                  color="black", alpha=1, position = 'identity',show.legend = F) +
-    ggplot2::scale_fill_manual(values=c("#d93c3e", "#3685bc")) + # Manually set the fill color for each group
+    ggplot2::scale_fill_manual(values=colors_choices) + # Manually set the fill color for each group
     ggplot2::theme_classic() + # Set the classic theme
     ggplot2::scale_y_discrete(expand = c(0,0.001)) + # Scale the y-axis with a small expansion to improve appearance
     ggplot2::labs(x=NULL, y=NULL) + # Remove x and y labels

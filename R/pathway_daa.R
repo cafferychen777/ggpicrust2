@@ -393,7 +393,7 @@ pathway_daa <-
             )
         }
         p_values_matrix <-
-          as.matrix(do.call(rbind, p_values_list))
+          as.matrix(do.call(rbind, metagenomeSeq_results_list))
         p_values_df <<- as.data.frame(p_values_matrix)
       }
       ,
@@ -425,8 +425,8 @@ pathway_daa <-
             cbind(
               feature = lefser(Lefser_object, groupCol = "Group_group_nonsense_")$Names,
               method = "Lefser",
-              group1 = Lefser_combinations[, 1][1],
-              group2 = Lefser_combinations[, 1][2],
+              group1 = Lefser_combinations[, i][1],
+              group2 = Lefser_combinations[, i][2],
               effect_scores = lefser(Lefser_object, groupCol = "Group_group_nonsense_")$scores
             )
         }
