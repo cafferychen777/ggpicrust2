@@ -6,7 +6,7 @@
 #' @param daa_method a character specifying the method for differential abundance analysis, default is "ALDEx2"
 #' @param select a vector containing pathway names for analysis, if NULL all pathways are included, default is NULL
 #' @param p.adjust a character specifying the method for p-value adjustment, default is "BH"
-#' @param reference a character specifying the reference group level, required for several differential abundance analysis methods such as LinDA and limme voom, default is NULL
+#' @param reference a character specifying the reference group level, required for several differential abundance analysis methods such as LinDA, limme voom and Maaslin2, default is NULL
 #'
 #' @return  a data frame containing the differential abundance analysis results.
 #' @export
@@ -55,61 +55,59 @@ pathway_daa <-
       daa_method,
       "ALDEx2" = {
         ALDEx2_abundance <- round(abundance)
-        switch(length_Level == 2,
-               "TRUE" = {
-                 ALDEx2_object <-
-                   aldex.clr(
-                     ALDEx2_abundance,
-                     Group,
-                     mc.samples = 256,
-                     denom = "all",
-                     verbose = FALSE
-                   )
-                 ALDEx2_results <-
-                   aldex.ttest(ALDEx2_object,
-                               paired.test = FALSE,
-                               verbose = FALSE)
-                 p_values_df <<-
-                   data.frame(
-                     feature = rep(rownames(ALDEx2_results), 2),
-                     method = c(
-                       rep("ALDEx2_Welch's t test", nrow(ALDEx2_results)),
-                       rep("ALDEx2_Wilcoxon rank test", nrow(ALDEx2_results))
-                     ),
-                     group1 = rep(Level[1], 2 * nrow(ALDEx2_results)),
-                     group2 = rep(Level[2], 2 * nrow(ALDEx2_results)),
-                     p_values = c(ALDEx2_results$we.ep, ALDEx2_results$wi.ep)
-                   )
-               },
-               {
-                 messgae("ALDEx2 takes a long time to complete the calculation, please wait patiently.")
-                 ALDEx2_object <-
-                   aldex.clr(
-                     ALDEx2_abundance,
-                     Group,
-                     mc.samples = 256,
-                     denom = "all",
-                     verbose = FALSE
-                   )
-                 ALDEx2_results <- aldex.kw(ALDEx2_object)
-                 p_values_df <-
-                   data.frame(
-                     feature = rep(rownames(ALDEx2_results), 2),
-                     method = c(
-                       rep("ALDEx2_Kruskal-Wallace test", nrow(ALDEx2_results)),
-                       rep("ALDEx2_glm test", nrow(ALDEx2_results))
-                     ),
-                     p_values = c(ALDEx2_results$kw.ep, ALDEx2_results$glm.ep)
-                   )
-                 for (k in 1:length_Level) {
-                   p_values_df <<-
-                     cbind(p_values_df[, 1:(1 + k)],
-                           rep(Level[k], 2 * nrow(ALDEx2_results)),
-                           p_values_df$p_values)
-                 }
-                 colnames(p_values_df)[3:(3 + length_Level)] <-
-                   c(paste0("group", 1:length_Level), "p_values")
-               })
+        if (length_Level == 2){
+          ALDEx2_object <-
+            aldex.clr(
+              ALDEx2_abundance,
+              Group,
+              mc.samples = 256,
+              denom = "all",
+              verbose = FALSE
+            )
+          ALDEx2_results <-
+            aldex.ttest(ALDEx2_object,
+                        paired.test = FALSE,
+                        verbose = FALSE)
+          p_values_df <<-
+            data.frame(
+              feature = rep(rownames(ALDEx2_results), 2),
+              method = c(
+                rep("ALDEx2_Welch's t test", nrow(ALDEx2_results)),
+                rep("ALDEx2_Wilcoxon rank test", nrow(ALDEx2_results))
+              ),
+              group1 = rep(Level[1], 2 * nrow(ALDEx2_results)),
+              group2 = rep(Level[2], 2 * nrow(ALDEx2_results)),
+              p_values = c(ALDEx2_results$we.ep, ALDEx2_results$wi.ep)
+            )
+        } else {
+          messgae("ALDEx2 takes a long time to complete the calculation, please wait patiently.")
+          ALDEx2_object <-
+            aldex.clr(
+              ALDEx2_abundance,
+              Group,
+              mc.samples = 256,
+              denom = "all",
+              verbose = FALSE
+            )
+          ALDEx2_results <- aldex.kw(ALDEx2_object)
+          p_values_df <<-
+            data.frame(
+              feature = rep(rownames(ALDEx2_results), 2),
+              method = c(
+                rep("ALDEx2_Kruskal-Wallace test", nrow(ALDEx2_results)),
+                rep("ALDEx2_glm test", nrow(ALDEx2_results))
+              ),
+              p_values = c(ALDEx2_results$kw.ep, ALDEx2_results$glm.ep)
+            )
+          for (k in 1:length_Level) {
+            p_values_df <<-
+              cbind(p_values_df[, 1:(1 + k)],
+                    rep(Level[k], 2 * nrow(ALDEx2_results)),
+                    p_values_df$p_values)
+          }
+          colnames(p_values_df)[3:(3 + length_Level)] <-
+            c(paste0("group", 1:length_Level), "p_values")
+        }
       },
       "DESeq2" = {
         message("DESeq2 is only suitable for comparison between two groups.")

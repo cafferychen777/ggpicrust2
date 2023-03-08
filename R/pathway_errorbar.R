@@ -27,7 +27,6 @@ pathway_errorbar <-
            p_value_bar = TRUE,
            colors = NULL,
            x_lab = NULL) {
-    group = name = value = feature = nonsense = negative_log10_p = group_nonsense = p_adjust = pathway_class = NULL # due to NSE notes in R CMD check
     if (is.null(x_lab)){
       if (ko_to_kegg == TRUE){
         x_lab <- "pathway_name"
@@ -55,6 +54,7 @@ pathway_errorbar <-
         )
       )
     }
+
     errorbar_sub_abundance_mat <-
       errorbar_abundance_mat[rownames(errorbar_abundance_mat) %in% daa_results_filtered_sub_df$feature,]
     errorbar_sub_relative_abundance_mat <-
