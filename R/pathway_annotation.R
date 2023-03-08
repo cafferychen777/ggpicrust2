@@ -21,21 +21,21 @@ pathway_annotation <-
       file_format <- substr(file, nchar(file) - 3, nchar(file))
       switch(file_format,
         ".txt" = abundance <-
-          read_delim(
+          readr::read_delim(
             file,
             delim = "\t",
             escape_double = FALSE,
             trim_ws = TRUE
           ),
         ".tsv" = abundance <-
-          read_delim(
+          readr::read_delim(
             file,
             delim = "\t",
             escape_double = FALSE,
             trim_ws = TRUE
           ),
         ".csv" = abundance <-
-          read_delim(
+          readr::read_delim(
             file,
             delim = "\t",
             escape_double = FALSE,
@@ -46,7 +46,7 @@ pathway_annotation <-
         )
       )
       abundance <-
-        abundance %>% add_column(
+        abundance %>% tibble::add_column(
           description = rep(NA, length = nrow(abundance)),
           .after = 1
         )

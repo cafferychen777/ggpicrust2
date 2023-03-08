@@ -14,10 +14,10 @@
 ko2kegg_abundance <- function (file)
 {
     file_format <- substr(file, nchar(file) - 3, nchar(file))
-    switch(file_format, .txt = abundance <- read_delim(file,
+    switch(file_format, .txt = abundance <- readr::read_delim(file,
         delim = "\t", escape_double = FALSE, trim_ws = TRUE),
-        .tsv = abundance <- read_delim(file, delim = "\t", escape_double = FALSE,
-            trim_ws = TRUE), .csv = abundance <- read_delim(file,
+        .tsv = abundance <- readr::read_delim(file, delim = "\t", escape_double = FALSE,
+            trim_ws = TRUE), .csv = abundance <- readr::read_delim(file,
             delim = "\t", escape_double = FALSE, trim_ws = TRUE),
         stop("Error: Please input file as .tsv, .txt or .csv\nThe best input file is what you get from picrust2 output file 'pred_metagenome_unstrat.tsv'"))
     message("Calculation may take a long time, please be patient.")

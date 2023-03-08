@@ -81,7 +81,7 @@ ggpicrust2 <- function(file,
            return(daa_results_df) # Return the results data frame
          },
          "FALSE" = {
-           abundance <- read_delim(
+           abundance <- readr::read_delim(
              file,
              # Input file
              delim = "\t",
@@ -91,7 +91,7 @@ ggpicrust2 <- function(file,
              trim_ws = TRUE # Option to trim white spaces
            )
            abundance <-
-             column_to_rownames(abundance, var = "function") # Convert a column to row names
+             tibble::column_to_rownames(abundance, var = "function") # Convert a column to row names
            daa_results_df <- pathway_daa(
              abundance = abundance,
              # Input abundance data

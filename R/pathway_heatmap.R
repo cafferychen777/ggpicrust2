@@ -13,9 +13,10 @@
 #' @import ggplot2
 #' @import tidyr
 
+utils::globalVariables(c("rowname","Sample","Value"))
 pathway_heatmap <- function(abundance, metadata, group) {
   # Make the abundance matrix relative
-  rel_abundance <- make_relative(abundance)
+  rel_abundance <- funrar::make_relative(abundance)
 
   # Convert the abundance matrix to a data frame
   rel_df <- as.data.frame(rel_abundance)

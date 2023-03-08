@@ -10,12 +10,13 @@
 #' @param p_value_bar a logical parameter indicating whether to display a bar showing the p-value threshold for significance.
 #' @param colors a vector of colors to be used to represent the groups in the figure.
 #' @param x_lab a character string to be used as the x-axis label in the figure, which defaults to "description" for KO IDs and "pathway_name" for KEGG pathway IDs.
-#'
+#' @importFrom stats sd
 #' @return A figure
 #' @export
 #'
 #' @examples
 
+utils::globalVariables(c("group", "name", "value", "feature", "negative_log10_p", "group_nonsense", "nonsense", "pathway_class", "p_adjust"))
 pathway_errorbar <-
   function(abundance,
            daa_results_df,
@@ -49,8 +50,8 @@ pathway_errorbar <-
     if (nrow(daa_results_filtered_sub_df) > 30) {
       stop(
         paste0(
-          "The feature with statistically significane are more than 30, the visualization will be terrible.\n Please use select to reduce the number.\n Now you have ",
-          paste(daa_results_filtered_sub_df$feature, collapse = ",")
+          "The feature with statistically significance are more than 30, the visualization will be terrible.\n Please use select to reduce the number.\n Now you have ",
+          paste(paste0('"', daa_results_filtered_sub_df$feature, '"'), collapse = ", ")
         )
       )
     }
@@ -58,7 +59,7 @@ pathway_errorbar <-
     errorbar_sub_abundance_mat <-
       errorbar_abundance_mat[rownames(errorbar_abundance_mat) %in% daa_results_filtered_sub_df$feature,]
     errorbar_sub_relative_abundance_mat <-
-      make_relative(errorbar_sub_abundance_mat)
+      funrar::make_relative(errorbar_sub_abundance_mat)
     error_bar_matrix <-
       cbind(
         sample = colnames(errorbar_sub_relative_abundance_mat),
@@ -78,7 +79,7 @@ pathway_errorbar <-
       as.numeric(error_bar_pivot_longer_tibble$value)
     error_bar_pivot_longer_tibble_summarised <-
       error_bar_pivot_longer_tibble %>% group_by(name, group) %>%
-      summarise(mean = mean(value), sd = sd(value))
+      summarise(mean = mean(value), sd = stats::sd(value))
     error_bar_pivot_longer_tibble_summarised <-
       error_bar_pivot_longer_tibble_summarised %>% mutate(group2 = "nonsense")
     switch(
@@ -170,7 +171,7 @@ pathway_errorbar <-
       ggplot2::geom_bar(stat = "identity",
                position = ggplot2::position_dodge(width = 0.8),
                width = 0.8) +
-      geom_stripped_cols() +
+      GGally::geom_stripped_cols() +
       ggplot2::scale_fill_manual(values = c(colors[1], colors[2])) +
       ggplot2::scale_color_manual(values = c(colors[1], colors[2])) +
       ggprism::theme_prism() +
@@ -274,7 +275,7 @@ pathway_errorbar <-
       ggplot2::geom_hline(aes(yintercept = 1.30103),
                  linetype = 'dashed',
                  color = 'black') +
-      theme_prism() +
+      ggprism::theme_prism() +
       ggplot2::scale_y_continuous(expand = c(0, 0),
                          guide = "prism_offset_minor") +
       ggplot2::labs(y = "P Values (-log10)", x = NULL) +
@@ -386,16 +387,16 @@ pathway_errorbar <-
     if (p_value_bar == TRUE) {
       if (ko_to_kegg == TRUE) {
         combination_bar_plot <-
-          pathway_class_annotation + bar_errorbar + p_values_bar + p_annotation + plot_layout(ncol = 4, widths =
+          pathway_class_annotation + bar_errorbar + p_values_bar + p_annotation + patchwork::plot_layout(ncol = 4, widths =
                                                                                                 c(1, 1.5, 0.5, 0.1))
       }
       else{
         combination_bar_plot <-
-          bar_errorbar + p_values_bar + p_annotation + plot_layout(ncol = 3, widths = c(2.3, 0.7, 0.3))
+          bar_errorbar + p_values_bar + p_annotation + patchwork::plot_layout(ncol = 3, widths = c(2.3, 0.7, 0.3))
       }
     }else{
       combination_bar_plot <-
-        bar_errorbar + p_annotation + plot_layout(ncol = 2, widths = c(2.5,  0.2))
+        bar_errorbar + p_annotation + patchwork::plot_layout(ncol = 2, widths = c(2.5,  0.2))
     }
     return(combination_bar_plot)
   }

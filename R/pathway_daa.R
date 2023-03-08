@@ -37,7 +37,7 @@ pathway_daa <-
            select = NULL,
            p.adjust = "BH",
            reference = NULL) {
-    if (!is_tibble(metadata)) {
+    if (!tibble::is_tibble(metadata)) {
       metadata <- tibble::as_tibble(metadata)
     }
     sample_names <- colnames(abundance)
@@ -74,7 +74,7 @@ pathway_daa <-
         ALDEx2_abundance <- round(abundance)
         if (length_Level == 2){
           ALDEx2_object <-
-            aldex.clr(
+            ALDEx2::aldex.clr(
               ALDEx2_abundance,
               Group,
               mc.samples = 256,
@@ -82,7 +82,7 @@ pathway_daa <-
               verbose = FALSE
             )
           ALDEx2_results <-
-            aldex.ttest(ALDEx2_object,
+            ALDEx2::aldex.ttest(ALDEx2_object,
                         paired.test = FALSE,
                         verbose = FALSE)
           p_values_df <<-
@@ -99,14 +99,14 @@ pathway_daa <-
         } else {
           #messgae("ALDEx2 takes a long time to complete the calculation, please wait patiently.")
           ALDEx2_object <-
-            aldex.clr(
+            ALDEx2::aldex.clr(
               ALDEx2_abundance,
               Group,
               mc.samples = 256,
               denom = "all",
               verbose = FALSE
             )
-          ALDEx2_results <- aldex.kw(ALDEx2_object)
+          ALDEx2_results <- ALDEx2::aldex.kw(ALDEx2_object)
           p_values_df <<-
             data.frame(
               feature = rep(rownames(ALDEx2_results), 2),
@@ -148,15 +148,15 @@ pathway_daa <-
             DESeq2_abundance_mat[, DESeq2_sub_group]
           DESeq2_abundance_mat_sub <- round(DESeq2_abundance_mat_sub)
           DESeq2_object <-
-            DESeqDataSetFromMatrix(
+            DESeq2::DESeqDataSetFromMatrix(
               countData = DESeq2_abundance_mat_sub,
               colData = DESeq2_metadata_sub,
               design = ~ Group_group_nonsense
             )
           DESeq2_object <-
-            estimateSizeFactors(DESeq2_object, type = "poscounts")
-          DESeq2_object_finish <- DESeq(DESeq2_object)
-          DESeq2_results[[i]] <- results(DESeq2_object_finish)
+            BiocGenerics::estimateSizeFactors(DESeq2_object, type = "poscounts")
+          DESeq2_object_finish <- DESeq2::DESeq(DESeq2_object)
+          DESeq2_results[[i]] <- DESeq2::results(DESeq2_object_finish)
         }
         DESeq2_results_nrow <-
           unlist(lapply(DESeq2_results, function(x)
@@ -174,7 +174,7 @@ pathway_daa <-
             ), DESeq2_group_matrix)
         }
         DESeq2_group_matrix <-
-          DESeq2_group_matrix[complete.cases(DESeq2_group_matrix),]
+          DESeq2_group_matrix[stats::complete.cases(DESeq2_group_matrix),]
         colnames(DESeq2_group_matrix) <- c("group1", "group2")
         p_values_matrix <-
           cbind(
@@ -195,7 +195,7 @@ pathway_daa <-
           dplyr::select(Maaslin2_metadata_df, -matching_columns)
         switch(length_Level == 2,
                "TRUE" = {
-                 Maaslin2_results <- Maaslin2(
+                 Maaslin2_results <- Maaslin2::Maaslin2(
                    Maaslin2_abundance_mat,
                    Maaslin2_metadata_df,
                    output = paste0("Maaslin2_results_", group),
@@ -217,7 +217,7 @@ pathway_daa <-
                  p_values_df <- as.data.frame(p_values_matrix)
                },
                {
-                 Maaslin2_results <- Maaslin2(
+                 Maaslin2_results <- Maaslin2::Maaslin2(
                    Maaslin2_abundance_mat,
                    Maaslin2_metadata_df,
                    output = paste0("Maaslin2_results_", group),
@@ -264,7 +264,7 @@ pathway_daa <-
             stop("If you use the LinDA or limma voom, you should give a reference.")
           }
           LinDA_metadata_df$Group_group_nonsense_ <-
-            relevel(LinDA_metadata_df$Group_group_nonsense_, ref = reference)
+            stats::relevel(LinDA_metadata_df$Group_group_nonsense_, ref = reference)
         }
         LinDA_results <- MicrobiomeStat::linda(abundance,
                                                LinDA_metadata_df,
@@ -302,13 +302,13 @@ pathway_daa <-
       "edgeR" = {
         edgeR_abundance_mat <- round(abundance_mat)
         edgeR_object <-
-          DGEList(counts = edgeR_abundance_mat, group = Group)
+          edgeR::DGEList(counts = edgeR_abundance_mat, group = Group)
         edgeR_object <- edgeR::calcNormFactors(edgeR_object)
         edgeR_object <-
-          estimateCommonDisp(edgeR_object, verbose = TRUE)
+          edgeR::estimateCommonDisp(edgeR_object, verbose = TRUE)
         switch(length_Level == 2,
                "TRUE" = {
-                 edgeR_results <- exactTest(edgeR_object, pair = c(1, 2))
+                 edgeR_results <- edgeR::exactTest(edgeR_object, pair = c(1, 2))
                  p_values_matrix <-
                    cbind(
                      feature = rownames(edgeR_abundance_mat),
@@ -324,7 +324,7 @@ pathway_daa <-
                  edgeR_numbers <- seq_along(Level)
                  edgeR_combinations <- utils::combn(edgeR_numbers, 2)
                  for (j in 1:sum(1:(length_Level - 1))) {
-                   DGEExact <- exactTest(edgeR_object, pair = edgeR_combinations[, j])
+                   DGEExact <- edgeR::exactTest(edgeR_object, pair = edgeR_combinations[, j])
                    edgeR_results[[j]] <- cbind(
                      feature = rownames(DGEExact$table),
                      method = "edgeR",
@@ -344,17 +344,17 @@ pathway_daa <-
           if (is.null(reference)) {
             stop("If you use the LinDA or limma voom, you should give a reference.")
           }
-          Group <- relevel(Group, ref = reference)
+          Group <- stats::relevel(Group, ref = reference)
         }else{
           reference <- Level[1]
-          Group <- relevel(Group, ref = reference)
+          Group <- stats::relevel(Group, ref = reference)
         }
         limma_voom_object <-
-          DGEList(counts = limma_voom_abundance_mat, group = Group)
+          edgeR::DGEList(counts = limma_voom_abundance_mat, group = Group)
         limma_voom_object <-
           edgeR::calcNormFactors(limma_voom_object)
-        limma_voom_Fit <- lmFit(voom(limma_voom_object))
-        limma_voom_Fit <- eBayes(limma_voom_Fit)
+        limma_voom_Fit <- limma::lmFit(limma::voom(limma_voom_object))
+        limma_voom_Fit <- limma::eBayes(limma_voom_Fit)
         p_values_matrix <-
           cbind(
             feature = rep(rownames(abundance), length_Level - 1),
@@ -391,15 +391,15 @@ pathway_daa <-
           colnames(metagenomeSeq_metadata_df) <-
             metagenomeSeq_colnames
           metagenomeSeq_phenotypeData <-
-            AnnotatedDataFrame(metagenomeSeq_metadata_df)
+            Biobase::AnnotatedDataFrame(metagenomeSeq_metadata_df)
           metagenomeSeq_object <-
-            newMRexperiment(metagenomeSeq_list[[1]], phenoData = metagenomeSeq_phenotypeData)
+            metagenomeSeq::newMRexperiment(metagenomeSeq_list[[1]], phenoData = metagenomeSeq_phenotypeData)
           metagenomeSeq_object <-
-            cumNorm(metagenomeSeq_object, p = cumNormStatFast(metagenomeSeq_object))
+            metagenomeSeq::cumNorm(metagenomeSeq_object, p = metagenomeSeq::cumNormStatFast(metagenomeSeq_object))
           metagenomeSeq_mod <-
-            model.matrix(~ Group_group_nonsense_, data = pData(metagenomeSeq_object))
+            stats::model.matrix(~ Group_group_nonsense_, data = Biobase::pData(metagenomeSeq_object))
           metagenomeSeq_results <-
-            fitFeatureModel(metagenomeSeq_object, metagenomeSeq_mod)
+            metagenomeSeq::fitFeatureModel(metagenomeSeq_object, metagenomeSeq_mod)
           metagenomeSeq_results_list[[i]] <-
             cbind(
               feature = names(metagenomeSeq_results@pvalues),
@@ -428,23 +428,23 @@ pathway_daa <-
           Lefser_sub_metadata_df$Group_group_nonsense_ <-
             factor(Lefser_sub_metadata_df$Group_group_nonsense_)
           Lefser_object <-
-            SummarizedExperiment(assays = list(counts = as.matrix(Lefser_sub_abundance)),
+            SummarizedExperiment::SummarizedExperiment(assays = list(counts = as.matrix(Lefser_sub_abundance)),
                                  colData = Lefser_sub_metadata_df)
           Lefser_kw_filter <-
             apply(Lefser_object@assays@data$counts, 1L, function(x) {
-              kruskal.test(x ~ as.numeric(Lefser_sub_metadata_df[, "Group_group_nonsense_"]) -
+              stats::kruskal.test(x ~ as.numeric(Lefser_sub_metadata_df[, "Group_group_nonsense_"]) -
                              1)[["p.value"]]
             })
-          if (!sum(na.omit(as.numeric(Lefser_kw_filter < 0.05)))) {
+          if (!sum(stats::na.omit(as.numeric(Lefser_kw_filter < 0.05)))) {
             next
           }
           Lefser_results[[i]] <-
             cbind(
-              feature = lefser(Lefser_object, groupCol = "Group_group_nonsense_")$Names,
+              feature = lefser::lefser(Lefser_object, groupCol = "Group_group_nonsense_")$Names,
               method = "Lefser",
               group1 = Lefser_combinations[, i][1],
               group2 = Lefser_combinations[, i][2],
-              effect_scores = lefser(Lefser_object, groupCol = "Group_group_nonsense_")$scores
+              effect_scores = lefser::lefser(Lefser_object, groupCol = "Group_group_nonsense_")$scores
             )
         }
         p_values_matrix <-

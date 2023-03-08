@@ -11,10 +11,10 @@ pathway_pca <- function(abundance, metadata, group){
   # due to NSE notes in R CMD check
   PC1 = PC2 = Group = NULL
   # Perform PCA on the abundance data, keeping the first two principal components
-  pca_axis <- prcomp(t(abundance), center = TRUE, scale = TRUE)$x[,1:2]
+  pca_axis <- stats::prcomp(t(abundance), center = TRUE, scale = TRUE)$x[,1:2]
 
   # Calculate the proportion of total variation explained by each PC
-  pca_proportion <- prcomp(t(abundance), center = TRUE, scale = TRUE)$sdev[1:2]/sum(prcomp(t(abundance), center = TRUE, scale = TRUE)$sdev)*100
+  pca_proportion <- stats::prcomp(t(abundance), center = TRUE, scale = TRUE)$sdev[1:2]/sum(stats::prcomp(t(abundance), center = TRUE, scale = TRUE)$sdev)*100
 
   # Combine the PCA results with the metadata information
   pca <- cbind(pca_axis, metadata[,group])
