@@ -55,7 +55,6 @@ pathway_errorbar <-
         )
       )
     }
-
     errorbar_sub_abundance_mat <-
       errorbar_abundance_mat[rownames(errorbar_abundance_mat) %in% daa_results_filtered_sub_df$feature,]
     errorbar_sub_relative_abundance_mat <-
@@ -68,9 +67,9 @@ pathway_errorbar <-
       )
     error_bar_df <- as.data.frame(error_bar_matrix)
     error_bar_pivot_longer_df <-
-      pivot_longer(error_bar_df,-c(sample, group))
+      error_bar_pivot_longer_df <- pivot_longer(error_bar_df,-c(sample, group))
     error_bar_pivot_longer_tibble <-
-      mutate(error_bar_pivot_longer_df, group = as.factor(group))
+      mutate(error_bar_pivot_longer_df, group = as.factor(as.matrix(error_bar_pivot_longer_df[,2])))
     error_bar_pivot_longer_tibble$sample <-
       factor(error_bar_pivot_longer_tibble$sample)
     error_bar_pivot_longer_tibble$name <-
@@ -272,7 +271,7 @@ pathway_errorbar <-
       GGally::geom_stripped_cols() +
       ggplot2::scale_fill_manual(values = colors[3]) +
       ggplot2::scale_color_manual(values = colors[3]) +
-      ggplot2::geom_hline(aes(yintercept = 1.30103),
+      ggplot2::geom_hline(ggplot2::aes(yintercept = 1.30103),
                  linetype = 'dashed',
                  color = 'black') +
       ggprism::theme_prism() +

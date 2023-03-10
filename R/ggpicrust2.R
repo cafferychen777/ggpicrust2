@@ -31,14 +31,13 @@ ggpicrust2 <- function(file,
                        select = NULL,
                        reference = NULL,
                        colors = NULL) {
-  # switch function to choose between converting KO abundance to KEGG abundance or not
+  # 创建一个空list
+  plot_result_list <- list()
+
   switch(ko_to_kegg,
          "TRUE" = {
-           # if the ko_to_kegg argument is set to TRUE, call the ko2kegg_abundance function to convert abundance
-           if (ko_to_kegg == TRUE) {
-             abundance <- ko2kegg_abundance(file)
-           }
-           # call pathway_daa function to perform DA analysis
+           plot_result_list <- list()
+           abundance <- ko2kegg_abundance(file)
            daa_results_df <- pathway_daa(
              abundance = abundance,
              metadata = metadata,
@@ -48,96 +47,99 @@ ggpicrust2 <- function(file,
              p.adjust = p.adjust,
              reference = reference
            )
-           # if the x_lab argument is set to "pathway_name", call the pathway_annotation function to add pathway name/description annotations
+           if (sum(as.numeric(daa_results_df$p_adjust <= 0.05)) == 0){
+             stop("There are no statistically significant biomarkers")
+           }
            if (x_lab == "pathway_name") {
              daa_results_df  <-
                pathway_annotation(daa_results_df = daa_results_df, ko_to_kegg = TRUE)
            }
-           # loop over unique values of the "method" column in the daa_results_df dataframe
            j <- 1
            for (i in unique(daa_results_df$method)) {
-             # select rows from the daa_results_df dataframe that have the current method value
+             daa_sub_method_results_df <-
+               daa_results_df[daa_results_df[, "method"] == i,]
+             daa_sub_method_results_df_sorted <- data.frame()
+             if (is.null(select)){
+               daa_sub_method_results_df_sorted <- daa_sub_method_results_df
+             }else if (select == "Top 10"){
+               # 对 daa_sub_method_results_df 按照 p_adjust 进行排序，自小向大
+               daa_sub_method_results_df_sorted <- daa_sub_method_results_df[order(daa_sub_method_results_df$p_adjust),]
+               # 保留 p_adjust 最小的十条记录
+               daa_sub_method_results_df_sorted <- daa_sub_method_results_df_sorted[1:10,]
+             }else if (select == "Top 20"){
+               # 对 daa_sub_method_results_df 按照 p_adjust 进行排序，自小向大
+               daa_sub_method_results_df_sorted <- daa_sub_method_results_df[order(daa_sub_method_results_df$p_adjust),]
+               # 保留 p_adjust 最小的二十条记录
+               daa_sub_method_results_df_sorted <- daa_sub_method_results_df_sorted[1:20,]
+             }else if (select == "Top 30"){
+               # 对 daa_sub_method_results_df 按照 p_adjust 进行排序，自小向大
+               daa_sub_method_results_df_sorted <- daa_sub_method_results_df[order(daa_sub_method_results_df$p_adjust),]
+               # 保留 p_adjust 最小的三十条记录
+               daa_sub_method_results_df_sorted <- daa_sub_method_results_df_sorted[1:30,]
+             }
+             combination_bar_plot <-
+               pathway_errorbar(
+                 abundance = abundance,
+                 daa_results_df = daa_sub_method_results_df_sorted,
+                 Group = metadata[, group],
+                 ko_to_kegg = ko_to_kegg,
+                 order = "pathway_class",
+                 colors = colors,
+                 x_lab = x_lab
+               )
+             # 创建一个子list，包含一个combination_bar_plot和对应的daa_results_df子集
+             sub_list <- list(plot = combination_bar_plot, results = daa_sub_method_results_df)
+             # 将子list添加到主list中
+             plot_result_list[[j]] <- sub_list
+             j <- j + 1
+           }
+           return(plot_result_list)
+         },
+         "FALSE" = {
+           plot_result_list <- list()
+           abundance <- readr::read_delim(
+             file,
+             delim = "\t",
+             escape_double = FALSE,
+             trim_ws = TRUE
+           )
+           abundance <-
+             tibble::column_to_rownames(abundance, var = "function")
+           daa_results_df <- pathway_daa(
+             abundance = abundance,
+             metadata = metadata,
+             group = group,
+             daa_method = daa_method,
+             select = select,
+             p.adjust = p.adjust,
+             reference = reference
+           )
+           daa_results_df <-
+             pathway_annotation(
+               pathway = pathway,
+               ko_to_kegg = FALSE,
+               daa_results_df = daa_results_df
+             )
+           j <- 1
+           for (i in unique(daa_results_df$method)) {
              daa_sub_method_results_df <-
                daa_results_df[daa_results_df[, "method"] == i,]
              combination_bar_plot <-
                pathway_errorbar(
                  abundance,
-                 # Input abundance data
                  daa_sub_method_results_df,
-                 # Results data frame from differential abundance analysis
                  metadata[, group],
-                 # Metadata with group information
                  ko_to_kegg = ko_to_kegg,
-                 # Option to convert KO numbers to KEGG pathway names
-                 order = "pathway_class",
-                 # Order to arrange the pathways in the plot
-                 colors = colors,
-                 # Colors to use in the plot
-                 x_lab = x_lab # Label for the x-axis
-               )
-             print(combination_bar_plot) # Print the combination bar plot
-             #message(paste0("No.", j, " plot is method ", i)) # Message indicating the plot and the method used
-           }
-           return(daa_results_df) # Return the results data frame
-         },
-         "FALSE" = {
-           abundance <- readr::read_delim(
-             file,
-             # Input file
-             delim = "\t",
-             # Delimiter in the file
-             escape_double = FALSE,
-             # Option to escape double quotes
-             trim_ws = TRUE # Option to trim white spaces
-           )
-           abundance <-
-             tibble::column_to_rownames(abundance, var = "function") # Convert a column to row names
-           daa_results_df <- pathway_daa(
-             abundance = abundance,
-             # Input abundance data
-             metadata = metadata,
-             # Metadata
-             group = group,
-             # Group information
-             daa_method = daa_method,
-             # Differential abundance analysis method
-             select = select,
-             # Option to select pathways with significant differences
-             p.adjust = p.adjust,
-             # Method to adjust p-values
-             reference = reference # Option to use a reference group
-           )
-           daa_results_df <-
-             pathway_annotation(
-               pathway = pathway,
-               # Option to use custom pathway names
-               ko_to_kegg = FALSE,
-               # Option to convert KO numbers to KEGG pathway names
-               daa_results_df = daa_results_df # Results data frame from differential abundance analysis
-             )
-           for (i in unique(daa_results_df$method)) {
-             # Loop through unique methods
-             daa_sub_method_results_df <-
-               daa_results_df[daa_results_df[, "method"] == i,] # Subset results for each method
-             combination_bar_plot <-
-               pathway_errorbar(
-                 abundance,
-                 # Input abundance data
-                 daa_sub_method_results_df,
-                 # Results data frame from differential abundance analysis
-                 metadata[, group],
-                 # Metadata with group information
-                 ko_to_kegg = ko_to_kegg,
-                 # Option to convert KO numbers to KEGG pathway names
                  order = order,
-                 # Order to arrange the pathways in the plot
                  colors = colors,
-                 # Colors to use in the plot
-                 x_lab = x_lab # Label for the x-axis
+                 x_lab = x_lab
                )
-             print(combination_bar_plot) # Print the combination bar plot
-             #message(paste0("No.", j, " plot is method ", i)) # Message indicating the plot and the method used
+             # 创建一个子list
+             sub_list <- list(plot = combination_bar_plot, results = daa_sub_method_results_df)
+             # 将子list添加到主list中
+             plot_result_list[[j]] <- sub_list
+             j <- j + 1
            }
-           return(daa_results_df) # Return the results data frame
+           return(plot_result_list)
          })
 }

@@ -109,6 +109,9 @@ pathway_annotation <-
       } else {
         daa_results_filtered_df <-
           daa_results_df[daa_results_df$p_adjust < 0.05, ]
+        if (nrow(daa_results_filtered_df) == 0 ){
+          stop("There are no statistically significant biomarker")
+        }
         daa_results_filtered_df$pathway_name <- NA
         daa_results_filtered_df$pathway_description <- NA
         daa_results_filtered_df$pathway_class <- NA

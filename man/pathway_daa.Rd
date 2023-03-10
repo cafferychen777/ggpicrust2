@@ -37,7 +37,7 @@ Predictional functional patwhay differential abundance (DA)
 }
 \examples{
 library(ggpicrust2)
-library(ALDEx2)
+library(MicrobiomeStat)
 abundance <- data.frame(sample1 = c(10, 20, 30),
 sample2 = c(20, 30, 40),
 sample3 = c(30, 40, 50),
@@ -49,8 +49,6 @@ metadata <- tibble::tibble(sample = paste0("sample", 1:5),
 group = c("control", "control", "treatment", "treatment", "treatment"))
 
 # Run pathway_daa function
-result <- pathway_daa(abundance = abundance, metadata = metadata, group = "group")
-
-# Print result
-print(result)
+result <- pathway_daa(abundance = abundance, metadata = metadata, group = "group",
+daa_method = "LinDA")
 }
