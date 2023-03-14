@@ -16,7 +16,7 @@
 #'
 #' @examples
 
-utils::globalVariables(c("group", "name", "value", "feature", "negative_log10_p", "group_nonsense", "nonsense", "pathway_class", "p_adjust"))
+utils::globalVariables(c("group", "name", "value", "feature", "negative_log10_p", "group_nonsense", "nonsense", "pathway_class", "p_adjust", "log_2_fold_change"))
 pathway_errorbar <-
   function(abundance,
            daa_results_df,
@@ -66,10 +66,9 @@ pathway_errorbar <-
         t(errorbar_sub_relative_abundance_mat)
       )
     error_bar_df <- as.data.frame(error_bar_matrix)
-    error_bar_pivot_longer_df <-
       error_bar_pivot_longer_df <- pivot_longer(error_bar_df,-c(sample, group))
     error_bar_pivot_longer_tibble <-
-      mutate(error_bar_pivot_longer_df, group = as.factor(as.matrix(error_bar_pivot_longer_df[,2])))
+      mutate(error_bar_pivot_longer_df, group = as.factor(group))
     error_bar_pivot_longer_tibble$sample <-
       factor(error_bar_pivot_longer_tibble$sample)
     error_bar_pivot_longer_tibble$name <-
@@ -108,7 +107,7 @@ pathway_errorbar <-
       },
       "pathway_class" = {
         if (!"pathway_class" %in% colnames(daa_results_filtered_sub_df)) {
-          stop("Please use pathway_annotation function to annotation the pathway_daa results")
+          stop("Please use pathway_annotation function to annotate the pathway_daa results")
         }
         order <- order(
           daa_results_filtered_sub_df$pathway_class,
@@ -258,26 +257,30 @@ pathway_errorbar <-
       cbind(
         daa_results_filtered_sub_df,
         negative_log10_p = -log10(daa_results_filtered_sub_df$p_adjust),
-        group_nonsense = "nonsense"
+        group_nonsense = "nonsense",
+        log_2_fold_change = NA
       )
 
-
+    for (i in daa_results_filtered_sub_df$feature){
+      mean <- error_bar_pivot_longer_tibble_summarised_ordered[error_bar_pivot_longer_tibble_summarised_ordered$name %in% i,]$mean
+      daa_results_filtered_sub_df[daa_results_filtered_sub_df$feature==i,]$log_2_fold_change <- log2(mean[1]/mean[2])
+    }
+    daa_results_filtered_sub_df$feature <- factor(daa_results_filtered_sub_df$feature,levels = levels(error_bar_pivot_longer_tibble_summarised_ordered$name))
     p_values_bar <- daa_results_filtered_sub_df %>%
-      ggplot2::ggplot(ggplot2::aes(feature, negative_log10_p, fill = group_nonsense)) +
+      ggplot2::ggplot(ggplot2::aes(feature, log_2_fold_change, fill = group_nonsense)) +
       ggplot2::geom_bar(stat = "identity",
                position = ggplot2::position_dodge(width = 0.8),
                width = 0.8) +
-      ggplot2::labs(y = "P Value (-log 10)", x = NULL) +
+      ggplot2::labs(y = "log2 fold change", x = NULL) +
       GGally::geom_stripped_cols() +
       ggplot2::scale_fill_manual(values = colors[3]) +
       ggplot2::scale_color_manual(values = colors[3]) +
-      ggplot2::geom_hline(ggplot2::aes(yintercept = 1.30103),
+      ggplot2::geom_hline(ggplot2::aes(yintercept = 0),
                  linetype = 'dashed',
                  color = 'black') +
       ggprism::theme_prism() +
       ggplot2::scale_y_continuous(expand = c(0, 0),
                          guide = "prism_offset_minor") +
-      ggplot2::labs(y = "P Values (-log10)", x = NULL) +
       ggplot2::theme(
         axis.ticks.y = ggplot2::element_blank(),
         axis.line.y = ggplot2::element_blank(),
@@ -364,7 +367,7 @@ pathway_errorbar <-
         fontface = "bold",
         family = "sans"
       ) +
-      ggplot2::labs(y = "p-value (corrected)") +
+      ggplot2::labs(y = "p-value (adjusted)") +
       ggplot2::scale_y_discrete(position = "right") +
       ggprism::theme_prism() +
       ggplot2::theme(
@@ -378,7 +381,7 @@ pathway_errorbar <-
         axis.title.y =  ggplot2::element_text(
           size = 11,
           color = "black",
-          hjust = 0.5
+          vjust = 0
         ),
         axis.title.x = ggplot2::element_blank(),
         legend.position = "non"
@@ -387,7 +390,7 @@ pathway_errorbar <-
       if (ko_to_kegg == TRUE) {
         combination_bar_plot <-
           pathway_class_annotation + bar_errorbar + p_values_bar + p_annotation + patchwork::plot_layout(ncol = 4, widths =
-                                                                                                c(1, 1.5, 0.5, 0.1))
+                                                                                                c(1, 1.2, 0.5, 0.1))
       }
       else{
         combination_bar_plot <-

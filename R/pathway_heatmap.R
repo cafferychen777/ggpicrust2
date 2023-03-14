@@ -18,12 +18,14 @@ pathway_heatmap <- function(abundance, metadata, group) {
   # Make the abundance matrix relative
   rel_abundance <- funrar::make_relative(abundance)
 
+
   # Convert the abundance matrix to a data frame
   rel_df <- as.data.frame(rel_abundance)
 
   # Order the samples based on the environment information
   ordered_metadata <- metadata[order(metadata[, group]),]
   order <- ordered_metadata$sample_name
+
 
   # Convert the abundance data frame to a long format
   long_df <- rel_df %>%
@@ -40,25 +42,24 @@ pathway_heatmap <- function(abundance, metadata, group) {
     ggplot2::ggplot(data = long_df,
                     mapping = ggplot2::aes(x = Sample, y = rowname, fill = Value)) +
     ggplot2::geom_tile() +
-    ggplot2::scale_fill_gradientn(colours = c("#4575b4",
-                                                       "#f7f7f7",
-                                                       "#d73027")) +
+    ggplot2::scale_fill_gradientn(colours = c("#0571b0","#92c5de","white","#f4a582","#ca0020"), breaks = c(0,0.1,0.2, 0.4, 0.6)) +
     ggplot2::labs(x = NULL, y = NULL) +
     ggplot2::scale_y_discrete(expand = c(0, 0), position = "left") +
     ggplot2::scale_x_discrete(expand = c(0, 0)) +
     # Customize the appearance of the heatmap
     ggplot2::theme(
       axis.text.x = ggplot2::element_blank(),
-      axis.text.y = ggplot2::element_blank(),
+      axis.text.y = ggplot2::element_text(size = 12, color = "black"),
       axis.ticks = ggplot2::element_blank(),
       axis.text = ggplot2::element_text(
         color = "black",
         size = 10,
         face = "bold"
       ),
-      legend.title = ggplot2::element_blank(),
-      legend.text = ggplot2::element_blank(),
-      panel.background = ggplot2::element_blank()
+      legend.title = ggplot2::element_text(size = 12, color = "black",face = "bold"),
+      legend.text = ggplot2::element_text(size = 12, color = "black",face = "bold"),
+      panel.background = ggplot2::element_blank(),
+      legend.margin = ggplot2::margin(l = 0, unit = "cm")
     ) +
     # Add a color bar to the heatmap
     ggplot2::guides(
@@ -66,7 +67,12 @@ pathway_heatmap <- function(abundance, metadata, group) {
         direction = "vertical",
         reverse = F,
         barwidth = unit(0.6, "cm"),
-        barheight = unit(18.5, "cm")
+        barheight = unit(9, "cm"),
+        title = "Abundance(%)",
+        title.position = "top",
+        title.hjust = -1,
+        ticks = TRUE,
+        label = TRUE
       )
     )
 

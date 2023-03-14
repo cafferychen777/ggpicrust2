@@ -45,7 +45,9 @@ pathway_pca <- function(abundance, metadata, group){
           panel.background = ggplot2::element_blank(),
           axis.text = ggplot2::element_text(color="black",size=10,face = "bold"),
           legend.text = ggplot2::element_text(size = 16, face = "bold"),
-          legend.title = ggplot2::element_text(size = 16, face = "bold"))
+          legend.title = ggplot2::element_text(size = 16, face = "bold"))+
+    ggplot2::geom_vline(xintercept = 0, linetype = "dashed", color = "black") +
+    ggplot2::geom_hline(yintercept = 0, linetype = "dashed", color = "black")
 
   # Create a ggplot object for the density plot of PC1
   # Plot the density of PC1 colored by Group

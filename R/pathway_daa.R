@@ -17,12 +17,10 @@
 #' abundance <- data.frame(sample1 = c(10, 20, 30),
 #' sample2 = c(20, 30, 40),
 #' sample3 = c(30, 40, 50),
-#' sample4 = c(40, 50, 60),
-#' sample5 = c(50, 60, 70),
 #' row.names = c("pathway1", "pathway2", "pathway3"))
 #'
-#' metadata <- tibble::tibble(sample = paste0("sample", 1:5),
-#' group = c("control", "control", "treatment", "treatment", "treatment"))
+#' metadata <- tibble::tibble(sample = paste0("sample", 1:3),
+#' group = c("control", "control", "treatment"))
 #'
 #' # Run pathway_daa function
 #' result <- pathway_daa(abundance = abundance, metadata = metadata, group = "group",
