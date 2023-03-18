@@ -66,7 +66,7 @@ pathway_errorbar <-
         t(errorbar_sub_relative_abundance_mat)
       )
     error_bar_df <- as.data.frame(error_bar_matrix)
-      error_bar_pivot_longer_df <- pivot_longer(error_bar_df,-c(sample, group))
+      error_bar_pivot_longer_df <- tidyr::pivot_longer(error_bar_df,-c(sample, group))
     error_bar_pivot_longer_tibble <-
       mutate(error_bar_pivot_longer_df, group = as.factor(group))
     error_bar_pivot_longer_tibble$sample <-
@@ -265,7 +265,7 @@ pathway_errorbar <-
       mean <- error_bar_pivot_longer_tibble_summarised_ordered[error_bar_pivot_longer_tibble_summarised_ordered$name %in% i,]$mean
       daa_results_filtered_sub_df[daa_results_filtered_sub_df$feature==i,]$log_2_fold_change <- log2(mean[1]/mean[2])
     }
-    daa_results_filtered_sub_df$feature <- factor(daa_results_filtered_sub_df$feature,levels = levels(error_bar_pivot_longer_tibble_summarised_ordered$name))
+    daa_results_filtered_sub_df$feature <- factor(daa_results_filtered_sub_df$feature,levels = rev(daa_results_filtered_sub_df$feature))
     p_values_bar <- daa_results_filtered_sub_df %>%
       ggplot2::ggplot(ggplot2::aes(feature, log_2_fold_change, fill = group_nonsense)) +
       ggplot2::geom_bar(stat = "identity",

@@ -59,7 +59,7 @@ ggpicrust2 <- function(file,
              daa_sub_method_results_df <-
                daa_results_df[daa_results_df[, "method"] == i,]
              daa_sub_method_results_df_sorted <- data.frame()
-             if (is.null(select)){
+             if (select == "NULL"){
                daa_sub_method_results_df_sorted <- daa_sub_method_results_df
              }else if (select == "Top 10"){
                # 对 daa_sub_method_results_df 按照 p_adjust 进行排序，自小向大
