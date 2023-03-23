@@ -36,6 +36,7 @@ a data frame containing the differential abundance analysis results.
 Predictional functional patwhay differential abundance (DA)
 }
 \examples{
+\dontrun{
 library(ggpicrust2)
 library(MicrobiomeStat)
 abundance <- data.frame(sample1 = c(10, 20, 30),
@@ -46,7 +47,8 @@ row.names = c("pathway1", "pathway2", "pathway3"))
 metadata <- tibble::tibble(sample = paste0("sample", 1:3),
 group = c("control", "control", "treatment"))
 
-# Run pathway_daa function
-# result <- pathway_daa(abundance = abundance, metadata = metadata, group = "group",
-# daa_method = "LinDA")
+Run pathway_daa function
+result <- pathway_daa(abundance = abundance, metadata = metadata, group = "group",
+daa_method = "LinDA")
+}
 }
