@@ -23,8 +23,8 @@
 #' group = c("control", "control", "treatment"))
 #'
 #' # Run pathway_daa function
-#' result <- pathway_daa(abundance = abundance, metadata = metadata, group = "group",
-#' daa_method = "LinDA")
+#' # result <- pathway_daa(abundance = abundance, metadata = metadata, group = "group",
+#' # daa_method = "LinDA")
 pathway_daa <-
   function(abundance,
            metadata,
