@@ -11,6 +11,9 @@
 #' @param colors a vector of colors to be used to represent the groups in the figure.
 #' @param x_lab a character string to be used as the x-axis label in the figure, which defaults to "description" for KO IDs and "pathway_name" for KEGG pathway IDs.
 #' @importFrom stats sd
+#' @value
+#' A ggplot2 plot (`plot`)
+#' Plot visualizes the differential abundance results of a specific DA method, and the corresponding dataframe contains the results used to create the plot.
 #' @return A figure
 #' @export
 #'

@@ -53,3 +53,21 @@ daa.results.df, a dataframe of DA results
 \description{
 This function integrates pathway name/description annotations, ten of the most advanced differential abundance (DA) methods, and visualization of DA results.
 }
+\examples{
+\dontrun{
+# Load necessary data: abundance data and metadata
+abundance_file <- "path/to/your/abundance_file.tsv"
+metadata <- read.csv("path/to/your/metadata.csv")
+
+# Run ggpicrust2 with desired parameters
+results <- ggpicrust2(file = abundance_file,
+                      metadata = metadata,
+                      group = "your_group_column",
+                      pathway = "KO",
+                      daa_method = "ALDEx2")
+
+# Access the plot and results dataframe for the first DA method
+example_plot <- results[[1]]$plot
+example_results <- results[[1]]$results
+}
+}

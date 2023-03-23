@@ -1,15 +1,22 @@
 #' Convert KO abundance in picrust2 export files to KEGG pathway abundance
 #'
-#' This function takes a file containing KO abundance in picrust2 export format and converts it to KEGG pathway abundance.
+#' Takes a file containing KO abundance in picrust2 export format and converts it to KEGG pathway abundance.
 #' The file should be in .tsv, .txt or .csv format.
 #'
 #' @param file A character, the address of the file containing KO abundance in picrust2 export format
 #'
-#' @return A data frame, kegg_abundance, with KEGG pathway abundance values
+#' @value
+#' A data frame with KEGG pathway abundance values. Rows represent KEGG pathways, and columns represent samples. Each cell contains the abundance of a specific KEGG pathway in a given sample.
 #'
 #' @examples
+#' \dontrun{
+#' library(ggpicrust2)
+#' # Prepare an example input file
+#' input_file <- system.file("extdata", "example_ko_abundance.tsv", package = "ggpicrust2")
 #'
-#'
+#' # Run ko2kegg_abundance function
+#' kegg_abundance <- ko2kegg_abundance(file = input_file)
+#' }
 #' @export
 ko2kegg_abundance <- function (file)
 {

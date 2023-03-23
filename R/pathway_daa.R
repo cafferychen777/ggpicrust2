@@ -9,6 +9,14 @@
 #' @param reference a character specifying the reference group level, required for several differential abundance analysis methods such as LinDA, limme voom and Maaslin2, default is NULL
 #'
 #' @return  a data frame containing the differential abundance analysis results.
+#' @value
+#' A data frame containing the differential abundance analysis results. The data frame has the following columns:
+#' \itemize{
+#'   \item \code{feature}: The feature ID of the pathway.
+#'   \item \code{statistic}: The test statistic for the differential abundance analysis.
+#'   \item \code{p_value}: The raw p-value for the differential abundance analysis.
+#'   \item \code{p_adjust}: The adjusted p-value for the differential abundance analysis.
+#' }
 #' @export
 #'
 #' @examples
@@ -81,7 +89,7 @@ pathway_daa <-
             ALDEx2::aldex.ttest(ALDEx2_object,
                         paired.test = FALSE,
                         verbose = FALSE)
-          p_values_df <<-
+          p_values_df <-
             data.frame(
               feature = rep(rownames(ALDEx2_results), 2),
               method = c(
@@ -103,7 +111,7 @@ pathway_daa <-
               verbose = FALSE
             )
           ALDEx2_results <- ALDEx2::aldex.kw(ALDEx2_object)
-          p_values_df <<-
+          p_values_df <-
             data.frame(
               feature = rep(rownames(ALDEx2_results), 2),
               method = c(
@@ -113,7 +121,7 @@ pathway_daa <-
               p_values = c(ALDEx2_results$kw.ep, ALDEx2_results$glm.ep)
             )
           for (k in 1:length_Level) {
-            p_values_df <<-
+            p_values_df <-
               cbind(p_values_df[, 1:(1 + k)],
                     rep(Level[k], 2 * nrow(ALDEx2_results)),
                     p_values_df$p_values)
@@ -179,7 +187,7 @@ pathway_daa <-
             DESeq2_group_matrix,
             p_values = as.vector(DESeq2_results_matrix[, "pvalue"])
           )
-        p_values_df <<- as.data.frame(p_values_matrix)
+        p_values_df <- as.data.frame(p_values_matrix)
       },
       "Maaslin2" = {
         Maaslin2_abundance_mat <- abundance_mat
@@ -232,7 +240,7 @@ pathway_daa <-
                      group2 = reference,
                      p_values = Maaslin2_results$results$pval
                    )
-                 p_values_df <<- as.data.frame(p_values_matrix)
+                 p_values_df <- as.data.frame(p_values_matrix)
                })
         message(
           paste0(
@@ -293,7 +301,7 @@ pathway_daa <-
           }
         }
         p_values_matrix <- as.matrix(do.call(rbind, LinDA_results))
-        p_values_df <<- as.data.frame(p_values_matrix)
+        p_values_df <- as.data.frame(p_values_matrix)
       },
       "edgeR" = {
         edgeR_abundance_mat <- round(abundance_mat)
@@ -331,7 +339,7 @@ pathway_daa <-
                  }
                  p_values_matrix <-
                    as.matrix(do.call(rbind, edgeR_results))
-                 p_values_df <<- as.data.frame(p_values_matrix)
+                 p_values_df <- as.data.frame(p_values_matrix)
                })
       },
       "limma voom" = {
@@ -361,7 +369,7 @@ pathway_daa <-
             ), each = nrow(abundance)),
             p_values = c(limma_voom_Fit$p.value[,-1])
           )
-        p_values_df <<- as.data.frame(p_values_matrix)
+        p_values_df <- as.data.frame(p_values_matrix)
       },
       "metagenomeSeq" = {
         metagenomeSeq_combinations <- utils::combn(Level, 2)
@@ -407,7 +415,7 @@ pathway_daa <-
         }
         p_values_matrix <-
           as.matrix(do.call(rbind, metagenomeSeq_results_list))
-        p_values_df <<- as.data.frame(p_values_matrix)
+        p_values_df <- as.data.frame(p_values_matrix)
       }
       ,
       "Lefser" = {
@@ -445,7 +453,7 @@ pathway_daa <-
         }
         p_values_matrix <-
           as.matrix(do.call(rbind, Lefser_results))
-        p_values_df <<- as.data.frame(p_values_matrix)
+        p_values_df <- as.data.frame(p_values_matrix)
         return(p_values_df)
       }
     )

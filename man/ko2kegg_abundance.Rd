@@ -9,10 +9,17 @@ ko2kegg_abundance(file)
 \arguments{
 \item{file}{A character, the address of the file containing KO abundance in picrust2 export format}
 }
-\value{
-A data frame, kegg_abundance, with KEGG pathway abundance values
-}
 \description{
-This function takes a file containing KO abundance in picrust2 export format and converts it to KEGG pathway abundance.
+Takes a file containing KO abundance in picrust2 export format and converts it to KEGG pathway abundance.
 The file should be in .tsv, .txt or .csv format.
+}
+\examples{
+\dontrun{
+library(ggpicrust2)
+# Prepare an example input file
+input_file <- system.file("extdata", "example_ko_abundance.tsv", package = "ggpicrust2")
+
+# Run ko2kegg_abundance function
+kegg_abundance <- ko2kegg_abundance(file = input_file)
+}
 }

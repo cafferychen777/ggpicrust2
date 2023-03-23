@@ -5,10 +5,32 @@
 #' @param daa_results_df A data frame, output of pathway_daa
 #' @param ko_to_kegg A character, decide if convert ko abundance to kegg pathway abundance
 #'
-#' @return
+#' @return A data frame containing pathway annotation information. The data frame has the following columns:
+#' \itemize{
+#'   \item \code{feature}: The feature ID of the pathway (e.g., KO, EC, or MetaCyc ID).
+#'   \item \code{description}: The description or name of the pathway.
+#'   \item Other columns depending on the input parameters and type of pathway.
+#' }
+#' If \code{ko_to_kegg} is set to TRUE, the output data frame will also include the following columns:
+#' \itemize{
+#'   \item \code{pathway_name}: The name of the KEGG pathway.
+#'   \item \code{pathway_description}: The description of the KEGG pathway.
+#'   \item \code{pathway_class}: The class of the KEGG pathway.
+#'   \item \code{pathway_map}: The KEGG pathway map ID.
+#' }
+#'
 #' @export
 #'
 #' @examples
+#' \dontrun{
+#' # Prepare the required input files and data frames
+#' # Then, you can use the pathway_annotation function as follows:
+#'
+#' result <- pathway_annotation(file = "path/to/picrust2/export/file.txt",
+#'                              pathway = "KO",
+#'                              daa_results_df = NULL,
+#'                              ko_to_kegg = FALSE)
+#'}
 pathway_annotation <-
   function(file = NULL,
            pathway = NULL,
