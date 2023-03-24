@@ -34,6 +34,12 @@
     <loc>/reference/pathway_daa.html</loc>
   </url>
   <url>
+    <loc>/reference/pathway_errorbar.html</loc>
+  </url>
+  <url>
+    <loc>/reference/pathway_heatmap.html</loc>
+  </url>
+  <url>
     <loc>/reference/pathway_pca.html</loc>
   </url>
 </urlset>
