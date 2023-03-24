@@ -20,7 +20,7 @@
 #' @export
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' library(ggpicrust2)
 #' library(MicrobiomeStat)
 #' abundance <- data.frame(sample1 = c(10, 20, 30),
@@ -31,7 +31,7 @@
 #' metadata <- tibble::tibble(sample = paste0("sample", 1:3),
 #' group = c("control", "control", "treatment"))
 #'
-#' Run pathway_daa function
+#' #Run pathway_daa function
 #' result <- pathway_daa(abundance = abundance, metadata = metadata, group = "group",
 #' daa_method = "LinDA")
 #' }

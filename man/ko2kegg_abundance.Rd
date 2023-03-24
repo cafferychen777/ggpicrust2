@@ -7,11 +7,14 @@
 ko2kegg_abundance(file)
 }
 \arguments{
-\item{file}{A character, the address of the file containing KO abundance in picrust2 export format}
+\item{file}{A character string representing the file path of the input file containing KO abundance data in picrust2 export format. The input file should have KO identifiers in the first column and sample identifiers in the first row. The remaining cells should contain the abundance values for each KO-sample pair.}
+}
+\value{
+A data frame with KEGG pathway abundance values. Rows represent KEGG pathways, identified by their KEGG pathway IDs. Columns represent samples, identified by their sample IDs from the input file. Each cell contains the abundance of a specific KEGG pathway in a given sample, calculated by summing the abundances of the corresponding KOs in the input file.
 }
 \description{
-Takes a file containing KO abundance in picrust2 export format and converts it to KEGG pathway abundance.
-The file should be in .tsv, .txt or .csv format.
+This function takes a file containing KO (KEGG Orthology) abundance data in picrust2 export format and converts it to KEGG pathway abundance data.
+The input file should be in .tsv, .txt, or .csv format.
 }
 \examples{
 \dontrun{

@@ -2,6 +2,7 @@
 #'
 #' This function creates a heatmap of the predicted functional pathway abundance data. The function first makes the abundance data relative, then converts the abundance data to a long format and orders the samples based on the environment information. The heatmap is then created using the `ggplot2` library. The color palette, appearance and the color bar of the heatmap can be customized using the `scale_fill_gradientn`, `theme` and `guides` functions respectively.
 #'
+#' @name pathway_heatmap
 #' @param abundance A matrix or data frame of pathway abundance data, where columns correspond to samples and rows correspond to pathways.
 #' @param metadata A data frame of metadata, where each row corresponds to a sample and each column corresponds to a metadata variable.
 #' @param group A character string specifying the column name in the metadata data frame that contains the group variable.
@@ -14,7 +15,6 @@
 #' @import tidyr
 #'
 #' @examples
-#' \dontrun{
 #' # Create example functional pathway abundance data
 #' abundance_example <- matrix(rnorm(30), nrow = 10, ncol = 3)
 #' rownames(abundance_example) <- paste0("Sample", 1:10)
@@ -27,9 +27,6 @@
 #' # Create a heatmap
 #' heatmap_plot <- pathway_heatmap(t(abundance_example), metadata_example, "group")
 #' print(heatmap_plot)
-#' }
-
-
 utils::globalVariables(c("rowname","Sample","Value"))
 pathway_heatmap <- function(abundance, metadata, group) {
   # Make the abundance matrix relative

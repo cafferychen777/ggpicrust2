@@ -7,7 +7,6 @@
 #' @export
 #'
 #' @examples
-#' \dontrun{
 #' # Create example functional pathway abundance data
 #' abundance_example <- data.frame(A = rnorm(10), B = rnorm(10), C = rnorm(10))
 #'
@@ -18,7 +17,6 @@
 #' # Perform PCA and create visualizations
 #' pca_plot <- pathway_pca(t(abundance_example), metadata_example, "group")
 #' print(pca_plot)
-#' }
 pathway_pca <- function(abundance, metadata, group){
   # due to NSE notes in R CMD check
   PC1 = PC2 = Group = NULL
