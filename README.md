@@ -14,17 +14,35 @@ mechanisms at play in your picrust2 output data. So if you are
 interested in exploring the output data of picrust2, ggpicrust2 is the
 tool you need.
 
+## Citation
+
+If you use ggpicrust2 in your research, please cite the following paper:
+
+Chen Yang, Aaron Burberry, Jiahao Mai, Liangliang Zhang. (2023).
+ggpicrust2: an R package for PICRUSt2 predicted functional profile
+analysis and visualization. arXiv preprint arXiv:2303.10388.
+
+BibTeX entry: @misc{yang2023ggpicrust2, title={ggpicrust2: an R package
+for PICRUSt2 predicted functional profile analysis and visualization},
+author={Chen Yang and Aaron Burberry and Jiahao Mai and Liangliang
+Zhang}, year={2023}, eprint={2303.10388}, archivePrefix={arXiv},
+primaryClass={stat.AP} }
+
 ## Installation
 
-You can install the development version of ggpicrust2 from
-[GitHub](https://github.com/) with:
+You can install the stable version of ggpicrust2 from CRAN with:
+
+``` r
+install.packages("ggpicrust2")
+```
+
+To install the latest development version of ggpicrust2 from GitHub, you
+can use:
 
 ``` r
 # install.packages("devtools")
 devtools::install_github("cafferychen777/ggpicrust2")
 ```
-
-We are actively preparing to upload the package to bioconductor.
 
 ## Workflow
 
@@ -199,35 +217,68 @@ pathway_errorbar(abundance = abundance,
 
 ### pathway_heatmap
 
-pathway_heatmap() can visualize the patterns in PICRUSt2 output data,
-which can be useful for identifying trends or highlighting areas of
-in-terest.
+In this section, we will demonstrate how to create a pathway heatmap
+using the `pathway_heatmap` function in the ggpicrust2 package. This
+function visualizes the relative abundance of pathways in different
+samples.
+
+First, we will create some example functional pathway abundance data and
+metadata:
 
 ``` r
-abundance <- ko2kegg_abundance(ko_abundance_file)
-metadata <-
-  read_delim(
-    "~/Microbiome/C9orf72/Code And Data/new_metadata.txt",
-    delim = "\t",
-    escape_double = FALSE,
-    trim_ws = TRUE
-  )
-group <- "Enviroment"
-pathway_heatmap(abundance = abundance, metadata = metadata, group = group)
+# Create example functional pathway abundance data
+abundance_example <- matrix(rnorm(30), nrow = 10, ncol = 3)
+rownames(abundance_example) <- paste0("Sample", 1:10)
+colnames(abundance_example) <- c("PathwayA", "PathwayB", "PathwayC")
+
+# Create example metadata
+# Please change your sample id's name to sample_name
+metadata_example <- data.frame(sample_name = rownames(abundance_example),
+                               group = factor(rep(c("Control", "Treatment"), each = 5)))
+```
+
+Next, we will use the pathway_heatmap function to create a heatmap:
+
+``` r
+# Create a heatmap
+heatmap_plot <- ggpicrust2::pathway_heatmap(t(abundance_example), metadata_example, "group")
+```
+
+Finally, we will display the resulting heatmap:
+
+``` r
+print(heatmap_plot)
 ```
 
 ### pathway_pca()
 
-pathway_pca() can show the difference after dimensional reduction by
-PCA.
+In this section, we will demonstrate how to perform Principal Component
+Analysis (PCA) on functional pathway abundance data and create
+visualizations of the PCA results using the `pathway_pca` function in
+the ggpicrust2 package.
+
+First, we will create some example functional pathway abundance data and
+metadata:
 
 ``` r
-# generate example abundance matrix and metadata dataframe
-abundance <- matrix(rnorm(200), ncol = 20)
-metadata <- data.frame(Group = rep(c("A", "B"), each = 10),
-                       Treatment = rep(c("X", "Y"), 10))
+# Create example functional pathway abundance data
+abundance_example <- data.frame(A = rnorm(10), B = rnorm(10), C = rnorm(10))
 
-# perform PCA and create plot
-pathway_pca_plot <- pathway_pca(abundance = abundance, metadata = metadata, group = "Group")
-print(pathway_pca_plot)
+# Create example metadata
+metadata_example <- tibble::tibble(sample_id = 1:10,
+                                   group = factor(rep(c("Control", "Treatment"), each = 5)))
+```
+
+Next, we will use the pathway_pca function to perform PCA and create
+visualizations:
+
+``` r
+# Perform PCA and create visualizations
+pca_plot <- ggpicrust2::pathway_pca(t(abundance_example), metadata_example, "group")
+```
+
+Finally, we will display the resulting PCA plot:
+
+``` r
+print(pca_plot)
 ```

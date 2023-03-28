@@ -15,19 +15,40 @@ knitr::opts_chunk$set(
 
 # ggpicrust2
 
-
 ggpicrust2 is a comprehensive package that integrates pathway name/description annotations, ten of the most advanced differential abundance (DA) methods, and visualization of DA results. It offers a comprehensive solution for analyzing and interpreting the results of picrust2 functional prediction in a seamless and intuitive way. Whether you are a researcher, data scientist, or bioinformatician, ggpicrust2 can help you better understand the underlying biological processes and mechanisms at play in your picrust2 output data. So if you are interested in exploring the output data of picrust2, ggpicrust2 is the tool you need.
+
+## Citation
+
+If you use ggpicrust2 in your research, please cite the following paper:
+
+Chen Yang, Aaron Burberry, Jiahao Mai, Liangliang Zhang. (2023). ggpicrust2: an R package for PICRUSt2 predicted functional profile analysis and visualization. arXiv preprint arXiv:2303.10388.
+
+BibTeX entry:
+@misc{yang2023ggpicrust2,
+title={ggpicrust2: an R package for PICRUSt2 predicted functional profile analysis and visualization},
+author={Chen Yang and Aaron Burberry and Jiahao Mai and Liangliang Zhang},
+year={2023},
+eprint={2303.10388},
+archivePrefix={arXiv},
+primaryClass={stat.AP}
+}
+
 
 ## Installation
 
-You can install the development version of ggpicrust2 from [GitHub](https://github.com/) with:
+You can install the stable version of ggpicrust2 from CRAN with:
+
+``` r
+install.packages("ggpicrust2")
+```
+
+To install the latest development version of ggpicrust2 from GitHub, you can use:
 
 ``` r
 # install.packages("devtools")
 devtools::install_github("cafferychen777/ggpicrust2")
 ```
 
-We are actively preparing to upload the package to bioconductor.
 
 ## Workflow
 
@@ -108,7 +129,9 @@ You'll still need to render `README.Rmd` regularly, to keep `README.md` up-to-da
 ## function details
 
 ### ko2kegg_abundance()
+
 KEGG Orthology(KO) is a classification system developed by the Kyoto Encyclopedia of Genes and Genomes (KEGG) data-base(Kanehisa et al., 2022). It uses a hierarchical structure to classify enzymes based on the reactions they catalyze. To better understand pathways' role in different groups and classify the pathways, the KO abundance table needs to be converted to KEGG pathway abundance. But PICRUSt2 removes the function from PICRUSt. ko2kegg_abundance() can help convert the table.
+
 ```{r ko2kegg_abundance sample,echo = TRUE,eval=FALSE}
 # Sample usage of the ko2kegg_abundance function
 
@@ -121,8 +144,11 @@ kegg_abundance <- ko2kegg_abundance(ko_abundance_file)
 # The resulting kegg_abundance data frame can now be used for further analysis and visualization.
 
 ```
+
 ### pathway_daa()
-Differential abundance(DA) analysis plays a major role in PICRUSt2 downstream analysis. pathway_daa() integrates almost all DA methods applicable to the predicted functional profile which there excludes ANCOM and ANCOMBC. It includes ALDEx2(Fernandes et al., 2013), DEseq2(Love et al., 2014), Maaslin2(Mallick et al., 2021), Lin-DA(Zhou et al., 2022), edgeR(Robinson et al., 2010) , limma voom(Ritchie et al., 2015), metagenomeSeq(Paulson et al., 2013),  lefser(Segata et al., 2011).
+
+Differential abundance(DA) analysis plays a major role in PICRUSt2 downstream analysis. pathway_daa() integrates almost all DA methods applicable to the predicted functional profile which there excludes ANCOM and ANCOMBC. It includes ALDEx2(Fernandes et al., 2013), DEseq2(Love et al., 2014), Maaslin2(Mallick et al., 2021), Lin-DA(Zhou et al., 2022), edgeR(Robinson et al., 2010) , limma voom(Ritchie et al., 2015), metagenomeSeq(Paulson et al., 2013), lefser(Segata et al., 2011).
+
 ```{r pathway_daa sample,echo = TRUE,eval=FALSE}
 #the abundance table is better to be data.frame rather than tibble
 #you can use ko2_kegg_abundance output
@@ -160,11 +186,15 @@ daa_results_df <- pathway_daa(abundance = abundance,
            p.adjust = "BH",
            reference = "Harvard BRI")
 ```
+
 ### pathway_annotation
+
 ```{r pathway_annotation sample,echo = TRUE,eval=FALSE}
 daa_results_df <- pathway_annotation(pathway = "KO", daa_results_df = daa_results_df, ko_to_kegg = TRUE)
 ```
+
 ### pathway_errorbar
+
 ```{r pathway_errorbar sample,echo = TRUE,eval=FALSE}
 pathway_errorbar(abundance = abundance,
            daa_results_df = daa_results_df,
@@ -179,28 +209,60 @@ pathway_errorbar(abundance = abundance,
 ```
 
 ### pathway_heatmap
-pathway_heatmap() can visualize the patterns in PICRUSt2 output data, which can be useful for identifying trends or highlighting areas of in-terest. 
-```{r pathway_heatmap sample,echo = TRUE,eval=FALSE}
-abundance <- ko2kegg_abundance(ko_abundance_file)
-metadata <-
-  read_delim(
-    "~/Microbiome/C9orf72/Code And Data/new_metadata.txt",
-    delim = "\t",
-    escape_double = FALSE,
-    trim_ws = TRUE
-  )
-group <- "Enviroment"
-pathway_heatmap(abundance = abundance, metadata = metadata, group = group)
-```
-### pathway_pca()
-pathway_pca() can show the difference after dimensional reduction by PCA. 
-```{r pathway_pca sample,echo = TRUE,eval=FALSE}
-# generate example abundance matrix and metadata dataframe
-abundance <- matrix(rnorm(200), ncol = 20)
-metadata <- data.frame(Group = rep(c("A", "B"), each = 10),
-                       Treatment = rep(c("X", "Y"), 10))
 
-# perform PCA and create plot
-pathway_pca_plot <- pathway_pca(abundance = abundance, metadata = metadata, group = "Group")
-print(pathway_pca_plot)
+In this section, we will demonstrate how to create a pathway heatmap using the `pathway_heatmap` function in the ggpicrust2 package. This function visualizes the relative abundance of pathways in different samples.
+
+First, we will create some example functional pathway abundance data and metadata:
+
+```{r  ,echo = TRUE,eval=FALSE}
+# Create example functional pathway abundance data
+abundance_example <- matrix(rnorm(30), nrow = 10, ncol = 3)
+rownames(abundance_example) <- paste0("Sample", 1:10)
+colnames(abundance_example) <- c("PathwayA", "PathwayB", "PathwayC")
+
+# Create example metadata
+# Please change your sample id's name to sample_name
+metadata_example <- data.frame(sample_name = rownames(abundance_example),
+                               group = factor(rep(c("Control", "Treatment"), each = 5)))
+```
+
+Next, we will use the pathway_heatmap function to create a heatmap:
+
+```{r ,echo = TRUE,eval=FALSE}
+# Create a heatmap
+heatmap_plot <- ggpicrust2::pathway_heatmap(t(abundance_example), metadata_example, "group")
+```
+
+Finally, we will display the resulting heatmap:
+
+```{r  ,echo = TRUE,eval=FALSE}
+print(heatmap_plot)
+```
+
+### pathway_pca()
+
+In this section, we will demonstrate how to perform Principal Component Analysis (PCA) on functional pathway abundance data and create visualizations of the PCA results using the `pathway_pca` function in the ggpicrust2 package.
+
+First, we will create some example functional pathway abundance data and metadata:
+
+```{r ,echo = TRUE,eval=FALSE}
+# Create example functional pathway abundance data
+abundance_example <- data.frame(A = rnorm(10), B = rnorm(10), C = rnorm(10))
+
+# Create example metadata
+metadata_example <- tibble::tibble(sample_id = 1:10,
+                                   group = factor(rep(c("Control", "Treatment"), each = 5)))
+```
+
+Next, we will use the pathway_pca function to perform PCA and create visualizations:
+
+```{r ,echo = TRUE,eval=FALSE}
+# Perform PCA and create visualizations
+pca_plot <- ggpicrust2::pathway_pca(t(abundance_example), metadata_example, "group")
+```
+
+Finally, we will display the resulting PCA plot:
+
+```{r ,echo = TRUE,eval=FALSE}
+print(pca_plot)
 ```
