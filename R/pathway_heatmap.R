@@ -91,5 +91,6 @@ pathway_heatmap <- function(abundance, metadata, group) {
       )
     )
 
+
   return(p)
 }

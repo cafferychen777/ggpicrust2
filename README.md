@@ -45,6 +45,11 @@ can use:
 devtools::install_github("cafferychen777/ggpicrust2")
 ```
 
+## Stay Updated
+
+Follow me on Twitter for the latest ggpicrust2 updates:
+[![](https://img.shields.io/twitter/follow/CafferyYang?style=social)](https://twitter.com/CafferyYang)
+
 ## Workflow
 
 The easiest way to analyze the picrust2 output is using ggpicrust2()
@@ -69,13 +74,13 @@ metadata <-
     trim_ws = TRUE
   )
 group <- "Enviroment"
-daa_results_df <-
+daa_results_list <-
   ggpicrust2(
     file = "/Users/apple/Microbiome/C9orf72/Code And Data/picrust2_out/KO_metagenome_out/pred_metagenome_unstrat.tsv/pred_metagenome_unstrat.tsv",
     metadata = metadata,
     group = "Enviroment",
     pathway = "KO",
-    daa_method = "ALDEx2",
+    daa_method = "LinDA",
     order = "pathway_class",
     ko_to_kegg = TRUE,
     x_lab = "pathway_name",
@@ -94,14 +99,14 @@ metadata <-
     trim_ws = TRUE
   )
 group <- "Enviroment"
-daa_results_df <-
+daa_results_list <-
   ggpicrust2(
     file = "//Users/apple/Microbiome/C9orf72/Code And Data/picrust2_out/EC_metagenome_out/pred_metagenome_unstrat.tsv/pred_metagenome_unstrat.tsv",
     metadata = metadata,
     group = "Enviroment",
     pathway = "EC",
-    daa_method = "ALDEx2",
-    order = "pathway_class",
+    daa_method = "LinDA",
+    order = "group",
     ko_to_kegg = FALSE,
     x_lab = "description",
     p.adjust = "BH",
