@@ -38,7 +38,7 @@ pathway_errorbar <-
       }
     }
     if (is.null(colors)) {
-      colors <- c("#d93c3e", "#3685bc", "#87ceeb")
+      colors <- c("#d93c3e", "#3685bc", "#6faa3e", "#e8a825", "#c973e6", "#ee6b3d", "#2db0a7", "#f25292")[1:nlevels(as.factor(Group))]
     }
     errorbar_abundance_mat <- as.matrix(abundance)
     daa_results_filtered_df <-
@@ -172,8 +172,8 @@ pathway_errorbar <-
                position = ggplot2::position_dodge(width = 0.8),
                width = 0.8) +
       GGally::geom_stripped_cols() +
-      ggplot2::scale_fill_manual(values = c(colors[1], colors[2])) +
-      ggplot2::scale_color_manual(values = c(colors[1], colors[2])) +
+      ggplot2::scale_fill_manual(values = colors) +
+      ggplot2::scale_color_manual(values = colors) +
       ggprism::theme_prism() +
       ggplot2::scale_x_continuous(expand = c(0, 0),
                          guide = "prism_offset_minor",) +
@@ -262,8 +262,8 @@ pathway_errorbar <-
                width = 0.8) +
       ggplot2::labs(y = "log2 fold change", x = NULL) +
       GGally::geom_stripped_cols() +
-      ggplot2::scale_fill_manual(values = colors[3]) +
-      ggplot2::scale_color_manual(values = colors[3]) +
+      ggplot2::scale_fill_manual(values = "#87ceeb") +
+      ggplot2::scale_color_manual(values = "#87ceeb") +
       ggplot2::geom_hline(ggplot2::aes(yintercept = 0),
                  linetype = 'dashed',
                  color = 'black') +

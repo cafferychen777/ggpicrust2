@@ -32,6 +32,7 @@ Imports:
     SummarizedExperiment,
     tibble,
     tidyr,
+    ggprism
 Depends: 
     R (>= 2.10)
 Suggests: 
@@ -42,7 +43,6 @@ Suggests:
     devtools,
     KEGGREST,
     ComplexHeatmap,
-    ggprism,
     ggforce,
     patchwork,
     ggplotify,
