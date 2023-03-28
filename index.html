@@ -26,7 +26,7 @@
     
     <a class="navbar-brand me-2" href="index.html">ggpicrust2</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.4.8</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.4.9</small>
 
     
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -65,13 +65,22 @@
 </h1></div>
 <p>ggpicrust2 is a comprehensive package that integrates pathway name/description annotations, ten of the most advanced differential abundance (DA) methods, and visualization of DA results. It offers a comprehensive solution for analyzing and interpreting the results of picrust2 functional prediction in a seamless and intuitive way. Whether you are a researcher, data scientist, or bioinformatician, ggpicrust2 can help you better understand the underlying biological processes and mechanisms at play in your picrust2 output data. So if you are interested in exploring the output data of picrust2, ggpicrust2 is the tool you need.</p>
 <div class="section level2">
+<h2 id="citation">Citation<a class="anchor" aria-label="anchor" href="#citation"></a>
+</h2>
+<p>If you use ggpicrust2 in your research, please cite the following paper:</p>
+<p>Chen Yang, Aaron Burberry, Jiahao Mai, Liangliang Zhang. (2023). ggpicrust2: an R package for PICRUSt2 predicted functional profile analysis and visualization. arXiv preprint arXiv:2303.10388.</p>
+<p>BibTeX entry: @misc{yang2023ggpicrust2, title={ggpicrust2: an R package for PICRUSt2 predicted functional profile analysis and visualization}, author={Chen Yang and Aaron Burberry and Jiahao Mai and Liangliang Zhang}, year={2023}, eprint={2303.10388}, archivePrefix={arXiv}, primaryClass={stat.AP} }</p>
+</div>
+<div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
-<p>You can install the development version of ggpicrust2 from <a href="https://github.com/" class="external-link">GitHub</a> with:</p>
+<p>You can install the stable version of ggpicrust2 from CRAN with:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"ggpicrust2"</span><span class="op">)</span></span></code></pre></div>
+<p>To install the latest development version of ggpicrust2 from GitHub, you can use:</p>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># install.packages("devtools")</span></span>
 <span><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"cafferychen777/ggpicrust2"</span><span class="op">)</span></span></code></pre></div>
-<p>We are actively preparing to upload the package to bioconductor.</p>
 </div>
 <div class="section level2">
 <h2 id="workflow">Workflow<a class="anchor" aria-label="anchor" href="#workflow"></a>
@@ -80,7 +89,7 @@
 <p>ggpicrust2() integrates ko abundance to kegg pathway abundance conversion, annotation of pathway, differential abundance (DA) analysis, DA results visualization.</p>
 <p><img src="https://cafferychen777.github.io/ggpicrust2/reference/figures/ggpicrust2%20fig1.jpeg"></p>
 <p><img src="https://cafferychen777.github.io/ggpicrust2/reference/figures/ggpicrust2%20fig2.jpeg"></p>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co">#If you want to analysis kegg pathway abundance instead of ko within the pathway. You should turn ko_to_kegg to TRUE.</span></span>
 <span><span class="co">#The kegg pathway typically have the more explainable description.</span></span>
 <span><span class="va">metadata</span> <span class="op">&lt;-</span></span>
@@ -146,7 +155,7 @@
 <h3 id="ko2kegg_abundance">ko2kegg_abundance()<a class="anchor" aria-label="anchor" href="#ko2kegg_abundance"></a>
 </h3>
 <p>KEGG Orthology(KO) is a classification system developed by the Kyoto Encyclopedia of Genes and Genomes (KEGG) data-base(Kanehisa et al., 2022). It uses a hierarchical structure to classify enzymes based on the reactions they catalyze. To better understand pathways’ role in different groups and classify the pathways, the KO abundance table needs to be converted to KEGG pathway abundance. But PICRUSt2 removes the function from PICRUSt. ko2kegg_abundance() can help convert the table.</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Sample usage of the ko2kegg_abundance function</span></span>
 <span></span>
 <span><span class="co"># Assume that the KO abundance table is stored in a file named "ko_abundance.tsv"</span></span>
@@ -161,7 +170,7 @@
 <h3 id="pathway_daa">pathway_daa()<a class="anchor" aria-label="anchor" href="#pathway_daa"></a>
 </h3>
 <p>Differential abundance(DA) analysis plays a major role in PICRUSt2 downstream analysis. pathway_daa() integrates almost all DA methods applicable to the predicted functional profile which there excludes ANCOM and ANCOMBC. It includes ALDEx2(Fernandes et al., 2013), DEseq2(Love et al., 2014), Maaslin2(Mallick et al., 2021), Lin-DA(Zhou et al., 2022), edgeR(Robinson et al., 2010) , limma voom(Ritchie et al., 2015), metagenomeSeq(Paulson et al., 2013), lefser(Segata et al., 2011).</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co">#the abundance table is better to be data.frame rather than tibble</span></span>
 <span><span class="co">#you can use ko2_kegg_abundance output</span></span>
 <span><span class="va">abundance</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/ko2kegg_abundance.html">ko2kegg_abundance</a></span><span class="op">(</span><span class="va">ko_abundance_file</span><span class="op">)</span></span>
@@ -201,13 +210,13 @@
 <div class="section level3">
 <h3 id="pathway_annotation">pathway_annotation<a class="anchor" aria-label="anchor" href="#pathway_annotation"></a>
 </h3>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">daa_results_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/pathway_annotation.html">pathway_annotation</a></span><span class="op">(</span>pathway <span class="op">=</span> <span class="st">"KO"</span>, daa_results_df <span class="op">=</span> <span class="va">daa_results_df</span>, ko_to_kegg <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="pathway_errorbar">pathway_errorbar<a class="anchor" aria-label="anchor" href="#pathway_errorbar"></a>
 </h3>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/pathway_errorbar.html">pathway_errorbar</a></span><span class="op">(</span>abundance <span class="op">=</span> <span class="va">abundance</span>,</span>
 <span>           daa_results_df <span class="op">=</span> <span class="va">daa_results_df</span>,</span>
 <span>           Group <span class="op">=</span> <span class="va">metadata</span><span class="op">$</span><span class="va">Enviroment</span>,</span>
@@ -222,32 +231,45 @@
 <div class="section level3">
 <h3 id="pathway_heatmap">pathway_heatmap<a class="anchor" aria-label="anchor" href="#pathway_heatmap"></a>
 </h3>
-<p>pathway_heatmap() can visualize the patterns in PICRUSt2 output data, which can be useful for identifying trends or highlighting areas of in-terest.</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">abundance</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/ko2kegg_abundance.html">ko2kegg_abundance</a></span><span class="op">(</span><span class="va">ko_abundance_file</span><span class="op">)</span></span>
-<span><span class="va">metadata</span> <span class="op">&lt;-</span></span>
-<span>  <span class="fu">read_delim</span><span class="op">(</span></span>
-<span>    <span class="st">"~/Microbiome/C9orf72/Code And Data/new_metadata.txt"</span>,</span>
-<span>    delim <span class="op">=</span> <span class="st">"\t"</span>,</span>
-<span>    escape_double <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>    trim_ws <span class="op">=</span> <span class="cn">TRUE</span></span>
-<span>  <span class="op">)</span></span>
-<span><span class="va">group</span> <span class="op">&lt;-</span> <span class="st">"Enviroment"</span></span>
-<span><span class="fu"><a href="reference/pathway_heatmap.html">pathway_heatmap</a></span><span class="op">(</span>abundance <span class="op">=</span> <span class="va">abundance</span>, metadata <span class="op">=</span> <span class="va">metadata</span>, group <span class="op">=</span> <span class="va">group</span><span class="op">)</span></span></code></pre></div>
+<p>In this section, we will demonstrate how to create a pathway heatmap using the <code>pathway_heatmap</code> function in the ggpicrust2 package. This function visualizes the relative abundance of pathways in different samples.</p>
+<p>First, we will create some example functional pathway abundance data and metadata:</p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Create example functional pathway abundance data</span></span>
+<span><span class="va">abundance_example</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">30</span><span class="op">)</span>, nrow <span class="op">=</span> <span class="fl">10</span>, ncol <span class="op">=</span> <span class="fl">3</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">rownames</a></span><span class="op">(</span><span class="va">abundance_example</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"Sample"</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">10</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">abundance_example</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"PathwayA"</span>, <span class="st">"PathwayB"</span>, <span class="st">"PathwayC"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Create example metadata</span></span>
+<span><span class="co"># Please change your sample id's name to sample_name</span></span>
+<span><span class="va">metadata_example</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>sample_name <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">rownames</a></span><span class="op">(</span><span class="va">abundance_example</span><span class="op">)</span>,</span>
+<span>                               group <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Control"</span>, <span class="st">"Treatment"</span><span class="op">)</span>, each <span class="op">=</span> <span class="fl">5</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<p>Next, we will use the pathway_heatmap function to create a heatmap:</p>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Create a heatmap</span></span>
+<span><span class="va">heatmap_plot</span> <span class="op">&lt;-</span> <span class="fu">ggpicrust2</span><span class="fu">::</span><span class="fu"><a href="reference/pathway_heatmap.html">pathway_heatmap</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/t.html" class="external-link">t</a></span><span class="op">(</span><span class="va">abundance_example</span><span class="op">)</span>, <span class="va">metadata_example</span>, <span class="st">"group"</span><span class="op">)</span></span></code></pre></div>
+<p>Finally, we will display the resulting heatmap:</p>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">heatmap_plot</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="pathway_pca">pathway_pca()<a class="anchor" aria-label="anchor" href="#pathway_pca"></a>
 </h3>
-<p>pathway_pca() can show the difference after dimensional reduction by PCA.</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># generate example abundance matrix and metadata dataframe</span></span>
-<span><span class="va">abundance</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">200</span><span class="op">)</span>, ncol <span class="op">=</span> <span class="fl">20</span><span class="op">)</span></span>
-<span><span class="va">metadata</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>Group <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"A"</span>, <span class="st">"B"</span><span class="op">)</span>, each <span class="op">=</span> <span class="fl">10</span><span class="op">)</span>,</span>
-<span>                       Treatment <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"X"</span>, <span class="st">"Y"</span><span class="op">)</span>, <span class="fl">10</span><span class="op">)</span><span class="op">)</span></span>
+<p>In this section, we will demonstrate how to perform Principal Component Analysis (PCA) on functional pathway abundance data and create visualizations of the PCA results using the <code>pathway_pca</code> function in the ggpicrust2 package.</p>
+<p>First, we will create some example functional pathway abundance data and metadata:</p>
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Create example functional pathway abundance data</span></span>
+<span><span class="va">abundance_example</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>A <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">10</span><span class="op">)</span>, B <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">10</span><span class="op">)</span>, C <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">10</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># perform PCA and create plot</span></span>
-<span><span class="va">pathway_pca_plot</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/pathway_pca.html">pathway_pca</a></span><span class="op">(</span>abundance <span class="op">=</span> <span class="va">abundance</span>, metadata <span class="op">=</span> <span class="va">metadata</span>, group <span class="op">=</span> <span class="st">"Group"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">pathway_pca_plot</span><span class="op">)</span></span></code></pre></div>
+<span><span class="co"># Create example metadata</span></span>
+<span><span class="va">metadata_example</span> <span class="op">&lt;-</span> <span class="fu">tibble</span><span class="fu">::</span><span class="fu"><a href="https://tibble.tidyverse.org/reference/tibble.html" class="external-link">tibble</a></span><span class="op">(</span>sample_id <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">10</span>,</span>
+<span>                                   group <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Control"</span>, <span class="st">"Treatment"</span><span class="op">)</span>, each <span class="op">=</span> <span class="fl">5</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<p>Next, we will use the pathway_pca function to perform PCA and create visualizations:</p>
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Perform PCA and create visualizations</span></span>
+<span><span class="va">pca_plot</span> <span class="op">&lt;-</span> <span class="fu">ggpicrust2</span><span class="fu">::</span><span class="fu"><a href="reference/pathway_pca.html">pathway_pca</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/t.html" class="external-link">t</a></span><span class="op">(</span><span class="va">abundance_example</span><span class="op">)</span>, <span class="va">metadata_example</span>, <span class="st">"group"</span><span class="op">)</span></span></code></pre></div>
+<p>Finally, we will display the resulting PCA plot:</p>
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">pca_plot</span><span class="op">)</span></span></code></pre></div>
 </div>
 </div>
 </div>
