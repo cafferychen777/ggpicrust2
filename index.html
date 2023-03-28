@@ -83,6 +83,11 @@
 <span><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"cafferychen777/ggpicrust2"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
+<h2 id="stay-updated">Stay Updated<a class="anchor" aria-label="anchor" href="#stay-updated"></a>
+</h2>
+<p>Follow me on Twitter for the latest ggpicrust2 updates: <a href="https://twitter.com/CafferyYang" class="external-link"><img src="https://img.shields.io/twitter/follow/CafferyYang?style=social"></a></p>
+</div>
+<div class="section level2">
 <h2 id="workflow">Workflow<a class="anchor" aria-label="anchor" href="#workflow"></a>
 </h2>
 <p>The easiest way to analyze the picrust2 output is using ggpicrust2() function. The entire pipeline can be run with ggpicrust2() function.</p>
@@ -100,13 +105,13 @@
 <span>    trim_ws <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span>  <span class="op">)</span></span>
 <span><span class="va">group</span> <span class="op">&lt;-</span> <span class="st">"Enviroment"</span></span>
-<span><span class="va">daa_results_df</span> <span class="op">&lt;-</span></span>
+<span><span class="va">daa_results_list</span> <span class="op">&lt;-</span></span>
 <span>  <span class="fu"><a href="reference/ggpicrust2.html">ggpicrust2</a></span><span class="op">(</span></span>
 <span>    file <span class="op">=</span> <span class="st">"/Users/apple/Microbiome/C9orf72/Code And Data/picrust2_out/KO_metagenome_out/pred_metagenome_unstrat.tsv/pred_metagenome_unstrat.tsv"</span>,</span>
 <span>    metadata <span class="op">=</span> <span class="va">metadata</span>,</span>
 <span>    group <span class="op">=</span> <span class="st">"Enviroment"</span>,</span>
 <span>    pathway <span class="op">=</span> <span class="st">"KO"</span>,</span>
-<span>    daa_method <span class="op">=</span> <span class="st">"ALDEx2"</span>,</span>
+<span>    daa_method <span class="op">=</span> <span class="st">"LinDA"</span>,</span>
 <span>    order <span class="op">=</span> <span class="st">"pathway_class"</span>,</span>
 <span>    ko_to_kegg <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>    x_lab <span class="op">=</span> <span class="st">"pathway_name"</span>,</span>
@@ -125,14 +130,14 @@
 <span>    trim_ws <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span>  <span class="op">)</span></span>
 <span><span class="va">group</span> <span class="op">&lt;-</span> <span class="st">"Enviroment"</span></span>
-<span><span class="va">daa_results_df</span> <span class="op">&lt;-</span></span>
+<span><span class="va">daa_results_list</span> <span class="op">&lt;-</span></span>
 <span>  <span class="fu"><a href="reference/ggpicrust2.html">ggpicrust2</a></span><span class="op">(</span></span>
 <span>    file <span class="op">=</span> <span class="st">"//Users/apple/Microbiome/C9orf72/Code And Data/picrust2_out/EC_metagenome_out/pred_metagenome_unstrat.tsv/pred_metagenome_unstrat.tsv"</span>,</span>
 <span>    metadata <span class="op">=</span> <span class="va">metadata</span>,</span>
 <span>    group <span class="op">=</span> <span class="st">"Enviroment"</span>,</span>
 <span>    pathway <span class="op">=</span> <span class="st">"EC"</span>,</span>
-<span>    daa_method <span class="op">=</span> <span class="st">"ALDEx2"</span>,</span>
-<span>    order <span class="op">=</span> <span class="st">"pathway_class"</span>,</span>
+<span>    daa_method <span class="op">=</span> <span class="st">"LinDA"</span>,</span>
+<span>    order <span class="op">=</span> <span class="st">"group"</span>,</span>
 <span>    ko_to_kegg <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>    x_lab <span class="op">=</span> <span class="st">"description"</span>,</span>
 <span>    p.adjust <span class="op">=</span> <span class="st">"BH"</span>,</span>
