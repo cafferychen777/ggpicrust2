@@ -68,7 +68,7 @@
 <h2 id="citation">Citation<a class="anchor" aria-label="anchor" href="#citation"></a>
 </h2>
 <p>If you use ggpicrust2 in your research, please cite the following paper:</p>
-<p>Chen Yang, Aaron Burberry, Jiahao Mai, Liangliang Zhang. (2023). ggpicrust2: an R package for PICRUSt2 predicted functional profile analysis and visualization. arXiv preprint arXiv:2303.10388.</p>
+<p>Chen Yang, Aaron Burberry, Jiahao Mai, Liangliang Zhang. (2023). <a href="https://arxiv.org/abs/2303.10388" class="external-link">ggpicrust2: an R package for PICRUSt2 predicted functional profile analysis and visualization.</a> arXiv preprint arXiv:2303.10388.</p>
 <p>BibTeX entry: @misc{yang2023ggpicrust2, title={ggpicrust2: an R package for PICRUSt2 predicted functional profile analysis and visualization}, author={Chen Yang and Aaron Burberry and Jiahao Mai and Liangliang Zhang}, year={2023}, eprint={2303.10388}, archivePrefix={arXiv}, primaryClass={stat.AP} }</p>
 </div>
 <div class="section level2">
@@ -145,8 +145,7 @@
 <h2 id="output">Output<a class="anchor" aria-label="anchor" href="#output"></a>
 </h2>
 <p>The typical output of the ggpicrust2 is like this.</p>
-<p><img src="https://cafferychen777.github.io/ggpicrust2/reference/figures/pathway_errorbar.jpg"></p>
-<p>You’ll still need to render <code>README.Rmd</code> regularly, to keep <code>README.md</code> up-to-date. <code><a href="https://devtools.r-lib.org/reference/build_rmd.html" class="external-link">devtools::build_readme()</a></code> is handy for this. You could also use GitHub Actions to re-render <code>README.Rmd</code> every time you push. An example workflow can be found here: <a href="https://github.com/r-lib/actions/tree/v1/examples" class="external-link uri">https://github.com/r-lib/actions/tree/v1/examples</a>.</p>
+<p><img src="https://cdn.jsdelivr.ren/gh/cafferychen777/ggpicrust2_paper@main/paper_figure/figure1.jpg"></p>
 </div>
 <div class="section level2">
 <h2 id="function-details">function details<a class="anchor" aria-label="anchor" href="#function-details"></a>
@@ -222,7 +221,7 @@
 <span>           Group <span class="op">=</span> <span class="va">metadata</span><span class="op">$</span><span class="va">Enviroment</span>,</span>
 <span>           ko_to_kegg <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>           p_values_threshold <span class="op">=</span> <span class="fl">0.05</span>,</span>
-<span>           order <span class="op">=</span> <span class="st">"group"</span>,</span>
+<span>           order <span class="op">=</span> <span class="st">"pathway_class"</span>,</span>
 <span>           select <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>           p_value_bar <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>           colors <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -240,7 +239,7 @@
 <span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">abundance_example</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"PathwayA"</span>, <span class="st">"PathwayB"</span>, <span class="st">"PathwayC"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Create example metadata</span></span>
-<span><span class="co"># Please change your sample id's name to sample_name</span></span>
+<span><span class="co"># Please change your sample id's column name to sample_name</span></span>
 <span><span class="va">metadata_example</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>sample_name <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">rownames</a></span><span class="op">(</span><span class="va">abundance_example</span><span class="op">)</span>,</span>
 <span>                               group <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Control"</span>, <span class="st">"Treatment"</span><span class="op">)</span>, each <span class="op">=</span> <span class="fl">5</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p>Next, we will use the pathway_heatmap function to create a heatmap:</p>
