@@ -19,8 +19,9 @@ tool you need.
 If you use ggpicrust2 in your research, please cite the following paper:
 
 Chen Yang, Aaron Burberry, Jiahao Mai, Liangliang Zhang. (2023).
-ggpicrust2: an R package for PICRUSt2 predicted functional profile
-analysis and visualization. arXiv preprint arXiv:2303.10388.
+[ggpicrust2: an R package for PICRUSt2 predicted functional profile
+analysis and visualization.](https://arxiv.org/abs/2303.10388) arXiv
+preprint arXiv:2303.10388.
 
 BibTeX entry: @misc{yang2023ggpicrust2, title={ggpicrust2: an R package
 for PICRUSt2 predicted functional profile analysis and visualization},
@@ -114,13 +115,7 @@ daa_results_df <-
 
 The typical output of the ggpicrust2 is like this.
 
-![](https://cafferychen777.github.io/ggpicrust2/reference/figures/pathway_errorbar.jpg)
-
-You’ll still need to render `README.Rmd` regularly, to keep `README.md`
-up-to-date. `devtools::build_readme()` is handy for this. You could also
-use GitHub Actions to re-render `README.Rmd` every time you push. An
-example workflow can be found here:
-<https://github.com/r-lib/actions/tree/v1/examples>.
+![](https://cdn.jsdelivr.ren/gh/cafferychen777/ggpicrust2_paper@main/paper_figure/figure1.jpg)
 
 ## function details
 
@@ -208,7 +203,7 @@ pathway_errorbar(abundance = abundance,
            Group = metadata$Enviroment,
            ko_to_kegg = TRUE,
            p_values_threshold = 0.05,
-           order = "group",
+           order = "pathway_class",
            select = NULL,
            p_value_bar = TRUE,
            colors = NULL,
@@ -232,7 +227,7 @@ rownames(abundance_example) <- paste0("Sample", 1:10)
 colnames(abundance_example) <- c("PathwayA", "PathwayB", "PathwayC")
 
 # Create example metadata
-# Please change your sample id's name to sample_name
+# Please change your sample id's column name to sample_name
 metadata_example <- data.frame(sample_name = rownames(abundance_example),
                                group = factor(rep(c("Control", "Treatment"), each = 5)))
 ```

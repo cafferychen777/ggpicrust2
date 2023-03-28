@@ -1,9 +1,13 @@
 #' Pathway information annotation of "EC", "KO", "MetaCyc" pathway
 #'
-#' @param file A character, address to store picrust2 export files
+#' This function has two primary use cases:
+#' 1. Annotating pathway information using the output file from PICRUSt2.
+#' 2. Annotating pathway information from the output of `pathway_daa` function, and converting KO abundance to KEGG pathway abundance when `ko_to_kegg` is set to TRUE.
+#'
+#' @param file A character, address to store PICRUSt2 export files. Provide this parameter when using the function for the first use case.
 #' @param pathway A character, consisting of "EC", "KO", "MetaCyc"
-#' @param daa_results_df A data frame, output of pathway_daa
-#' @param ko_to_kegg A character, decide if convert ko abundance to kegg pathway abundance
+#' @param daa_results_df A data frame, output of pathway_daa. Provide this parameter when using the function for the second use case.
+#' @param ko_to_kegg A logical, decide if convert KO abundance to KEGG pathway abundance. Default is FALSE. Set to TRUE when using the function for the second use case.
 #'
 #' @return A data frame containing pathway annotation information. The data frame has the following columns:
 #' \itemize{
@@ -26,11 +30,18 @@
 #' # Prepare the required input files and data frames
 #' # Then, you can use the pathway_annotation function as follows:
 #'
-#' result <- pathway_annotation(file = "path/to/picrust2/export/file.txt",
-#'                              pathway = "KO",
-#'                              daa_results_df = NULL,
-#'                              ko_to_kegg = FALSE)
-#'}
+#' # Use case 1: Annotating pathway information using the output file from PICRUSt2
+#' result1 <- pathway_annotation(file = "path/to/picrust2/export/file.txt",
+#'                               pathway = "KO",
+#'                               daa_results_df = NULL,
+#'                               ko_to_kegg = FALSE)
+#'
+#' # Use case 2: Annotating pathway information from the output of pathway_daa function and converting KO abundance to KEGG pathway abundance
+#' result2 <- pathway_annotation(file = NULL,
+#'                               pathway = "KO",
+#'                               daa_results_df = your_daa_results_df,
+#'                               ko_to_kegg = TRUE)
+#' }
 pathway_annotation <-
   function(file = NULL,
            pathway = NULL,
