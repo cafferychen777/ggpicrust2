@@ -79,9 +79,9 @@
 <ul>
 <li><a href="#ko2kegg_abundance">ko2kegg_abundance()</a></li>
 <li><a href="#pathway_daa">pathway_daa()</a></li>
-<li><a href="#pathway_annotation">pathway_annotation</a></li>
-<li><a href="#pathway_errorbar">pathway_errorbar</a></li>
-<li><a href="#pathway_heatmap">pathway_heatmap</a></li>
+<li><a href="#pathway_annotation">pathway_annotation()</a></li>
+<li><a href="#pathway_errorbar">pathway_errorbar()</a></li>
+<li><a href="#pathway_heatmap">pathway_heatmap()</a></li>
 <li><a href="#pathway_pca">pathway_pca()</a></li>
 </ul>
 </li>
@@ -239,13 +239,13 @@
 <span>           reference <span class="op">=</span> <span class="st">"Harvard BRI"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level3">
-<h3 id="pathway_annotation">pathway_annotation<a class="anchor" aria-label="anchor" href="#pathway_annotation"></a>
+<h3 id="pathway_annotation">pathway_annotation()<a class="anchor" aria-label="anchor" href="#pathway_annotation"></a>
 </h3>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">daa_results_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/pathway_annotation.html">pathway_annotation</a></span><span class="op">(</span>pathway <span class="op">=</span> <span class="st">"KO"</span>, daa_results_df <span class="op">=</span> <span class="va">daa_results_df</span>, ko_to_kegg <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level3">
-<h3 id="pathway_errorbar">pathway_errorbar<a class="anchor" aria-label="anchor" href="#pathway_errorbar"></a>
+<h3 id="pathway_errorbar">pathway_errorbar()<a class="anchor" aria-label="anchor" href="#pathway_errorbar"></a>
 </h3>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/pathway_errorbar.html">pathway_errorbar</a></span><span class="op">(</span>abundance <span class="op">=</span> <span class="va">abundance</span>,</span>
@@ -260,7 +260,7 @@
 <span>           x_lab <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level3">
-<h3 id="pathway_heatmap">pathway_heatmap<a class="anchor" aria-label="anchor" href="#pathway_heatmap"></a>
+<h3 id="pathway_heatmap">pathway_heatmap()<a class="anchor" aria-label="anchor" href="#pathway_heatmap"></a>
 </h3>
 <p>In this section, we will demonstrate how to create a pathway heatmap using the <code>pathway_heatmap</code> function in the ggpicrust2 package. This function visualizes the relative abundance of pathways in different samples.</p>
 <p>First, we will create some example functional pathway abundance data and metadata:</p>
