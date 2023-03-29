@@ -17,6 +17,22 @@ knitr::opts_chunk$set(
 
 ggpicrust2 is a comprehensive package that integrates pathway name/description annotations, ten of the most advanced differential abundance (DA) methods, and visualization of DA results. It offers a comprehensive solution for analyzing and interpreting the results of picrust2 functional prediction in a seamless and intuitive way. Whether you are a researcher, data scientist, or bioinformatician, ggpicrust2 can help you better understand the underlying biological processes and mechanisms at play in your picrust2 output data. So if you are interested in exploring the output data of picrust2, ggpicrust2 is the tool you need.
 
+## Table of Contents
+
+- [Citation](#citation)
+- [Installation](#installation)
+- [Stay Updated](#stay-updated)
+- [Workflow](#workflow)
+- [Output](#output)
+- [Function Details](#function-details)
+  - [ko2kegg_abundance()](#ko2kegg_abundance)
+  - [pathway_daa()](#pathway_daa)
+  - [pathway_annotation](#pathway_annotation)
+  - [pathway_errorbar](#pathway_errorbar)
+  - [pathway_heatmap](#pathway_heatmap)
+  - [pathway_pca()](#pathway_pca)
+- [Author's Other Projects](#authors-other-projects)
+
 ## Citation
 
 If you use ggpicrust2 in your research, please cite the following paper:

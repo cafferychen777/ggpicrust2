@@ -14,6 +14,22 @@ mechanisms at play in your picrust2 output data. So if you are
 interested in exploring the output data of picrust2, ggpicrust2 is the
 tool you need.
 
+## Table of Contents
+
+- [Citation](#citation)
+- [Installation](#installation)
+- [Stay Updated](#stay-updated)
+- [Workflow](#workflow)
+- [Output](#output)
+- [Function Details](#function-details)
+  - [ko2kegg_abundance()](#ko2kegg_abundance)
+  - [pathway_daa()](#pathway_daa)
+  - [pathway_annotation](#pathway_annotation)
+  - [pathway_errorbar](#pathway_errorbar)
+  - [pathway_heatmap](#pathway_heatmap)
+  - [pathway_pca()](#pathway_pca)
+- [Author’s Other Projects](#authors-other-projects)
+
 ## Citation
 
 If you use ggpicrust2 in your research, please cite the following paper:
