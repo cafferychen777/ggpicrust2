@@ -42,10 +42,7 @@ devtools::install_github("cafferychen777/ggpicrust2")
 
 ## Stay Updated
 
-
-Follow me on Twitter for the latest ggpicrust2 updates:
-[![](https://img.shields.io/twitter/follow/CafferyYang?style=social)](https://twitter.com/CafferyYang)
-
+Follow me on Twitter for the latest ggpicrust2 updates: [![](https://img.shields.io/twitter/follow/CafferyYang?style=social)](https://twitter.com/CafferyYang)
 
 ## Workflow
 
@@ -261,3 +258,9 @@ Finally, we will display the resulting PCA plot:
 ```{r ,echo = TRUE,eval=FALSE}
 print(pca_plot)
 ```
+
+## Author's other projects
+
+[MicrobiomeGallery](https://a95dps-caffery-chen.shinyapps.io/MicrobiomeGallery/), a web-based platform for sharing microbiome data visualization code and datasets. （It's still under construction）
+
+![](https://raw.githubusercontent.com/cafferychen777/ggpicrust2_paper/main/paper_figure/MicrobiomeGallery_preview.jpg)

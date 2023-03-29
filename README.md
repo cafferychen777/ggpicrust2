@@ -282,3 +282,11 @@ Finally, we will display the resulting PCA plot:
 ``` r
 print(pca_plot)
 ```
+
+## Author’s other projects
+
+[MicrobiomeGallery](https://a95dps-caffery-chen.shinyapps.io/MicrobiomeGallery/),
+a web-based platform for sharing microbiome data visualization code and
+datasets. （It’s still under construction）
+
+![](https://raw.githubusercontent.com/cafferychen777/ggpicrust2_paper/main/paper_figure/MicrobiomeGallery_preview.jpg)
