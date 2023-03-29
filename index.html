@@ -61,9 +61,10 @@
 </nav><div class="container template-home">
 <div class="row">
   <main id="main" class="col-md-9"><div class="section level1">
-<div class="page-header"><h1 id="ggpicrust2">ggpicrust2<a class="anchor" aria-label="anchor" href="#ggpicrust2"></a>
+<div class="page-header"><h1 id="ggpicrust2-documentation">ggpicrust2 Documentation<a class="anchor" aria-label="anchor" href="#ggpicrust2-documentation"></a>
 </h1></div>
-<p>ggpicrust2 is a comprehensive package that integrates pathway name/description annotations, ten of the most advanced differential abundance (DA) methods, and visualization of DA results. It offers a comprehensive solution for analyzing and interpreting the results of picrust2 functional prediction in a seamless and intuitive way. Whether you are a researcher, data scientist, or bioinformatician, ggpicrust2 can help you better understand the underlying biological processes and mechanisms at play in your picrust2 output data. So if you are interested in exploring the output data of picrust2, ggpicrust2 is the tool you need.</p>
+<p><em>ggpicrust2</em> is a comprehensive package that integrates pathway name/description annotations, ten of the most advanced differential abundance (DA) methods, and visualization of DA results. It offers a comprehensive solution for analyzing and interpreting the results of PICRUSt2 functional prediction in a seamless and intuitive way. Whether you are a researcher, data scientist, or bioinformatician, <em>ggpicrust2</em> can help you better understand the underlying biological processes and mechanisms at play in your PICRUSt2 output data. So if you are interested in exploring the output data of PICRUSt2, <em>ggpicrust2</em> is the tool you need.</p>
+<p><a href="https://CRAN.R-project.org/package=ggpicrust2" class="external-link"><img src="https://www.r-pkg.org/badges/version/ggpicrust2" alt="CRAN version"></a> <a href="https://CRAN.R-project.org/package=ggpicrust2" class="external-link"><img src="https://cranlogs.r-pkg.org/badges/grand-total/ggpicrust2" alt="Downloads"></a> <a href="https://opensource.org/licenses/MIT" class="external-link"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a></p>
 <div class="section level2">
 <h2 id="table-of-contents">Table of Contents<a class="anchor" aria-label="anchor" href="#table-of-contents"></a>
 </h2>
@@ -90,30 +91,33 @@
 <div class="section level2">
 <h2 id="citation">Citation<a class="anchor" aria-label="anchor" href="#citation"></a>
 </h2>
-<p>If you use ggpicrust2 in your research, please cite the following paper:</p>
+<p>If you use <em>ggpicrust2</em> in your research, please cite the following paper:</p>
 <p>Chen Yang, Aaron Burberry, Jiahao Mai, Liangliang Zhang. (2023). <a href="https://arxiv.org/abs/2303.10388" class="external-link">ggpicrust2: an R package for PICRUSt2 predicted functional profile analysis and visualization.</a> arXiv preprint arXiv:2303.10388.</p>
 <p>BibTeX entry: @misc{yang2023ggpicrust2, title={ggpicrust2: an R package for PICRUSt2 predicted functional profile analysis and visualization}, author={Chen Yang and Aaron Burberry and Jiahao Mai and Liangliang Zhang}, year={2023}, eprint={2303.10388}, archivePrefix={arXiv}, primaryClass={stat.AP} }</p>
 </div>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
-<p>You can install the stable version of ggpicrust2 from CRAN with:</p>
+<p>You can install the stable version of <em>ggpicrust2</em> from CRAN with:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"ggpicrust2"</span><span class="op">)</span></span></code></pre></div>
-<p>To install the latest development version of ggpicrust2 from GitHub, you can use:</p>
+<p>To install the latest development version of <em>ggpicrust2</em> from GitHub, you can use:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># install.packages("devtools")</span></span>
+<code class="sourceCode R"><span><span class="co"># Install the devtools package if not already installed</span></span>
+<span><span class="co"># install.packages("devtools")</span></span>
+<span></span>
+<span><span class="co"># Install ggpicrust2 from GitHub</span></span>
 <span><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"cafferychen777/ggpicrust2"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="stay-updated">Stay Updated<a class="anchor" aria-label="anchor" href="#stay-updated"></a>
 </h2>
-<p>Follow me on Twitter for the latest ggpicrust2 updates: <a href="https://twitter.com/CafferyYang" class="external-link"><img src="https://img.shields.io/twitter/follow/CafferyYang?style=social"></a></p>
+<p>Follow me on Twitter for the latest <em>ggpicrust2</em> updates: <a href="https://twitter.com/CafferyYang" class="external-link"><img src="https://img.shields.io/twitter/follow/CafferyYang?style=social"></a></p>
 </div>
 <div class="section level2">
 <h2 id="workflow">Workflow<a class="anchor" aria-label="anchor" href="#workflow"></a>
 </h2>
-<p>The easiest way to analyze the picrust2 output is using ggpicrust2() function. The entire pipeline can be run with ggpicrust2() function.</p>
+<p>The easiest way to analyze the PICRUSt2 output is using ggpicrust2() function. The entire pipeline can be run with ggpicrust2() function.</p>
 <p>ggpicrust2() integrates ko abundance to kegg pathway abundance conversion, annotation of pathway, differential abundance (DA) analysis, DA results visualization.</p>
 <p><img src="https://cafferychen777.github.io/ggpicrust2/reference/figures/ggpicrust2%20fig1.jpeg"></p>
 <p><img src="https://cafferychen777.github.io/ggpicrust2/reference/figures/ggpicrust2%20fig2.jpeg"></p>
@@ -196,7 +200,7 @@
 <div class="section level3">
 <h3 id="pathway_daa">pathway_daa()<a class="anchor" aria-label="anchor" href="#pathway_daa"></a>
 </h3>
-<p>Differential abundance(DA) analysis plays a major role in PICRUSt2 downstream analysis. pathway_daa() integrates almost all DA methods applicable to the predicted functional profile which there excludes ANCOM and ANCOMBC. It includes ALDEx2(Fernandes et al., 2013), DEseq2(Love et al., 2014), Maaslin2(Mallick et al., 2021), Lin-DA(Zhou et al., 2022), edgeR(Robinson et al., 2010) , limma voom(Ritchie et al., 2015), metagenomeSeq(Paulson et al., 2013), lefser(Segata et al., 2011).</p>
+<p>Differential abundance(DA) analysis plays a major role in PICRUSt2 downstream analysis. pathway_daa() integrates almost all DA methods applicable to the predicted functional profile which there excludes ANCOM and ANCOMBC. It includes <a href="https://bioconductor.riken.jp/packages/3.9/bioc/html/ALDEx2.html" class="external-link">ALDEx2</a>(Fernandes et al., 2013), <a href="https://bioconductor.org/packages/release/bioc/html/DESeq2.html" class="external-link">DEseq2</a>(Love et al., 2014), <a href="https://www.bioconductor.org/packages/release/bioc/html/Maaslin2.html" class="external-link">Maaslin2</a>(Mallick et al., 2021), <a href="https://genomebiology.biomedcentral.com/articles/10.1186/s13059-022-02655-5" class="external-link">LinDA</a>(Zhou et al., 2022), <a href="https://bioconductor.org/packages/release/bioc/html/edgeR.html" class="external-link">edgeR</a>(Robinson et al., 2010) , <a href="https://ucdavis-bioinformatics-training.github.io/2018-June-RNA-Seq-Workshop/thursday/DE.html" class="external-link">limma voom</a>(Ritchie et al., 2015), <a href="https://www.bioconductor.org/packages/release/bioc/html/metagenomeSeq.html#:~:text=metagenomeSeq%20is%20designed%20to%20address,the%20testing%20of%20feature%20correlations." class="external-link">metagenomeSeq</a>(Paulson et al., 2013), <a href="http://bioconductor.org/packages/release/bioc/html/lefser.html" class="external-link">lefser</a>(Segata et al., 2011).</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co">#the abundance table is better to be data.frame rather than tibble</span></span>
 <span><span class="co">#you can use ko2_kegg_abundance output</span></span>
