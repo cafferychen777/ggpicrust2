@@ -23,6 +23,7 @@ rownames(abundance_example) <- paste0("Sample", 1:10)
 colnames(abundance_example) <- c("PathwayA", "PathwayB", "PathwayC")
 
 # Create example metadata
+# Please ensure the sample IDs in the metadata have the column name "sample_name"
 metadata_example <- data.frame(sample_name = rownames(abundance_example),
                                group = factor(rep(c("Control", "Treatment"), each = 5)))
 

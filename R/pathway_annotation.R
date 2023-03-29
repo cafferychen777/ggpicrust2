@@ -36,7 +36,8 @@
 #'                               daa_results_df = NULL,
 #'                               ko_to_kegg = FALSE)
 #'
-#' # Use case 2: Annotating pathway information from the output of pathway_daa function and converting KO abundance to KEGG pathway abundance
+#' # Use case 2: Annotating pathway information from the output of pathway_daa function
+#' # and converting KO abundance to KEGG pathway abundance
 #' result2 <- pathway_annotation(file = NULL,
 #'                               pathway = "KO",
 #'                               daa_results_df = your_daa_results_df,
