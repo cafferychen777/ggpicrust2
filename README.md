@@ -30,9 +30,9 @@ MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.or
 - [Function Details](#function-details)
   - [ko2kegg_abundance()](#ko2kegg_abundance)
   - [pathway_daa()](#pathway_daa)
-  - [pathway_annotation](#pathway_annotation)
-  - [pathway_errorbar](#pathway_errorbar)
-  - [pathway_heatmap](#pathway_heatmap)
+  - [pathway_annotation()](#pathway_annotation)
+  - [pathway_errorbar()](#pathway_errorbar)
+  - [pathway_heatmap()](#pathway_heatmap)
   - [pathway_pca()](#pathway_pca)
 - [Author’s Other Projects](#authors-other-projects)
 
@@ -233,13 +233,13 @@ daa_results_df <- pathway_daa(abundance = abundance,
            reference = "Harvard BRI")
 ```
 
-### pathway_annotation
+### pathway_annotation()
 
 ``` r
 daa_results_df <- pathway_annotation(pathway = "KO", daa_results_df = daa_results_df, ko_to_kegg = TRUE)
 ```
 
-### pathway_errorbar
+### pathway_errorbar()
 
 ``` r
 pathway_errorbar(abundance = abundance,
@@ -254,7 +254,7 @@ pathway_errorbar(abundance = abundance,
            x_lab = NULL)
 ```
 
-### pathway_heatmap
+### pathway_heatmap()
 
 In this section, we will demonstrate how to create a pathway heatmap
 using the `pathway_heatmap` function in the ggpicrust2 package. This
