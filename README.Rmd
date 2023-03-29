@@ -13,56 +13,61 @@ knitr::opts_chunk$set(
 )
 ```
 
-# ggpicrust2
+# ggpicrust2 Documentation
 
-ggpicrust2 is a comprehensive package that integrates pathway name/description annotations, ten of the most advanced differential abundance (DA) methods, and visualization of DA results. It offers a comprehensive solution for analyzing and interpreting the results of picrust2 functional prediction in a seamless and intuitive way. Whether you are a researcher, data scientist, or bioinformatician, ggpicrust2 can help you better understand the underlying biological processes and mechanisms at play in your picrust2 output data. So if you are interested in exploring the output data of picrust2, ggpicrust2 is the tool you need.
+*ggpicrust2* is a comprehensive package that integrates pathway name/description annotations, ten of the most advanced differential abundance (DA) methods, and visualization of DA results. It offers a comprehensive solution for analyzing and interpreting the results of PICRUSt2 functional prediction in a seamless and intuitive way. Whether you are a researcher, data scientist, or bioinformatician, *ggpicrust2* can help you better understand the underlying biological processes and mechanisms at play in your PICRUSt2 output data. So if you are interested in exploring the output data of PICRUSt2, *ggpicrust2* is the tool you need.
+
+[![CRAN version](https://www.r-pkg.org/badges/version/ggpicrust2)](https://CRAN.R-project.org/package=ggpicrust2) [![Downloads](https://cranlogs.r-pkg.org/badges/grand-total/ggpicrust2)](https://CRAN.R-project.org/package=ggpicrust2) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## Table of Contents
 
-- [Citation](#citation)
-- [Installation](#installation)
-- [Stay Updated](#stay-updated)
-- [Workflow](#workflow)
-- [Output](#output)
-- [Function Details](#function-details)
-  - [ko2kegg_abundance()](#ko2kegg_abundance)
-  - [pathway_daa()](#pathway_daa)
-  - [pathway_annotation](#pathway_annotation)
-  - [pathway_errorbar](#pathway_errorbar)
-  - [pathway_heatmap](#pathway_heatmap)
-  - [pathway_pca()](#pathway_pca)
-- [Author's Other Projects](#authors-other-projects)
+-   [Citation](#citation)
+-   [Installation](#installation)
+-   [Stay Updated](#stay-updated)
+-   [Workflow](#workflow)
+-   [Output](#output)
+-   [Function Details](#function-details)
+    -   [ko2kegg_abundance()](#ko2kegg_abundance)
+    -   [pathway_daa()](#pathway_daa)
+    -   [pathway_annotation](#pathway_annotation)
+    -   [pathway_errorbar](#pathway_errorbar)
+    -   [pathway_heatmap](#pathway_heatmap)
+    -   [pathway_pca()](#pathway_pca)
+-   [Author's Other Projects](#authors-other-projects)
 
-## Citation
+## Citation {#citation}
 
-If you use ggpicrust2 in your research, please cite the following paper:
+If you use *ggpicrust2* in your research, please cite the following paper:
 
 Chen Yang, Aaron Burberry, Jiahao Mai, Liangliang Zhang. (2023). [ggpicrust2: an R package for PICRUSt2 predicted functional profile analysis and visualization.](https://arxiv.org/abs/2303.10388) arXiv preprint arXiv:2303.10388.
 
 BibTeX entry: @misc{yang2023ggpicrust2, title={ggpicrust2: an R package for PICRUSt2 predicted functional profile analysis and visualization}, author={Chen Yang and Aaron Burberry and Jiahao Mai and Liangliang Zhang}, year={2023}, eprint={2303.10388}, archivePrefix={arXiv}, primaryClass={stat.AP} }
 
-## Installation
+## Installation {#installation}
 
-You can install the stable version of ggpicrust2 from CRAN with:
+You can install the stable version of *ggpicrust2* from CRAN with:
 
 ``` r
 install.packages("ggpicrust2")
 ```
 
-To install the latest development version of ggpicrust2 from GitHub, you can use:
+To install the latest development version of *ggpicrust2* from GitHub, you can use:
 
 ``` r
+# Install the devtools package if not already installed
 # install.packages("devtools")
+
+# Install ggpicrust2 from GitHub
 devtools::install_github("cafferychen777/ggpicrust2")
 ```
 
-## Stay Updated
+## Stay Updated {#stay-updated}
 
-Follow me on Twitter for the latest ggpicrust2 updates: [![](https://img.shields.io/twitter/follow/CafferyYang?style=social)](https://twitter.com/CafferyYang)
+Follow me on Twitter for the latest *ggpicrust2* updates: [![](https://img.shields.io/twitter/follow/CafferyYang?style=social)](https://twitter.com/CafferyYang)
 
-## Workflow
+## Workflow {#workflow}
 
-The easiest way to analyze the picrust2 output is using ggpicrust2() function. The entire pipeline can be run with ggpicrust2() function.
+The easiest way to analyze the PICRUSt2 output is using ggpicrust2() function. The entire pipeline can be run with ggpicrust2() function.
 
 ggpicrust2() integrates ko abundance to kegg pathway abundance conversion, annotation of pathway, differential abundance (DA) analysis, DA results visualization.
 
@@ -123,7 +128,7 @@ daa_results_list <-
 #The visualization will be published in viewer.
 ```
 
-## Output
+## Output {#output}
 
 The typical output of the ggpicrust2 is like this.
 
@@ -134,9 +139,9 @@ table1 <-read.csv(file="/Users/apple/Microbiome/ggpicrust2/ggpicrust2/docs/refer
 pander::pander(table1[,-10])
 ```
 
-## function details
+## function details {#function-details}
 
-### ko2kegg_abundance()
+### ko2kegg_abundance() {#ko2kegg_abundance}
 
 KEGG Orthology(KO) is a classification system developed by the Kyoto Encyclopedia of Genes and Genomes (KEGG) data-base(Kanehisa et al., 2022). It uses a hierarchical structure to classify enzymes based on the reactions they catalyze. To better understand pathways' role in different groups and classify the pathways, the KO abundance table needs to be converted to KEGG pathway abundance. But PICRUSt2 removes the function from PICRUSt. ko2kegg_abundance() can help convert the table.
 
@@ -153,9 +158,9 @@ kegg_abundance <- ko2kegg_abundance(ko_abundance_file)
 
 ```
 
-### pathway_daa()
+### pathway_daa() {#pathway_daa}
 
-Differential abundance(DA) analysis plays a major role in PICRUSt2 downstream analysis. pathway_daa() integrates almost all DA methods applicable to the predicted functional profile which there excludes ANCOM and ANCOMBC. It includes ALDEx2(Fernandes et al., 2013), DEseq2(Love et al., 2014), Maaslin2(Mallick et al., 2021), Lin-DA(Zhou et al., 2022), edgeR(Robinson et al., 2010) , limma voom(Ritchie et al., 2015), metagenomeSeq(Paulson et al., 2013), lefser(Segata et al., 2011).
+Differential abundance(DA) analysis plays a major role in PICRUSt2 downstream analysis. pathway_daa() integrates almost all DA methods applicable to the predicted functional profile which there excludes ANCOM and ANCOMBC. It includes [ALDEx2](https://bioconductor.riken.jp/packages/3.9/bioc/html/ALDEx2.html)(Fernandes et al., 2013), [DEseq2](https://bioconductor.org/packages/release/bioc/html/DESeq2.html)(Love et al., 2014), [Maaslin2](https://www.bioconductor.org/packages/release/bioc/html/Maaslin2.html)(Mallick et al., 2021), [LinDA](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-022-02655-5)(Zhou et al., 2022), [edgeR](https://bioconductor.org/packages/release/bioc/html/edgeR.html)(Robinson et al., 2010) , [limma voom](https://ucdavis-bioinformatics-training.github.io/2018-June-RNA-Seq-Workshop/thursday/DE.html)(Ritchie et al., 2015), [metagenomeSeq](https://www.bioconductor.org/packages/release/bioc/html/metagenomeSeq.html#:~:text=metagenomeSeq%20is%20designed%20to%20address,the%20testing%20of%20feature%20correlations.)(Paulson et al., 2013), [lefser](http://bioconductor.org/packages/release/bioc/html/lefser.html)(Segata et al., 2011).
 
 ```{r pathway_daa sample,echo = TRUE,eval=FALSE}
 #the abundance table is better to be data.frame rather than tibble
@@ -195,13 +200,13 @@ daa_results_df <- pathway_daa(abundance = abundance,
            reference = "Harvard BRI")
 ```
 
-### pathway_annotation
+### pathway_annotation {#pathway_annotation}
 
 ```{r pathway_annotation sample,echo = TRUE,eval=FALSE}
 daa_results_df <- pathway_annotation(pathway = "KO", daa_results_df = daa_results_df, ko_to_kegg = TRUE)
 ```
 
-### pathway_errorbar
+### pathway_errorbar {#pathway_errorbar}
 
 ```{r pathway_errorbar sample,echo = TRUE,eval=FALSE}
 pathway_errorbar(abundance = abundance,
@@ -216,7 +221,7 @@ pathway_errorbar(abundance = abundance,
            x_lab = NULL)
 ```
 
-### pathway_heatmap
+### pathway_heatmap {#pathway_heatmap}
 
 In this section, we will demonstrate how to create a pathway heatmap using the `pathway_heatmap` function in the ggpicrust2 package. This function visualizes the relative abundance of pathways in different samples.
 
@@ -247,7 +252,7 @@ Finally, we will display the resulting heatmap:
 print(heatmap_plot)
 ```
 
-### pathway_pca()
+### pathway_pca() {#pathway_pca}
 
 In this section, we will demonstrate how to perform Principal Component Analysis (PCA) on functional pathway abundance data and create visualizations of the PCA results using the `pathway_pca` function in the ggpicrust2 package.
 
@@ -275,7 +280,7 @@ Finally, we will display the resulting PCA plot:
 print(pca_plot)
 ```
 
-## Author's other projects
+## Author's other projects {#authors-other-projects}
 
 [MicrobiomeGallery](https://a95dps-caffery-chen.shinyapps.io/MicrobiomeGallery/), a web-based platform for sharing microbiome data visualization code and datasets. （It's still under construction）
 

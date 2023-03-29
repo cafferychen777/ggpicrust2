@@ -1,18 +1,24 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# ggpicrust2
+# ggpicrust2 Documentation
 
-ggpicrust2 is a comprehensive package that integrates pathway
+*ggpicrust2* is a comprehensive package that integrates pathway
 name/description annotations, ten of the most advanced differential
 abundance (DA) methods, and visualization of DA results. It offers a
 comprehensive solution for analyzing and interpreting the results of
-picrust2 functional prediction in a seamless and intuitive way. Whether
-you are a researcher, data scientist, or bioinformatician, ggpicrust2
+PICRUSt2 functional prediction in a seamless and intuitive way. Whether
+you are a researcher, data scientist, or bioinformatician, *ggpicrust2*
 can help you better understand the underlying biological processes and
-mechanisms at play in your picrust2 output data. So if you are
-interested in exploring the output data of picrust2, ggpicrust2 is the
+mechanisms at play in your PICRUSt2 output data. So if you are
+interested in exploring the output data of PICRUSt2, *ggpicrust2* is the
 tool you need.
+
+[![CRAN
+version](https://www.r-pkg.org/badges/version/ggpicrust2)](https://CRAN.R-project.org/package=ggpicrust2)
+[![Downloads](https://cranlogs.r-pkg.org/badges/grand-total/ggpicrust2)](https://CRAN.R-project.org/package=ggpicrust2)
+[![License:
+MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## Table of Contents
 
@@ -32,7 +38,8 @@ tool you need.
 
 ## Citation
 
-If you use ggpicrust2 in your research, please cite the following paper:
+If you use *ggpicrust2* in your research, please cite the following
+paper:
 
 Chen Yang, Aaron Burberry, Jiahao Mai, Liangliang Zhang. (2023).
 [ggpicrust2: an R package for PICRUSt2 predicted functional profile
@@ -47,28 +54,31 @@ primaryClass={stat.AP} }
 
 ## Installation
 
-You can install the stable version of ggpicrust2 from CRAN with:
+You can install the stable version of *ggpicrust2* from CRAN with:
 
 ``` r
 install.packages("ggpicrust2")
 ```
 
-To install the latest development version of ggpicrust2 from GitHub, you
-can use:
+To install the latest development version of *ggpicrust2* from GitHub,
+you can use:
 
 ``` r
+# Install the devtools package if not already installed
 # install.packages("devtools")
+
+# Install ggpicrust2 from GitHub
 devtools::install_github("cafferychen777/ggpicrust2")
 ```
 
 ## Stay Updated
 
-Follow me on Twitter for the latest ggpicrust2 updates:
+Follow me on Twitter for the latest *ggpicrust2* updates:
 [![](https://img.shields.io/twitter/follow/CafferyYang?style=social)](https://twitter.com/CafferyYang)
 
 ## Workflow
 
-The easiest way to analyze the picrust2 output is using ggpicrust2()
+The easiest way to analyze the PICRUSt2 output is using ggpicrust2()
 function. The entire pipeline can be run with ggpicrust2() function.
 
 ggpicrust2() integrates ko abundance to kegg pathway abundance
@@ -167,10 +177,23 @@ kegg_abundance <- ko2kegg_abundance(ko_abundance_file)
 Differential abundance(DA) analysis plays a major role in PICRUSt2
 downstream analysis. pathway_daa() integrates almost all DA methods
 applicable to the predicted functional profile which there excludes
-ANCOM and ANCOMBC. It includes ALDEx2(Fernandes et al., 2013),
-DEseq2(Love et al., 2014), Maaslin2(Mallick et al., 2021), Lin-DA(Zhou
-et al., 2022), edgeR(Robinson et al., 2010) , limma voom(Ritchie et al.,
-2015), metagenomeSeq(Paulson et al., 2013), lefser(Segata et al., 2011).
+ANCOM and ANCOMBC. It includes
+[ALDEx2](https://bioconductor.riken.jp/packages/3.9/bioc/html/ALDEx2.html)(Fernandes
+et al., 2013),
+[DEseq2](https://bioconductor.org/packages/release/bioc/html/DESeq2.html)(Love
+et al., 2014),
+[Maaslin2](https://www.bioconductor.org/packages/release/bioc/html/Maaslin2.html)(Mallick
+et al., 2021),
+[LinDA](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-022-02655-5)(Zhou
+et al., 2022),
+[edgeR](https://bioconductor.org/packages/release/bioc/html/edgeR.html)(Robinson
+et al., 2010) , [limma
+voom](https://ucdavis-bioinformatics-training.github.io/2018-June-RNA-Seq-Workshop/thursday/DE.html)(Ritchie
+et al., 2015),
+[metagenomeSeq](https://www.bioconductor.org/packages/release/bioc/html/metagenomeSeq.html#:~:text=metagenomeSeq%20is%20designed%20to%20address,the%20testing%20of%20feature%20correlations.)(Paulson
+et al., 2013),
+[lefser](http://bioconductor.org/packages/release/bioc/html/lefser.html)(Segata
+et al., 2011).
 
 ``` r
 #the abundance table is better to be data.frame rather than tibble
