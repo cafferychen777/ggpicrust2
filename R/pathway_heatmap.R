@@ -7,7 +7,7 @@
 #' @param metadata A data frame of metadata, where each row corresponds to a sample and each column corresponds to a metadata variable.
 #' @param group A character string specifying the column name in the metadata data frame that contains the group variable.
 #'
-#' @return A ggplot heatmap object. The output is a ggplot object representing the heatmap of the predicted functional pathway abundance data. The heatmap visualizes the relative abundance of pathways in different samples.
+#' @return A ggplot heatmap object. The output is a ggplot object representing the heatmap of the predicted functional pathway abundance data. The heatmap visualizes the z score of pathways in different samples.
 #' @export
 #'
 #' @import dplyr
@@ -29,13 +29,27 @@
 #' heatmap_plot <- pathway_heatmap(t(abundance_example), metadata_example, "group")
 #' print(heatmap_plot)
 utils::globalVariables(c("rowname","Sample","Value"))
-pathway_heatmap <- function(abundance, metadata, group ) {
-   # Make the abundance matrix relative
-  rel_abundance <- funrar::make_relative(abundance)
+pathway_heatmap <- function(abundance, metadata, group) {
+   # Heatmaps use color changes to visualize changes in values. However, if the
+   # data for plotting the heat map are too different, for example, if the heat
+   # map is plotted using gene expression data, gene1 is expressed above 1000 in
+   # all samples and gene2 is expressed between 1-10 in all samples, it is
+   # difficult to plot the heat map with small changes in the expression of two
+   # genes in different samples by the colors to reflect. Therefore, when
+   # plotting a heat map, we usually normalize the gene expression data, that
+   # is, we subtract the mean value of each gene expression from the expression
+   # of this gene in all samples and divide it by its standard deviation, and
+   # this normalization is called standard normalization or Z-score processing.
+   # The processed values are reduced equally, and the expression of each gene
+   # in all samples becomes a set of values with a mean of 0 and a standard
+   # deviation of 1. At this point, the plotted heat map gives a good indication
+   # of the variation in expression of all genes across samples.
+  z_abundance <- t(apply(abundance, 1, scale))
+  colnames(z_abundance) <- colnames(abundance)
 
 
   # Convert the abundance matrix to a data frame
-  rel_df <- as.data.frame(rel_abundance)
+  z_df <- as.data.frame(z_abundance)
 
   # Order the samples based on the environment information
   ordered_metadata <- metadata[order(metadata[, group]),]
@@ -43,7 +57,7 @@ pathway_heatmap <- function(abundance, metadata, group ) {
 
 
   # Convert the abundance data frame to a long format
-  long_df <- rel_df %>%
+  long_df <- z_df %>%
     tibble::rownames_to_column() %>%
     tidyr::pivot_longer(cols = -rowname,
                         names_to = "Sample",
@@ -83,7 +97,7 @@ pathway_heatmap <- function(abundance, metadata, group ) {
         reverse = F,
         barwidth = unit(0.6, "cm"),
         barheight = unit(9, "cm"),
-        title = "Abundance(%)",
+        title = "Z Score",
         title.position = "top",
         title.hjust = -1,
         ticks = TRUE,
