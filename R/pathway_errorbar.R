@@ -18,7 +18,7 @@
 #' @export
 #'
 #' @examples
-utils::globalVariables(c("group", "name", "value", "feature", "negative_log10_p", "group_nonsense", "nonsense", "pathway_class", "p_adjust", "log_2_fold_change"))
+utils::globalVariables(c("group", "name", "value", "feature", "negative_log10_p", "group_nonsense", "nonsense", "pathway_class", "p_adjust", "log_2_fold_change", "transform_sample_counts"))
 pathway_errorbar <-
   function(abundance,
            daa_results_df,
@@ -60,7 +60,7 @@ pathway_errorbar <-
     errorbar_sub_abundance_mat <-
       errorbar_abundance_mat[rownames(errorbar_abundance_mat) %in% daa_results_filtered_sub_df$feature,]
     errorbar_sub_relative_abundance_mat <-
-      as.matrix(as.data.frame(transform_sample_counts(otu_table(errorbar_sub_abundance_mat,taxa_are_rows = TRUE), function(x) x/sum(x))))
+      as.matrix(as.data.frame(transform_sample_counts(phyloseq::otu_table(errorbar_sub_abundance_mat,taxa_are_rows = TRUE), function(x) x/sum(x))))
     error_bar_matrix <-
       cbind(
         sample = colnames(errorbar_sub_relative_abundance_mat),

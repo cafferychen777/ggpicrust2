@@ -29,7 +29,7 @@
 #' heatmap_plot <- pathway_heatmap(t(abundance_example), metadata_example, "group")
 #' print(heatmap_plot)
 utils::globalVariables(c("rowname","Sample","Value"))
-pathway_heatmap <- function(abundance, metadata, group) {
+pathway_heatmap <- function(abundance, metadata, group ) {
    # Make the abundance matrix relative
   rel_abundance <- funrar::make_relative(abundance)
 

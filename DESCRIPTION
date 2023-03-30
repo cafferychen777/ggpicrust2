@@ -32,7 +32,8 @@ Imports:
     SummarizedExperiment,
     tibble,
     tidyr,
-    ggprism
+    ggprism,
+    phyloseq
 Depends: 
     R (>= 2.10)
 Suggests: 
