@@ -1,7 +1,7 @@
 Package: ggpicrust2
 Type: Package
 Title: Make 'PICRUSt2' Output Analysis and Visualization Easier
-Version: 1.4.11
+Version: 1.4.12
 Authors@R: c(
     person("Chen", "Yang", email = "cafferychen7850@gmail.com", role = c("aut", "cre")),
     person("Liangliang", "Zhang", email = "lxz716@case.edu ", role = "aut"))
@@ -18,7 +18,6 @@ Imports:
     DESeq2,
     dplyr,
     edgeR,
-    funrar,
     GGally,
     ggplot2,
     grid,
