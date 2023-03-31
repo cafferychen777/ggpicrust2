@@ -46,7 +46,7 @@ pathway_pca <- function(abundance, metadata, group){
     ggplot2::scale_color_manual(values=colors_choices)+
     ggplot2::stat_ellipse(ggplot2::aes(color = Group),fill="white",geom = "polygon",
                  level=0.95,alpha = 0.01,show.legend = F)+
-    ggplot2::labs(x=paste0("PC1(",round(pca_proportion[1],1),"%)"),y=paste0("PC1(",round(pca_proportion[2],1),"%)"),color = group)+
+    ggplot2::labs(x=paste0("PC1(",round(pca_proportion[1],1),"%)"),y=paste0("PC2(",round(pca_proportion[2],1),"%)"),color = group)+
     ggplot2::theme_classic()+
     ggplot2::theme(axis.line=ggplot2::element_line(colour = "black"),
           axis.title=ggplot2::element_text(color="black",face = "bold"),
