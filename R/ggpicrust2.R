@@ -49,7 +49,7 @@ ggpicrust2 <- function(file,
                        select = NULL,
                        reference = NULL,
                        colors = NULL) {
-  # 创建一个空list
+  #create an empty list
   plot_result_list <- list()
 
   switch(ko_to_kegg,
@@ -80,19 +80,19 @@ ggpicrust2 <- function(file,
              if (is.null(select)){
                daa_sub_method_results_df_sorted <- daa_sub_method_results_df
              }else if (select == "Top 10"){
-               # 对 daa_sub_method_results_df 按照 p_adjust 进行排序，自小向大
+               # Sort daa_sub_method_results_df by p_adjust, from smallest to largest
                daa_sub_method_results_df_sorted <- daa_sub_method_results_df[order(daa_sub_method_results_df$p_adjust),]
-               # 保留 p_adjust 最小的十条记录
+               #Keep the ten smallest records p_adjust
                daa_sub_method_results_df_sorted <- daa_sub_method_results_df_sorted[1:10,]
              }else if (select == "Top 20"){
-               # 对 daa_sub_method_results_df 按照 p_adjust 进行排序，自小向大
+               # Sort daa_sub_method_results_df by p_adjust, from smallest to largest
                daa_sub_method_results_df_sorted <- daa_sub_method_results_df[order(daa_sub_method_results_df$p_adjust),]
-               # 保留 p_adjust 最小的二十条记录
+               # Keep p_adjust minimum of 20 records
                daa_sub_method_results_df_sorted <- daa_sub_method_results_df_sorted[1:20,]
              }else if (select == "Top 30"){
-               # 对 daa_sub_method_results_df 按照 p_adjust 进行排序，自小向大
+               # Sort daa_sub_method_results_df by p_adjust, from smallest to largest
                daa_sub_method_results_df_sorted <- daa_sub_method_results_df[order(daa_sub_method_results_df$p_adjust),]
-               # 保留 p_adjust 最小的三十条记录
+               # Keep p_adjust minimum of 30 records
                daa_sub_method_results_df_sorted <- daa_sub_method_results_df_sorted[1:30,]
              }
              combination_bar_plot <-
@@ -105,9 +105,9 @@ ggpicrust2 <- function(file,
                  colors = colors,
                  x_lab = x_lab
                )
-             # 创建一个子list，包含一个combination_bar_plot和对应的daa_results_df子集
+             # Create a sublist containing a combination_bar_plot and the corresponding subset of daa_results_df
              sub_list <- list(plot = combination_bar_plot, results = daa_sub_method_results_df)
-             # 将子list添加到主list中
+             # Add sublists to the main list
              plot_result_list[[j]] <- sub_list
              j <- j + 1
            }
@@ -152,9 +152,9 @@ ggpicrust2 <- function(file,
                  colors = colors,
                  x_lab = x_lab
                )
-             # 创建一个子list
+             # Create a sublist
              sub_list <- list(plot = combination_bar_plot, results = daa_sub_method_results_df)
-             # 将子list添加到主list中
+             # Add sublists to the main list
              plot_result_list[[j]] <- sub_list
              j <- j + 1
            }
