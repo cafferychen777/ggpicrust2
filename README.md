@@ -41,16 +41,16 @@ MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.or
 If you use *ggpicrust2* in your research, please cite the following
 paper:
 
-Chen Yang, Aaron Burberry, Jiahao Mai, Liangliang Zhang. (2023).
-[ggpicrust2: an R package for PICRUSt2 predicted functional profile
-analysis and visualization.](https://arxiv.org/abs/2303.10388) arXiv
-preprint arXiv:2303.10388.
+Chen Yang, Aaron Burberry, Xuan Cao, Jiahao Mai, Liangliang Zhang.
+(2023). [ggpicrust2: an R package for PICRUSt2 predicted functional
+profile analysis and visualization.](https://arxiv.org/abs/2303.10388)
+arXiv preprint arXiv:2303.10388.
 
 BibTeX entry: @misc{yang2023ggpicrust2, title={ggpicrust2: an R package
 for PICRUSt2 predicted functional profile analysis and visualization},
-author={Chen Yang and Aaron Burberry and Jiahao Mai and Liangliang
-Zhang}, year={2023}, eprint={2303.10388}, archivePrefix={arXiv},
-primaryClass={stat.AP} }
+author={Chen Yang and Aaron Burberry and Jiahao Mai and Xuan Cao and
+Liangliang Zhang}, year={2023}, eprint={2303.10388},
+archivePrefix={arXiv}, primaryClass={stat.AP} }
 
 You can also find the paper on
 [ResearchGate](https://www.researchgate.net/publication/369380349_ggpicrust2_an_R_package_for_PICRUSt2_predicted_functional_profile_analysis_and_visualization).
@@ -88,9 +88,9 @@ ggpicrust2() integrates ko abundance to kegg pathway abundance
 conversion, annotation of pathway, differential abundance (DA) analysis,
 DA results visualization.
 
-![](https://cafferychen777.github.io/ggpicrust2/reference/figures/ggpicrust2%20fig1.jpeg)
+![](https://github.moeyy.xyz/https://raw.githubusercontent.com/cafferychen777/ggpicrust2_paper/main/paper_figure/workflow_1.png)
 
-![](https://cafferychen777.github.io/ggpicrust2/reference/figures/ggpicrust2%20fig2.jpeg)
+![](https://github.moeyy.xyz/https://raw.githubusercontent.com/cafferychen777/ggpicrust2_paper/main/paper_figure/workflow_2.png)
 
 ``` r
 #If you want to analysis kegg pathway abundance instead of ko within the pathway. You should turn ko_to_kegg to TRUE.
