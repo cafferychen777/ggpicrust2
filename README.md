@@ -218,7 +218,7 @@ daa_results_df <- pathway_daa(abundance = abundance,
            select = NULL,
            p.adjust = "BH",
            reference = NULL)
-#If you group levels >3 and want to use the LinDA or limma voom, you should give a reference.
+#If you group levels >3 and want to use the LinDA, limme voom and Maaslin2, you should give a reference.
 metadata <-
   read_delim(
     "~/Microbiome/C9orf72/Code And Data/new_metadata.txt",
