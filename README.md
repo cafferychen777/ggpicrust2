@@ -86,7 +86,9 @@ function. The entire pipeline can be run with ggpicrust2() function.
 
 ggpicrust2() integrates ko abundance to kegg pathway abundance
 conversion, annotation of pathway, differential abundance (DA) analysis,
-DA results visualization.
+DA results visualization. When you have trouble running ggpicrust2(),
+you can debug it by running a separate function, which will greatly
+increase the speed of your analysis and visualization
 
 ![](https://github.moeyy.xyz/https://raw.githubusercontent.com/cafferychen777/ggpicrust2_paper/main/paper_figure/workflow_1.png)
 
@@ -110,13 +112,8 @@ daa_results_list <-
     group = "Enviroment",
     pathway = "KO",
     daa_method = "LinDA",
-    p_values_bar = TRUE,
-    order = "pathway_class",
     ko_to_kegg = TRUE,
-    x_lab = "pathway_name",
-    p.adjust = "BH",
-    select = NULL,
-    reference = NULL
+    order = "pathway_class"
   )
 #The visualization will be published in viewer.
 

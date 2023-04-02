@@ -30,7 +30,10 @@
 #'                       metadata = metadata,
 #'                       group = "your_group_column",
 #'                       pathway = "KO",
-#'                       daa_method = "ALDEx2")
+#'                       daa_method = "LinDA"，
+#'                       order = "pathway_class",
+#'                       p_values_bar = TRUE,
+#'                       x_lab = "pathway_name")
 #'
 #' # Access the plot and results dataframe for the first DA method
 #' example_plot <- results[[1]]$plot
