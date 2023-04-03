@@ -13,11 +13,21 @@ knitr::opts_chunk$set(
 )
 ```
 
+# ggpicrust2 Community User Tutorial Competition
+
+As an open source developer, I am excited to announce a competition for the best tutorials on using *ggpicrust2* - an R package designed for analyzing and interpreting the results of PICRUSt2 functional prediction.
+
+We welcome submissions in any format, and the first place winner will receive a full set of *ggpicrust2* community swag, including a logo t-shirt, tote bag, and hat. The second, third, and fourth place winners will each receive a cultural t-shirt with the *ggpicrust2* logo.
+
+The competition will run from April 3 to June 3, and to enter, simply use Rstudio's rpub function to publish your tutorial online, and then send an email to [Caffery](cafferychen7850@gmail.com) with the link.
+
+Whether you are a researcher, data scientist, or bioinformatician, ggpicrust2 can help you better understand the underlying biological processes and mechanisms at play in your PICRUSt2 output data. So, join us in building an even better ggpicrust2 community!
+
 # ggpicrust2 Documentation
 
 *ggpicrust2* is a comprehensive package that integrates pathway name/description annotations, ten of the most advanced differential abundance (DA) methods, and visualization of DA results. It offers a comprehensive solution for analyzing and interpreting the results of PICRUSt2 functional prediction in a seamless and intuitive way. Whether you are a researcher, data scientist, or bioinformatician, *ggpicrust2* can help you better understand the underlying biological processes and mechanisms at play in your PICRUSt2 output data. So if you are interested in exploring the output data of PICRUSt2, *ggpicrust2* is the tool you need.
 
-[![CRAN version](https://www.r-pkg.org/badges/version/ggpicrust2)](https://CRAN.R-project.org/package=ggpicrust2) [![Downloads](https://cranlogs.r-pkg.org/badges/grand-total/ggpicrust2)](https://CRAN.R-project.org/package=ggpicrust2) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/mit)
+[![CRAN version](https://www.r-pkg.org/badges/version/ggpicrust2)](https://CRAN.R-project.org/package=ggpicrust2) [![Downloads](https://cranlogs.r-pkg.org/badges/grand-total/ggpicrust2)](https://CRAN.R-project.org/package=ggpicrust2) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/license/mit)
 
 ## Table of Contents
 
