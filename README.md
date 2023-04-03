@@ -18,9 +18,9 @@ use Rstudio’s rpub function to publish your tutorial online, and then
 send an email to [Caffery](cafferychen7850@gmail.com) with the link.
 
 Whether you are a researcher, data scientist, or bioinformatician,
-ggpicrust2 can help you better understand the underlying biological
+*ggpicrust2* can help you better understand the underlying biological
 processes and mechanisms at play in your PICRUSt2 output data. So, join
-us in building an even better ggpicrust2 community!
+us in building an even better *ggpicrust2* community!
 
 # ggpicrust2 Documentation
 
@@ -39,7 +39,7 @@ tool you need.
 version](https://www.r-pkg.org/badges/version/ggpicrust2)](https://CRAN.R-project.org/package=ggpicrust2)
 [![Downloads](https://cranlogs.r-pkg.org/badges/grand-total/ggpicrust2)](https://CRAN.R-project.org/package=ggpicrust2)
 [![License:
-MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/license/mit)
+MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/license/mit/)
 
 ## Table of Contents
 
@@ -133,8 +133,12 @@ daa_results_list <-
     group = "Enviroment",
     pathway = "KO",
     daa_method = "LinDA",
+    p_values_bar = TRUE,
+    p.adjust = "BH",
     ko_to_kegg = TRUE,
     order = "pathway_class"
+    select = NULL,
+    reference = NULL
   )
 #The visualization will be published in viewer.
 

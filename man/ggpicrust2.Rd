@@ -64,7 +64,11 @@ results <- ggpicrust2(file = abundance_file,
                       metadata = metadata,
                       group = "your_group_column",
                       pathway = "KO",
-                      daa_method = "ALDEx2")
+                      daa_method = "LinDA"，
+                      ko_to_kegg = TRUE,
+                      order = "pathway_class",
+                      p_values_bar = TRUE,
+                      x_lab = "pathway_name")
 
 # Access the plot and results dataframe for the first DA method
 example_plot <- results[[1]]$plot

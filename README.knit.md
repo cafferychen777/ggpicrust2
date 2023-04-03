@@ -4,14 +4,7 @@ output: github_document
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-```{r, include = FALSE}
-knitr::opts_chunk$set(
-  collapse = TRUE,
-  comment = "#>",
-  fig.path = "man/figures/README-",
-  out.width = "100%"
-)
-```
+
 
 # ggpicrust2 Community User Tutorial Competition
 
@@ -87,7 +80,8 @@ ggpicrust2() integrates ko abundance to kegg pathway abundance conversion, annot
 
 ![](https://github.moeyy.xyz/https://raw.githubusercontent.com/cafferychen777/ggpicrust2_paper/main/paper_figure/workflow_2.png)
 
-```{r ggpicrust2(), eval = FALSE}
+
+```r
 #If you want to analysis kegg pathway abundance instead of ko within the pathway. You should turn ko_to_kegg to TRUE.
 #The kegg pathway typically have the more explainable description.
 metadata <-
@@ -147,10 +141,7 @@ The typical output of the ggpicrust2 is like this.
 
 ![](https://cdn.jsdelivr.ren/gh/cafferychen777/ggpicrust2_paper@main/paper_figure/figure1.jpg)
 
-```{r ,echo = FALSE,eval=FALSE}
-table1 <-read.csv(file="/Users/apple/Microbiome/ggpicrust2/ggpicrust2/docs/reference/table/ggpicrust2 table1.csv")
-pander::pander(table1[,-10])
-```
+
 
 ## function details {#function-details}
 
@@ -158,7 +149,8 @@ pander::pander(table1[,-10])
 
 KEGG Orthology(KO) is a classification system developed by the Kyoto Encyclopedia of Genes and Genomes (KEGG) data-base(Kanehisa et al., 2022). It uses a hierarchical structure to classify enzymes based on the reactions they catalyze. To better understand pathways' role in different groups and classify the pathways, the KO abundance table needs to be converted to KEGG pathway abundance. But PICRUSt2 removes the function from PICRUSt. ko2kegg_abundance() can help convert the table.
 
-```{r ko2kegg_abundance sample,echo = TRUE,eval=FALSE}
+
+```r
 # Sample usage of the ko2kegg_abundance function
 
 # Assume that the KO abundance table is stored in a file named "ko_abundance.tsv"
@@ -175,7 +167,8 @@ kegg_abundance <- ko2kegg_abundance(ko_abundance_file)
 
 Differential abundance(DA) analysis plays a major role in PICRUSt2 downstream analysis. pathway_daa() integrates almost all DA methods applicable to the predicted functional profile which there excludes ANCOM and ANCOMBC. It includes [ALDEx2](https://bioconductor.riken.jp/packages/3.9/bioc/html/ALDEx2.html)(Fernandes et al., 2013), [DEseq2](https://bioconductor.org/packages/release/bioc/html/DESeq2.html)(Love et al., 2014), [Maaslin2](https://www.bioconductor.org/packages/release/bioc/html/Maaslin2.html)(Mallick et al., 2021), [LinDA](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-022-02655-5)(Zhou et al., 2022), [edgeR](https://bioconductor.org/packages/release/bioc/html/edgeR.html)(Robinson et al., 2010) , [limma voom](https://ucdavis-bioinformatics-training.github.io/2018-June-RNA-Seq-Workshop/thursday/DE.html)(Ritchie et al., 2015), [metagenomeSeq](https://www.bioconductor.org/packages/release/bioc/html/metagenomeSeq.html#:~:text=metagenomeSeq%20is%20designed%20to%20address,the%20testing%20of%20feature%20correlations.)(Paulson et al., 2013), [lefser](http://bioconductor.org/packages/release/bioc/html/lefser.html)(Segata et al., 2011).
 
-```{r pathway_daa sample,echo = TRUE,eval=FALSE}
+
+```r
 #the abundance table is better to be data.frame rather than tibble
 #you can use ko2_kegg_abundance output
 abundance <- ko2kegg_abundance(ko_abundance_file)
@@ -217,13 +210,15 @@ daa_results_df <- pathway_daa(abundance = abundance,
 
 **If you are in China and you are using kegg pathway annotation, Please make sure your internet can break through the firewall.**
 
-```{r pathway_annotation sample,echo = TRUE,eval=FALSE}
+
+```r
 daa_results_df <- pathway_annotation(pathway = "KO", daa_results_df = daa_results_df, ko_to_kegg = TRUE)
 ```
 
 ### pathway_errorbar() {#pathway_errorbar}
 
-```{r pathway_errorbar sample,echo = TRUE,eval=FALSE}
+
+```r
 pathway_errorbar(abundance = abundance,
            daa_results_df = daa_results_df,
            Group = metadata$Enviroment,
@@ -242,7 +237,8 @@ In this section, we will demonstrate how to create a pathway heatmap using the `
 
 First, we will create some example functional pathway abundance data and metadata:
 
-```{r  ,echo = TRUE,eval=FALSE}
+
+```r
 # Create example functional pathway abundance data
 abundance_example <- matrix(rnorm(30), nrow = 10, ncol = 3)
 rownames(abundance_example) <- paste0("Sample", 1:10)
@@ -256,14 +252,16 @@ metadata_example <- data.frame(sample_name = rownames(abundance_example),
 
 Next, we will use the pathway_heatmap function to create a heatmap:
 
-```{r ,echo = TRUE,eval=FALSE}
+
+```r
 # Create a heatmap
 heatmap_plot <- ggpicrust2::pathway_heatmap(t(abundance_example), metadata_example, "group")
 ```
 
 Finally, we will display the resulting heatmap:
 
-```{r  ,echo = TRUE,eval=FALSE}
+
+```r
 print(heatmap_plot)
 ```
 
@@ -273,7 +271,8 @@ In this section, we will demonstrate how to perform Principal Component Analysis
 
 First, we will create some example functional pathway abundance data and metadata:
 
-```{r ,echo = TRUE,eval=FALSE}
+
+```r
 # Create example functional pathway abundance data
 abundance_example <- data.frame(A = rnorm(10), B = rnorm(10), C = rnorm(10))
 
@@ -284,14 +283,16 @@ metadata_example <- tibble::tibble(sample_id = 1:10,
 
 Next, we will use the pathway_pca function to perform PCA and create visualizations:
 
-```{r ,echo = TRUE,eval=FALSE}
+
+```r
 # Perform PCA and create visualizations
 pca_plot <- ggpicrust2::pathway_pca(t(abundance_example), metadata_example, "group")
 ```
 
 Finally, we will display the resulting PCA plot:
 
-```{r ,echo = TRUE,eval=FALSE}
+
+```r
 print(pca_plot)
 ```
 

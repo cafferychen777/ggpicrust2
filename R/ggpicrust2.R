@@ -31,6 +31,7 @@
 #'                       group = "your_group_column",
 #'                       pathway = "KO",
 #'                       daa_method = "LinDA"，
+#'                       ko_to_kegg = TRUE,
 #'                       order = "pathway_class",
 #'                       p_values_bar = TRUE,
 #'                       x_lab = "pathway_name")
@@ -104,6 +105,7 @@ ggpicrust2 <- function(file,
                  daa_results_df = daa_sub_method_results_df_sorted,
                  Group = metadata[, group],
                  ko_to_kegg = ko_to_kegg,
+                 p_value_bar = p_values_bar,
                  order = "pathway_class",
                  colors = colors,
                  x_lab = x_lab
@@ -151,6 +153,7 @@ ggpicrust2 <- function(file,
                  daa_sub_method_results_df,
                  metadata[, group],
                  ko_to_kegg = ko_to_kegg,
+                 p_value_bar = p_values_bar,
                  order = order,
                  colors = colors,
                  x_lab = x_lab
