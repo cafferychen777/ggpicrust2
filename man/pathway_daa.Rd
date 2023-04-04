@@ -23,7 +23,7 @@ pathway_daa(
 
 \item{daa_method}{a character specifying the method for differential abundance analysis, default is "ALDEx2"}
 
-\item{select}{a vector containing pathway names for analysis, if NULL all pathways are included, default is NULL}
+\item{select}{a vector containing sample names for analysis, if NULL all samples are included, default is NULL}
 
 \item{p.adjust}{a character specifying the method for p-value adjustment, default is "BH"}
 

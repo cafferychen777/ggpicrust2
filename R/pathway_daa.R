@@ -4,7 +4,7 @@
 #' @param metadata a tibble containing samples information
 #' @param group a character specifying the group name for differential abundance analysis
 #' @param daa_method a character specifying the method for differential abundance analysis, default is "ALDEx2"
-#' @param select a vector containing pathway names for analysis, if NULL all pathways are included, default is NULL
+#' @param select a vector containing sample names for analysis, if NULL all samples are included, default is NULL
 #' @param p.adjust a character specifying the method for p-value adjustment, default is "BH"
 #' @param reference a character specifying the reference group level, required for several differential abundance analysis methods such as LinDA, limme voom and Maaslin2, default is NULL
 #'
@@ -103,7 +103,7 @@ pathway_daa <-
               p_values = c(ALDEx2_results$we.ep, ALDEx2_results$wi.ep)
             )
         } else {
-          #messgae("ALDEx2 takes a long time to complete the calculation, please wait patiently.")
+          message("ALDEx2 takes a long time to complete the calculation, please wait patiently.")
           ALDEx2_object <-
             ALDEx2::aldex.clr(
               ALDEx2_abundance,

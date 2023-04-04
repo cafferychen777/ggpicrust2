@@ -9,7 +9,7 @@
 #' @param p.adjust A character, the method to adjust p-values
 #' @param order A character to control the order of the main plot rows
 #' @param p_values_bar A character to control if the main plot has the p_values bar
-#' @param x_lab A character to control the x-axis label name
+#' @param x_lab A character to control the x-axis label name, you can choose from "feature","pathway_name" and "description"
 #' @param select A vector consisting of pathway names to be selected
 #' @param reference A character, a reference group level for several DA methods
 #' @param colors A vector consisting of colors number
@@ -49,7 +49,7 @@ ggpicrust2 <- function(file,
                        p.adjust = "BH",
                        order = "group",
                        p_values_bar = TRUE,
-                       x_lab = "pathway_name",
+                       x_lab = NULL,
                        select = NULL,
                        reference = NULL,
                        colors = NULL) {
@@ -72,42 +72,22 @@ ggpicrust2 <- function(file,
            if (sum(as.numeric(daa_results_df$p_adjust <= 0.05)) == 0){
              stop("There are no statistically significant biomarkers")
            }
-           if (x_lab == "pathway_name") {
              daa_results_df  <-
                pathway_annotation(daa_results_df = daa_results_df, ko_to_kegg = TRUE)
-           }
            j <- 1
            for (i in unique(daa_results_df$method)) {
              daa_sub_method_results_df <-
                daa_results_df[daa_results_df[, "method"] == i,]
-             daa_sub_method_results_df_sorted <- data.frame()
-             if (is.null(select)){
-               daa_sub_method_results_df_sorted <- daa_sub_method_results_df
-             }else if (select == "Top 10"){
-               # Sort daa_sub_method_results_df by p_adjust, from smallest to largest
-               daa_sub_method_results_df_sorted <- daa_sub_method_results_df[order(daa_sub_method_results_df$p_adjust),]
-               #Keep the ten smallest records p_adjust
-               daa_sub_method_results_df_sorted <- daa_sub_method_results_df_sorted[1:10,]
-             }else if (select == "Top 20"){
-               # Sort daa_sub_method_results_df by p_adjust, from smallest to largest
-               daa_sub_method_results_df_sorted <- daa_sub_method_results_df[order(daa_sub_method_results_df$p_adjust),]
-               # Keep p_adjust minimum of 20 records
-               daa_sub_method_results_df_sorted <- daa_sub_method_results_df_sorted[1:20,]
-             }else if (select == "Top 30"){
-               # Sort daa_sub_method_results_df by p_adjust, from smallest to largest
-               daa_sub_method_results_df_sorted <- daa_sub_method_results_df[order(daa_sub_method_results_df$p_adjust),]
-               # Keep p_adjust minimum of 30 records
-               daa_sub_method_results_df_sorted <- daa_sub_method_results_df_sorted[1:30,]
-             }
              combination_bar_plot <-
                pathway_errorbar(
                  abundance = abundance,
-                 daa_results_df = daa_sub_method_results_df_sorted,
+                 daa_results_df = daa_sub_method_results_df,
                  Group = metadata[, group],
                  ko_to_kegg = ko_to_kegg,
                  p_value_bar = p_values_bar,
-                 order = "pathway_class",
+                 order = order,
                  colors = colors,
+                 select = select,
                  x_lab = x_lab
                )
              # Create a sublist containing a combination_bar_plot and the corresponding subset of daa_results_df
@@ -126,8 +106,8 @@ ggpicrust2 <- function(file,
              escape_double = FALSE,
              trim_ws = TRUE
            )
-           abundance <-
-             tibble::column_to_rownames(abundance, var = "function")
+           rownames(abundance) <- abundance[,1]
+           abundance <- abundance[,-1]
            daa_results_df <- pathway_daa(
              abundance = abundance,
              metadata = metadata,
@@ -156,6 +136,7 @@ ggpicrust2 <- function(file,
                  p_value_bar = p_values_bar,
                  order = order,
                  colors = colors,
+                 select = select,
                  x_lab = x_lab
                )
              # Create a sublist

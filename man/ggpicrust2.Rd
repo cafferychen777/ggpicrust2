@@ -14,7 +14,7 @@ ggpicrust2(
   p.adjust = "BH",
   order = "group",
   p_values_bar = TRUE,
-  x_lab = "pathway_name",
+  x_lab = NULL,
   select = NULL,
   reference = NULL,
   colors = NULL
@@ -39,7 +39,7 @@ ggpicrust2(
 
 \item{p_values_bar}{A character to control if the main plot has the p_values bar}
 
-\item{x_lab}{A character to control the x-axis label name}
+\item{x_lab}{A character to control the x-axis label name, you can choose from "feature","pathway_name" and "description"}
 
 \item{select}{A vector consisting of pathway names to be selected}
 

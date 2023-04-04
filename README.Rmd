@@ -87,6 +87,8 @@ ggpicrust2() integrates ko abundance to kegg pathway abundance conversion, annot
 
 ![](https://github.moeyy.xyz/https://raw.githubusercontent.com/cafferychen777/ggpicrust2_paper/main/paper_figure/workflow_2.png)
 
+### ggpicrust2()
+
 ```{r ggpicrust2(), eval = FALSE}
 #If you want to analysis kegg pathway abundance instead of ko within the pathway. You should turn ko_to_kegg to TRUE.
 #The kegg pathway typically have the more explainable description.
@@ -110,9 +112,10 @@ daa_results_list <-
     ko_to_kegg = TRUE,
     order = "pathway_class"
     select = NULL,
-    reference = NULL
+    reference = NULL # If your metadata[,group] has more than two levels, please specify a reference.
   )
-#The visualization will be published in viewer.
+
+
 
 #If you want to analysis the EC. MetaCyc. KO without conversions. You should turn ko_to_kegg to FALSE.
 metadata <-
@@ -138,7 +141,130 @@ daa_results_list <-
     select = NULL,
     reference = NULL
   )
-#The visualization will be published in viewer.
+```
+
+### If an error occurs with ggpicrust2, please use the following workflow. 
+
+```{r alternative, eval = FALSE}
+#If you want to analysis kegg pathway abundance instead of ko within the pathway. You should turn ko_to_kegg to TRUE.
+#The kegg pathway typically have the more explainable description.
+#metadata should be tibble.
+metadata <-
+  read_delim(
+    "~/Microbiome/C9orf72/Code And Data/new_metadata.txt",
+    delim = "\t",
+    escape_double = FALSE,
+    trim_ws = TRUE
+  )
+
+kegg_abundance <-
+  ko2kegg_abundance(
+    "/Users/apple/Downloads/pred_metagenome_unstrat.tsv/pred_metagenome_unstrat.tsv"
+  )
+
+group <- "Enviroment"
+
+daa_results_df <-
+  pathway_daa(
+    abundance = kegg_abundance,
+    metadata = metadata,
+    group = group,
+    daa_method = "ALDEx2",
+    select = NULL,
+    reference = NULL
+  )
+
+#if you are using LinDA, limme voom and Maaslin2, please specify a reference just like followings code.
+# daa_results_df <- pathway_daa(abundance = kegg_abundance, metadata = metadata, group = group, daa_method = "ALDEx2", select = NULL, reference = "Harvard BRI")
+
+daa_sub_method_results_df <-
+  daa_results_df[daa_results_df$method == "ALDEx2_Kruskal-Wallace test", ]
+
+daa_annotated_sub_method_results_df <-
+  pathway_annotation(pathway = "KO",
+                     daa_results_df = daa_sub_method_results_df,
+                     ko_to_kegg = TRUE)
+
+Group <-
+  metadata$Enviroment # column which you are interested in metadata
+
+# select parameter format in pathway_error() is c("ko00562", "ko00440", "ko04111", "ko05412", "ko00310", "ko04146", "ko00600", "ko04142", "ko00604", "ko04260", "ko04110", "ko04976", "ko05222", "ko05416", "ko00380", "ko05322", "ko00625", "ko00624", "ko00626", "ko00621")
+
+daa_results_list <-
+  pathway_errorbar(
+    abundance = kegg_abundance,
+    daa_results_df = daa_annotated_sub_method_results_df,
+    Group = Group,
+    p_values_threshold = 0.05,
+    order = "pathway_class",
+    select = NULL,
+    ko_to_kegg = TRUE,
+    p_value_bar = TRUE,
+    colors = NULL,
+    x_lab = "pathway_name"
+  )
+# x_lab can be set "feature" which represents kegg pathway id.
+
+# If you want to analysis the EC. MetaCyc. KO without conversions. You should turn ko_to_kegg to FALSE.
+metadata <-
+  read_delim(
+    "~/Microbiome/C9orf72/Code And Data/new_metadata.txt",
+    delim = "\t",
+    escape_double = FALSE,
+    trim_ws = TRUE
+  )
+
+#ko_abundance should be data.frame instead of tibble
+#ID should be in the first column
+ko_abundance <-
+  read.delim(
+    "/Users/apple/Downloads/pred_metagenome_unstrat.tsv/pred_metagenome_unstrat.tsv"
+  )
+#sometimes there are function, pathway or something else. Change function. when needed
+rownames(ko_abundance) <- ko_abundance$function.
+ko_abundance <- ko_abundance[, -1]
+
+group <- "Enviroment"
+
+daa_results_df <-
+  pathway_daa(
+    abundance = ko_abundance,
+    metadata = metadata,
+    group = group,
+    daa_method = "ALDEx2",
+    select = NULL,
+    reference = NULL
+  )
+
+#if you are using LinDA, limme voom and Maaslin2, please specify a reference just like followings code.
+# daa_results_df <- pathway_daa(abundance = kegg_abundance, metadata = metadata, group = group, daa_method = "ALDEx2", select = NULL, reference = "Harvard BRI")
+
+daa_sub_method_results_df <-
+  daa_results_df[daa_results_df$method == "ALDEx2_Kruskal-Wallace test", ]
+
+daa_annotated_sub_method_results_df <-
+  pathway_annotation(pathway = "KO",
+                     daa_results_df = daa_sub_method_results_df,
+                     ko_to_kegg = FALSE)
+
+Group <-
+  metadata$Enviroment # column which you are interested in metadata
+
+# select parameter format in pathway_error() is c("K00001", "K00002", "K00003", "K00004")
+
+daa_results_list <-
+  pathway_errorbar(
+    abundance = ko_abundance,
+    daa_results_df = daa_annotated_sub_method_results_df,
+    Group = Group,
+    p_values_threshold = 0.05,
+    order = "pathway_class",
+    select = NULL,
+    ko_to_kegg = FALSE,
+    p_value_bar = TRUE,
+    colors = NULL,
+    x_lab = "description"
+  )
 ```
 
 ## Output {#output}
