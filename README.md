@@ -1,26 +1,7 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# ggpicrust2 Community User Tutorial Competition
-
-As an open source developer, I am excited to announce a competition for
-the best tutorials on using *ggpicrust2* - an R package designed for
-analyzing and interpreting the results of PICRUSt2 functional
-prediction.
-
-We welcome submissions in any format, and the first place winner will
-receive a full set of *ggpicrust2* community swag, including a logo
-t-shirt, tote bag, and hat. The second, third, and fourth place winners
-will each receive a cultural t-shirt with the *ggpicrust2* logo.
-
-The competition will run from April 3 to June 3, and to enter, simply
-use Rstudio’s rpub function to publish your tutorial online, and then
-send an email to [Caffery](cafferychen7850@gmail.com) with the link.
-
-Whether you are a researcher, data scientist, or bioinformatician,
-*ggpicrust2* can help you better understand the underlying biological
-processes and mechanisms at play in your PICRUSt2 output data. So, join
-us in building an even better *ggpicrust2* community!
+![](https://raw.iqiq.io/cafferychen777/ggpicrust2_paper/main/Contest_post.jpeg)
 
 # ggpicrust2 Documentation
 
@@ -72,9 +53,6 @@ for PICRUSt2 predicted functional profile analysis and visualization},
 author={Chen Yang and Aaron Burberry and Jiahao Mai and Xuan Cao and
 Liangliang Zhang}, year={2023}, eprint={2303.10388},
 archivePrefix={arXiv}, primaryClass={stat.AP} }
-
-You can also find the paper on
-[ResearchGate](https://www.researchgate.net/publication/369380349_ggpicrust2_an_R_package_for_PICRUSt2_predicted_functional_profile_analysis_and_visualization).
 
 ## Installation
 
