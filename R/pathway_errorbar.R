@@ -36,7 +36,7 @@ pathway_errorbar <-
       }else{
         x_lab <- "description"
       }
-      if (is.null(daa_results_df$pathway_name)&is.null(daa_results_df$pathway_name$description)){
+      if (is.null(daa_results_df$pathway_name)&is.null(daa_results_df$description)){
         message("Please use pathway_annotation to annotate the daa_results_df")
       }
     }
