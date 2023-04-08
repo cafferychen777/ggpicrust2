@@ -19,7 +19,8 @@ knitr::opts_chunk$set(
 
 *ggpicrust2* is a comprehensive package that integrates pathway name/description annotations, ten of the most advanced differential abundance (DA) methods, and visualization of DA results. It offers a comprehensive solution for analyzing and interpreting the results of PICRUSt2 functional prediction in a seamless and intuitive way. Whether you are a researcher, data scientist, or bioinformatician, *ggpicrust2* can help you better understand the underlying biological processes and mechanisms at play in your PICRUSt2 output data. So if you are interested in exploring the output data of PICRUSt2, *ggpicrust2* is the tool you need.
 
-[![CRAN version](https://www.r-pkg.org/badges/version/ggpicrust2)](https://CRAN.R-project.org/package=ggpicrust2) [![Downloads](https://cranlogs.r-pkg.org/badges/grand-total/ggpicrust2)](https://CRAN.R-project.org/package=ggpicrust2) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/license/mit/)
+[![CRAN version](https://www.r-pkg.org/badges/version/ggpicrust2)](https://CRAN.R-project.org/package=ggpicrust2) [![Downloads](https://cranlogs.r-pkg.org/badges/grand-total/ggpicrust2)](https://CRAN.R-project.org/package=ggpicrust2) 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/license/mit/)
 
 ## Table of Contents
 
@@ -35,6 +36,7 @@ knitr::opts_chunk$set(
     -   [pathway_errorbar()](#pathway_errorbar)
     -   [pathway_heatmap()](#pathway_heatmap)
     -   [pathway_pca()](#pathway_pca)
+-   [FAQ](#faq)
 -   [Author's Other Projects](#authors-other-projects)
 
 ## Citation {#citation}
@@ -82,6 +84,12 @@ ggpicrust2() integrates ko abundance to kegg pathway abundance conversion, annot
 ```{r ggpicrust2(), eval = FALSE}
 #If you want to analysis kegg pathway abundance instead of ko within the pathway. You should turn ko_to_kegg to TRUE.
 #The kegg pathway typically have the more explainable description.
+library(readr)
+library(ggpicrust2)
+library(tibble)
+library(tidyverse)
+library(ggprism)
+library(patchwork)
 metadata <-
   read_delim(
     "~/Microbiome/C9orf72/Code And Data/new_metadata.txt",
@@ -108,6 +116,12 @@ daa_results_list <-
 
 
 #If you want to analysis the EC. MetaCyc. KO without conversions. You should turn ko_to_kegg to FALSE.
+library(readr)
+library(ggpicrust2)
+library(tibble)
+library(tidyverse)
+library(ggprism)
+library(patchwork)
 metadata <-
   read_delim(
     "~/Microbiome/C9orf72/Code And Data/new_metadata.txt",
@@ -139,6 +153,12 @@ daa_results_list <-
 #If you want to analysis kegg pathway abundance instead of ko within the pathway. You should turn ko_to_kegg to TRUE.
 #The kegg pathway typically have the more explainable description.
 #metadata should be tibble.
+library(readr)
+library(ggpicrust2)
+library(tibble)
+library(tidyverse)
+library(ggprism)
+library(patchwork)
 metadata <-
   read_delim(
     "~/Microbiome/C9orf72/Code And Data/new_metadata.txt",
@@ -165,7 +185,7 @@ daa_results_df <-
   )
 
 #if you are using LinDA, limme voom and Maaslin2, please specify a reference just like followings code.
-# daa_results_df <- pathway_daa(abundance = kegg_abundance, metadata = metadata, group = group, daa_method = "ALDEx2", select = NULL, reference = "Harvard BRI")
+# daa_results_df <- pathway_daa(abundance = kegg_abundance, metadata = metadata, group = group, daa_method = "LinDA", select = NULL, reference = "Harvard BRI")
 
 daa_sub_method_results_df <-
   daa_results_df[daa_results_df$method == "ALDEx2_Kruskal-Wallace test", ]
@@ -196,6 +216,12 @@ daa_results_list <-
 # x_lab can be set "feature" which represents kegg pathway id.
 
 # If you want to analysis the EC. MetaCyc. KO without conversions. You should turn ko_to_kegg to FALSE.
+library(readr)
+library(ggpicrust2)
+library(tibble)
+library(tidyverse)
+library(ggprism)
+library(patchwork)
 metadata <-
   read_delim(
     "~/Microbiome/C9orf72/Code And Data/new_metadata.txt",
@@ -420,6 +446,75 @@ print(pca_plot)
 [![LinkedIn](https://img.shields.io/badge/Share_on-LinkedIn-0077B5?logo=linkedin&style=social)](https://www.linkedin.com/shareArticle?mini=true&url=https%3A%2F%2Fgithub.com%2Fcafferychen777%2Fggpicrust2&title=Check%20out%20this%20awesome%20package%20on%20GitHub%21)
 
 [![Reddit](https://img.shields.io/badge/Share_on-Reddit-FF4500?logo=reddit&style=social)](https://www.reddit.com/submit?url=https%3A%2F%2Fgithub.com%2Fcafferychen777%2Fggpicrust2&title=Check%20out%20this%20awesome%20package%20on%20GitHub%21)
+
+## FAQ{#faq}
+
+### Issue 1: pathway_errorbar error
+
+When using `pathway_errorbar` with the following parameters:
+
+```r
+pathway_errorbar(abundance = abundance,
+                 daa_results_df = daa_results_df,
+                 Group = metadata$Enviroment,
+                 ko_to_kegg = TRUE,
+                 p_values_threshold = 0.05,
+                 order = "pathway_class",
+                 select = NULL,
+                 p_value_bar = TRUE,
+                 colors = NULL,
+                 x_lab = "pathway_name")
+```
+
+You may encounter an error:
+
+```
+Error in `ggplot_add()`:
+! Can't add `e2` to a <ggplot> object.
+Run `rlang::last_trace()` to see where the error occurred.
+```
+
+Make sure you have the `patchwork` package loaded:
+
+```r
+library(patchwork)
+```
+
+### Issue 2: guide_train.prism_offset_minor error
+
+You may encounter an error with `guide_train.prism_offset_minor`:
+
+```
+Error in guide_train.prism_offset_minor(guide, panel_params[[aesthetic]]) : 
+  No minor breaks exist, guide_prism_offset_minor needs minor breaks to work
+```
+
+Ensure that the `ggprism` package is loaded:
+
+```r
+library(ggprism)
+```
+
+### Issue 3: SSL certificate problem
+
+When encountering the following error:
+
+```
+SSL peer certificate or SSH remote key was not OK: [rest.kegg.jp] SSL certificate problem: certificate has expired
+```
+
+If you are in China, make sure your computer network can bypass the firewall.
+
+### Issue 3: Bad Request (HTTP 400)
+
+When encountering the following error:
+
+```
+Error in .getUrl(url, .flatFileParser) : Bad Request (HTTP 400).
+```
+
+Please restart R session.
+
 
 ## Author's other projects {#authors-other-projects}
 

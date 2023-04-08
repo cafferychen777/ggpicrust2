@@ -66,6 +66,9 @@ pathway_errorbar <-
         )
       )
     }
+    if (nrow(daa_results_filtered_sub_df) == 0){
+      message("The feature with statistically significance is zero, pathway_errorbar can't do the visualization.")
+    }
     errorbar_sub_abundance_mat <-
       errorbar_abundance_mat[rownames(errorbar_abundance_mat) %in% daa_results_filtered_sub_df$feature,]
     errorbar_sub_relative_abundance_mat <-
@@ -302,6 +305,7 @@ pathway_errorbar <-
         legend.position = "non"
       ) +
       ggplot2::coord_flip()
+
     if (ko_to_kegg == TRUE) {
       pathway_class_y <- (ymax + ymin) / 2 - 0.5
       pathway_class_plot_df <-

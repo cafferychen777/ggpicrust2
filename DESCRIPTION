@@ -32,7 +32,8 @@ Imports:
     tibble,
     tidyr,
     ggprism,
-    phyloseq
+    phyloseq,
+    patchwork
 Depends: 
     R (>= 2.10)
 Suggests: 
@@ -44,7 +45,6 @@ Suggests:
     KEGGREST,
     ComplexHeatmap,
     ggforce,
-    patchwork,
     ggplotify,
     BiocGenerics,
     BiocManager,
