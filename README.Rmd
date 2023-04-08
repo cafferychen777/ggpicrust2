@@ -253,7 +253,7 @@ daa_results_df <-
   )
 
 #if you are using LinDA, limme voom and Maaslin2, please specify a reference just like followings code.
-# daa_results_df <- pathway_daa(abundance = kegg_abundance, metadata = metadata, group = group, daa_method = "ALDEx2", select = NULL, reference = "Harvard BRI")
+# daa_results_df <- pathway_daa(abundance = kegg_abundance, metadata = metadata, group = group, daa_method = "LinDA", select = NULL, reference = "Harvard BRI")
 
 daa_sub_method_results_df <-
   daa_results_df[daa_results_df$method == "ALDEx2_Kruskal-Wallace test", ]
