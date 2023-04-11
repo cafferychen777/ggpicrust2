@@ -49,14 +49,17 @@ Chen Yang, Aaron Burberry, Xuan Cao, Jiahao Mai, Fabio Cominelli, Liangliang Zha
 profile analysis and visualization.](https://arxiv.org/abs/2303.10388)
 arXiv preprint arXiv:2303.10388.
 
-BibTeX entry: @misc{yang2023ggpicrust2, title={ggpicrust2: an R package
-for PICRUSt2 predicted functional profile analysis and visualization},
-author={Chen Yang and Aaron Burberry and and Fabio Cominelli and Jiahao Mai and Xuan Cao and
-Liangliang Zhang}, year={2023}, eprint={2303.10388},
-archivePrefix={arXiv}, primaryClass={stat.AP} }
+BibTeX entry: @misc{yang2023ggpicrust2,
+      title={ggpicrust2: an R package for PICRUSt2 predicted functional profile analysis and visualization}, 
+      author={Chen Yang and Jiahao Mai and Xuan Cao and Aaron Burberry and Fabio Cominelli and Liangliang Zhang},
+      year={2023},
+      eprint={2303.10388},
+      archivePrefix={arXiv},
+      primaryClass={stat.AP}
+}
 
 ResearchGate preprint link: [Click here](369380349_ggpicrust2_an_R_package_for_PICRUSt2_predicted_functional_profile_analysis_and_visualization)
-}
+
 
 ## Installation
 
