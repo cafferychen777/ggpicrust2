@@ -55,6 +55,9 @@ author={Chen Yang and Aaron Burberry and and Fabio Cominelli and Jiahao Mai and 
 Liangliang Zhang}, year={2023}, eprint={2303.10388},
 archivePrefix={arXiv}, primaryClass={stat.AP} }
 
+ResearchGate preprint link: [Click here](369380349_ggpicrust2_an_R_package_for_PICRUSt2_predicted_functional_profile_analysis_and_visualization)
+}
+
 ## Installation
 
 You can install the stable version of *ggpicrust2* from CRAN with:
@@ -544,7 +547,7 @@ When encountering the following error:
 If you are in China, make sure your computer network can bypass the
 firewall.
 
-### Issue 3: Bad Request (HTTP 400)
+### Issue 4: Bad Request (HTTP 400)
 
 When encountering the following error:
 
