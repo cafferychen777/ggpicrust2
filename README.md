@@ -44,14 +44,14 @@ MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.or
 If you use *ggpicrust2* in your research, please cite the following
 paper:
 
-Chen Yang, Aaron Burberry, Xuan Cao, Jiahao Mai, Liangliang Zhang.
+Chen Yang, Aaron Burberry, Xuan Cao, Jiahao Mai, Fabio Cominelli, Liangliang Zhang.
 (2023). [ggpicrust2: an R package for PICRUSt2 predicted functional
 profile analysis and visualization.](https://arxiv.org/abs/2303.10388)
 arXiv preprint arXiv:2303.10388.
 
 BibTeX entry: @misc{yang2023ggpicrust2, title={ggpicrust2: an R package
 for PICRUSt2 predicted functional profile analysis and visualization},
-author={Chen Yang and Aaron Burberry and Jiahao Mai and Xuan Cao and
+author={Chen Yang and Aaron Burberry and and Fabio Cominelli and Jiahao Mai and Xuan Cao and
 Liangliang Zhang}, year={2023}, eprint={2303.10388},
 archivePrefix={arXiv}, primaryClass={stat.AP} }
 
