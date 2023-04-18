@@ -179,7 +179,7 @@ pathway_annotation <-
             daa_results_filtered_df[i, ]$pathway_name <-
               keggGet_results[[i]][[1]]$NAME
             daa_results_filtered_df[i, ]$pathway_description <-
-              keggGet_results[[i]][[1]]$DESCRIPTION
+              keggGet_results[[i]][[1]]$DESCRIPTION[1]
             daa_results_filtered_df[i, ]$pathway_class <-
               keggGet_results[[i]][[1]]$CLASS
             daa_results_filtered_df[i, ]$pathway_map <-
@@ -200,42 +200,10 @@ pathway_annotation <-
               keggGet_results[[j]] <-
                 KEGGREST::keggGet(daa_results_filtered_df$feature[seq(i -
                   9, i, 1)])
-              # for (k in seq(i - 9, i, 1)) {
-              #   if (k %% 10 == 0) {
-              #     daa_results_filtered_df[k, ]$pathway_name <-
-              #       keggGet_results[[j]][[10]]$NAME
-              #     daa_results_filtered_df[i, ]$pathway_description <-
-              #       keggGet_results[[j]][[10]]$DESCRIPTION
-              #     daa_results_filtered_df[i, ]$pathway_class <-
-              #       keggGet_results[[j]][[10]]$CLASS
-              #     daa_results_filtered_df[i, ]$pathway_map <-
-              #       keggGet_results[[j]][[10]]$PATHWAY_MAP
-              #   } else{
-              #     daa_results_filtered_df[k, ]$pathway_name <-
-              #       keggGet_results[[j]][[k %% 10]]$NAME
-              #     daa_results_filtered_df[i, ]$pathway_description <-
-              #       keggGet_results[[j]][[k %% 10]]$DESCRIPTION
-              #     daa_results_filtered_df[i, ]$pathway_class <-
-              #       keggGet_results[[j]][[k %% 10]]$CLASS
-              #     daa_results_filtered_df[i, ]$pathway_map <-
-              #       keggGet_results[[j]][[k %% 10]]$PATHWAY_MAP
-              #   }
-              # }
             } else {
               keggGet_results[[j]] <-
                 KEGGREST::keggGet(daa_results_filtered_df$feature[seq(nrow(daa_results_filtered_df) %/% 10 *
                   10 + 1, i, 1)])
-              # for (k in seq(nrow(daa_results_filtered_df) %/% 10 * 10 +
-              #               1, i, 1)) {
-              #   daa_results_filtered_df[k, ]$pathway_name <-
-              #     keggGet_results[[j]][[k %% 10]]$NAME
-              #   daa_results_filtered_df[i, ]$pathway_description <-
-              #     keggGet_results[[j]][[k %% 10]]$DESCRIPTION
-              #   daa_results_filtered_df[i, ]$pathway_class <-
-              #     keggGet_results[[j]][[k %% 10]]$CLASS
-              #   daa_results_filtered_df[i, ]$pathway_map <-
-              #     keggGet_results[[j]][[k %% 10]]$PATHWAY_MAP
-              # }
             }
             j <- j + 1
           }
