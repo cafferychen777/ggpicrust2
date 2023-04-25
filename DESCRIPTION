@@ -1,7 +1,7 @@
 Package: ggpicrust2
 Type: Package
 Title: Make 'PICRUSt2' Output Analysis and Visualization Easier
-Version: 1.6.1
+Version: 1.6.2
 Authors@R: c(
     person("Chen", "Yang", email = "cafferychen7850@gmail.com", role = c("aut", "cre")),
     person("Liangliang", "Zhang", email = "lxz716@case.edu ", role = "aut"))
