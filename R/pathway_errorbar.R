@@ -479,8 +479,15 @@ pathway_errorbar <-
           bar_errorbar + p_values_bar + p_annotation + patchwork::plot_layout(ncol = 3, widths = c(2.3, 0.7, 0.3))
       }
     }else{
-      combination_bar_plot <-
-        bar_errorbar + p_annotation + patchwork::plot_layout(ncol = 2, widths = c(2.5,  0.2))
+      if (ko_to_kegg == TRUE) {
+        combination_bar_plot <-
+          pathway_class_annotation + bar_errorbar + p_annotation + patchwork::plot_layout(ncol = 3, widths =
+                                                                                                           c(1, 1.2, 0.1))
+      }
+      else{
+        combination_bar_plot <-
+          bar_errorbar + p_annotation + patchwork::plot_layout(ncol = 2, widths = c(2.5,  0.2))
+      }
     }
     return(combination_bar_plot)
   }
