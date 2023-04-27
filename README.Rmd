@@ -19,8 +19,7 @@ knitr::opts_chunk$set(
 
 *ggpicrust2* is a comprehensive package that integrates pathway name/description annotations, ten of the most advanced differential abundance (DA) methods, and visualization of DA results. It offers a comprehensive solution for analyzing and interpreting the results of PICRUSt2 functional prediction in a seamless and intuitive way. Whether you are a researcher, data scientist, or bioinformatician, *ggpicrust2* can help you better understand the underlying biological processes and mechanisms at play in your PICRUSt2 output data. So if you are interested in exploring the output data of PICRUSt2, *ggpicrust2* is the tool you need.
 
-[![CRAN version](https://www.r-pkg.org/badges/version/ggpicrust2)](https://CRAN.R-project.org/package=ggpicrust2) [![Downloads](https://cranlogs.r-pkg.org/badges/grand-total/ggpicrust2)](https://CRAN.R-project.org/package=ggpicrust2) 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/license/mit/)
+[![CRAN version](https://www.r-pkg.org/badges/version/ggpicrust2)](https://CRAN.R-project.org/package=ggpicrust2) [![Downloads](https://cranlogs.r-pkg.org/badges/grand-total/ggpicrust2)](https://CRAN.R-project.org/package=ggpicrust2) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/license/mit/)
 
 ## Table of Contents
 
@@ -46,6 +45,8 @@ If you use *ggpicrust2* in your research, please cite the following paper:
 Chen Yang, Aaron Burberry, Xuan Cao, Jiahao Mai, Liangliang Zhang. (2023). [ggpicrust2: an R package for PICRUSt2 predicted functional profile analysis and visualization.](https://arxiv.org/abs/2303.10388) arXiv preprint arXiv:2303.10388.
 
 BibTeX entry: @misc{yang2023ggpicrust2, title={ggpicrust2: an R package for PICRUSt2 predicted functional profile analysis and visualization}, author={Chen Yang and Aaron Burberry and Jiahao Mai and Xuan Cao and Liangliang Zhang}, year={2023}, eprint={2303.10388}, archivePrefix={arXiv}, primaryClass={stat.AP} }
+
+ResearchGate preprint link: [Click here](https://www.researchgate.net/publication/369380349_ggpicrust2_an_R_package_for_PICRUSt2_predicted_functional_profile_analysis_and_visualization)
 
 ## Installation {#installation}
 
@@ -447,13 +448,13 @@ print(pca_plot)
 
 [![Reddit](https://img.shields.io/badge/Share_on-Reddit-FF4500?logo=reddit&style=social)](https://www.reddit.com/submit?url=https%3A%2F%2Fgithub.com%2Fcafferychen777%2Fggpicrust2&title=Check%20out%20this%20awesome%20package%20on%20GitHub%21)
 
-## FAQ{#faq}
+## FAQ {#faq}
 
 ### Issue 1: pathway_errorbar error
 
 When using `pathway_errorbar` with the following parameters:
 
-```r
+``` r
 pathway_errorbar(abundance = abundance,
                  daa_results_df = daa_results_df,
                  Group = metadata$Enviroment,
@@ -468,7 +469,7 @@ pathway_errorbar(abundance = abundance,
 
 You may encounter an error:
 
-```
+```         
 Error in `ggplot_add()`:
 ! Can't add `e2` to a <ggplot> object.
 Run `rlang::last_trace()` to see where the error occurred.
@@ -476,7 +477,7 @@ Run `rlang::last_trace()` to see where the error occurred.
 
 Make sure you have the `patchwork` package loaded:
 
-```r
+``` r
 library(patchwork)
 ```
 
@@ -484,14 +485,14 @@ library(patchwork)
 
 You may encounter an error with `guide_train.prism_offset_minor`:
 
-```
+```         
 Error in guide_train.prism_offset_minor(guide, panel_params[[aesthetic]]) : 
   No minor breaks exist, guide_prism_offset_minor needs minor breaks to work
 ```
 
 Ensure that the `ggprism` package is loaded:
 
-```r
+``` r
 library(ggprism)
 ```
 
@@ -499,22 +500,31 @@ library(ggprism)
 
 When encountering the following error:
 
-```
+```         
 SSL peer certificate or SSH remote key was not OK: [rest.kegg.jp] SSL certificate problem: certificate has expired
 ```
 
 If you are in China, make sure your computer network can bypass the firewall.
 
-### Issue 3: Bad Request (HTTP 400)
+### Issue 4: Bad Request (HTTP 400)
 
 When encountering the following error:
 
-```
+```         
 Error in .getUrl(url, .flatFileParser) : Bad Request (HTTP 400).
 ```
 
 Please restart R session.
 
+### Issue 5: Error in grid.Call(C_textBounds, as.graphicsAnnot(xlabel),x$x, x$y, :
+
+When encountering the following error:
+
+```         
+Error in grid.Call(C_textBounds, as.graphicsAnnot(xlabel),x$x, x$y, :
+```
+
+Please having some required fonts installed. You can refer to this [thread](https://stackoverflow.com/questions/71362738/r-error-in-grid-callc-textbounds-as-graphicsannotxlabel-xx-xy-polygo).
 
 ## Author's other projects {#authors-other-projects}
 

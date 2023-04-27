@@ -44,22 +44,19 @@ MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.or
 If you use *ggpicrust2* in your research, please cite the following
 paper:
 
-Chen Yang, Aaron Burberry, Xuan Cao, Jiahao Mai, Fabio Cominelli, Liangliang Zhang.
+Chen Yang, Aaron Burberry, Xuan Cao, Jiahao Mai, Liangliang Zhang.
 (2023). [ggpicrust2: an R package for PICRUSt2 predicted functional
 profile analysis and visualization.](https://arxiv.org/abs/2303.10388)
 arXiv preprint arXiv:2303.10388.
 
-BibTeX entry: @misc{yang2023ggpicrust2,
-      title={ggpicrust2: an R package for PICRUSt2 predicted functional profile analysis and visualization}, 
-      author={Chen Yang and Jiahao Mai and Xuan Cao and Aaron Burberry and Fabio Cominelli and Liangliang Zhang},
-      year={2023},
-      eprint={2303.10388},
-      archivePrefix={arXiv},
-      primaryClass={stat.AP}
-}
+BibTeX entry: @misc{yang2023ggpicrust2, title={ggpicrust2: an R package
+for PICRUSt2 predicted functional profile analysis and visualization},
+author={Chen Yang and Aaron Burberry and Jiahao Mai and Xuan Cao and
+Liangliang Zhang}, year={2023}, eprint={2303.10388},
+archivePrefix={arXiv}, primaryClass={stat.AP} }
 
-ResearchGate preprint link: [Click here](https://www.researchgate.net/publication/369380349_ggpicrust2_an_R_package_for_PICRUSt2_predicted_functional_profile_analysis_and_visualization)
-
+ResearchGate preprint link: [Click
+here](https://www.researchgate.net/publication/369380349_ggpicrust2_an_R_package_for_PICRUSt2_predicted_functional_profile_analysis_and_visualization)
 
 ## Installation
 
@@ -557,6 +554,15 @@ When encountering the following error:
     Error in .getUrl(url, .flatFileParser) : Bad Request (HTTP 400).
 
 Please restart R session.
+
+### Issue 5: Error in grid.Call(C_textBounds, as.graphicsAnnot(xlabel),x$x, x$y, :
+
+When encountering the following error:
+
+    Error in grid.Call(C_textBounds, as.graphicsAnnot(xlabel),x$x, x$y, :
+
+Please having some required fonts installed. You can refer to this
+[thread](https://stackoverflow.com/questions/71362738/r-error-in-grid-callc-textbounds-as-graphicsannotxlabel-xx-xy-polygo).
 
 ## Author’s other projects
 
