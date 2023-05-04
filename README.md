@@ -22,6 +22,17 @@ version](https://www.r-pkg.org/badges/version/ggpicrust2)](https://CRAN.R-projec
 [![License:
 MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/license/mit/)
 
+## News
+
+Update alert! 🚨 ggpicrust2 Ver1.6.3 is now available. To get the latest
+version, simply use
+
+``` r
+devtools::install_github('cafferychen777/ggpicrust2'). 
+```
+
+Don’t miss out on the major bug fixes and improvements. 😀
+
 ## Table of Contents
 
 - [Citation](#citation)
