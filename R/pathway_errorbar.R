@@ -311,10 +311,11 @@ pathway_errorbar <-
       ) + ggplot2::coord_cartesian(clip = "off")
 
     if (ko_to_kegg == TRUE) {
-      pathway_class_group <-
+      pathway_class_group_mat <-
         daa_results_filtered_sub_df$pathway_class %>%
         table() %>%
-        data.frame()
+        data.frame() %>% column_to_rownames(".")
+      pathway_class_group <- data.frame(.= unique(daa_results_filtered_sub_df$pathway_class),Freq = pathway_class_group_mat[unique(daa_results_filtered_sub_df$pathway_class),])
       start <-
         c(1, rev(pathway_class_group$Freq)[1:(length(pathway_class_group$Freq) - 1)]) %>%
         cumsum()
