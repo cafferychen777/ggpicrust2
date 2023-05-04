@@ -28,7 +28,7 @@ Update alert! 🚨 ggpicrust2 Ver1.6.3 is now available. To get the latest
 version, simply use
 
 ``` r
-devtools::install_github('cafferychen777/ggpicrust2'). 
+devtools::install_github('cafferychen777/ggpicrust2')
 ```
 
 Don’t miss out on the major bug fixes and improvements. 😀
