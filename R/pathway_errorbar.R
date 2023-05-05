@@ -109,7 +109,7 @@
 #'   x_lab = "description"
 #' )
 #' }
-utils::globalVariables(c("group", "name", "value", "feature", "negative_log10_p", "group_nonsense", "nonsense", "pathway_class", "p_adjust", "log_2_fold_change", "transform_sample_counts"))
+utils::globalVariables(c("group", "name", "value", "feature", "negative_log10_p", "group_nonsense", "nonsense", "pathway_class", "p_adjust", "log_2_fold_change", "transform_sample_counts", "column_to_rownames"))
 pathway_errorbar <-
   function(abundance,
            daa_results_df,
