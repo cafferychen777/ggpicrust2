@@ -84,7 +84,7 @@ Follow me on Twitter for the latest *ggpicrust2* updates: [![](https://img.shiel
 
 The easiest way to analyze the PICRUSt2 output is using ggpicrust2() function. The entire pipeline can be run with ggpicrust2() function.
 
-ggpicrust2() integrates ko abundance to kegg pathway abundance conversion, annotation of pathway, differential abundance (DA) analysis, DA results visualization. When you have trouble running ggpicrust2(), you can debug it by running a separate function, which will greatly increase the speed of your analysis and visualization
+ggpicrust2() integrates ko abundance to kegg pathway abundance conversion, annotation of pathway, differential abundance (DA) analysis, DA results visualization. When you have trouble running ggpicrust2(), you can debug it by running a separate function, which will greatly increase the speed of your analysis and visualization.
 
 ![](https://github.moeyy.xyz/https://raw.githubusercontent.com/cafferychen777/ggpicrust2_paper/main/paper_figure/workflow_1.png)
 
@@ -93,7 +93,7 @@ ggpicrust2() integrates ko abundance to kegg pathway abundance conversion, annot
 ### ggpicrust2()
 
 ```{r ggpicrust2(), eval = FALSE}
-#If you want to analysis kegg pathway abundance instead of ko within the pathway. You should turn ko_to_kegg to TRUE.
+#If you want to analyze kegg pathway abundance instead of ko within the pathway. You should turn ko_to_kegg to TRUE.
 #The kegg pathway typically have the more explainable description.
 library(readr)
 library(ggpicrust2)
@@ -161,7 +161,7 @@ daa_results_list <-
 ### If an error occurs with ggpicrust2, please use the following workflow.
 
 ```{r alternative, eval = FALSE}
-#If you want to analysis kegg pathway abundance instead of ko within the pathway. You should turn ko_to_kegg to TRUE.
+#If you want to analyze kegg pathway abundance instead of ko within the pathway. You should turn ko_to_kegg to TRUE.
 #The kegg pathway typically have the more explainable description.
 #metadata should be tibble.
 library(readr)
@@ -450,7 +450,7 @@ print(pca_plot)
 
 ## Share
 
-[![Twitter](https://img.shields.io/twitter/url?url=https%253A%252F%252Fgithub.com%252Fcafferychen777%252Fggpicrust2&style=social)](https://twitter.com/intent/tweet?url=https%3A%2F%2Fgithub.com%2Fcafferychen777%2Fggpicrust2&text=Check%20out%20this%20awesome%20package%20on%20GitHub%21)
+[![Twitter](https://twitter.com/intent/tweet?url=https%3A%2F%2Fgithub.com%2Fcafferychen777%2Fggpicrust2&text=Check%20out%20this%20awesome%20package%20on%20GitHub%21)
 
 [![Facebook](https://img.shields.io/badge/Share_on-Facebook-1877F2?logo=facebook&style=social)](https://www.facebook.com/sharer/sharer.php?u=https%3A%2F%2Fgithub.com%2Fcafferychen777%2Fggpicrust2&quote=Check%20out%20this%20awesome%20package%20on%20GitHub%21)
 
@@ -535,6 +535,79 @@ Error in grid.Call(C_textBounds, as.graphicsAnnot(xlabel),x$x, x$y, :
 ```
 
 Please having some required fonts installed. You can refer to this [thread](https://stackoverflow.com/questions/71362738/r-error-in-grid-callc-textbounds-as-graphicsannotxlabel-xx-xy-polygo).
+
+### Issue 6: Visualization becomes cluttered when there are more than 30 features of statistical significance.
+
+When faced with this issue, consider the following solutions:
+
+**Solution 1: Utilize the 'select' parameter**
+
+The 'select' parameter allows you to specify which features you wish to visualize. Here's an example of how you can apply this in your code:
+
+```         
+ggpicrust2::pathway_errorbar(
+  abundance = kegg_abundance,
+  daa_results_df = daa_results_df_annotated,
+  Group = metadata$Day,
+  p_values_threshold = 0.05,
+  order = "pathway_class",
+  select = c("ko05340", "ko00564", "ko00680", "ko00562", "ko03030", "ko00561", "ko00440", "ko00250", "ko00740", "ko04940", "ko00010", "ko00195", "ko00760", "ko00920", "ko00311", "ko00310", "ko04146", "ko00600", "ko04141", "ko04142", "ko00604", "ko04260", "ko00909", "ko04973", "ko00510", "ko04974"),
+  ko_to_kegg = TRUE,
+  p_value_bar = FALSE,
+  colors = NULL,
+  x_lab = "pathway_name"
+)
+```
+
+
+**Solution 2: Limit to the Top 20 features**
+
+If there are too many significant features to visualize effectively, you might consider limiting your visualization to the top 20 features with the smallest adjusted p-values:
+
+```         
+daa_results_df_annotated <- daa_results_df_annotated[!is.na(daa_results_df_annotated$pathway_name),]
+
+daa_results_df_annotated$p_adjust <- round(daa_results_df_annotated$p_adjust,5)
+
+low_p_feature <- daa_results_df_annotated[order(daa_results_df_annotated$p_adjust), ]$feature[1:20]
+
+
+p <- ggpicrust2::pathway_errorbar(
+  abundance = kegg_abundance,
+  daa_results_df = daa_results_df_annotated,
+  Group = metadata$Day,
+  p_values_threshold = 0.05,
+  order = "pathway_class",
+  select = low_p_feature,
+  ko_to_kegg = TRUE,
+  p_value_bar = FALSE,
+  colors = NULL,
+  x_lab = "pathway_name"
+)
+```
+
+### Issue 7: There are no statistically significant biomarkers
+
+If you are not finding any statistically significant biomarkers in your analysis, there could be several reasons for this:
+
+1. **The true difference between your groups is small or non-existent.** If the microbial communities or pathways you're comparing are truly similar, then it's correct and expected that you won't find significant differences.
+
+2. **Your sample size might be too small to detect the differences.** Statistical power, the ability to detect differences if they exist, increases with sample size.
+
+3. **The variation within your groups might be too large.** If there's a lot of variation in microbial communities within a single group, it can be hard to detect differences between groups.
+
+Here are a few suggestions:
+
+1. **Increase your sample size**: If possible, adding more samples to your analysis can increase your statistical power, making it easier to detect significant differences.
+
+2. **Decrease intra-group variation**: If there's a lot of variation within your groups, consider whether there are outliers or subgroups that are driving this variation. You might need to clean your data, or to stratify your analysis to account for these subgroups.
+
+3. **Change your statistical method or adjust parameters**: Depending on the nature of your data and your specific question, different statistical methods might be more or less powerful. If you're currently using a parametric test, consider using a non-parametric test, or vice versa. Also, consider whether adjusting the parameters of your current test might help.
+
+Remember, not finding significant results is also a result and can be informative, as it might indicate that there are no substantial differences between the groups you're studying. It's important to interpret your results in the context of your specific study and not to force statistical significance where there isn't any.
+
+With these strategies, you should be able to create a more readable and informative visualization, even when dealing with a large number of significant features.
+
 
 ## Author's other projects {#authors-other-projects}
 
