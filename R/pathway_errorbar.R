@@ -170,8 +170,8 @@ pathway_errorbar <-
         group = Group,
         t(errorbar_sub_relative_abundance_mat)
       )
-    error_bar_df$group <- factor(error_bar_df$group,levels = levels(as.factor(Group)))
     error_bar_df <- as.data.frame(error_bar_matrix)
+    error_bar_df$group <- factor(error_bar_df$group,levels = levels(as.factor(Group)))
       error_bar_pivot_longer_df <- tidyr::pivot_longer(error_bar_df,-c(sample, group))
     error_bar_pivot_longer_tibble <-
       mutate(error_bar_pivot_longer_df, group = as.factor(group))
