@@ -303,7 +303,7 @@ daa_results_list <-
     daa_results_df = daa_annotated_sub_method_results_df,
     Group = Group,
     p_values_threshold = 0.05,
-    order = "pathway_class",
+    order = "group",
     select = NULL,
     ko_to_kegg = FALSE,
     p_value_bar = TRUE,
