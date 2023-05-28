@@ -18,16 +18,16 @@ This function creates a heatmap of the predicted functional pathway abundance da
 }
 \examples{
 # Create example functional pathway abundance data
-abundance_example <- matrix(rnorm(30), nrow = 10, ncol = 3)
-rownames(abundance_example) <- paste0("Sample", 1:10)
-colnames(abundance_example) <- c("PathwayA", "PathwayB", "PathwayC")
+kegg_abundance_example <- matrix(rnorm(30), nrow = 3, ncol = 10)
+colnames(kegg_abundance_example) <- paste0("Sample", 1:10)
+rownames(kegg_abundance_example) <- c("PathwayA", "PathwayB", "PathwayC")
 
 # Create example metadata
 # Please ensure the sample IDs in the metadata have the column name "sample_name"
-metadata_example <- data.frame(sample_name = rownames(abundance_example),
+metadata_example <- data.frame(sample_name = rownames(kegg_abundance_example),
                                group = factor(rep(c("Control", "Treatment"), each = 5)))
 
 # Create a heatmap
-heatmap_plot <- pathway_heatmap(t(abundance_example), metadata_example, "group")
+heatmap_plot <- pathway_heatmap(kegg_abundance_example, metadata_example, "group")
 print(heatmap_plot)
 }

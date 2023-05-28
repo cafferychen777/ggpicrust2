@@ -16,17 +16,17 @@
 #'
 #' @examples
 #' # Create example functional pathway abundance data
-#' abundance_example <- matrix(rnorm(30), nrow = 10, ncol = 3)
-#' rownames(abundance_example) <- paste0("Sample", 1:10)
-#' colnames(abundance_example) <- c("PathwayA", "PathwayB", "PathwayC")
+#' kegg_abundance_example <- matrix(rnorm(30), nrow = 3, ncol = 10)
+#' colnames(kegg_abundance_example) <- paste0("Sample", 1:10)
+#' rownames(kegg_abundance_example) <- c("PathwayA", "PathwayB", "PathwayC")
 #'
 #' # Create example metadata
 #' # Please ensure the sample IDs in the metadata have the column name "sample_name"
-#' metadata_example <- data.frame(sample_name = rownames(abundance_example),
+#' metadata_example <- data.frame(sample_name = rownames(kegg_abundance_example),
 #'                                group = factor(rep(c("Control", "Treatment"), each = 5)))
 #'
 #' # Create a heatmap
-#' heatmap_plot <- pathway_heatmap(t(abundance_example), metadata_example, "group")
+#' heatmap_plot <- pathway_heatmap(kegg_abundance_example, metadata_example, "group")
 #' print(heatmap_plot)
 utils::globalVariables(c("rowname","Sample","Value"))
 pathway_heatmap <- function(abundance, metadata, group) {
@@ -44,9 +44,19 @@ pathway_heatmap <- function(abundance, metadata, group) {
    # in all samples becomes a set of values with a mean of 0 and a standard
    # deviation of 1. At this point, the plotted heat map gives a good indication
    # of the variation in expression of all genes across samples.
+
+  # Check that 'group' is a column in 'metadata'
+  if (!group %in% colnames(metadata)) {
+    stop(paste("group:", group, "must be a column in metadata"))
+  }
+
+  # Check if the samples in abundance and metadata match
+  if (!all(colnames(abundance) %in% metadata$sample_name)) {
+    stop("Samples in abundance and metadata must match")
+  }
+
   z_abundance <- t(apply(abundance, 1, scale))
   colnames(z_abundance) <- colnames(abundance)
-
 
   # Convert the abundance matrix to a data frame
   z_df <- as.data.frame(z_abundance)

@@ -9,3 +9,5 @@
 ^pkgdown$
 ^codecov\.yml$
 ^\.github$
+^CRAN-SUBMISSION$
+^cran-comments\.md$

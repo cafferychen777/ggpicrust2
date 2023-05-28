@@ -1,12 +1,28 @@
 #' Predictional functional patwhay differential abundance (DA)
 #'
-#' @param abundance a data frame containing predicted functional pathway abundance
+#' @param abundance a data frame containing predicted functional pathway abundance, with pathways/features as rows and samples as columns. The column names of abundance should match the sample names in metadata. Pathway abundance values should be counts
 #' @param metadata a tibble containing samples information
 #' @param group a character specifying the group name for differential abundance analysis
-#' @param daa_method a character specifying the method for differential abundance analysis, default is "ALDEx2"
-#' @param select a vector containing sample names for analysis, if NULL all samples are included, default is NULL
-#' @param p.adjust a character specifying the method for p-value adjustment, default is "BH"
-#' @param reference a character specifying the reference group level, required for several differential abundance analysis methods such as LinDA, limme voom and Maaslin2, default is NULL
+#' @param daa_method a character specifying the method for differential abundance analysis, choices are:
+#' - "ALDEx2": ANOVA-Like Differential Expression tool for high throughput sequencing data
+#' - "DESeq2": Differential expression analysis based on the negative binomial distribution using DESeq2
+#' - "edgeR": Exact test for differences between two groups of negative-binomially distributed counts using edgeR
+#' - "limma voom": Limma-voom framework for the analysis of RNA-seq data
+#' - "metagenomeSeq": Fit logistic regression models to test for differential abundance between groups using metagenomeSeq
+#' - "LinDA": Linear models for differential abundance analysis of microbiome compositional data
+#' - "Maaslin2": Multivariate Association with Linear Models (MaAsLin2) for differential abundance analysis
+#' - "Lefse": Linear discriminant analysis (LDA) effect size algorithm for high-dimensional microbiome data
+#' @default "ALDEx2"
+#' @param select a vector containing sample names for analysis, if NULL all samples are included. This parameter can be used to specify which samples are included in the differential abundance analysis. Default is NULL.
+#' @param p.adjust a character specifying the method for p-value adjustment, choices are:
+#'- "BH": Benjamini-Hochberg correction
+#'- "holm": Holm's correction
+#'- "bonferroni": Bonferroni correction
+#'- "hochberg": Hochberg's correction
+#'- "fdr": False discovery rate correction
+#'- "none": No p-value adjustment.
+#' @default "BH"
+#' @param reference a character specifying the reference group level, required for several differential abundance analysis methods such as LinDA, limme voom and Maaslin2. This parameter is used to specify the reference group when there are more than two groups. Default is NULL.
 #'
 #' @return  a data frame containing the differential abundance analysis results.
 #' @value
@@ -43,9 +59,19 @@ pathway_daa <-
            select = NULL,
            p.adjust = "BH",
            reference = NULL) {
+
+    valid_methods <- c("ALDEx2", "DESeq2", "edgeR", "limma voom", "metagenomeSeq",
+                       "LinDA", "Maaslin2", "Lefse")
+
+    if (!daa_method %in% valid_methods) {
+      stop(paste("Invalid daa_method. Please choose from:",
+                 paste(valid_methods, collapse = ", ")))
+    }
+
     if (!tibble::is_tibble(metadata)) {
       metadata <- tibble::as_tibble(metadata)
     }
+
     sample_names <- colnames(abundance)
     matches <-
       base::lapply(metadata, function(x) {
@@ -459,6 +485,14 @@ pathway_daa <-
         return(p_values_df)
       }
     )
+
+    valid_p_adjust <- c("BH", "holm", "bonferroni",  "hochberg", "fdr", "none")
+
+    if (!p.adjust %in% valid_p_adjust) {
+      stop(paste("Invalid p.adjust method. Please choose from:",
+                 paste(valid_p_adjust, collapse = ", ")))
+    }
+
       switch(
         p.adjust,
         "BH" = {
