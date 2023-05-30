@@ -134,7 +134,7 @@ pathway_annotation <-
             load(system.file("extdata", "MetaCyc_reference.RData", package = "ggpicrust2"))
             for (i in seq_len(nrow(daa_results_df))) {
               daa_results_df[i, ]$description <-
-                EC_reference[EC_reference[, 1] %in% daa_results_df[i, ]$feature, 2]
+                MetaCyc_reference[MetaCyc_reference[, 1] %in% daa_results_df[i, ]$feature, 2]
             }
           },
           stop("Only provide 'KO', 'EC' and 'MetaCyc' pathway")

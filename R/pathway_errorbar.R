@@ -121,6 +121,19 @@ pathway_errorbar <-
            p_value_bar = TRUE,
            colors = NULL,
            x_lab = NULL) {
+    # Identify pathways with missing annotation
+    missing_pathways <- daa_results_df[is.na(daa_results_df$pathway_name), "feature"]
+
+    # Inform the user about the missing annotations
+    if(length(missing_pathways) > 0) {
+      message("The following pathways are missing annotations and have been excluded: ",
+              paste(missing_pathways, collapse = ", "))
+      message("You can use the 'pathway_annotation' function to add annotations for these pathways.")
+    }
+
+    # Exclude rows with missing pathway annotation
+    daa_results_df <- daa_results_df[!is.na(daa_results_df[,x_lab]),]
+
     if (is.null(x_lab)){
       if (ko_to_kegg == TRUE){
         x_lab <- "pathway_name"
@@ -158,18 +171,20 @@ pathway_errorbar <-
       )
     }
     if (nrow(daa_results_filtered_sub_df) == 0){
-      message("The feature with statistically significance is zero, pathway_errorbar can't do the visualization.")
+      stop("The feature with statistically significance is zero, pathway_errorbar can't do the visualization.")
     }
-    errorbar_sub_abundance_mat <-
-      errorbar_abundance_mat[rownames(errorbar_abundance_mat) %in% daa_results_filtered_sub_df$feature,]
-    errorbar_sub_relative_abundance_mat <-
-      as.matrix(as.data.frame(phyloseq::transform_sample_counts(phyloseq::otu_table(errorbar_sub_abundance_mat,taxa_are_rows = TRUE), function(x) x/sum(x))))
-    error_bar_matrix <-
-      cbind(
-        sample = colnames(errorbar_sub_relative_abundance_mat),
-        group = Group,
-        t(errorbar_sub_relative_abundance_mat)
-      )
+    # Convert to relative abundance
+    relative_abundance_mat <- as.matrix(as.data.frame(phyloseq::transform_sample_counts(phyloseq::otu_table(errorbar_abundance_mat, taxa_are_rows = TRUE), function(x) x/sum(x))))
+
+    # Subset to only include the features present in daa_results_filtered_sub_df$feature
+    sub_relative_abundance_mat <- relative_abundance_mat[rownames(relative_abundance_mat) %in% daa_results_filtered_sub_df$feature,]
+
+    # Create a matrix for the error bars
+    error_bar_matrix <- cbind(
+      sample = colnames(sub_relative_abundance_mat),
+      group = Group,
+      t(sub_relative_abundance_mat)
+    )
     error_bar_df <- as.data.frame(error_bar_matrix)
     error_bar_df$group <- factor(Group,levels = levels(as.factor(Group)))
       error_bar_pivot_longer_df <- tidyr::pivot_longer(error_bar_df,-c(sample, group))
@@ -270,7 +285,7 @@ pathway_errorbar <-
       ggplot2::geom_bar(stat = "identity",
                position = ggplot2::position_dodge(width = 0.8),
                width = 0.8) +
-      GGally::geom_stripped_cols() +
+      GGally::geom_stripped_cols(width = 10) +
       ggplot2::scale_fill_manual(values = colors) +
       ggplot2::scale_color_manual(values = colors) +
       ggprism::theme_prism() +

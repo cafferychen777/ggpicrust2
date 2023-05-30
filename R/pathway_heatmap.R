@@ -22,7 +22,7 @@
 #'
 #' # Create example metadata
 #' # Please ensure the sample IDs in the metadata have the column name "sample_name"
-#' metadata_example <- data.frame(sample_name = rownames(kegg_abundance_example),
+#' metadata_example <- data.frame(sample_name = colnames(kegg_abundance_example),
 #'                                group = factor(rep(c("Control", "Treatment"), each = 5)))
 #'
 #' # Create a heatmap
@@ -63,7 +63,9 @@ pathway_heatmap <- function(abundance, metadata, group) {
 
   # Order the samples based on the environment information
   ordered_metadata <- metadata[order(metadata[, group]),]
+  ordered_sample_names <- ordered_metadata$sample_name
   order <- ordered_metadata$sample_name
+  ordered_group_levels <- levels(ordered_metadata[, group])
 
 
   # Convert the abundance data frame to a long format
@@ -115,6 +117,14 @@ pathway_heatmap <- function(abundance, metadata, group) {
       )
     )
 
+  # Print the ordered sample names and group levels
+  cat("Ordered Sample Names:\n")
+  cat(ordered_sample_names, sep = ", ")
+  cat("\n")
+
+  cat("Group Levels:\n")
+  cat(ordered_group_levels, sep = ", ")
+  cat("\n")
 
   return(p)
 }
