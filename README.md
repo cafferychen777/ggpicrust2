@@ -291,7 +291,7 @@ daa_annotated_sub_method_results_df <- pathway_annotation(pathway = "KO", daa_re
 
 # Generate pathway error bar plot
 # Please change Group to metadata$your_group_column if you are not using example dataset
-daa_results_list <- pathway_errorbar(abundance = kegg_abundance, daa_results_df = daa_annotated_sub_method_results_df, Group = metadata$Environment, p_values_threshold = 0.05, order = "pathway_class", select = NULL, ko_to_kegg = TRUE, p_value_bar = TRUE, colors = NULL, x_lab = "pathway_name")
+p <- pathway_errorbar(abundance = kegg_abundance, daa_results_df = daa_annotated_sub_method_results_df, Group = metadata$Environment, p_values_threshold = 0.05, order = "pathway_class", select = NULL, ko_to_kegg = TRUE, p_value_bar = TRUE, colors = NULL, x_lab = "pathway_name")
 
 # If you want to analyze EC, MetaCyc, and KO without conversions, turn ko_to_kegg to FALSE.
 
@@ -428,11 +428,13 @@ kegg_abundance <- ko2kegg_abundance(ko_abundance_file) # Or use data(kegg_abunda
 metadata <- read_delim("path/to/your/metadata.txt", delim = "\t", escape_double = FALSE, trim_ws = TRUE)
 
 # The default DAA method is "ALDEx2"
+# Please change group to "your_group_column" if you are not using example dataset
 daa_results_df <- pathway_daa(abundance = kegg_abundance, metadata = metadata, group = "Environment", daa_method = "linDA", select = NULL, p.adjust = "BH", reference = NULL)
 
 # If you have more than 3 group levels and want to use the LinDA, limma voom, or Maaslin2 methods, you should provide a reference.
 metadata <- read_delim("path/to/your/metadata.txt", delim = "\t", escape_double = FALSE, trim_ws = TRUE)
 
+# Please change group to "your_group_column" if you are not using example dataset
 daa_results_df <- pathway_daa(abundance = kegg_abundance, metadata = metadata, group = "Group", daa_method = "LinDA", select = NULL, p.adjust = "BH", reference = "Harvard BRI")
 
 # Other example
@@ -450,6 +452,8 @@ data("metacyc_abundance")
 data("metadata")
 
 # Run pathway_daa function for multiple methods
+# Please change column_to_rownames() to the feature column if you are not using example dataset
+# Please change group to "your_group_column" if you are not using example dataset
 methods <- c("ALDEx2", "DESeq2", "edgeR")
 daa_results_list <- lapply(methods, function(method) {
   pathway_daa(abundance = metacyc_abundance %>% column_to_rownames("pathway"), metadata = metadata, group = "Environment", daa_method = method)
@@ -491,8 +495,10 @@ metacyc_daa_annotated_results_df <- pathway_annotation(pathway = "MetaCyc", daa_
 data("ko_abundance")
 data("metadata")
 kegg_abundance <- ko2kegg_abundance(data = ko_abundance) # Or use data(kegg_abundance)
+# Please change group to "your_group_column" if you are not using example dataset
 daa_results_df <- pathway_daa(kegg_abundance, metadata = metadata, group = "Environment", daa_method = "LinDA")
 daa_annotated_results_df <- pathway_annotation(pathway = "KO", daa_results_df = daa_results_df, ko_to_kegg = TRUE)
+# Please change Group to metadata$your_group_column if you are not using example dataset
 p <- pathway_errorbar(abundance = kegg_abundance,
            daa_results_df = daa_annotated_results_df,
            Group = metadata$Environment,
