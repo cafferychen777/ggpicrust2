@@ -39,7 +39,7 @@ MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.or
 
 ## News
 
-Update alert! 🚨 ggpicrust2 Ver1.6.3 is now available. To get the latest
+Update alert! 🚨 ggpicrust2 Ver1.7 is now available. To get the latest
 version, simply use
 
 ``` r
@@ -83,8 +83,7 @@ author={Chen Yang and Aaron Burberry and Jiahao Mai and Xuan Cao and
 Liangliang Zhang}, year={2023}, eprint={2303.10388},
 archivePrefix={arXiv}, primaryClass={stat.AP} }
 
-ResearchGate preprint link: [Click
-here](https://www.researchgate.net/publication/369380349_ggpicrust2_an_R_package_for_PICRUSt2_predicted_functional_profile_analysis_and_visualization)
+ResearchGate preprint link: \[Click here\]
 
 ## Installation
 
@@ -161,7 +160,7 @@ for (pkg in pkgs) {
 ## Stay Updated
 
 Follow me on Twitter for the latest *ggpicrust2* updates:
-[![](https://img.shields.io/twitter/follow/CafferyYang?style=social)](https://twitter.com/CafferyYang)
+\[![](https://img.shields.io/twitter/follow/CafferyYang?style=social)\]
 
 ## Workflow
 
@@ -425,7 +424,7 @@ data("metadata")
 metacyc_daa_results_df <- pathway_daa(abundance = metacyc_abundance %>% column_to_rownames("pathway"), metadata = metadata, group = "Environment", daa_method = "LinDA", select = NULL, p.adjust = "BH", reference = NULL)
 ```
 
-### compare_daa_results() &
+### compare_daa_results()
 
 ``` r
 library(ggpicrust2)

@@ -33,8 +33,11 @@ pathway_heatmap(kegg_abundance_example, metadata_example, "group")
 \donttest{
 data("metacyc_abundance")
 data("metadata")
-metacyc_daa_results_df <- pathway_daa(metacyc_abundance \%>\% column_to_rownames("pathway"), metadata, "Environment", daa_method = "LinDA")
+metacyc_daa_results_df <- pathway_daa(metacyc_abundance \%>\% column_to_rownames("pathway"),
+metadata, "Environment", daa_method = "LinDA")
 feature_with_p_0.05 <- metacyc_daa_results_df \%>\% filter(p_adjust < 0.05)
-pathway_heatmap(abundance = metacyc_abundance \%>\% filter(pathway \%in\% feature_with_p_0.05$feature) \%>\% column_to_rownames("pathway"), metadata = metadata, group = "Environment")
+pathway_heatmap(abundance = metacyc_abundance \%>\% filter(pathway \%in\%
+feature_with_p_0.05$feature) \%>\%
+column_to_rownames("pathway"), metadata = metadata, group = "Environment")
 }
 }

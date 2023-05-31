@@ -17,7 +17,7 @@
 #' metadata_example <- data.frame(sample_name = colnames(kegg_abundance_example),
 #'                                group = factor(rep(c("Control", "Treatment"), each = 5)))
 #'
-#' pca_plot <- pathway_pca(abundance_example, metadata_example, "group")
+#' pca_plot <- pathway_pca(kegg_abundance_example, metadata_example, "group")
 #' print(pca_plot)
 #'
 #' \donttest{
