@@ -64,5 +64,9 @@ group = c("control", "control", "treatment"))
 #Run pathway_daa function
 result <- pathway_daa(abundance = abundance, metadata = metadata, group = "group",
 daa_method = "LinDA")
+
+data(metacyc_abundance)
+data(metadata)
+daa_results_df <- pathway_daa(metacyc_abundance \%>\% column_to_rownames("pathway"), metadata, "Environment", daa_method = "LinDA")
 }
 }
