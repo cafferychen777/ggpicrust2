@@ -26,8 +26,15 @@
 #'                                group = factor(rep(c("Control", "Treatment"), each = 5)))
 #'
 #' # Create a heatmap
-#' heatmap_plot <- pathway_heatmap(kegg_abundance_example, metadata_example, "group")
-#' print(heatmap_plot)
+#' pathway_heatmap(kegg_abundance_example, metadata_example, "group")
+#'
+#' \donttest{
+#' data("metacyc_abundance")
+#' data("metadata")
+#' metacyc_daa_results_df <- pathway_daa(metacyc_abundance %>% column_to_rownames("pathway"), metadata, "Environment", daa_method = "LinDA")
+#' feature_with_p_0.05 <- metacyc_daa_results_df %>% filter(p_adjust < 0.05)
+#' pathway_heatmap(abundance = metacyc_abundance %>% filter(pathway %in% feature_with_p_0.05$feature) %>% column_to_rownames("pathway"), metadata = metadata, group = "Environment")
+#' }
 utils::globalVariables(c("rowname","Sample","Value"))
 pathway_heatmap <- function(abundance, metadata, group) {
    # Heatmaps use color changes to visualize changes in values. However, if the
@@ -61,11 +68,13 @@ pathway_heatmap <- function(abundance, metadata, group) {
   # Convert the abundance matrix to a data frame
   z_df <- as.data.frame(z_abundance)
 
+  metadata <- metadata %>% as.data.frame()
+
   # Order the samples based on the environment information
   ordered_metadata <- metadata[order(metadata[, group]),]
   ordered_sample_names <- ordered_metadata$sample_name
   order <- ordered_metadata$sample_name
-  ordered_group_levels <- levels(ordered_metadata[, group])
+  ordered_group_levels <- ordered_metadata %>% select(all_of(c(group))) %>% pull()
 
 
   # Convert the abundance data frame to a long format
@@ -78,12 +87,15 @@ pathway_heatmap <- function(abundance, metadata, group) {
   # Set the order of the samples in the heatmap
   long_df$Sample <- factor(long_df$Sample, levels = order)
 
+  # Compute breaks from the data
+  breaks <- quantile(long_df$Value, probs = seq(0, 1, by = 0.3), na.rm = TRUE)
+
   # Create the heatmap using ggplot
   p <-
     ggplot2::ggplot(data = long_df,
                     mapping = ggplot2::aes(x = Sample, y = rowname, fill = Value)) +
     ggplot2::geom_tile() +
-    ggplot2::scale_fill_gradientn(colours = c("#0571b0","#92c5de","white","#f4a582","#ca0020"), breaks = c(0,0.2, 0.4, 0.6)) +
+    ggplot2::scale_fill_gradientn(colours = c("#0571b0","#92c5de","white","#f4a582","#ca0020"), breaks = breaks) +
     ggplot2::labs(x = NULL, y = NULL) +
     ggplot2::scale_y_discrete(expand = c(0, 0), position = "left") +
     ggplot2::scale_x_discrete(expand = c(0, 0)) +
@@ -118,11 +130,11 @@ pathway_heatmap <- function(abundance, metadata, group) {
     )
 
   # Print the ordered sample names and group levels
-  cat("Ordered Sample Names:\n")
+  cat("The Sample Names in order from left to right are:\n")
   cat(ordered_sample_names, sep = ", ")
   cat("\n")
 
-  cat("Group Levels:\n")
+  cat("The Group Levels in order from left to right are:\n")
   cat(ordered_group_levels, sep = ", ")
   cat("\n")
 

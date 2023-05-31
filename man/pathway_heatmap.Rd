@@ -24,10 +24,17 @@ rownames(kegg_abundance_example) <- c("PathwayA", "PathwayB", "PathwayC")
 
 # Create example metadata
 # Please ensure the sample IDs in the metadata have the column name "sample_name"
-metadata_example <- data.frame(sample_name = rownames(kegg_abundance_example),
+metadata_example <- data.frame(sample_name = colnames(kegg_abundance_example),
                                group = factor(rep(c("Control", "Treatment"), each = 5)))
 
 # Create a heatmap
-heatmap_plot <- pathway_heatmap(kegg_abundance_example, metadata_example, "group")
-print(heatmap_plot)
+pathway_heatmap(kegg_abundance_example, metadata_example, "group")
+
+\donttest{
+data("metacyc_abundance")
+data("metadata")
+metacyc_daa_results_df <- pathway_daa(metacyc_abundance \%>\% column_to_rownames("pathway"), metadata, "Environment", daa_method = "LinDA")
+feature_with_p_0.05 <- metacyc_daa_results_df \%>\% filter(p_adjust < 0.05)
+pathway_heatmap(abundance = metacyc_abundance \%>\% filter(pathway \%in\% feature_with_p_0.05$feature) \%>\% column_to_rownames("pathway"), metadata = metadata, group = "Environment")
+}
 }

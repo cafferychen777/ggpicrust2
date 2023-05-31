@@ -24,6 +24,7 @@
 #'
 #' @examples
 #' \donttest{
+#' library(tidyverse)
 #' # Generate example data
 #' set.seed(123)
 #' # First metagenome
@@ -46,6 +47,7 @@
 #' print(results$correlation$p_matrix)
 #' }
 #' @export
+utils::globalVariables(c("cor.test","Heatmap"))
 compare_metagenome_results <- function(metagenomes, names, daa_method = "ALDEx2", p.adjust = "BH", reference = NULL) {
   if(length(metagenomes) != length(names)){
     stop("The length of 'metagenomes' must match the length of 'names'")

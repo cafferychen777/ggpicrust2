@@ -16,6 +16,7 @@
 #' }
 #'
 #' @export
+utils::globalVariables(c("read.csv"))
 import_MicrobiomeAnalyst_daa_results <- function(file_path = NULL, data = NULL, method = "MicrobiomeAnalyst", group_levels = NULL) {
   # Check if a data frame is provided
   if (is.null(data)) {

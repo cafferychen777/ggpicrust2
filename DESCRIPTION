@@ -33,7 +33,8 @@ Imports:
     tidyr,
     ggprism,
     phyloseq,
-    patchwork
+    patchwork,
+    circlize
 Depends: 
     R (>= 2.10)
 Suggests: 

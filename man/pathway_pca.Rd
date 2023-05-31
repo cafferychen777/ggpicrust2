@@ -21,13 +21,21 @@ Perform Principal Component Analysis (PCA) on functional pathway abundance data 
 }
 \examples{
 # Create example functional pathway abundance data
-abundance_example <- data.frame(A = rnorm(10), B = rnorm(10), C = rnorm(10))
+kegg_abundance_example <- matrix(rnorm(30), nrow = 3, ncol = 10)
+colnames(kegg_abundance_example) <- paste0("Sample", 1:10)
+rownames(kegg_abundance_example) <- c("PathwayA", "PathwayB", "PathwayC")
 
 # Create example metadata
-metadata_example <- tibble::tibble(sample_id = 1:10,
-                                   group = factor(rep(c("Control", "Treatment"), each = 5)))
+# Please ensure the sample IDs in the metadata have the column name "sample_name"
+metadata_example <- data.frame(sample_name = colnames(kegg_abundance_example),
+                               group = factor(rep(c("Control", "Treatment"), each = 5)))
 
-# Perform PCA and create visualizations
-pca_plot <- pathway_pca(t(abundance_example), metadata_example, "group")
+pca_plot <- pathway_pca(abundance_example, metadata_example, "group")
 print(pca_plot)
+
+\donttest{
+data("metacyc_abundance")
+data("metadata")
+pathway_pca(metacyc_abundance \%>\% column_to_rownames("pathway"), metadata, "Environment")
+}
 }

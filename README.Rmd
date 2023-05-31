@@ -15,7 +15,13 @@ knitr::opts_chunk$set(
 
 # ggpicrust2 Documentation
 
-*ggpicrust2* is a comprehensive package that integrates pathway name/description annotations, ten of the most advanced differential abundance (DA) methods, and visualization of DA results. It offers a comprehensive solution for analyzing and interpreting the results of PICRUSt2 functional prediction in a seamless and intuitive way. Whether you are a researcher, data scientist, or bioinformatician, *ggpicrust2* can help you better understand the underlying biological processes and mechanisms at play in your PICRUSt2 output data. So if you are interested in exploring the output data of PICRUSt2, *ggpicrust2* is the tool you need.
+*ggpicrust2* is a comprehensive package designed to provide a seamless and intuitive solution for analyzing and interpreting the results of PICRUSt2 functional prediction. It offers a wide range of features, including pathway name/description annotations, advanced differential abundance (DA) methods, and visualization of DA results. 
+
+One of the newest additions to *ggpicrust2* is the capability to compare the consistency and inconsistency across different DA methods applied to the same dataset. This feature allows users to assess the agreement and discrepancy between various methods when it comes to predicting and sequencing the metagenome of a particular sample. It provides valuable insights into the consistency of results obtained from different approaches and helps users evaluate the robustness of their findings.
+
+By leveraging this functionality, researchers, data scientists, and bioinformaticians can gain a deeper understanding of the underlying biological processes and mechanisms present in their PICRUSt2 output data. This comparison of different methods enables them to make informed decisions and draw reliable conclusions based on the consistency evaluation of macrogenomic predictions or sequencing results for the same sample.
+
+If you are interested in exploring and analyzing your PICRUSt2 output data, *ggpicrust2* is a powerful tool that provides a comprehensive set of features, including the ability to assess the consistency and evaluate the performance of different methods applied to the same dataset.
 
 [![CRAN version](https://www.r-pkg.org/badges/version/ggpicrust2)](https://CRAN.R-project.org/package=ggpicrust2) [![Downloads](https://cranlogs.r-pkg.org/badges/grand-total/ggpicrust2)](https://CRAN.R-project.org/package=ggpicrust2) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/license/mit/)
 
@@ -79,16 +85,11 @@ devtools::install_github("cafferychen777/ggpicrust2")
 ## Dependent CRAN Packages
 
 | Package        | Description                                                                                                                       |
-|----------------|--------------------------------------------------------|
-| ALDEx2         | Differential abundance analysis of taxonomic and functional features                                                              |
+|----------------|-----------------------------------------------------------------------------------------------------------------------------------|
 | aplot          | Create interactive plots                                                                                                          |
-| dplyr          | A fast consistent tool for working with data frame like objects both in memory and out of memory both in memory and out of memory |
-| edgeR          | Empirical Analysis of Digital Gene Expression Data in R                                                                           |
+| dplyr          | A fast consistent tool for working with data frame like objects both in memory and out of memory                                  |
 | ggplot2        | An implementation of the Grammar of Graphics in R                                                                                 |
 | grid           | A rewrite of the graphics layout capabilities of R                                                                                |
-| limma          | Linear Models for Microarray and RNA-Seq Data                                                                                     |
-| Maaslin2       | Tools for microbiome analysis                                                                                                     |
-| metagenomeSeq  | Statistical analysis for sparse high-throughput sequencing                                                                        |
 | MicrobiomeStat | Statistical analysis of microbiome data                                                                                           |
 | readr          | Read rectangular data (csv tsv fwf) into R                                                                                        |
 | stats          | The R Stats Package                                                                                                               |
@@ -96,7 +97,6 @@ devtools::install_github("cafferychen777/ggpicrust2")
 | tidyr          | Easily tidy data with spread() and gather() functions                                                                             |
 | ggprism        | Interactive 3D plots with 'prism' graphics                                                                                        |
 | cowplot        | Streamlined Plot Theme and Plot Annotations for 'ggplot2'                                                                         |
-| KEGGREST       | R Interface to KEGG REST API                                                                                                      |
 | ggforce        | Easily add secondary axes, zooms, and image overlays to 'ggplot2'                                                                 |
 | ggplotify      | Convert complex plots into 'grob' or 'ggplot' objects                                                                             |
 | magrittr       | A Forward-Pipe Operator for R                                                                                                     |
@@ -105,23 +105,35 @@ devtools::install_github("cafferychen777/ggpicrust2")
 ## Dependent Bioconductor Packages
 
 | Package              | Description                                                           |
-|-------------------|-----------------------------------------------------|
+|----------------------|-----------------------------------------------------------------------|
 | phyloseq             | Handling and analysis of high-throughput microbiome census data       |
+| ALDEx2               | Differential abundance analysis of taxonomic and functional features  |
 | SummarizedExperiment | SummarizedExperiment container for storing data and metadata together |
 | Biobase              | Base functions for Bioconductor                                       |
 | devtools             | Tools to make developing R packages easier                            |
 | ComplexHeatmap       | Making Complex Heatmaps in R                                          |
 | BiocGenerics         | S4 generic functions for Bioconductor                                 |
 | BiocManager          | Access the Bioconductor Project Package Repositories                  |
+| metagenomeSeq        | Statistical analysis for sparse high-throughput sequencing            |
+| Maaslin2             | Tools for microbiome analysis                                         |
+| edgeR                | Empirical Analysis of Digital Gene Expression Data in R               |
+| lefser               | R implementation of the LEfSE method for microbiome biomarker discovery |
+| limma                | Linear Models for Microarray and RNA-Seq Data                         |
+| KEGGREST             | R Interface to KEGG REST API                                          |
+
 
 ``` r
 if (!requireNamespace("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
 
-pkgs <- c("phyloseq", "SummarizedExperiment", "Biobase", "devtools", 
-          "ComplexHeatmap", "BiocGenerics", "BiocManager")
+pkgs <- c("phyloseq", "ALDEx2", "SummarizedExperiment", "Biobase", "devtools", 
+          "ComplexHeatmap", "BiocGenerics", "BiocManager", "metagenomeSeq", 
+          "Maaslin2", "edgeR", "lefser", "limma", "KEGGREST")
 
-BiocManager::install(pkgs)
+for (pkg in pkgs) {
+  if (!requireNamespace(pkg, quietly = TRUE))
+    BiocManager::install(pkg)
+}
 ```
 
 ## Stay Updated {#stay-updated}
@@ -130,13 +142,13 @@ Follow me on Twitter for the latest *ggpicrust2* updates: [![](https://img.shiel
 
 ## Workflow {#workflow}
 
-The easiest way to analyze the PICRUSt2 output is using ggpicrust2() function. The entire pipeline can be run with ggpicrust2() function.
+The easiest way to analyze the PICRUSt2 output is using ggpicrust2() function. The main pipeline can be run with ggpicrust2() function.
 
-ggpicrust2() integrates ko abundance to kegg pathway abundance conversion, annotation of pathway, differential abundance (DA) analysis, DA results visualization. When you have trouble running ggpicrust2(), you can debug it by running a separate function, which will greatly increase the speed of your analysis and visualization.
+ggpicrust2() integrates ko abundance to kegg pathway abundance conversion, annotation of pathway, differential abundance (DA) analysis, part of DA results visualization. When you have trouble running ggpicrust2(), you can debug it by running a separate function, which will greatly increase the speed of your analysis and visualization.
 
-![](https://github.moeyy.xyz/https://raw.githubusercontent.com/cafferychen777/ggpicrust2_paper/main/paper_figure/workflow_1.png)
+![](https://raw.githubusercontent.com/cafferychen777/ggpicrust2_paper/main/paper_figure/workflow_1.png)
 
-![](https://github.moeyy.xyz/https://raw.githubusercontent.com/cafferychen777/ggpicrust2_paper/main/paper_figure/workflow_2.png)
+![](https://raw.githubusercontent.com/cafferychen777/ggpicrust2_paper/main/paper_figure/workflow_2.png)
 
 ### ggpicrust2()
 
@@ -215,143 +227,95 @@ results_file_input <- ggpicrust2(data = metacyc_abundance,
                                  order = "group",
                                  p_values_bar = TRUE,
                                  x_lab = "description")
+results_file_input[[1]]$plot
+results_file_input[[1]]$results
 ```
 
 ### If an error occurs with ggpicrust2, please use the following workflow.
 
 ```{r alternative, eval = FALSE}
-#If you want to analyze kegg pathway abundance instead of ko within the pathway. You should turn ko_to_kegg to TRUE.
-#The kegg pathway typically have the more explainable description.
-#metadata should be tibble.
 library(readr)
 library(ggpicrust2)
 library(tibble)
 library(tidyverse)
 library(ggprism)
 library(patchwork)
-metadata <-
-  read_delim(
-    "path/to/your/metadata.txt",
-    delim = "\t",
-    escape_double = FALSE,
-    trim_ws = TRUE
-  )
 
-kegg_abundance <-
-  ko2kegg_abundance(
-    "path/to/your/pred_metagenome_unstrat.tsv"
-  )
+# If you want to analyze KEGG pathway abundance instead of KO within the pathway, turn ko_to_kegg to TRUE.
+# KEGG pathways typically have more explainable descriptions.
 
-group <- "Environment"
+# Load metadata as a tibble
+metadata <- read_delim("path/to/your/metadata.txt", delim = "\t", escape_double = FALSE, trim_ws = TRUE)
 
-daa_results_df <-
-  pathway_daa(
-    abundance = kegg_abundance,
-    metadata = metadata,
-    group = group,
-    daa_method = "ALDEx2",
-    select = NULL,
-    reference = NULL
-  )
+# Load KEGG pathway abundance
+kegg_abundance <- ko2kegg_abundance("path/to/your/pred_metagenome_unstrat.tsv")
 
-#if you are using LinDA, limme voom and Maaslin2, please specify a reference just like followings code.
-# daa_results_df <- pathway_daa(abundance = kegg_abundance, metadata = metadata, group = group, daa_method = "LinDA", select = NULL, reference = "Harvard BRI")
+# Perform pathway differential abundance analysis (DAA) using ALDEx2 method
+daa_results_df <- pathway_daa(abundance = kegg_abundance, metadata = metadata, group = "Environment", daa_method = "ALDEx2", select = NULL, reference = NULL)
 
-daa_sub_method_results_df <-
-  daa_results_df[daa_results_df$method == "ALDEx2_Kruskal-Wallace test", ]
+# Filter results for ALDEx2_Kruskal-Wallace test method
+daa_sub_method_results_df <- daa_results_df[daa_results_df$method == "ALDEx2_Kruskal-Wallace test", ]
 
-daa_annotated_sub_method_results_df <-
-  pathway_annotation(pathway = "KO",
-                     daa_results_df = daa_sub_method_results_df,
-                     ko_to_kegg = TRUE)
+# Annotate pathway results using KO to KEGG conversion
+daa_annotated_sub_method_results_df <- pathway_annotation(pathway = "KO", daa_results_df = daa_sub_method_results_df, ko_to_kegg = TRUE)
 
-Group <-
-  metadata$Environment # column which you are interested in metadata
+# Generate pathway error bar plot
+daa_results_list <- pathway_errorbar(abundance = kegg_abundance, daa_results_df = daa_annotated_sub_method_results_df, Group = metadata$Environment, p_values_threshold = 0.05, order = "pathway_class", select = NULL, ko_to_kegg = TRUE, p_value_bar = TRUE, colors = NULL, x_lab = "pathway_name")
 
-# select parameter format in pathway_error() is c("ko00562", "ko00440", "ko04111", "ko05412", "ko00310", "ko04146", "ko00600", "ko04142", "ko00604", "ko04260", "ko04110", "ko04976", "ko05222", "ko05416", "ko00380", "ko05322", "ko00625", "ko00624", "ko00626", "ko00621")
+# If you want to analyze EC, MetaCyc, and KO without conversions, turn ko_to_kegg to FALSE.
 
-daa_results_list <-
-  pathway_errorbar(
-    abundance = kegg_abundance,
-    daa_results_df = daa_annotated_sub_method_results_df,
-    Group = Group,
-    p_values_threshold = 0.05,
-    order = "pathway_class",
-    select = NULL,
-    ko_to_kegg = TRUE,
-    p_value_bar = TRUE,
-    colors = NULL,
-    x_lab = "pathway_name"
-  )
-# x_lab can be set "feature" which represents kegg pathway id.
+# Load metadata as a tibble
+metadata <- read_delim("path/to/your/metadata.txt", delim = "\t", escape_double = FALSE, trim_ws = TRUE)
 
-# If you want to analysis the EC. MetaCyc. KO without conversions. You should turn ko_to_kegg to FALSE.
-library(readr)
-library(ggpicrust2)
-library(tibble)
-library(tidyverse)
-library(ggprism)
-library(patchwork)
-metadata <-
-  read_delim(
-    "path/to/your/metadata.txt",
-    delim = "\t",
-    escape_double = FALSE,
-    trim_ws = TRUE
-  )
+# Load KO abundance as a data.frame
+ko_abundance <- read.delim("path/to/your/pred_metagenome_unstrat.tsv")
 
-#ko_abundance should be data.frame instead of tibble
-#ID should be in the first column
-ko_abundance <-
-  read.delim(
-    "path/to/your/pred_metagenome_unstrat.tsv"
-  )
-#sometimes there are function, pathway or something else. Change function. when needed
-rownames(ko_abundance) <- ko_abundance[,1]
-ko_abundance <- ko_abundance[, -1]
+# Perform pathway DAA using ALDEx2 method
+daa_results_df <- pathway_daa(abundance = ko_abundance %>% column_to_rownames("#NAME"), metadata = metadata, group = "Environment", daa_method = "ALDEx2", select = NULL, reference = NULL)
 
-group <- "Environment"
+# Filter results for ALDEx2_Kruskal-Wallace test method
+daa_sub_method_results_df <- daa_results_df[daa_results_df$method == "ALDEx2_Kruskal-Wallace test", ]
 
-daa_results_df <-
-  pathway_daa(
-    abundance = ko_abundance,
-    metadata = metadata,
-    group = group,
-    daa_method = "ALDEx2",
-    select = NULL,
-    reference = NULL
-  )
+# Annotate pathway results without KO to KEGG conversion
+daa_annotated_sub_method_results_df <- pathway_annotation(pathway = "KO", daa_results_df = daa_sub_method_results_df, ko_to_kegg = FALSE)
 
-#if you are using LinDA, limme voom and Maaslin2, please specify a reference just like followings code.
-# daa_results_df <- pathway_daa(abundance = kegg_abundance, metadata = metadata, group = group, daa_method = "LinDA", select = NULL, reference = "Harvard BRI")
+# Generate pathway error bar plot
+p <- pathway_errorbar(abundance = ko_abundance %>% column_to_rownames("#NAME"), daa_results_df = daa_annotated_sub_method_results_df, Group = metadata$Environment, p_values_threshold = 0.05, order = "pathway_class", select = NULL, ko_to_kegg = FALSE, p_value_bar = TRUE, colors = NULL, x_lab = "description")
 
-daa_sub_method_results_df <-
-  daa_results_df[daa_results_df$method == "ALDEx2_Kruskal-Wallace test", ]
+# Workflow for MetaCyc Pathway and EC
 
-daa_annotated_sub_method_results_df <-
-  pathway_annotation(pathway = "KO",
-                     daa_results_df = daa_sub_method_results_df,
-                     ko_to_kegg = FALSE)
+# Load MetaCyc pathway abundance and metadata
+data("metacyc_abundance")
+data("metadata")
 
-Group <-
-  metadata$Environment # column which you are interested in metadata
+# Perform pathway DAA using LinDA method
+metacyc_daa_results_df <- pathway_daa(abundance = metacyc_abundance %>% column_to_rownames("pathway"), metadata = metadata, group = "Environment", daa_method = "LinDA")
 
-# select parameter format in pathway_error() is c("K00001", "K00002", "K00003", "K00004")
+# Annotate MetaCyc pathway results without KO to KEGG conversion
+metacyc_daa_annotated_results_df <- pathway_annotation(pathway = "MetaCyc", daa_results_df = daa_results_df, ko_to_kegg = FALSE)
 
-daa_results_list <-
-  pathway_errorbar(
-    abundance = ko_abundance,
-    daa_results_df = daa_annotated_sub_method_results_df,
-    Group = Group,
-    p_values_threshold = 0.05,
-    order = "pathway_class",
-    select = NULL,
-    ko_to_kegg = FALSE,
-    p_value_bar = TRUE,
-    colors = NULL,
-    x_lab = "description"
-  )
+# Generate pathway error bar plot
+pathway_errorbar(abundance = metacyc_abundance %>% column_to_rownames("pathway"), daa_results_df = metacyc_daa_annotated_results_df, Group = metadata$Environment, ko_to_kegg = FALSE, p_values_threshold = 0.05, order = "group", select = NULL, p_value_bar = TRUE, colors = NULL, x_lab = "description")
+
+# Generate pathway heatmap
+feature_with_p_0.05 <- metacyc_daa_results_df %>% filter(p_adjust < 0.05)
+pathway_heatmap(abundance = metacyc_abundance %>% filter(pathway %in% feature_with_p_0.05$feature) %>% column_to_rownames("pathway"), metadata = metadata, group = "Environment")
+
+# Generate pathway PCA plot
+pathway_pca(abundance = metacyc_abundance %>% column_to_rownames("pathway"), metadata = metadata, group = "Environment")
+
+# Run pathway DAA for multiple methods
+methods <- c("ALDEx2", "DESeq2", "edgeR")
+daa_results_list <- lapply(methods, function(method) {
+  pathway_daa(abundance = metacyc_abundance %>% column_to_rownames("pathway"), metadata = metadata, group = "Environment", daa_method = method)
+})
+
+# Compare results across different methods
+comparison_results <- compare_daa_results(daa_results_list = daa_results_list, method_names = c("ALDEx2_Welch's t test", "ALDEx2_Wilcoxon rank test", "DESeq2", "edgeR"))
+
 ```
+
+
 
 ## Output {#output}
 
@@ -368,11 +332,16 @@ KEGG Orthology(KO) is a classification system developed by the Kyoto Encyclopedi
 ```{r ko2kegg_abundance sample,echo = TRUE,eval=FALSE}
 # Sample usage of the ko2kegg_abundance function
 
-# Assume that the KO abundance table is stored in a file named "ko_abundance.tsv"
+library(ggpicrust2)
 
+# Assume that the KO abundance table is stored in a file named "ko_abundance.tsv"
 ko_abundance_file <- "ko_abundance.tsv"
 
-kegg_abundance <- ko2kegg_abundance(ko_abundance_file)
+# Convert KO abundance to KEGG pathway abundance
+kegg_abundance <- ko2kegg_abundance(file = ko_abundance_file)
+
+# Alternatively, if the KO abundance data is already loaded as a data frame named "ko_abundance"
+kegg_abundance <- ko2kegg_abundance(data = ko_abundance)
 
 # The resulting kegg_abundance data frame can now be used for further analysis and visualization.
 
@@ -383,41 +352,26 @@ kegg_abundance <- ko2kegg_abundance(ko_abundance_file)
 Differential abundance(DA) analysis plays a major role in PICRUSt2 downstream analysis. pathway_daa() integrates almost all DA methods applicable to the predicted functional profile which there excludes ANCOM and ANCOMBC. It includes [ALDEx2](https://bioconductor.riken.jp/packages/3.9/bioc/html/ALDEx2.html)(Fernandes et al., 2013), [DESeq2](https://bioconductor.org/packages/release/bioc/html/DESeq2.html)(Love et al., 2014), [Maaslin2](https://www.bioconductor.org/packages/release/bioc/html/Maaslin2.html)(Mallick et al., 2021), [LinDA](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-022-02655-5)(Zhou et al., 2022), [edgeR](https://bioconductor.org/packages/release/bioc/html/edgeR.html)(Robinson et al., 2010) , [limma voom](https://ucdavis-bioinformatics-training.github.io/2018-June-RNA-Seq-Workshop/thursday/DE.html)(Ritchie et al., 2015), [metagenomeSeq](https://www.bioconductor.org/packages/release/bioc/html/metagenomeSeq.html#:~:text=metagenomeSeq%20is%20designed%20to%20address,the%20testing%20of%20feature%20correlations.)(Paulson et al., 2013), [Lefser](http://bioconductor.org/packages/release/bioc/html/lefser.html)(Segata et al., 2011).
 
 ```{r pathway_daa sample,echo = TRUE,eval=FALSE}
-#the abundance table is better to be data.frame rather than tibble
-#you can use ko2_kegg_abundance output
-abundance <- ko2kegg_abundance(ko_abundance_file_path)
-metadata <-
-  read_delim(
-    "~/Microbiome/C9orf72/Code And Data/new_metadata.txt",
-    delim = "\t",
-    escape_double = FALSE,
-    trim_ws = TRUE
-  )
-group <- "Environment"
-#daa_method default is "ALDex2"
-daa_results_df <- pathway_daa(abundance = abundance,
-           metadata = metadata,
-           group = group ,
-           daa_method = "limma voom",
-           select = NULL,
-           p.adjust = "BH",
-           reference = NULL)
-#If you group levels >3 and want to use the LinDA, limme voom and Maaslin2, you should give a reference.
-metadata <-
-  read_delim(
-    "~/Microbiome/C9orf72/Code And Data/new_metadata.txt",
-    delim = "\t",
-    escape_double = FALSE,
-    trim_ws = TRUE
-  )
-group <- "Group"
-daa_results_df <- pathway_daa(abundance = abundance,
-           metadata = metadata,
-           group = group ,
-           daa_method = "limma voom",
-           select = NULL,
-           p.adjust = "BH",
-           reference = "Harvard BRI")
+# The abundance table is recommended to be a data.frame rather than a tibble.
+# The abundance table should have feature names or pathway names as row names, and sample names as column names.
+# You can use the output of ko2kegg_abundance
+ko_abundance_file <- "path/to/your/pred_metagenome_unstrat.tsv"
+kegg_abundance <- ko2kegg_abundance(ko_abundance_file) # Or use data(kegg_abundance)
+
+metadata <- read_delim("path/to/your/metadata.txt", delim = "\t", escape_double = FALSE, trim_ws = TRUE)
+
+# The default DAA method is "ALDEx2"
+daa_results_df <- pathway_daa(abundance = kegg_abundance, metadata = metadata, group = "Environment", daa_method = "limma voom", select = NULL, p.adjust = "BH", reference = NULL)
+
+# If you have more than 3 group levels and want to use the LinDA, limma voom, or Maaslin2 methods, you should provide a reference.
+metadata <- read_delim("path/to/your/metadata.txt", delim = "\t", escape_double = FALSE, trim_ws = TRUE)
+
+daa_results_df <- pathway_daa(abundance = kegg_abundance, metadata = metadata, group = "Group", daa_method = "LinDA", select = NULL, p.adjust = "BH", reference = "Harvard BRI")
+
+# Other example
+data("metacyc_abundance")
+data("metadata")
+metacyc_daa_results_df <- pathway_daa(abundance = metacyc_abundance %>% column_to_rownames("pathway"), metadata = metadata, group = "Environment", daa_method = "LinDA", select = NULL, p.adjust = "BH", reference = NULL)
 ```
 
 ### compare_daa_results() & {#compare_daa_results}
@@ -434,8 +388,9 @@ daa_results_list <- lapply(methods, function(method) {
   pathway_daa(abundance = metacyc_abundance %>% column_to_rownames("pathway"), metadata = metadata, group = "Environment", daa_method = method)
 })
 
+method_names <- c("ALDEx2_Welch's t test","ALDEx2_Wilcoxon rank test","DESeq2", "edgeR")
 # Compare results across different methods
-comparison_results <- compare_daa_results(daa_results_list = daa_results_list, method_names = c("ALDEx2_Welch's t test","ALDEx2_Wilcoxon rank test","DESeq2", "edgeR"))
+comparison_results <- compare_daa_results(daa_results_list = daa_results_list, method_names = method_names)
 ```
 
 ### pathway_annotation() {#pathway_annotation}
@@ -443,19 +398,34 @@ comparison_results <- compare_daa_results(daa_results_list = daa_results_list, m
 **If you are in China and you are using kegg pathway annotation, Please make sure your internet can break through the firewall.**
 
 ```{r pathway_annotation sample,echo = TRUE,eval=FALSE}
+
+# Make sure to check if the features in `daa_results_df` correspond to the selected pathway
+
+# Annotate KEGG Pathway
 daa_annotated_results_df <- pathway_annotation(pathway = "KO", daa_results_df = daa_results_df, ko_to_kegg = TRUE)
 
+# Annotate KO
 daa_annotated_results_df <- pathway_annotation(pathway = "KO", daa_results_df = daa_results_df, ko_to_kegg = FALSE)
 
-daa_annotated_results_df <- pathway_annotation(pathway = "EC", daa_results_df = daa_results_df, ko_to_kegg = FALSE)
+# Annotate KEGG
+# daa_annotated_results_df <- pathway_annotation(pathway = "EC", daa_results_df = daa_results_df, ko_to_kegg = FALSE)
 
-daa_annotated_results_df <- pathway_annotation(pathway = "MetaCyc", daa_results_df = daa_results_df, ko_to_kegg = FALSE)
+# Annotate MetaCyc Pathway
+data("metacyc_abundance")
+data("metadata")
+metacyc_daa_results_df <- pathway_daa(abundance = metacyc_abundance %>% column_to_rownames("pathway"), metadata = metadata, group = "Environment", daa_method = "LinDA")
+metacyc_daa_annotated_results_df <- pathway_annotation(pathway = "MetaCyc", daa_results_df = metacyc_daa_results_df, ko_to_kegg = FALSE)
 ```
 
 ### pathway_errorbar() {#pathway_errorbar}
 
 ```{r pathway_errorbar sample,echo = TRUE,eval=FALSE}
-pathway_errorbar(abundance = abundance,
+data("ko_abundance")
+data("metadata")
+kegg_abundance <- ko2kegg_abundance(data = ko_abundance) # Or use data(kegg_abundance)
+daa_results_df <- pathway_daa(kegg_abundance, metadata = metadata, group = "Environment", daa_method = "LinDA")
+daa_annotated_results_df <- pathway_annotation(pathway = "KO", daa_results_df = daa_results_df, ko_to_kegg = TRUE)
+p <- pathway_errorbar(abundance = kegg_abundance,
            daa_results_df = daa_annotated_results_df,
            Group = metadata$Environment,
            ko_to_kegg = TRUE,
@@ -467,8 +437,12 @@ pathway_errorbar(abundance = abundance,
            x_lab = "pathway_name")
 
 # If you want to analysis the EC. MetaCyc. KO without conversions. 
-pathway_errorbar(abundance = abundance,
-           daa_results_df = daa_annotated_results_df,
+data("metacyc_abundance")
+data("metadata")
+metacyc_daa_results_df <- pathway_daa(abundance = metacyc_abundance %>% column_to_rownames("pathway"), metadata = metadata, group = "Environment", daa_method = "LinDA")
+metacyc_daa_annotated_results_df <- pathway_annotation(pathway = "MetaCyc", daa_results_df = metacyc_daa_results_df, ko_to_kegg = FALSE)
+p <- pathway_errorbar(abundance = metacyc_abundance %>% column_to_rownames("pathway"),
+           daa_results_df = metacyc_daa_annotated_results_df,
            Group = metadata$Environment,
            ko_to_kegg = FALSE,
            p_values_threshold = 0.05,
@@ -483,7 +457,7 @@ pathway_errorbar(abundance = abundance,
 
 In this section, we will demonstrate how to create a pathway heatmap using the `pathway_heatmap` function in the ggpicrust2 package. This function visualizes the relative abundance of pathways in different samples.
 
-First, we will create some example functional pathway abundance data and metadata:
+Use the fake dataset
 
 ```{r  ,echo = TRUE,eval=FALSE}
 # Create example functional pathway abundance data
@@ -495,47 +469,44 @@ colnames(abundance_example) <- c("PathwayA", "PathwayB", "PathwayC")
 # Please change your sample id's column name to sample_name
 metadata_example <- data.frame(sample_name = rownames(abundance_example),
                                group = factor(rep(c("Control", "Treatment"), each = 5)))
-```
 
-Next, we will use the pathway_heatmap function to create a heatmap:
-
-```{r ,echo = TRUE,eval=FALSE}
 # Create a heatmap
-heatmap_plot <- ggpicrust2::pathway_heatmap(t(abundance_example), metadata_example, "group")
+pathway_heatmap(t(abundance_example), metadata_example, "group")
 ```
 
-Finally, we will display the resulting heatmap:
-
+Use the real dataset
 ```{r  ,echo = TRUE,eval=FALSE}
-print(heatmap_plot)
+data("metacyc_abundance")
+data("metadata")
+metacyc_daa_results_df <- pathway_daa(metacyc_abundance %>% column_to_rownames("pathway"), metadata, "Environment", daa_method = "LinDA")
+feature_with_p_0.05 <- metacyc_daa_results_df %>% filter(p_adjust < 0.05) 
+pathway_heatmap(abundance = metacyc_abundance %>% filter(pathway %in% feature_with_p_0.05$feature) %>% column_to_rownames("pathway"), metadata = metadata, group = "Environment")
 ```
-
 ### pathway_pca() {#pathway_pca}
 
 In this section, we will demonstrate how to perform Principal Component Analysis (PCA) on functional pathway abundance data and create visualizations of the PCA results using the `pathway_pca` function in the ggpicrust2 package.
 
-First, we will create some example functional pathway abundance data and metadata:
+Use the fake dataset
 
 ```{r ,echo = TRUE,eval=FALSE}
 # Create example functional pathway abundance data
-abundance_example <- data.frame(A = rnorm(10), B = rnorm(10), C = rnorm(10))
+abundance_example <- matrix(rnorm(30), nrow = 3, ncol = 10)
+colnames(abundance_example) <- paste0("Sample", 1:10)
+rownames(kegg_abundance_example) <- c("PathwayA", "PathwayB", "PathwayC")
 
 # Create example metadata
-metadata_example <- tibble::tibble(sample_id = 1:10,
-                                   group = factor(rep(c("Control", "Treatment"), each = 5)))
-```
-
-Next, we will use the pathway_pca function to perform PCA and create visualizations:
-
-```{r ,echo = TRUE,eval=FALSE}
+metadata_example <- data.frame(sample_name = colnames(kegg_abundance_example),
+                                group = factor(rep(c("Control", "Treatment"), each = 5)))
 # Perform PCA and create visualizations
-pca_plot <- ggpicrust2::pathway_pca(t(abundance_example), metadata_example, "group")
+pathway_pca(abundance = abundance_example, metadata = metadata_example, "group")
 ```
 
-Finally, we will display the resulting PCA plot:
-
+Use the real dataset
 ```{r ,echo = TRUE,eval=FALSE}
-print(pca_plot)
+# Create example functional pathway abundance data
+data("metacyc_abundance")
+data("metadata")
+pathway_pca(metacyc_abundance %>% column_to_rownames("pathway"), metadata, "Environment")
 ```
 
 ### compare_metagenome_results {#compare_metagenome_results}
@@ -564,7 +535,7 @@ print(results$correlation$p_matrix)
 
 ## Share
 
-[![Twitter](https://twitter.com/intent/tweet?url=https%253A%252F%252Fgithub.com%252Fcafferychen777%252Fggpicrust2&text=Check%20out%20this%20awesome%20package%20on%20GitHub!)
+[![Twitter](https://twitter.com/intent/tweet?url=https%3A%2F%2Fgithub.com%2Fcafferychen777%2Fggpicrust2&text=Check%20out%20this%20awesome%20package%20on%20GitHub)
 
 [![Facebook](https://img.shields.io/badge/Share_on-Facebook-1877F2?logo=facebook&style=social)](https://www.facebook.com/sharer/sharer.php?u=https%3A%2F%2Fgithub.com%2Fcafferychen777%2Fggpicrust2&quote=Check%20out%20this%20awesome%20package%20on%20GitHub%21)
 

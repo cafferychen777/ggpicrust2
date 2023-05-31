@@ -23,18 +23,18 @@ The input file should be in .tsv, .txt, or .csv format.
 library(ggpicrust2)
 library(readr)
 
-# Prepare an example input file
-input_file <- system.file("extdata", "example_ko_abundance.tsv", package = "ggpicrust2")
+# Prepare an input file path
+input_file <- "path/to/your/picrust2/results/pred_metagenome_unstrat.tsv"
 
 # Run ko2kegg_abundance function
 kegg_abundance <- ko2kegg_abundance(file = input_file)
 
 # Alternatively, read the data from a file and use the data argument
-file_path <- "/path/to/your/pred_metagenome_unstrat.tsv"
-data <- read_delim(file_path, delim = "\t")
-result <- ko2kegg_abundance(data = data)
+file_path <- "path/to/your/picrust2/results/pred_metagenome_unstrat.tsv"
+ko_abundance <- read_delim(file_path, delim = "\t")
+kegg_abundance <- ko2kegg_abundance(data = ko_abundance)
 
 # Print the result
-print(result)
+print(abundance)
 }
 }

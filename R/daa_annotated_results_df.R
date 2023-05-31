@@ -1,0 +1,22 @@
+#' Differentially Abundant Analysis Results with Annotation
+#'
+#' This is a result dataset after processing 'kegg_abundance' through
+#' the 'pathway_daa' with the LinDA method and further annotation with 'pathway_annotation'.
+#'
+#' @format A data frame with 10 variables:
+#' \describe{
+#'   \item{adj_method}{Method used for adjusting p-values.}
+#'   \item{feature}{Feature being tested.}
+#'   \item{group1}{One group in the comparison.}
+#'   \item{group2}{The other group in the comparison.}
+#'   \item{method}{Statistical test used.}
+#'   \item{p_adjust}{Adjusted p-value.}
+#'   \item{p_values}{P-values from the statistical test.}
+#'   \item{pathway_class}{Class of the pathway.}
+#'   \item{pathway_description}{Description of the pathway.}
+#'   \item{pathway_map}{Map of the pathway.}
+#'   \item{pathway_name}{Name of the pathway.}
+#' }
+#' @source From ggpicrust2 package demonstration.
+#' @references Douglas GM, Maffei VJ, Zaneveld J, Yurgel SN, Brown JR, Taylor CM, Huttenhower C, Langille MGI. PICRUSt2 for prediction of metagenome functions. Nat Biotechnol. 2020.
+"daa_annotated_results_df"

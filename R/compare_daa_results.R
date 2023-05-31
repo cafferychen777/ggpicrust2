@@ -27,13 +27,16 @@
 #' # Run pathway_daa function for multiple methods
 #' methods <- c("ALDEx2", "DESeq2", "edgeR")
 #' daa_results_list <- lapply(methods, function(method) {
-#' pathway_daa(abundance = metacyc_abundance %>% column_to_rownames("pathway"), metadata = metadata, group = "Environment", daa_method = method)
+#' pathway_daa(abundance = metacyc_abundance %>% column_to_rownames("pathway"),
+#' metadata = metadata, group = "Environment", daa_method = method)
 #' })
 #'
 #' # Compare results across different methods
-#' comparison_results <- compare_daa_results(daa_results_list = daa_results_list, method_names = c("ALDEx2_Welch's t test","ALDEx2_Wilcoxon rank test","DESeq2", "edgeR"))
+#' comparison_results <- compare_daa_results(daa_results_list = daa_results_list,
+#' method_names = c("ALDEx2_Welch's t test","ALDEx2_Wilcoxon rank test","DESeq2", "edgeR"))
 #' }
 #' @export
+utils::globalVariables(c("group1","group2"))
 compare_daa_results <- function(daa_results_list, method_names, p_values_threshold = 0.05) {
   # Compare the consistency and inconsistency of statistically significant features obtained using different methods in pathway_daa.
 
