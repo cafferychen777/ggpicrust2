@@ -421,9 +421,18 @@ comparison_results <- compare_daa_results(daa_results_list = daa_results_list, m
 # Make sure to check if the features in `daa_results_df` correspond to the selected pathway
 
 # Annotate KEGG Pathway
+data("kegg_abundance")
+data("metadata")
+# Please change group to "your_group_column" if you are not using example dataset
+daa_results_df <- pathway_daa(abundance = kegg_abundance, metadata = metadata, group = "Environment", daa_method = "LinDA")
 daa_annotated_results_df <- pathway_annotation(pathway = "KO", daa_results_df = daa_results_df, ko_to_kegg = TRUE)
 
 # Annotate KO
+data("ko_abundance")
+data("metadata")
+# Please change column_to_rownames() to the feature column if you are not using example dataset
+# Please change group to "your_group_column" if you are not using example dataset
+daa_results_df <- pathway_daa(abundance = ko_abundance %>% column_to_rownames("#NAME"), metadata = metadata, group = "Environment", daa_method = "LinDA")
 daa_annotated_results_df <- pathway_annotation(pathway = "KO", daa_results_df = daa_results_df, ko_to_kegg = FALSE)
 
 # Annotate KEGG
@@ -432,6 +441,8 @@ daa_annotated_results_df <- pathway_annotation(pathway = "KO", daa_results_df = 
 # Annotate MetaCyc Pathway
 data("metacyc_abundance")
 data("metadata")
+# Please change column_to_rownames() to the feature column if you are not using example dataset
+# Please change group to "your_group_column" if you are not using example dataset
 metacyc_daa_results_df <- pathway_daa(abundance = metacyc_abundance %>% column_to_rownames("pathway"), metadata = metadata, group = "Environment", daa_method = "LinDA")
 metacyc_daa_annotated_results_df <- pathway_annotation(pathway = "MetaCyc", daa_results_df = metacyc_daa_results_df, ko_to_kegg = FALSE)
 ```
@@ -497,11 +508,44 @@ pathway_heatmap(abundance_example, metadata_example, "group")
 
 Use the real dataset
 ```{r  ,echo = TRUE,eval=FALSE}
+# Load the data
 data("metacyc_abundance")
+
+# Load the metadata
 data("metadata")
-metacyc_daa_results_df <- pathway_daa(metacyc_abundance %>% column_to_rownames("pathway"), metadata, "Environment", daa_method = "LinDA")
-feature_with_p_0.05 <- metacyc_daa_results_df %>% filter(p_adjust < 0.05) 
-pathway_heatmap(abundance = metacyc_abundance %>% filter(pathway %in% feature_with_p_0.05$feature) %>% column_to_rownames("pathway"), metadata = metadata, group = "Environment")
+
+# Perform differential abundance analysis
+metacyc_daa_results_df <- pathway_daa(
+  abundance = metacyc_abundance %>% column_to_rownames("pathway"),
+  metadata = metadata,
+  group = "Environment",
+  daa_method = "LinDA"
+)
+
+# Annotate the results
+annotated_metacyc_daa_results_df <- pathway_annotation(
+  pathway = "MetaCyc",
+  daa_results_df = metacyc_daa_results_df,
+  ko_to_kegg = FALSE
+)
+
+# Filter features with p < 0.05
+feature_with_p_0.05 <- metacyc_daa_results_df %>% 
+  filter(p_adjust < 0.05)
+
+# Create the heatmap
+pathway_heatmap(
+  abundance = metacyc_abundance %>% 
+    right_join(
+      annotated_metacyc_daa_results_df %>% select(all_of(c("feature","description"))),
+      by = c("pathway" = "feature")
+    ) %>% 
+    filter(pathway %in% feature_with_p_0.05$feature) %>% 
+    select(-"pathway") %>% 
+    column_to_rownames("description"),
+  metadata = metadata, 
+  group = "Environment"
+)
 ```
 ### pathway_pca() {#pathway_pca}
 
@@ -527,7 +571,8 @@ Use the real dataset
 # Create example functional pathway abundance data
 data("metacyc_abundance")
 data("metadata")
-pathway_pca(metacyc_abundance %>% column_to_rownames("pathway"), metadata, "Environment")
+
+pathway_pca(abundance = metacyc_abundance %>% column_to_rownames("pathway"), metadata = metadata, group = "Environment")
 ```
 
 ### compare_metagenome_results() {#compare_metagenome_results}
@@ -605,6 +650,11 @@ You may encounter an error with `guide_train.prism_offset_minor`:
 ```         
 Error in guide_train.prism_offset_minor(guide, panel_params[[aesthetic]]) : 
   No minor breaks exist, guide_prism_offset_minor needs minor breaks to work
+```
+
+```
+Error in get(as.character(FUN)，mode = "function"object envir = envir)
+guide_prism_offset_minor' of mode'function' was not found
 ```
 
 Ensure that the `ggprism` package is loaded:
