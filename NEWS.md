@@ -1,3 +1,5 @@
+# ggpicrust2 1.7.1
+
 # ggpicrust2 1.7.0
 
 # ggpicrust2 1.6.6
