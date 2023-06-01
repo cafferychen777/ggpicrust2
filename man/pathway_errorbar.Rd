@@ -48,19 +48,21 @@ kegg_abundance <- ko2kegg_abundance(
 
 # data(kegg_abundance)
 
+# Please change group to "your_group_column" if you are not using example dataset
 group <- "Environment"
 
 daa_results_df <- pathway_daa(
   abundance = kegg_abundance,
   metadata = metadata,
-  group = group,devtools::document()
+  group = group,
   daa_method = "ALDEx2",
   select = NULL,
   reference = NULL
 )
 
+# Please check the unique(daa_results_df$method) and choose one
 daa_sub_method_results_df <- daa_results_df[daa_results_df$method
-== "ALDEx2_Kruskal-Wallace test", ]
+== "ALDEx2_Welch's t test", ]
 
 daa_annotated_sub_method_results_df <- pathway_annotation(
   pathway = "KO",
@@ -68,6 +70,7 @@ daa_annotated_sub_method_results_df <- pathway_annotation(
   ko_to_kegg = TRUE
 )
 
+# Please change Group to metadata$your_group_column if you are not using example dataset
 Group <- metadata$Environment
 
 p <- pathway_errorbar(
@@ -76,7 +79,10 @@ p <- pathway_errorbar(
   Group = Group,
   p_values_threshold = 0.05,
   order = "pathway_class",
-  select = NULL,
+  select = daa_annotated_sub_method_results_df \%>\%
+  arrange(p_adjust) \%>\%
+  slice(1:20) \%>\%
+  select("feature") \%>\% pull(),
   ko_to_kegg = TRUE,
   p_value_bar = TRUE,
   colors = NULL,

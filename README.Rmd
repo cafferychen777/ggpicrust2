@@ -243,17 +243,20 @@ library(patchwork)
 # KEGG pathways typically have more explainable descriptions.
 
 # Load metadata as a tibble
-metadata <- read_delim("path/to/your/metadata.txt", delim = "\t", escape_double = FALSE, trim_ws = TRUE)
+# data(metadata)
+metadata <- read_delim("path/to/your/metadata.txt", delim = "\t", escape_double = FALSE, trim_ws = TRUE) 
 
 # Load KEGG pathway abundance
-kegg_abundance <- ko2kegg_abundance("path/to/your/pred_metagenome_unstrat.tsv")
+# data(kegg_abundance)
+kegg_abundance <- ko2kegg_abundance("path/to/your/pred_metagenome_unstrat.tsv") 
 
 # Perform pathway differential abundance analysis (DAA) using ALDEx2 method
 # Please change group to "your_group_column" if you are not using example dataset
 daa_results_df <- pathway_daa(abundance = kegg_abundance, metadata = metadata, group = "Environment", daa_method = "ALDEx2", select = NULL, reference = NULL) 
 
-# Filter results for ALDEx2_Kruskal-Wallace test method
-daa_sub_method_results_df <- daa_results_df[daa_results_df$method == "ALDEx2_Kruskal-Wallace test", ]
+# Filter results for ALDEx2_Welch's t test method
+# Please check the unique(daa_results_df$method) and choose one
+daa_sub_method_results_df <- daa_results_df[daa_results_df$method == "ALDEx2_Wilcoxon rank test", ]
 
 # Annotate pathway results using KO to KEGG conversion
 daa_annotated_sub_method_results_df <- pathway_annotation(pathway = "KO", daa_results_df = daa_sub_method_results_df, ko_to_kegg = TRUE)
@@ -265,9 +268,11 @@ p <- pathway_errorbar(abundance = kegg_abundance, daa_results_df = daa_annotated
 # If you want to analyze EC, MetaCyc, and KO without conversions, turn ko_to_kegg to FALSE.
 
 # Load metadata as a tibble
+# data(metadata)
 metadata <- read_delim("path/to/your/metadata.txt", delim = "\t", escape_double = FALSE, trim_ws = TRUE)
 
 # Load KO abundance as a data.frame
+# data(ko_abundance)
 ko_abundance <- read.delim("path/to/your/pred_metagenome_unstrat.tsv")
 
 # Perform pathway DAA using ALDEx2 method
@@ -276,7 +281,7 @@ ko_abundance <- read.delim("path/to/your/pred_metagenome_unstrat.tsv")
 daa_results_df <- pathway_daa(abundance = ko_abundance %>% column_to_rownames("#NAME"), metadata = metadata, group = "Environment", daa_method = "ALDEx2", select = NULL, reference = NULL)
 
 # Filter results for ALDEx2_Kruskal-Wallace test method
-daa_sub_method_results_df <- daa_results_df[daa_results_df$method == "ALDEx2_Kruskal-Wallace test", ]
+daa_sub_method_results_df <- daa_results_df[daa_results_df$method == "ALDEx2_Wilcoxon rank test", ]
 
 # Annotate pathway results without KO to KEGG conversion
 daa_annotated_sub_method_results_df <- pathway_annotation(pathway = "KO", daa_results_df = daa_sub_method_results_df, ko_to_kegg = FALSE)
@@ -284,7 +289,12 @@ daa_annotated_sub_method_results_df <- pathway_annotation(pathway = "KO", daa_re
 # Generate pathway error bar plot
 # Please change column_to_rownames() to the feature column
 # Please change Group to metadata$your_group_column if you are not using example dataset
-p <- pathway_errorbar(abundance = ko_abundance %>% column_to_rownames("#NAME"), daa_results_df = daa_annotated_sub_method_results_df, Group = metadata$Environment, p_values_threshold = 0.05, order = "pathway_class", select = NULL, ko_to_kegg = FALSE, p_value_bar = TRUE, colors = NULL, x_lab = "description")
+p <- pathway_errorbar(abundance = ko_abundance %>% column_to_rownames("#NAME"), daa_results_df = daa_annotated_sub_method_results_df, Group = metadata$Environment, p_values_threshold = 0.05, order = "group",
+select = daa_annotated_sub_method_results_df %>% arrange(p_adjust) %>% slice(1:20) %>% dplyr::select(feature) %>% pull(), 
+ko_to_kegg = FALSE, 
+p_value_bar = TRUE, 
+colors = NULL, 
+x_lab = "description")
 
 # Workflow for MetaCyc Pathway and EC
 

@@ -35,20 +35,21 @@
 #'
 #' # data(kegg_abundance)
 #'
+#' # Please change group to "your_group_column" if you are not using example dataset
 #' group <- "Environment"
 #'
 #' daa_results_df <- pathway_daa(
 #'   abundance = kegg_abundance,
 #'   metadata = metadata,
-#'   group = group,devtools::document()
-
+#'   group = group,
 #'   daa_method = "ALDEx2",
 #'   select = NULL,
 #'   reference = NULL
 #' )
 #'
+#' # Please check the unique(daa_results_df$method) and choose one
 #' daa_sub_method_results_df <- daa_results_df[daa_results_df$method
-#' == "ALDEx2_Kruskal-Wallace test", ]
+#' == "ALDEx2_Welch's t test", ]
 #'
 #' daa_annotated_sub_method_results_df <- pathway_annotation(
 #'   pathway = "KO",
@@ -56,6 +57,7 @@
 #'   ko_to_kegg = TRUE
 #' )
 #'
+#' # Please change Group to metadata$your_group_column if you are not using example dataset
 #' Group <- metadata$Environment
 #'
 #' p <- pathway_errorbar(
@@ -64,7 +66,10 @@
 #'   Group = Group,
 #'   p_values_threshold = 0.05,
 #'   order = "pathway_class",
-#'   select = NULL,
+#'   select = daa_annotated_sub_method_results_df %>%
+#'   arrange(p_adjust) %>%
+#'   slice(1:20) %>%
+#'   select("feature") %>% pull(),
 #'   ko_to_kegg = TRUE,
 #'   p_value_bar = TRUE,
 #'   colors = NULL,
@@ -182,7 +187,8 @@ pathway_errorbar <-
       stop("The feature with statistically significance is zero, pathway_errorbar can't do the visualization.")
     }
     # Convert to relative abundance
-    relative_abundance_mat <- as.matrix(as.data.frame(phyloseq::transform_sample_counts(phyloseq::otu_table(errorbar_abundance_mat, taxa_are_rows = TRUE), function(x) x/sum(x))))
+    relative_abundance_mat <- apply(t(errorbar_abundance_mat), 1, function(x)
+      x / sum(x))
 
     # Subset to only include the features present in daa_results_filtered_sub_df$feature
     sub_relative_abundance_mat <- relative_abundance_mat[rownames(relative_abundance_mat) %in% daa_results_filtered_sub_df$feature,]

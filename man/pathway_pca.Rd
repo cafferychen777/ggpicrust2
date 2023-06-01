@@ -20,6 +20,7 @@ A ggplot object showing the PCA results.
 Perform Principal Component Analysis (PCA) on functional pathway abundance data and create visualizations of the PCA results.
 }
 \examples{
+library(tidyverse)
 # Create example functional pathway abundance data
 kegg_abundance_example <- matrix(rnorm(30), nrow = 3, ncol = 10)
 colnames(kegg_abundance_example) <- paste0("Sample", 1:10)

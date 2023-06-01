@@ -19,6 +19,7 @@ This function creates a heatmap of the predicted functional pathway abundance da
 \examples{
 library(ggpicrust2)
 library(ggh4x)
+library(tidyverse)
 # Create example functional pathway abundance data
 kegg_abundance_example <- matrix(rnorm(30), nrow = 3, ncol = 10)
 colnames(kegg_abundance_example) <- paste0("Sample", 1:10)
@@ -35,9 +36,11 @@ pathway_heatmap(kegg_abundance_example, metadata_example, "group")
 \donttest{
 data("metacyc_abundance")
 data("metadata")
-metacyc_daa_results_df <- pathway_daa(abundance = metacyc_abundance \%>\% column_to_rownames("pathway"),
+metacyc_daa_results_df <- pathway_daa(abundance = metacyc_abundance \%>\%
+column_to_rownames("pathway"),
 metadata = metadata, group = "Environment", daa_method = "LinDA")
-annotated_metacyc_daa_results_df <- pathway_annotation(pathway = "MetaCyc", daa_results_df = metacyc_daa_results_df, ko_to_kegg = FALSE)
+annotated_metacyc_daa_results_df <- pathway_annotation(pathway = "MetaCyc",
+daa_results_df = metacyc_daa_results_df, ko_to_kegg = FALSE)
 feature_with_p_0.05 <- metacyc_daa_results_df \%>\% filter(p_adjust < 0.05)
 pathway_heatmap(abundance = metacyc_abundance \%>\%
 right_join(annotated_metacyc_daa_results_df \%>\%

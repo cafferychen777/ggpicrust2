@@ -17,6 +17,7 @@
 #' @examples
 #' library(ggpicrust2)
 #' library(ggh4x)
+#' library(tidyverse)
 #' # Create example functional pathway abundance data
 #' kegg_abundance_example <- matrix(rnorm(30), nrow = 3, ncol = 10)
 #' colnames(kegg_abundance_example) <- paste0("Sample", 1:10)
@@ -33,9 +34,11 @@
 #' \donttest{
 #' data("metacyc_abundance")
 #' data("metadata")
-#' metacyc_daa_results_df <- pathway_daa(abundance = metacyc_abundance %>% column_to_rownames("pathway"),
+#' metacyc_daa_results_df <- pathway_daa(abundance = metacyc_abundance %>%
+#' column_to_rownames("pathway"),
 #' metadata = metadata, group = "Environment", daa_method = "LinDA")
-#' annotated_metacyc_daa_results_df <- pathway_annotation(pathway = "MetaCyc", daa_results_df = metacyc_daa_results_df, ko_to_kegg = FALSE)
+#' annotated_metacyc_daa_results_df <- pathway_annotation(pathway = "MetaCyc",
+#' daa_results_df = metacyc_daa_results_df, ko_to_kegg = FALSE)
 #' feature_with_p_0.05 <- metacyc_daa_results_df %>% filter(p_adjust < 0.05)
 #' pathway_heatmap(abundance = metacyc_abundance %>%
 #' right_join(annotated_metacyc_daa_results_df %>%
@@ -44,7 +47,7 @@
 #' select(-"pathway") %>%
 #' column_to_rownames("description"), metadata = metadata, group = "Environment")
 #' }
-utils::globalVariables(c("rowname","Sample","Value","quantile"))
+utils::globalVariables(c("rowname","Sample","Value","quantile","facet_nested","strip_nested","elem_list_rect"))
 pathway_heatmap <- function(abundance, metadata, group) {
    # Heatmaps use color changes to visualize changes in values. However, if the
    # data for plotting the heat map are too different, for example, if the heat
@@ -145,7 +148,7 @@ pathway_heatmap <- function(abundance, metadata, group) {
         ticks = TRUE,
         label = TRUE
       )
-    ) + facet_nested(cols = vars(!!sym(group)), space = "free", scale = "free", switch = "x", strip =strip_nested(background_x = elem_list_rect(fill = colors)))
+    ) + ggh4x::facet_nested(cols = vars(!!sym(group)), space = "free", scale = "free", switch = "x", strip =strip_nested(background_x = elem_list_rect(fill = colors)))
 
   # Print the ordered sample names and group levels
   cat("The Sample Names in order from left to right are:\n")

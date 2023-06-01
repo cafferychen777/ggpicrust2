@@ -33,7 +33,6 @@ Imports:
     tibble,
     tidyr,
     ggprism,
-    phyloseq,
     patchwork,
     circlize
 Depends: 

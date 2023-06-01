@@ -7,6 +7,7 @@
 #' @export
 #'
 #' @examples
+#' library(tidyverse)
 #' # Create example functional pathway abundance data
 #' kegg_abundance_example <- matrix(rnorm(30), nrow = 3, ncol = 10)
 #' colnames(kegg_abundance_example) <- paste0("Sample", 1:10)
