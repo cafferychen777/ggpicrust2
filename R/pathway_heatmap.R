@@ -99,13 +99,13 @@ pathway_heatmap <- function(abundance, metadata, group) {
     tibble::rownames_to_column() %>%
     tidyr::pivot_longer(cols = -rowname,
                         names_to = "Sample",
-                        values_to = "Value") %>% left_join(metadata %>% select(c("sample_name",group)), by = c("Sample" = "sample_name"))
+                        values_to = "Value") %>% left_join(metadata %>% select(all_of(c("sample_name",group))), by = c("Sample" = "sample_name"))
 
   # Set the order of the samples in the heatmap
   long_df$Sample <- factor(long_df$Sample, levels = order)
 
   # Compute breaks from the data
-  breaks <- quantile(long_df$Value, probs = seq(0, 1, by = 0.3), na.rm = TRUE)
+  breaks <- range(long_df$Value, na.rm = TRUE)
 
   colors <- c("#d93c3e", "#3685bc", "#6faa3e", "#e8a825", "#c973e6", "#ee6b3d", "#2db0a7", "#f25292")
 
@@ -114,7 +114,7 @@ pathway_heatmap <- function(abundance, metadata, group) {
     ggplot2::ggplot(data = long_df,
                     mapping = ggplot2::aes(x = Sample, y = rowname, fill = Value)) +
     ggplot2::geom_tile() +
-    ggplot2::scale_fill_gradientn(colours = c("#0571b0","#92c5de","white","#f4a582","#ca0020"), breaks = breaks) +
+    ggplot2::scale_fill_gradient2(low = "#0571b0", mid = "white", high = "#ca0020", midpoint = 0) +
     ggplot2::labs(x = NULL, y = NULL) +
     ggplot2::scale_y_discrete(expand = c(0, 0), position = "left") +
     ggplot2::scale_x_discrete(expand = c(0, 0)) +

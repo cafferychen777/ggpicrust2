@@ -86,7 +86,7 @@ pathway_daa <-
     matching_columns <-
       names(metadata)[sapply(matches, function(x) {
         length(x) == length(sample_names)
-      })]
+      })][1]
     switch(is.null(select),
            "TRUE" = {
              abundance <- abundance
