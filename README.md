@@ -373,7 +373,7 @@ comparison_results <- compare_daa_results(daa_results_list = daa_results_list, m
 
 The typical output of the ggpicrust2 is like this.
 
-![](https://raw.githubusercontent.com/cafferychen777/ggpicrust2_paper/main/paper_figure/figure1.jpg)
+![](https://cdn.jsdelivr.net/gh/cafferychen777/ggpicrust2_paper@main/paper_figure/figure1.jpg)
 
 ## function details
 
@@ -389,6 +389,7 @@ function from PICRUSt. ko2kegg_abundance() can help convert the table.
 
 ``` r
 # Sample usage of the ko2kegg_abundance function
+devtools::install_github('cafferychen777/ggpicrust2')
 
 library(ggpicrust2)
 
@@ -575,6 +576,9 @@ pathway_heatmap(abundance_example, metadata_example, "group")
 Use the real dataset
 
 ``` r
+library(tidyverse)
+library(ggh4x)
+library(ggpicrust2)
 # Load the data
 data("metacyc_abundance")
 

@@ -15,6 +15,7 @@
 #' @import tidyr
 #'
 #' @examples
+#' \donttest{
 #' library(ggpicrust2)
 #' library(ggh4x)
 #' library(tidyverse)
@@ -30,8 +31,7 @@
 #'
 #' # Create a heatmap
 #' pathway_heatmap(kegg_abundance_example, metadata_example, "group")
-#'
-#' \donttest{
+#' # Use real dataset
 #' data("metacyc_abundance")
 #' data("metadata")
 #' metacyc_daa_results_df <- pathway_daa(abundance = metacyc_abundance %>%

@@ -1,0 +1,11 @@
+name: Publish Document
+title:
+username:
+account: rpubs
+server: rpubs.com
+hostUrl: rpubs.com
+appId: https://api.rpubs.com/api/v1/document/1048076/6c784d82075c43e5a49b43d0ce7b35d5
+bundleId: https://api.rpubs.com/api/v1/document/1048076/6c784d82075c43e5a49b43d0ce7b35d5
+url: http://rpubs.com/cafferychen7850/1048076
+when: 1685622582.91693
+lastSyncTime: 1685622582.91695
