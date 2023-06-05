@@ -17,9 +17,13 @@ A ggplot heatmap object. The output is a ggplot object representing the heatmap 
 This function creates a heatmap of the predicted functional pathway abundance data. The function first makes the abundance data relative, then converts the abundance data to a long format and orders the samples based on the environment information. The heatmap is then created using the `ggplot2` library. The color palette, appearance and the color bar of the heatmap can be customized using the `scale_fill_gradientn`, `theme` and `guides` functions respectively.
 }
 \examples{
+\donttest{
 library(ggpicrust2)
 library(ggh4x)
-library(tidyverse)
+library(dplyr)
+library(tidyr)
+library(tibble)
+library(magrittr)
 # Create example functional pathway abundance data
 kegg_abundance_example <- matrix(rnorm(30), nrow = 3, ncol = 10)
 colnames(kegg_abundance_example) <- paste0("Sample", 1:10)
@@ -32,8 +36,7 @@ metadata_example <- data.frame(sample_name = colnames(kegg_abundance_example),
 
 # Create a heatmap
 pathway_heatmap(kegg_abundance_example, metadata_example, "group")
-
-\donttest{
+# Use real dataset
 data("metacyc_abundance")
 data("metadata")
 metacyc_daa_results_df <- pathway_daa(abundance = metacyc_abundance \%>\%

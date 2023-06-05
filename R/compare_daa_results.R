@@ -3,7 +3,7 @@
 #' This function compares the consistency and inconsistency of statistically significant features obtained
 #' using different methods in `pathway_daa` from the `ggpicrust2` package. It creates a report showing the number of common and
 #' different features identified by each method, and the features themselves.
-#'
+#' @name compare_daa_results
 #' @param daa_results_list A list of data frames containing statistically significant features obtained using different methods.
 #' @param method_names A character vector of names for each method used.
 #' @param p_values_threshold A numeric value representing the threshold for the p-values. Features with p-values less than this
@@ -20,7 +20,9 @@
 #'
 #' @examples
 #' \donttest{
+#' library(magrittr)
 #' library(ggpicrust2)
+#' library(tibble)
 #' data("metacyc_abundance")
 #' data("metadata")
 #'

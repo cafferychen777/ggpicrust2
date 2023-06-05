@@ -53,7 +53,8 @@ Predictional functional patwhay differential abundance (DA)
 \donttest{
 library(ggpicrust2)
 library(MicrobiomeStat)
-library(tidyverse)
+library(tibble)
+library(magrittr)
 abundance <- data.frame(sample1 = c(10, 20, 30),
 sample2 = c(20, 30, 40),
 sample3 = c(30, 40, 50),

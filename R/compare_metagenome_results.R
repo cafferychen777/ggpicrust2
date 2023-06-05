@@ -11,7 +11,7 @@
 #' The default is "BH".
 #' @param reference A character specifying the reference group level for DAA.
 #' This parameter is used when there are more than two groups. The default is NULL.
-#'
+#' @name compare_metagenome_results
 #' @return A list containing two elements:
 #' \itemize{
 #' \item "daa": a list of results from the `pathway_daa` function. Each result is a data frame
@@ -24,7 +24,8 @@
 #'
 #' @examples
 #' \donttest{
-#' library(tidyverse)
+#' library(dplyr)
+#' library(ComplexHeatmap)
 #' # Generate example data
 #' set.seed(123)
 #' # First metagenome

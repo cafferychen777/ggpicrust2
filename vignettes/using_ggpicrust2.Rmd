@@ -135,8 +135,6 @@ The easiest way to analyze the PICRUSt2 output is using ggpicrust2() function. T
 
 ggpicrust2() integrates ko abundance to kegg pathway abundance conversion, annotation of pathway, differential abundance (DA) analysis, part of DA results visualization. When you have trouble running ggpicrust2(), you can debug it by running a separate function, which will greatly increase the speed of your analysis and visualization.
 
-![](https://raw.githubusercontent.com/cafferychen777/ggpicrust2_paper/main/paper_figure/Workflow.png)
-
 ### ggpicrust2()
 
 You can download the example dataset from the provided [Github link](https://github.com/cafferychen777/ggpicrust2_paper/tree/main/Dataset) and [Google Drive link](https://drive.google.com/drive/folders/1on4RKgm9NkaBCykMCCRvVJuEJeNVVqAF?usp=share_link) or use the dataset included in the package.
@@ -332,9 +330,7 @@ comparison_results <- compare_daa_results(daa_results_list = daa_results_list, m
 
 ## Output {#output}
 
-The typical output of the ggpicrust2 is like this.
-
-![](https://cdn.jsdelivr.net/gh/cafferychen777/ggpicrust2_paper@main/paper_figure/figure1.jpg)
+The typical output of the ggpicrust2 is like this. This image is omitted due to the CRAN package size check issue.
 
 ## function details {#function-details}
 
