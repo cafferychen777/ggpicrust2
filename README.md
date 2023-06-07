@@ -83,7 +83,8 @@ author={Chen Yang and Aaron Burberry and Jiahao Mai and Xuan Cao and
 Liangliang Zhang}, year={2023}, eprint={2303.10388},
 archivePrefix={arXiv}, primaryClass={stat.AP} }
 
-ResearchGate preprint link: \[Click here\]
+ResearchGate preprint link: [Click
+here](https://www.researchgate.net/publication/369380349_ggpicrust2_an_R_package_for_PICRUSt2_predicted_functional_profile_analysis_and_visualization)
 
 ## Installation
 
