@@ -854,10 +854,29 @@ With these strategies, you should be able to create a more readable and
 informative visualization, even when dealing with a large number of
 significant features.
 
-## Author’s other projects
+## Author’s Other Projects
 
-[MicrobiomeGallery](https://a95dps-caffery-chen.shinyapps.io/MicrobiomeGallery/),
-a web-based platform for sharing microbiome data visualization code and
-datasets. （It’s still under construction）
+1.  [MicrobiomeGallery](https://a95dps-caffery-chen.shinyapps.io/MicrobiomeGallery/),
+    a **web-based platform for sharing microbiome data visualization
+    code and datasets**. 📊💻 (Note: It’s still under construction)
 
 ![](https://raw.githubusercontent.com/cafferychen777/ggpicrust2_paper/main/paper_figure/MicrobiomeGallery_preview.jpg)
+
+2.  [MicrobiomeStat](www.microbiomestat.wiki), a **groundbreaking R
+    package designed to revolutionize microbiome analysis**. 🧬🔬 It’s
+    not just another package; it’s a **game-changer** in the field of
+    microbiome analysis. MicrobiomeStat is **specifically tailored for
+    longitudinal studies**, providing comprehensive solutions for both
+    longitudinal and paired analyses. The package is also adept at
+    handling cross-sectional studies and is **not limited to microbiome
+    data** - it can deal with **multi-omics data** as well. 🎯 Our
+    ultimate aim is to make MicrobiomeStat the **go-to R package for
+    longitudinal analysis of multi-omics data**. (Note: Both the package
+    and wiki are still under development)
+
+If you’re interested in becoming a **dev user for MicrobiomeStat**,
+please email <cafferychen7850@gmail.com>. 📧
+
+Stay tuned for more exciting updates! 🎉
+
+![](https://cdn.staticaly.com/gh/cafferychen777/ggpicrust2_paper/main/paper_figure/WeChatac562b362dadbf21a03414be3a5d06a5.png)
