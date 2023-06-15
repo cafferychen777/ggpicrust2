@@ -131,6 +131,9 @@ ggpicrust2 <- function(file = NULL,
       p.adjust = p.adjust,
       reference = reference
     )
+    if(daa_method == "Lefse") {
+      stop("The 'Lefse' method is not suitable for the ggpicrust2() function as Lefse in R does not output p-values, only effect sizes.")
+    }
     if (sum(as.numeric(daa_results_df$p_adjust <= 0.05)) == 0) {
       stop("There are no statistically significant biomarkers")
     }
@@ -190,6 +193,9 @@ ggpicrust2 <- function(file = NULL,
       p.adjust = p.adjust,
       reference = reference
     )
+    if(daa_method == "Lefse") {
+      stop("The 'Lefse' method is not suitable for the ggpicrust2() function as Lefse in R does not output p-values, only effect sizes.")
+    }
     cat("Annotating pathways...\n")
     daa_results_df <-
       pathway_annotation(
