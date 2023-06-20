@@ -308,7 +308,7 @@ data("metadata")
 metacyc_daa_results_df <- pathway_daa(abundance = metacyc_abundance %>% column_to_rownames("pathway"), metadata = metadata, group = "Environment", daa_method = "LinDA")
 
 # Annotate MetaCyc pathway results without KO to KEGG conversion
-metacyc_daa_annotated_results_df <- pathway_annotation(pathway = "MetaCyc", daa_results_df = daa_results_df, ko_to_kegg = FALSE)
+metacyc_daa_annotated_results_df <- pathway_annotation(pathway = "MetaCyc", daa_results_df = metacyc_daa_results_df, ko_to_kegg = FALSE)
 
 # Generate pathway error bar plot
 # Please change column_to_rownames() to the feature column
