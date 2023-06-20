@@ -1,7 +1,7 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# ggpicrust2 Documentation
+# ggpicrust2 vigenett
 
 *ggpicrust2* is a comprehensive package designed to provide a seamless
 and intuitive solution for analyzing and interpreting the results of
@@ -39,7 +39,7 @@ MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.or
 
 ## News
 
-Update alert! 🚨 ggpicrust2 Ver1.7 is now available. To get the latest
+Update alert! 🚨 ggpicrust2 Ver1.7.2 is now available. To get the latest
 version, simply use
 
 ``` r

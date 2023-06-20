@@ -1,10 +1,10 @@
 ---
-title: "Using ggpicrust2"
+title: "ggpicrust2 vigenett"
 author: "Caffery Yang"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Using ggpicrust2}
+  %\VignetteIndexEntry{ggpicrust2 vigenett}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -19,7 +19,7 @@ knitr::opts_chunk$set(
 ```
 
 
-# ggpicrust2 Documentation
+# Using ggpicrust2
 
 *ggpicrust2* is a comprehensive package designed to provide a seamless and intuitive solution for analyzing and interpreting the results of PICRUSt2 functional prediction. It offers a wide range of features, including pathway name/description annotations, advanced differential abundance (DA) methods, and visualization of DA results. 
 
