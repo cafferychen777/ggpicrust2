@@ -1,7 +1,7 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# ggpicrust2 vigenett
+# ggpicrust2 Vignettes
 
 *ggpicrust2* is a comprehensive package designed to provide a seamless
 and intuitive solution for analyzing and interpreting the results of
