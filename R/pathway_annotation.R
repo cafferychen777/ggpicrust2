@@ -197,7 +197,7 @@ pathway_annotation <-
         if (nrow(daa_results_filtered_df) > 100) {
           cat("\n") # New line
           message(
-            "Too many statistically significant pathways. The database cannot handle the query all at once. Please break it down into smaller queries."
+            "The number of statistically significant pathways exceeds the database's query limit. Please consider breaking down the analysis into smaller queries or selecting a subset of pathways for further investigation."
           )
           cat("\n") # New line
         }
