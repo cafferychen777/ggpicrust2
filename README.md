@@ -1,7 +1,7 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# ggpicrust2 Vignettes
+# ggpicrust2 vignettes
 
 *ggpicrust2* is a comprehensive package designed to provide a seamless
 and intuitive solution for analyzing and interpreting the results of
@@ -143,6 +143,7 @@ devtools::install_github("cafferychen777/ggpicrust2")
 | lefser               | R implementation of the LEfSE method for microbiome biomarker discovery |
 | limma                | Linear Models for Microarray and RNA-Seq Data                           |
 | KEGGREST             | R Interface to KEGG REST API                                            |
+| DESeq2               | Differential gene expression analysis using RNA-seq data                |
 
 ``` r
 if (!requireNamespace("BiocManager", quietly = TRUE))
@@ -150,7 +151,7 @@ if (!requireNamespace("BiocManager", quietly = TRUE))
 
 pkgs <- c("phyloseq", "ALDEx2", "SummarizedExperiment", "Biobase", "devtools", 
           "ComplexHeatmap", "BiocGenerics", "BiocManager", "metagenomeSeq", 
-          "Maaslin2", "edgeR", "lefser", "limma", "KEGGREST")
+          "Maaslin2", "edgeR", "lefser", "limma", "KEGGREST", "DESeq2")
 
 for (pkg in pkgs) {
   if (!requireNamespace(pkg, quietly = TRUE))

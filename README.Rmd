@@ -13,7 +13,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-# ggpicrust2 vigenett
+# ggpicrust2 vignettes
 
 *ggpicrust2* is a comprehensive package designed to provide a seamless and intuitive solution for analyzing and interpreting the results of PICRUSt2 functional prediction. It offers a wide range of features, including pathway name/description annotations, advanced differential abundance (DA) methods, and visualization of DA results. 
 
@@ -120,6 +120,7 @@ devtools::install_github("cafferychen777/ggpicrust2")
 | lefser               | R implementation of the LEfSE method for microbiome biomarker discovery |
 | limma                | Linear Models for Microarray and RNA-Seq Data                         |
 | KEGGREST             | R Interface to KEGG REST API                                          |
+| DESeq2               | Differential gene expression analysis using RNA-seq data              |
 
 
 ``` r
@@ -128,7 +129,7 @@ if (!requireNamespace("BiocManager", quietly = TRUE))
 
 pkgs <- c("phyloseq", "ALDEx2", "SummarizedExperiment", "Biobase", "devtools", 
           "ComplexHeatmap", "BiocGenerics", "BiocManager", "metagenomeSeq", 
-          "Maaslin2", "edgeR", "lefser", "limma", "KEGGREST")
+          "Maaslin2", "edgeR", "lefser", "limma", "KEGGREST", "DESeq2")
 
 for (pkg in pkgs) {
   if (!requireNamespace(pkg, quietly = TRUE))
