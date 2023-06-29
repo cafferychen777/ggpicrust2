@@ -139,7 +139,15 @@ for (pkg in pkgs) {
 
 ## Stay Updated {#stay-updated}
 
-Follow me on Twitter for the latest *ggpicrust2* updates: [![](https://img.shields.io/twitter/follow/CafferyYang?style=social)]
+Stay up to date with the latest *ggpicrust2* developments by following me on Twitter: [![](https://img.shields.io/twitter/follow/CafferyYang?style=social)](https://twitter.com/CafferyYang)
+
+On my Twitter account, you'll find regular updates, announcements, and insights related to *ggpicrust2*. By following me, you'll ensure that you never miss any important information or new features.
+
+Feel free to join the conversation, ask questions, and engage with other users who are also interested in *ggpicrust2*. Twitter is a great platform to stay connected and be a part of the community.
+
+Click on the Twitter follow button above or visit [https://twitter.com/CafferyYang](https://twitter.com/CafferyYang) to follow me now!
+
+Thank you for your interest in *ggpicrust2*, and I look forward to keeping you informed about all the exciting updates!
 
 ## Workflow {#workflow}
 
