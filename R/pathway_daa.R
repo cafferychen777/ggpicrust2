@@ -624,6 +624,11 @@ pathway_daa <-
                  paste(valid_p_adjust, collapse = ", ")))
     }
 
+    # Checking if p_values_df exists and has any rows
+    if (!exists("p_values_df") || nrow(p_values_df) == 0) {
+      stop("Notice: There are no statistical significances detected. This is not an error, but it might indicate that your data does not contain any values passing the set significance threshold (p<=0.05). You may refer to the tutorial's FAQ for further help and suggestions.")
+    }
+
       switch(
         p.adjust,
         "BH" = {
@@ -649,6 +654,7 @@ pathway_daa <-
             p.adjust(p_values_df$p_values, method = "none")
         }
       )
+
       daa_results_df <-
         cbind(p_values_df, adj_method = p.adjust, p_adjust = adjusted_p_values)
       return(daa_results_df)
