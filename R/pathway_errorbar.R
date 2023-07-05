@@ -154,14 +154,20 @@ pathway_errorbar <-
         x_lab <- "description"
       }
       if (is.null(daa_results_df$pathway_name)&is.null(daa_results_df$description)){
-        message("Please use pathway_annotation to annotate the daa_results_df")
+        message(
+          "Please utilize the 'pathway_annotation' function to annotate the 'daa_results_df' data frame."
+        )
       }
     }
     if (!(x_lab %in% colnames(daa_results_df))){
-      message("There is no x_lab you defined in daa_results_df")
+      message(
+        "The 'x_lab' you defined does not exist as a column in the 'daa_results_df' data frame."
+      )
     }
     if (nlevels(factor(daa_results_df$method)) != 1) {
-      message("There are more than one method in daa_results_df$method, please filter it.")
+      message(
+        "The 'method' column in the 'daa_results_df' data frame contains more than one method. Please filter it to contain only one method."
+      )
     }
     if (is.null(colors)) {
       colors <- c("#d93c3e", "#3685bc", "#6faa3e", "#e8a825", "#c973e6", "#ee6b3d", "#2db0a7", "#f25292")[1:nlevels(as.factor(Group))]
@@ -176,15 +182,23 @@ pathway_errorbar <-
       daa_results_filtered_sub_df <- daa_results_filtered_df
     }
     if (nrow(daa_results_filtered_sub_df) > 30) {
-      stop(
+      message(
         paste0(
-          "The feature with statistically significance are more than 30, the visualization will be terrible.\n Please use select to reduce the number.\n Now you have ",
-          paste(paste0('"', daa_results_filtered_sub_df$feature, '"'), collapse = ", ")
+          "The number of features with statistical significance exceeds 30, leading to suboptimal visualization. ",
+          "Please use 'select' to reduce the number of features.\n",
+          "Currently, you have these features: ",
+          paste(paste0('"', daa_results_filtered_sub_df$feature, '"'), collapse = ", "), ".\n",
+          "You can find the statistically significant features with the following command:\n",
+          "daa_results_df %>% filter(p_adjust < 0.05) %>% select(c(\"feature\",\"p_adjust\"))"
         )
       )
+      stop()
     }
     if (nrow(daa_results_filtered_sub_df) == 0){
-      stop("The feature with statistically significance is zero, pathway_errorbar can't do the visualization.")
+      stop(
+        "Visualization with 'pathway_errorbar' cannot be performed because there are no features with statistical significance. ",
+        "For possible solutions, please check the FAQ section of the tutorial."
+      )
     }
     # Convert to relative abundance
     relative_abundance_mat <- apply(t(errorbar_abundance_mat), 1, function(x)
@@ -242,7 +256,10 @@ pathway_errorbar <-
       },
       "pathway_class" = {
         if (!"pathway_class" %in% colnames(daa_results_filtered_sub_df)) {
-          stop("Please use pathway_annotation function to annotate the pathway_daa results")
+          stop(
+            "The 'pathway_class' column is missing in the 'daa_results_filtered_sub_df' data frame. ",
+            "Please use the 'pathway_annotation' function to annotate the 'pathway_daa' results."
+          )
         }
         order <- order(
           daa_results_filtered_sub_df$pathway_class,
