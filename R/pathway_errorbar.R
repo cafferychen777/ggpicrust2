@@ -144,6 +144,18 @@ pathway_errorbar <-
       message("You can use the 'pathway_annotation' function to add annotations for these pathways.")
     }
 
+    # Get the names of all columns in the data frame
+    column_names <- colnames(daa_results_df)
+
+    # Check if there are more than two 'group' columns
+    group_columns <- grepl("^group", column_names)
+    if (sum(group_columns) > 2) {
+      p_value_bar <- FALSE
+      message(
+        "There are more than two 'group' columns in the 'daa_results_df' data frame. As a result, it is not possible to compute the log2 fold values. The 'p_value_bar' has been automatically set to FALSE."
+      )
+    }
+
     # Exclude rows with missing pathway annotation
     daa_results_df <- daa_results_df[!is.na(daa_results_df[,x_lab]),]
 
@@ -153,22 +165,32 @@ pathway_errorbar <-
       }else{
         x_lab <- "description"
       }
+
       if (is.null(daa_results_df$pathway_name)&is.null(daa_results_df$description)){
         message(
           "Please utilize the 'pathway_annotation' function to annotate the 'daa_results_df' data frame."
         )
       }
     }
+
     if (!(x_lab %in% colnames(daa_results_df))){
       message(
         "The 'x_lab' you defined does not exist as a column in the 'daa_results_df' data frame."
       )
     }
+
     if (nlevels(factor(daa_results_df$method)) != 1) {
       message(
         "The 'method' column in the 'daa_results_df' data frame contains more than one method. Please filter it to contain only one method."
       )
     }
+
+    if (nlevels(factor(daa_results_df$group1)) != 1 || nlevels(factor(daa_results_df$group2)) != 1) {
+      message(
+        "The 'group1' or 'group2' column in the 'daa_results_df' data frame contains more than one group. Please filter each to contain only one group."
+      )
+    }
+
     if (is.null(colors)) {
       colors <- c("#d93c3e", "#3685bc", "#6faa3e", "#e8a825", "#c973e6", "#ee6b3d", "#2db0a7", "#f25292")[1:nlevels(as.factor(Group))]
     }
