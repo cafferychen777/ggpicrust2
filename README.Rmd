@@ -58,11 +58,13 @@ Don't miss out on the major bug fixes and improvements. 😀
 
 If you use *ggpicrust2* in your research, please cite the following paper:
 
-Chen Yang, Aaron Burberry, Xuan Cao, Jiahao Mai, Liangliang Zhang. (2023). [ggpicrust2: an R package for PICRUSt2 predicted functional profile analysis and visualization.](https://arxiv.org/abs/2303.10388) arXiv preprint arXiv:2303.10388.
+Chen Yang and others. (2023). ggpicrust2: an R package for PICRUSt2 predicted functional profile analysis and visualization. *Bioinformatics*, btad470. [DOI link](https://doi.org/10.1093/bioinformatics/btad470)
 
-BibTeX entry: @misc{yang2023ggpicrust2, title={ggpicrust2: an R package for PICRUSt2 predicted functional profile analysis and visualization}, author={Chen Yang and Aaron Burberry and Jiahao Mai and Xuan Cao and Liangliang Zhang}, year={2023}, eprint={2303.10388}, archivePrefix={arXiv}, primaryClass={stat.AP} }
+BibTeX entry: [Download here](https://academic.oup.com/bioinformatics/advance-article/doi/10.1093/bioinformatics/btad470/7234609?utm_source=advanceaccess&utm_campaign=bioinformatics&utm_medium=email&login=false)
 
-ResearchGate preprint link: [Click here](https://www.researchgate.net/publication/369380349_ggpicrust2_an_R_package_for_PICRUSt2_predicted_functional_profile_analysis_and_visualization)
+ResearchGate link: [Click here](https://www.researchgate.net/publication/372829051_ggpicrust2_an_R_package_for_PICRUSt2_predicted_functional_profile_analysis_and_visualization)
+
+Bioinformatics link: [Click here](https://academic.oup.com/bioinformatics/advance-article/doi/10.1093/bioinformatics/btad470/7234609?utm_source=advanceaccess&utm_campaign=bioinformatics&utm_medium=email&login=false)
 
 ## Installation {#installation}
 
