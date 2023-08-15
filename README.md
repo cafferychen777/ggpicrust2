@@ -48,6 +48,9 @@ devtools::install_github('cafferychen777/ggpicrust2')
 
 Don’t miss out on the major bug fixes and improvements. 😀
 
+**Join our official Discord channel for more updates and discussions:**
+[ggpicrust2 Discord](https://discord.gg/yaR7FEc8)
+
 ## Table of Contents
 
 - [Citation](#citation)
