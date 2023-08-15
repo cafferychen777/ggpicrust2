@@ -29,7 +29,7 @@ pathway_daa(
 - "metagenomeSeq": Fit logistic regression models to test for differential abundance between groups using metagenomeSeq
 - "LinDA": Linear models for differential abundance analysis of microbiome compositional data
 - "Maaslin2": Multivariate Association with Linear Models (MaAsLin2) for differential abundance analysis
-- "Lefse": Linear discriminant analysis (LDA) effect size algorithm for high-dimensional microbiome data}
+- "Lefser": Linear discriminant analysis (LDA) effect size algorithm for high-dimensional microbiome data}
 
 \item{select}{a vector containing sample names for analysis, if NULL all samples are included. This parameter can be used to specify which samples are included in the differential abundance analysis. Default is NULL.}
 
@@ -70,6 +70,6 @@ daa_method = "LinDA")
 data(metacyc_abundance)
 data(metadata)
 daa_results_df <- pathway_daa(metacyc_abundance \%>\%
-column_to_rownames("pathway"), metadata, "Environment", daa_method = "LinDA")
+column_to_rownames("pathway"), metadata, "Environment", daa_method = "Lefser")
 }
 }

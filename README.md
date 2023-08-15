@@ -878,17 +878,17 @@ significant features.
 
 ![](https://raw.githubusercontent.com/cafferychen777/ggpicrust2_paper/main/paper_figure/MicrobiomeGallery_preview.jpg)
 
-2.  [MicrobiomeStat](www.microbiomestat.wiki), a **groundbreaking R
-    package designed to revolutionize microbiome analysis**. 🧬🔬 It’s
-    not just another package; it’s a **game-changer** in the field of
-    microbiome analysis. MicrobiomeStat is **specifically tailored for
-    longitudinal studies**, providing comprehensive solutions for both
-    longitudinal and paired analyses. The package is also adept at
-    handling cross-sectional studies and is **not limited to microbiome
-    data** - it can deal with **multi-omics data** as well. 🎯 Our
-    ultimate aim is to make MicrobiomeStat the **go-to R package for
-    longitudinal analysis of multi-omics data**. (Note: Both the package
-    and wiki are still under development)
+2.  [MicrobiomeStat](https://www.microbiomestat.wiki/), a
+    **groundbreaking R package designed to revolutionize microbiome
+    analysis**. 🧬🔬 It’s not just another package; it’s a
+    **game-changer** in the field of microbiome analysis. MicrobiomeStat
+    is **specifically tailored for longitudinal studies**, providing
+    comprehensive solutions for both longitudinal and paired analyses.
+    The package is also adept at handling cross-sectional studies and is
+    **not limited to microbiome data** - it can deal with **multi-omics
+    data** as well. 🎯 Our ultimate aim is to make MicrobiomeStat the
+    **go-to R package for longitudinal analysis of multi-omics data**.
+    (Note: Both the package and wiki are still under development)
 
 If you’re interested in becoming a **dev user for MicrobiomeStat**,
 please email <cafferychen7850@gmail.com>. 📧
