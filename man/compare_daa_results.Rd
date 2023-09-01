@@ -35,14 +35,24 @@ data("metacyc_abundance")
 data("metadata")
 
 # Run pathway_daa function for multiple methods
-methods <- c("ALDEx2", "DESeq2", "edgeR")
+methods <- c("ALDEx2", "DESeq2", "edgeR","Maaslin2")
 daa_results_list <- lapply(methods, function(method) {
 pathway_daa(abundance = metacyc_abundance \%>\% column_to_rownames("pathway"),
 metadata = metadata, group = "Environment", daa_method = method)
 })
 
+names(daa_results_list) <- methods
+# Correct Maaslin2 feature names by replacing dots with hyphens.
+# Note: When using Maaslin2 as the differential abundance analysis method,
+# it modifies the original feature names by replacing hyphens (-) with dots (.).
+# This replacement can cause inconsistencies when trying to compare results from Maaslin2
+# with those from other methods that do not modify feature names.
+# Therefore, this line of code reverses that replacement, converting the dots back into
+# hyphens for accurate and consistent comparisons across different methods.
+daa_results_list[["Maaslin2"]]$feature <- gsub("\\\\.", "-", daa_results_list[["Maaslin2"]]$feature)
+
 # Compare results across different methods
 comparison_results <- compare_daa_results(daa_results_list = daa_results_list,
-method_names = c("ALDEx2_Welch's t test","ALDEx2_Wilcoxon rank test","DESeq2", "edgeR"))
+method_names = c("ALDEx2_Welch's t test","ALDEx2_Wilcoxon rank test","DESeq2", "edgeR", "Maaslin2"))
 }
 }
