@@ -899,3 +899,11 @@ please email <cafferychen7850@gmail.com>. 📧
 Stay tuned for more exciting updates! 🎉
 
 ![](https://cdn.staticaly.com/gh/cafferychen777/ggpicrust2_paper/main/paper_figure/WeChatac562b362dadbf21a03414be3a5d06a5.png)
+\## Contributors
+
+<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+<!-- prettier-ignore-start -->
+<!-- markdownlint-disable -->
+<!-- markdownlint-restore -->
+<!-- prettier-ignore-end -->
+<!-- ALL-CONTRIBUTORS-LIST:END -->
