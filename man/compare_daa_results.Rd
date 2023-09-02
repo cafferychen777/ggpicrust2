@@ -53,6 +53,6 @@ daa_results_list[["Maaslin2"]]$feature <- gsub("\\\\.", "-", daa_results_list[["
 
 # Compare results across different methods
 comparison_results <- compare_daa_results(daa_results_list = daa_results_list,
-method_names = c("ALDEx2_Welch's t test","ALDEx2_Wilcoxon rank test","DESeq2", "edgeR", "Maaslin2"))
+method_names = c("ALDEx2","DESeq2", "edgeR", "Maaslin2"))
 }
 }

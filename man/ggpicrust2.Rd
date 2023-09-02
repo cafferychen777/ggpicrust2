@@ -32,7 +32,7 @@ ggpicrust2(
 
 \item{pathway}{A character, consisting of "EC", "KO", "MetaCyc"}
 
-\item{daa_method}{a character specifying the method for differential abundance analysis, choices are:
+\item{daa_method}{a character specifying the method for differential abundance analysis, default is "ALDEx2", choices are:
 - "ALDEx2": ANOVA-Like Differential Expression tool for high throughput sequencing data
 - "DESeq2": Differential expression analysis based on the negative binomial distribution using DESeq2
 - "edgeR": Exact test for differences between two groups of negative-binomially distributed counts using edgeR
@@ -43,7 +43,7 @@ ggpicrust2(
 
 \item{ko_to_kegg}{A character to control the conversion of KO abundance to KEGG abundance}
 
-\item{p.adjust}{a character specifying the method for p-value adjustment, choices are:
+\item{p.adjust}{a character specifying the method for p-value adjustment, default is "BH", choices are:
 - "BH": Benjamini-Hochberg correction
 - "holm": Holm's correction
 - "bonferroni": Bonferroni correction
@@ -65,6 +65,8 @@ ggpicrust2(
 }
 \value{
 daa.results.df, a dataframe of DA results
+A list of sub-lists, each containing a ggplot2 plot (`plot`) and a dataframe of differential abundance results (`results`) for a specific DA method.
+Each plot visualizes the differential abundance results of a specific DA method, and the corresponding dataframe contains the results used to create the plot.
 }
 \description{
 This function integrates pathway name/description annotations, ten of the most advanced differential abundance (DA) methods, and visualization of DA results.

@@ -490,7 +490,7 @@ daa_results_list <- lapply(methods, function(method) {
   pathway_daa(abundance = metacyc_abundance %>% column_to_rownames("pathway"), metadata = metadata, group = "Environment", daa_method = method)
 })
 
-method_names <- c("ALDEx2_Welch's t test","ALDEx2_Wilcoxon rank test","DESeq2", "edgeR")
+method_names <- c("ALDEx2","DESeq2", "edgeR")
 # Compare results across different methods
 comparison_results <- compare_daa_results(daa_results_list = daa_results_list, method_names = method_names)
 ```
