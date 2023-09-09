@@ -28,7 +28,6 @@ Imports:
     metagenomeSeq,
     MicrobiomeStat,
     readr,
-    stats,
     SummarizedExperiment,
     tibble,
     tidyr,
@@ -38,17 +37,11 @@ Imports:
 Depends: 
     R (>= 2.10)
 Suggests: 
-    covr,
-    testthat (>= 3.0.0),
-    cowplot,
     Biobase,
-    devtools,
     KEGGREST,
     ComplexHeatmap,
-    ggforce,
     ggplotify,
     BiocGenerics,
-    BiocManager,
     magrittr,
     utils,
     knitr,

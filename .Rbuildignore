@@ -4,4 +4,7 @@
 ^.*\.Rproj$
 ^\.Rproj\.user$
 ^\.github$
-
+^\.all-contributorsrc$
+^README\.Rmd$
+^doc$
+^docs$
