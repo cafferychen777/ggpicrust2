@@ -1,0 +1,7 @@
+pandoc: 3.1.1
+pkgdown: 2.0.7
+pkgdown_sha: ~
+articles:
+  using_ggpicrust2: using_ggpicrust2.html
+last_built: 2023-09-09T01:30Z
+
