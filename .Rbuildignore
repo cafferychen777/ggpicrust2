@@ -1,9 +1,7 @@
 ^renv$
 ^renv\.lock$
 ^Meta$
-^doc$
 ^.*\.Rproj$
 ^\.Rproj\.user$
 ^\.github$
-^README\.Rmd$
 
