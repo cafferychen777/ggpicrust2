@@ -3,6 +3,9 @@
 
 # ggpicrust2 vignettes
 
+![DALL·E 2023-10-07 18 14 15 - Circular logo illustration_ 'ggpicrust2' is written at the top in bold letters  A 3D pie chart showcases different segments of predicted metagenome da](https://github.com/cafferychen777/ggpicrust2/assets/82987086/8123e607-3d42-4ea5-86f8-c78d0fd4a5e6)
+
+
 *ggpicrust2* is a comprehensive package designed to provide a seamless
 and intuitive solution for analyzing and interpreting the results of
 PICRUSt2 functional prediction. It offers a wide range of features,
