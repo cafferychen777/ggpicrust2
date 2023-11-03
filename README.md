@@ -39,17 +39,24 @@ MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.or
 
 ## News
 
-Update alert! 🚨 ggpicrust2 Ver1.7.2 is now available. To get the latest
-version, simply use
+Update alert! 🚨 ggpicrust2 Ver1.7.2 is now available. Due to some
+issues with the CRAN server, ggpicrust2 was inadvertently removed from
+CRAN. We are working diligently to resolve this issue. In the meantime,
+you can get the latest version from GitHub by using the following
+command:
 
 ``` r
 devtools::install_github('cafferychen777/ggpicrust2')
 ```
 
-Don’t miss out on the major bug fixes and improvements. 😀
+This update includes major bug fixes and improvements. Don’t miss out!
+😀
 
 **Join our official Discord channel for more updates and discussions:**
 [ggpicrust2 Discord](https://discord.gg/yaR7FEc8)
+
+Thank you for your understanding and patience as we work to resolve this
+issue.
 
 ## Table of Contents
 
