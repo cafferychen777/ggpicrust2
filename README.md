@@ -53,7 +53,7 @@ This update includes major bug fixes and improvements. Don’t miss out!
 😀
 
 **Join our official Discord channel for more updates and discussions:**
-[ggpicrust2 Discord](https://discord.gg/yaR7FEc8)
+[ggpicrust2 Discord](https://discord.com/invite/yaR7FEc8)
 
 Thank you for your understanding and patience as we work to resolve this
 issue.
@@ -439,7 +439,7 @@ Differential abundance(DA) analysis plays a major role in PICRUSt2
 downstream analysis. pathway_daa() integrates almost all DA methods
 applicable to the predicted functional profile which there excludes
 ANCOM and ANCOMBC. It includes
-[ALDEx2](https://bioconductor.riken.jp/packages/3.9/bioc/html/ALDEx2.html)(Fernandes
+[ALDEx2](https://www.bioconductor.org/packages/release/bioc/html/ALDEx2.html)(Fernandes
 et al., 2013),
 [DESeq2](https://bioconductor.org/packages/release/bioc/html/DESeq2.html)(Love
 et al., 2014),
@@ -453,7 +453,7 @@ voom](https://ucdavis-bioinformatics-training.github.io/2018-June-RNA-Seq-Worksh
 et al., 2015),
 [metagenomeSeq](https://www.bioconductor.org/packages/release/bioc/html/metagenomeSeq.html#:~:text=metagenomeSeq%20is%20designed%20to%20address,the%20testing%20of%20feature%20correlations.)(Paulson
 et al., 2013),
-[Lefser](http://bioconductor.org/packages/release/bioc/html/lefser.html)(Segata
+[Lefser](https://bioconductor.org/packages/release/bioc/html/lefser.html)(Segata
 et al., 2011).
 
 ``` r
