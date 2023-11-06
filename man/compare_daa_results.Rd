@@ -35,7 +35,7 @@ data("metacyc_abundance")
 data("metadata")
 
 # Run pathway_daa function for multiple methods
-methods <- c("ALDEx2", "DESeq2", "edgeR","Maaslin2")
+methods <- c("DESeq2", "edgeR","Maaslin2")
 daa_results_list <- lapply(methods, function(method) {
 pathway_daa(abundance = metacyc_abundance \%>\% column_to_rownames("pathway"),
 metadata = metadata, group = "Environment", daa_method = method)
@@ -53,6 +53,6 @@ daa_results_list[["Maaslin2"]]$feature <- gsub("\\\\.", "-", daa_results_list[["
 
 # Compare results across different methods
 comparison_results <- compare_daa_results(daa_results_list = daa_results_list,
-method_names = c("ALDEx2","DESeq2", "edgeR", "Maaslin2"))
+method_names = c("DESeq2", "edgeR", "Maaslin2"))
 }
 }
