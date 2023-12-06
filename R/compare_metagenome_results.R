@@ -41,7 +41,7 @@
 #' # Define names
 #' names <- c("metagenome1", "metagenome2")
 #' # Call the function
-#' results <- compare_metagenome_results(metagenomes, names)
+#' results <- compare_metagenome_results(metagenomes, names, daa_method = "LinDA")
 #' # Print the correlation matrix
 #' print(results$correlation$cor_matrix)
 #' # Print the p-value matrix
