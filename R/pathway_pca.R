@@ -20,15 +20,26 @@
 #' metadata_example <- data.frame(sample_name = colnames(kegg_abundance_example),
 #'                                group = factor(rep(c("Control", "Treatment"), each = 5)))
 #'
-#' pca_plot <- pathway_pca(kegg_abundance_example, metadata_example, "group")
+#' # Define custom colors for PCA plot
+#' custom_colors <- c("blue", "red")
+#'
+#' # Generate PCA plot with custom colors
+#' pca_plot <- pathway_pca(kegg_abundance_example, metadata_example, "group", colors = custom_colors)
+#'
+#' pca_plot <- pathway_pca(kegg_abundance_example, metadata_example, "group", colors = NULL)
+#'
 #' print(pca_plot)
 #'
 #' \donttest{
 #' data("metacyc_abundance")
 #' data("metadata")
-#' pathway_pca(metacyc_abundance %>% column_to_rownames("pathway"), metadata, "Environment")
+#' # Generate PCA plot for real dataset with custom colors
+#' pathway_pca(metacyc_abundance %>% column_to_rownames("pathway"), metadata, "Environment", colors = c("green", "purple"))
 #' }
-pathway_pca <- function(abundance, metadata, group){
+pathway_pca <- function(abundance,
+                        metadata,
+                        group,
+                        colors = NULL){
   # due to NSE notes in R CMD check
   PC1 = PC2 = Group = NULL
   # Perform PCA on the abundance data, keeping the first two principal components
@@ -43,18 +54,24 @@ pathway_pca <- function(abundance, metadata, group){
 
   levels <- length(levels(factor(pca$Group)))
 
+  # Set default colors if colors are not provided
+  if (is.null(colors)) {
+    colors <- c("#d93c3e", "#3685bc","#208A42","#89288F","#F47D2B",
+                "#FEE500","#8A9FD1","#C06CAB","#E6C2DC","#90D5E4",
+                "#89C75F","#F37B7D","#9983BD","#D24B27","#3BBCA8",
+                "#6E4B9E","#0C727C", "#7E1416","#D8A767","#3D3D3D")[1:levels]
+  }
 
-
-  colors_choices <- c("#d93c3e", "#3685bc","#208A42","#89288F","#F47D2B",
-             "#FEE500","#8A9FD1","#C06CAB","#E6C2DC","#90D5E4",
-             "#89C75F","#F37B7D","#9983BD","#D24B27","#3BBCA8",
-             "#6E4B9E","#0C727C", "#7E1416","#D8A767","#3D3D3D")[1:levels]
+  # Ensure the number of colors matches the number of levels in Group
+  if (length(colors) != levels) {
+    stop("The length of colors vector must match the number of levels in Group")
+  }
 
 
   # Create a ggplot object for the PCA scatter plot
   Fig1a.taxa.pca <- ggplot2::ggplot(pca,ggplot2::aes(PC1,PC2))+
     ggplot2::geom_point(size=2,ggplot2::aes(color=Group),show.legend = T)+
-    ggplot2::scale_color_manual(values=colors_choices)+
+    ggplot2::scale_color_manual(values=colors)+
     ggplot2::stat_ellipse(ggplot2::aes(color = Group),fill="white",geom = "polygon",
                  level=0.95,alpha = 0.01,show.legend = F)+
     ggplot2::labs(x=paste0("PC1(",round(pca_proportion[1],1),"%)"),y=paste0("PC2(",round(pca_proportion[2],1),"%)"),color = group)+
@@ -76,7 +93,7 @@ pathway_pca <- function(abundance, metadata, group){
     ggplot2::ggplot(pca) +
     ggplot2::geom_density(ggplot2::aes(x=PC1, group=Group, fill=Group), # Plot the density of PC1
                  color="black", alpha=1, position = 'identity',show.legend = F) +
-    ggplot2::scale_fill_manual(values=colors_choices) + # Manually set the fill color for each group
+    ggplot2::scale_fill_manual(values=colors) + # Manually set the fill color for each group
     ggplot2::theme_classic() + # Set the classic theme
     ggplot2::scale_y_discrete(expand = c(0,0.001)) + # Scale the y-axis with a small expansion to improve appearance
     ggplot2::labs(x=NULL, y=NULL) + # Remove x and y labels
@@ -88,7 +105,7 @@ pathway_pca <- function(abundance, metadata, group){
     ggplot2::ggplot(pca) +
     ggplot2::geom_density(ggplot2::aes(x=PC2, group=Group, fill=Group), # Plot the density of PC2
                  color="black", alpha=1, position = 'identity',show.legend = F) +
-    ggplot2::scale_fill_manual(values=colors_choices) + # Manually set the fill color for each group
+    ggplot2::scale_fill_manual(values=colors) + # Manually set the fill color for each group
     ggplot2::theme_classic() + # Set the classic theme
     ggplot2::scale_y_discrete(expand = c(0,0.001)) + # Scale the y-axis with a small expansion to improve appearance
     ggplot2::labs(x=NULL, y=NULL) + # Remove x and y labels

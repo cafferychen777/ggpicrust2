@@ -4,7 +4,7 @@
 \alias{pathway_pca}
 \title{Perform Principal Component Analysis (PCA) on functional pathway abundance data and create visualizations of the PCA results.}
 \usage{
-pathway_pca(abundance, metadata, group)
+pathway_pca(abundance, metadata, group, colors = NULL)
 }
 \arguments{
 \item{abundance}{A data frame, predicted functional pathway abundance.}
@@ -33,12 +33,20 @@ rownames(kegg_abundance_example) <- c("PathwayA", "PathwayB", "PathwayC")
 metadata_example <- data.frame(sample_name = colnames(kegg_abundance_example),
                                group = factor(rep(c("Control", "Treatment"), each = 5)))
 
-pca_plot <- pathway_pca(kegg_abundance_example, metadata_example, "group")
+# Define custom colors for PCA plot
+custom_colors <- c("blue", "red")
+
+# Generate PCA plot with custom colors
+pca_plot <- pathway_pca(kegg_abundance_example, metadata_example, "group", colors = custom_colors)
+
+pca_plot <- pathway_pca(kegg_abundance_example, metadata_example, "group", colors = NULL)
+
 print(pca_plot)
 
 \donttest{
 data("metacyc_abundance")
 data("metadata")
-pathway_pca(metacyc_abundance \%>\% column_to_rownames("pathway"), metadata, "Environment")
+# Generate PCA plot for real dataset with custom colors
+pathway_pca(metacyc_abundance \%>\% column_to_rownames("pathway"), metadata, "Environment", colors = c("green", "purple"))
 }
 }
