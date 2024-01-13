@@ -7,7 +7,7 @@ Authors@R: c(
     person("Liangliang", "Zhang", email = "lxz716@case.edu ", role = "aut"))
 Description: Provides a convenient way to analyze and visualize 'PICRUSt2' output with pre-defined plots and functions. Allows for generating statistical plots about microbiome functional predictions and offers customization options. Features a one-click option for creating publication-level plots, saving time and effort in producing professional-grade figures. Streamlines the 'PICRUSt2' analysis and visualization process. For more details, see Yang et al. (2023) <doi:10.1093/bioinformatics/btad470>.
 BugReports: https://github.com/cafferychen777/ggpicrust2/issues
-URL: https://github.com/cafferychen777/ggpicrust2
+URL: https://github.com/cafferychen777/ggpicrust2, https://cafferychen777.github.io/ggpicrust2/
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
