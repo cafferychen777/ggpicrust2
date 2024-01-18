@@ -21,7 +21,7 @@
 #'                                group = factor(rep(c("Control", "Treatment"), each = 5)))
 #'
 #' # Define custom colors for PCA plot
-#' custom_colors <- c("blue", "red")
+#' custom_colors <- c("skyblue", "salmon")
 #'
 #' # Generate PCA plot with custom colors
 #' pca_plot <- pathway_pca(kegg_abundance_example, metadata_example, "group", colors = custom_colors)
@@ -70,7 +70,7 @@ pathway_pca <- function(abundance,
 
   # Create a ggplot object for the PCA scatter plot
   Fig1a.taxa.pca <- ggplot2::ggplot(pca,ggplot2::aes(PC1,PC2))+
-    ggplot2::geom_point(size=2,ggplot2::aes(color=Group),show.legend = T)+
+    ggplot2::geom_point(size=4,ggplot2::aes(color=Group),show.legend = T)+
     ggplot2::scale_color_manual(values=colors)+
     ggplot2::stat_ellipse(ggplot2::aes(color = Group),fill="white",geom = "polygon",
                  level=0.95,alpha = 0.01,show.legend = F)+
