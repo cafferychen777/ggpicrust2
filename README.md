@@ -3,6 +3,10 @@
 
 # ggpicrust2 vignettes
 
+🌟 **If you find `ggpicrust2` helpful, please consider giving us a star
+on GitHub!** Your support greatly motivates us to improve and maintain
+this project. 🌟
+
 *ggpicrust2* is a comprehensive package designed to provide a seamless
 and intuitive solution for analyzing and interpreting the results of
 PICRUSt2 functional prediction. It offers a wide range of features,

@@ -15,6 +15,8 @@ knitr::opts_chunk$set(
 
 # ggpicrust2 vignettes
 
+🌟 **If you find `ggpicrust2` helpful, please consider giving us a star on GitHub!** Your support greatly motivates us to improve and maintain this project. 🌟
+
 *ggpicrust2* is a comprehensive package designed to provide a seamless and intuitive solution for analyzing and interpreting the results of PICRUSt2 functional prediction. It offers a wide range of features, including pathway name/description annotations, advanced differential abundance (DA) methods, and visualization of DA results. 
 
 One of the newest additions to *ggpicrust2* is the capability to compare the consistency and inconsistency across different DA methods applied to the same dataset. This feature allows users to assess the agreement and discrepancy between various methods when it comes to predicting and sequencing the metagenome of a particular sample. It provides valuable insights into the consistency of results obtained from different approaches and helps users evaluate the robustness of their findings.
