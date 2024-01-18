@@ -34,7 +34,7 @@ metadata_example <- data.frame(sample_name = colnames(kegg_abundance_example),
                                group = factor(rep(c("Control", "Treatment"), each = 5)))
 
 # Define custom colors for PCA plot
-custom_colors <- c("blue", "red")
+custom_colors <- c("skyblue", "salmon")
 
 # Generate PCA plot with custom colors
 pca_plot <- pathway_pca(kegg_abundance_example, metadata_example, "group", colors = custom_colors)
