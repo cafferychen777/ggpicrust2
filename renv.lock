@@ -2596,13 +2596,8 @@
     },
     "renv": {
       "Package": "renv",
-      "Version": "1.0.1",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Requirements": [
-        "utils"
-      ],
-      "Hash": "6523639dd021b32c3199a41cbe6db340"
+      "Version": "1.0.3",
+      "Source": "Repository"
     },
     "reshape": {
       "Package": "reshape",
