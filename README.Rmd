@@ -27,17 +27,15 @@ If you are interested in exploring and analyzing your PICRUSt2 output data, *ggp
 
 ## News
 
-Update alert! 🚨 ggpicrust2 Ver1.7.2 is now available. Due to some issues with the CRAN server, ggpicrust2 was inadvertently removed from CRAN. We are working diligently to resolve this issue. In the meantime, you can get the latest version from GitHub by using the following command:
+🌟 Introducing `MicrobiomeStat`: Generate Dozens of Pages of Detailed Reports in a Single Click
 
-``` r
-devtools::install_github('cafferychen777/ggpicrust2')
-```
+We're pleased to introduce `MicrobiomeStat`, our latest R package tailored for **longitudinal microbiome data** analysis. Designed to work efficiently with 16s rRNA microbiome data, `MicrobiomeStat` integrates comprehensive statistical tests and clear visualizations, offering a practical solution for microbiome researchers.
 
-This update includes major bug fixes and improvements. Don't miss out! 😀
+`MicrobiomeStat` aims to simplify the complexities of microbiome data analysis. It's well-suited for various research needs, whether you're dealing with multi-omics data or cross-sectional studies. The package is designed to be user-friendly, accommodating both new and experienced researchers in the field.
 
-**Join our official Discord channel for more updates and discussions:** [ggpicrust2 Discord](https://discord.com/invite/yaR7FEc8)
+For those engaged in microbiome research, `MicrobiomeStat` provides a straightforward approach to data analysis. Discover its full capabilities and learn more about how it can enhance your research at the [MicrobiomeStat Wiki](https://www.microbiomestat.wiki/). You can also access the tool directly on GitHub: [MicrobiomeStat GitHub Repository](https://github.com/cafferychen777/MicrobiomeStat).
 
-Thank you for your understanding and patience as we work to resolve this issue.
+We appreciate your support and interest in our tools and look forward to seeing the contributions `MicrobiomeStat` can make to your research endeavors.
 
 ## Table of Contents
 
