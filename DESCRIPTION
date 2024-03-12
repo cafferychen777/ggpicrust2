@@ -19,7 +19,7 @@ Imports:
     dplyr,
     edgeR,
     GGally,
-    ggplot2 (>= 3.4.0, < 3.5.0),
+    ggplot2 (== 3.4.2),
     grid,
     ggh4x,
     lefser,
