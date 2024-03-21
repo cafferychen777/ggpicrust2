@@ -891,56 +891,25 @@ With these strategies, you should be able to create a more readable and
 informative visualization, even when dealing with a large number of
 significant features.
 
-### Issue 8: Error in pathway_daa with ALDEx2 method
-
-When using the `pathway_daa` function with the ALDEx2 method, you may
-encounter the following error:
-
-    Error in Math.factor(c(3L, 3L, 3L, 4L, 4L, 4L, 1L, 1L, 1L, 2L, 2L, 2L)) :
-    ‘round’ not meaningful for factors
-
-This issue may be related to recent updates in the ALDEx2 package that
-introduced compatibility issues with ggpicrust2. To resolve this issue,
-you can try installing ALDEx2 v.1.28 from the Bioconductor archive:
-
-1.  Remove the currently installed version of ALDEx2:
-
-    ``` r
-    remove.packages("ALDEx2")
-    ```
-
-2.  Install ALDEx2 v.1.28:
-
-    ``` r
-    install.packages("https://mghp.osn.xsede.org/bir190004-bucket01/index.html#archive.bioconductor.org/packages/3.15/bioc/src/contrib/Archive/ALDEx2/ALDEx2_1.28.0.tar.gz", repos = NULL, type = "source")
-    ```
-
-Alternatively, you can consider using another differential abundance
-analysis (daa) method, such as LinDA, until the compatibility issues are
-resolved.
-
 ## Author’s Other Projects
 
-1.  [MicrobiomeGallery](https://cafferyyang.shinyapps.io/MicrobiomeGallery/):
+1.  [MicrobiomeStat](https://www.microbiomestat.wiki/): The
+    MicrobiomeStat package is a dedicated R tool for exploring
+    longitudinal microbiome data. It also accommodates multi-omics data
+    and cross-sectional studies, valuing the collective efforts within
+    the community. This tool aims to support researchers through their
+    extensive biological inquiries over time, with a spirit of gratitude
+    towards the community’s existing resources and a collaborative ethos
+    for furthering microbiome research.
+
+If you’re interested in helping to test and develop MicrobiomeStat,
+please contact <cafferychen7850@gmail.com>.
+
+2.  [MicrobiomeGallery](https://cafferyyang.shinyapps.io/MicrobiomeGallery/):
     This is a web-based platform currently under development, which aims
     to provide a space for sharing microbiome data visualization code
     and datasets.
 
 ![](https://raw.githubusercontent.com/cafferychen777/ggpicrust2_paper/main/paper_figure/MicrobiomeGallery_preview.jpg)
 
-2.  [MicrobiomeStat](https://www.microbiomestat.wiki/): This is an R
-    package that aims to provide new tools for microbiome analysis. The
-    package is being developed with a particular focus on longitudinal
-    studies, but it also includes tools for handling cross-sectional
-    studies. While its primary purpose is to analyze microbiome data, it
-    also has capabilities for handling multi-omics data. The goal is for
-    MicrobiomeStat to become a widely-used tool for longitudinal
-    analysis of multi-omics data. Please note that both the package and
-    the accompanying wiki are still under development.
-
-If you’re interested in helping to test and develop MicrobiomeStat,
-please contact <cafferychen7850@gmail.com>.
-
 We look forward to sharing more updates as these projects progress.
-
-![](https://cdn.staticaly.com/gh/cafferychen777/ggpicrust2_paper/main/paper_figure/WeChatac562b362dadbf21a03414be3a5d06a5.png)
