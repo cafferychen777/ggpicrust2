@@ -891,6 +891,34 @@ With these strategies, you should be able to create a more readable and
 informative visualization, even when dealing with a large number of
 significant features.
 
+### Issue 8: Error in pathway_daa with ALDEx2 method
+
+When using the `pathway_daa` function with the ALDEx2 method, you may
+encounter the following error:
+
+    Error in Math.factor(c(3L, 3L, 3L, 4L, 4L, 4L, 1L, 1L, 1L, 2L, 2L, 2L)) :
+    ‘round’ not meaningful for factors
+
+This issue may be related to recent updates in the ALDEx2 package that
+introduced compatibility issues with ggpicrust2. To resolve this issue,
+you can try installing ALDEx2 v.1.28 from the Bioconductor archive:
+
+1.  Remove the currently installed version of ALDEx2:
+
+    ``` r
+    remove.packages("ALDEx2")
+    ```
+
+2.  Install ALDEx2 v.1.28:
+
+    ``` r
+    install.packages("https://mghp.osn.xsede.org/bir190004-bucket01/index.html#archive.bioconductor.org/packages/3.15/bioc/src/contrib/Archive/ALDEx2/ALDEx2_1.28.0.tar.gz", repos = NULL, type = "source")
+    ```
+
+Alternatively, you can consider using another differential abundance
+analysis (daa) method, such as LinDA, until the compatibility issues are
+resolved.
+
 ## Author’s Other Projects
 
 1.  [MicrobiomeGallery](https://cafferyyang.shinyapps.io/MicrobiomeGallery/):
