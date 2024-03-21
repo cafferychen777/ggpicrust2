@@ -194,15 +194,19 @@ pathway_errorbar <-
     if (is.null(colors)) {
       colors <- c("#d93c3e", "#3685bc", "#6faa3e", "#e8a825", "#c973e6", "#ee6b3d", "#2db0a7", "#f25292")[1:nlevels(as.factor(Group))]
     }
+
     errorbar_abundance_mat <- as.matrix(abundance)
+
     daa_results_filtered_df <-
       daa_results_df[daa_results_df$p_adjust < p_values_threshold,]
+
     if (!is.null(select)) {
       daa_results_filtered_sub_df <-
         daa_results_filtered_df[daa_results_filtered_df$feature %in% select, ]
     } else {
       daa_results_filtered_sub_df <- daa_results_filtered_df
     }
+
     if (nrow(daa_results_filtered_sub_df) > 30) {
       message(
         paste0(
@@ -216,6 +220,7 @@ pathway_errorbar <-
       )
       stop()
     }
+
     if (nrow(daa_results_filtered_sub_df) == 0){
       stop(
         "Visualization with 'pathway_errorbar' cannot be performed because there are no features with statistical significance. ",
@@ -236,21 +241,30 @@ pathway_errorbar <-
       t(sub_relative_abundance_mat)
     )
     error_bar_df <- as.data.frame(error_bar_matrix)
+
     error_bar_df$group <- factor(Group,levels = levels(as.factor(Group)))
+
       error_bar_pivot_longer_df <- tidyr::pivot_longer(error_bar_df,-c(sample, group))
+
     error_bar_pivot_longer_tibble <-
       mutate(error_bar_pivot_longer_df, group = as.factor(group))
+
     error_bar_pivot_longer_tibble$sample <-
       factor(error_bar_pivot_longer_tibble$sample)
+
     error_bar_pivot_longer_tibble$name <-
       factor(error_bar_pivot_longer_tibble$name)
+
     error_bar_pivot_longer_tibble$value <-
       as.numeric(error_bar_pivot_longer_tibble$value)
+
     error_bar_pivot_longer_tibble_summarised <-
       error_bar_pivot_longer_tibble %>% group_by(name, group) %>%
       summarise(mean = mean(value), sd = stats::sd(value))
+
     error_bar_pivot_longer_tibble_summarised <-
       error_bar_pivot_longer_tibble_summarised %>% mutate(group2 = "nonsense")
+
     switch(
       order,
       "p_values" = {
@@ -292,8 +306,10 @@ pathway_errorbar <-
         order <- order
       }
     )
+
     daa_results_filtered_sub_df <-
       daa_results_filtered_sub_df[order,]
+
     error_bar_pivot_longer_tibble_summarised_ordered <-
       data.frame(
         name = NULL,
@@ -301,6 +317,7 @@ pathway_errorbar <-
         mean = NULL,
         sd = NULL
       )
+
     for (i in daa_results_filtered_sub_df$feature) {
       error_bar_pivot_longer_tibble_summarised_ordered <-
         rbind(
@@ -309,6 +326,7 @@ pathway_errorbar <-
                                                      i,]
         )
     }
+
     if (ko_to_kegg == FALSE){
       error_bar_pivot_longer_tibble_summarised_ordered[, x_lab] <-
         rep(daa_results_filtered_sub_df[, x_lab], each = length(levels(
@@ -323,6 +341,7 @@ pathway_errorbar <-
               factor(error_bar_pivot_longer_tibble_summarised_ordered$group)
             )))
     }
+
     error_bar_pivot_longer_tibble_summarised_ordered$name <- factor(error_bar_pivot_longer_tibble_summarised_ordered$name, levels = rev(daa_results_filtered_sub_df$feature))
 
     bar_errorbar <-
