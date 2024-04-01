@@ -180,13 +180,13 @@ pathway_errorbar <-
     }
 
     if (nlevels(factor(daa_results_df$method)) != 1) {
-      message(
+      stop(
         "The 'method' column in the 'daa_results_df' data frame contains more than one method. Please filter it to contain only one method."
       )
     }
 
     if (nlevels(factor(daa_results_df$group1)) != 1 || nlevels(factor(daa_results_df$group2)) != 1) {
-      message(
+      stop(
         "The 'group1' or 'group2' column in the 'daa_results_df' data frame contains more than one group. Please filter each to contain only one group."
       )
     }
