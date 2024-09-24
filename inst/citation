@@ -1,10 +1,43 @@
-bibentry(bibtype = "Article",
-         title = "ggpicrust2: an R package for PICRUSt2 predicted functional profile analysis and visualization",
-         author = c("Chen Yang", "Jiahao Mai", "Xuan Cao", "Aaron Burberry", "Fabio Cominelli", "Liangliang Zhang"),
-         journal = "Bioinformatics",
-         volume = "39",
-         number = "8",
-         pages = "btad470",
-         year = "2023",
-         url = "https://doi.org/10.1093/bioinformatics/btad470",
-         note = "Yang, Chen et al. (2023). ggpicrust2: an R package for PICRUSt2 predicted functional profile analysis and visualization. Bioinformatics, 39(8), btad470. https://doi.org/10.1093/bioinformatics/btad470")
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: "Yang"
+  given-names: "Chen"
+- family-names: "Mai"
+  given-names: "Jiahao"
+- family-names: "Cao"
+  given-names: "Xuan"
+- family-names: "Burberry"
+  given-names: "Aaron"
+- family-names: "Cominelli"
+  given-names: "Fabio"
+- family-names: "Zhang"
+  given-names: "Liangliang"
+title: "ggpicrust2: an R package for PICRUSt2 predicted functional profile analysis and visualization"
+version: 1.0.0
+doi: 10.1093/bioinformatics/btad470
+date-released: 2023-08-01
+url: "https://github.com/cafferychen777/ggpicrust2"
+preferred-citation:
+  type: article
+  authors:
+  - family-names: "Yang"
+    given-names: "C."
+  - family-names: "Mai"
+    given-names: "J."
+  - family-names: "Cao"
+    given-names: "X."
+  - family-names: "Burberry"
+    given-names: "A."
+  - family-names: "Cominelli"
+    given-names: "F."
+  - family-names: "Zhang"
+    given-names: "L."
+  doi: "10.1093/bioinformatics/btad470"
+  journal: "Bioinformatics (Oxford, England)"
+  month: 8
+  start: btad470
+  title: "ggpicrust2: an R package for PICRUSt2 predicted functional profile analysis and visualization"
+  volume: 39
+  issue: 8
+  year: 2023
