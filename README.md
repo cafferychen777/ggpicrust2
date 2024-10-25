@@ -913,3 +913,7 @@ please contact <cafferychen7850@gmail.com>.
 ![](https://raw.githubusercontent.com/cafferychen777/ggpicrust2_paper/main/paper_figure/MicrobiomeGallery_preview.jpg)
 
 We look forward to sharing more updates as these projects progress.
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=cafferychen777/ggpicrust2&type=Date)](https://star-history.com/#cafferychen777/ggpicrust2&Date)
