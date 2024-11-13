@@ -1,3 +1,287 @@
+#' Read and validate input file
+#' @param file_path Path to the input file
+#' @return Abundance data frame
+#' @noRd
+read_abundance_file <- function(file_path) {
+  if (!file.exists(file_path)) {
+    stop("File does not exist: ", file_path)
+  }
+  
+  file_ext <- tolower(tools::file_ext(file_path))
+  valid_formats <- c("txt", "tsv", "csv")
+  
+  if (!file_ext %in% valid_formats) {
+    stop(
+      "Invalid file format. Please input file in .tsv, .txt or .csv format. ",
+      "The best input file format is the output file from PICRUSt2, ",
+      "specifically 'pred_metagenome_unstrat.tsv'."
+    )
+  }
+  
+  delimiter <- if (file_ext == "csv") "," else "\t"
+  
+  tryCatch({
+    abundance <- readr::read_delim(
+      file_path,
+      delim = delimiter,
+      show_col_types = FALSE,
+      progress = FALSE
+    )
+    
+    if (ncol(abundance) < 2) {
+      stop("Input file must contain at least two columns")
+    }
+    
+    abundance %>% tibble::add_column(description = NA, .after = 1)
+  }, 
+  error = function(e) {
+    stop("Error reading file: ", e$message)
+  })
+}
+
+#' Load reference data for pathway annotation
+#' @param pathway_type One of "KO", "EC", or "MetaCyc"
+#' @return Reference data list
+#' @noRd
+load_reference_data <- function(pathway_type) {
+  if (!pathway_type %in% c("KO", "EC", "MetaCyc")) {
+    stop("Invalid pathway option. Please provide one of the following options: 'KO', 'EC', 'MetaCyc'.")
+  }
+  
+  ref_file <- sprintf("%s_reference.RData", pathway_type)
+  ref_path <- system.file("extdata", ref_file, package = "ggpicrust2")
+  
+  if (!file.exists(ref_path)) {
+    stop("Reference data file not found: ", ref_file)
+  }
+  
+  tryCatch({
+    load(ref_path)
+    ref_data <- get(paste0(pathway_type, "_reference"))
+    
+    if (pathway_type == "EC") {
+      message("Note: EC description may appear to be duplicated due to shared EC numbers across different reactions.")
+    }
+    
+    ref_data
+  },
+  error = function(e) {
+    stop("Error loading reference data: ", e$message)
+  })
+}
+
+#' Cache manager for KEGG annotations
+#' @noRd
+kegg_cache <- new.env(parent = emptyenv())
+
+#' Get KEGG annotation with caching
+#' @param ko_id KO identifier
+#' @return KEGG annotation
+#' @noRd
+get_kegg_with_cache <- function(ko_id) {
+  if (!exists(ko_id, envir = kegg_cache)) {
+    # 添加请求间隔
+    Sys.sleep(0.1)  # 100ms 延迟避免过快请求
+    
+    result <- with_retry({
+      KEGGREST::keggGet(ko_id)
+    })
+    
+    if (!is.null(result)) {
+      assign(ko_id, result, envir = kegg_cache)
+    }
+  }
+  get(ko_id, envir = kegg_cache, inherits = FALSE)
+}
+
+#' Retry mechanism for KEGG queries
+#' @param expr Expression or function to retry
+#' @param max_attempts Maximum number of retry attempts
+#' @return Result or error
+#' @noRd
+with_retry <- function(expr, max_attempts = getOption("ggpicrust2.max_retries", 3)) {
+  attempt <- 1
+  last_error <- NULL
+  
+  while (attempt <= max_attempts) {
+    result <- tryCatch({
+      if (is.function(expr)) expr() else if (is.expression(expr)) eval(expr) else expr
+    }, error = function(e) {
+      # 特别处理 HTTP 404 错误
+      if (grepl("HTTP 404", e$message)) {
+        return(NULL)  # 直接返回 NULL，不再重试
+      }
+      
+      last_error <- e
+      if (attempt == max_attempts) {
+        return(e)
+      }
+      log_message(sprintf("Attempt %d failed: %s, retrying...", attempt, e$message), "WARN")
+      Sys.sleep(min(2^attempt, 30))  # 限制最大等待时间为30秒
+      NULL
+    })
+    
+    if (!is.null(result) && !inherits(result, "error")) {
+      return(result)
+    }
+    
+    attempt <- attempt + 1
+  }
+  
+  NULL  # 如果所有尝试都失败，返回 NULL
+}
+
+#' Enhanced logging system
+#' @noRd
+log_message <- function(msg, level = "INFO") {
+  if (getOption("ggpicrust2.verbose", default = TRUE)) {
+    timestamp <- format(Sys.time(), "%Y-%m-%d %H:%M:%S")
+    message(sprintf("[%s] %s: %s", timestamp, level, msg))
+  }
+}
+
+#' Create enhanced progress bar
+#' @noRd
+create_progress_bar <- function(total, format = NULL) {
+  if (is.null(format)) {
+    format <- paste0(
+      "  [:bar] :percent | Elapsed: :elapsed | ETA: :eta\n",
+      "  :current/:total (:rate/sec) | :what"
+    )
+  }
+  
+  progress::progress_bar$new(
+    format = format,
+    total = total,
+    clear = FALSE,
+    width = 80
+  )
+}
+
+#' Validate input parameters
+#' @noRd
+validate_inputs <- function(file, pathway, daa_results_df, ko_to_kegg) {
+  # File validation
+  if (!is.null(file)) {
+    if (!is.character(file) || length(file) != 1) {
+      stop("'file' must be a single character string")
+    }
+  }
+  
+  # Pathway validation
+  if (!is.null(pathway)) {
+    valid_pathways <- c("KO", "EC", "MetaCyc")
+    if (!pathway %in% valid_pathways) {
+      stop(sprintf("'pathway' must be one of: %s", 
+                  paste(valid_pathways, collapse = ", ")))
+    }
+  }
+  
+  # Data frame validation
+  if (!is.null(daa_results_df)) {
+    if (!is.data.frame(daa_results_df)) {
+      stop("'daa_results_df' must be a data frame")
+    }
+    if (ko_to_kegg) {
+      required_cols <- c("feature", "p_adjust")
+      missing_cols <- setdiff(required_cols, colnames(daa_results_df))
+      if (length(missing_cols) > 0) {
+        stop(sprintf("Missing required columns: %s", 
+                    paste(missing_cols, collapse = ", ")))
+      }
+    }
+  }
+}
+
+#' Process KEGG annotations with improved error handling and caching
+#' @param df Data frame with features to annotate
+#' @return Annotated data frame
+#' @noRd
+process_kegg_annotations <- function(df) {
+  if (nrow(df) == 0) {
+    stop("Empty data frame provided for KEGG annotation")
+  }
+  
+  filtered_df <- df[df$p_adjust < 0.05, ]
+  if (nrow(filtered_df) == 0) {
+    stop(
+      "No statistically significant biomarkers found (p_adjust < 0.05).\n",
+      "Consider using a less stringent threshold or reviewing your data."
+    )
+  }
+  
+  # 初始化新列
+  new_cols <- c("pathway_name", "pathway_description", "pathway_class", "pathway_map")
+  filtered_df[new_cols] <- NA_character_
+  
+  # 创建进度条
+  total_features <- nrow(filtered_df)
+  pb <- create_progress_bar(total_features)
+  log_message("Starting KEGG annotation process")
+  
+  # 添加重试计数器
+  retry_count <- 0
+  max_retries <- 3
+  
+  # 处理每个特征
+  for (i in seq_len(nrow(filtered_df))) {
+    ko_id <- filtered_df$feature[i]
+    
+    # 更新进度条
+    pb$tick(tokens = list(what = sprintf("Processing %s", ko_id)))
+    
+    # 获取 KEGG 注释
+    entry <- tryCatch({
+      result <- get_kegg_with_cache(ko_id)
+      if (is.null(result)) {
+        log_message(sprintf("No KEGG data found for %s", ko_id), "WARN")
+        next
+      }
+      result
+    }, error = function(e) {
+      log_message(sprintf("Error processing %s: %s", ko_id, e$message), "ERROR")
+      NULL
+    })
+    
+    # 安全地提取数据
+    if (!is.null(entry) && length(entry) > 0) {
+      filtered_df$pathway_name[i] <- safe_extract(entry[[1]], "NAME", 1)
+      filtered_df$pathway_description[i] <- safe_extract(entry[[1]], "DESCRIPTION", 1)
+      filtered_df$pathway_class[i] <- safe_extract(entry[[1]], "CLASS", 1)
+      filtered_df$pathway_map[i] <- safe_extract(entry[[1]], "PATHWAY_MAP", 1)
+    }
+  }
+  
+  log_message("KEGG annotation process completed")
+  
+  # 移除所有 NA 行
+  filtered_df <- filtered_df[!is.na(filtered_df$pathway_name), ]
+  
+  if (nrow(filtered_df) == 0) {
+    warning("No valid KEGG annotations found for any features")
+    return(NULL)
+  }
+  
+  filtered_df
+}
+
+#' Pathway information annotation
+#'
+#' @inheritParams pathway_annotation
+#' @return Annotated data frame
+#' @noRd
+annotate_pathways <- function(abundance, pathway_type, ref_data) {
+  if (nrow(abundance) == 0) {
+    stop("Empty data frame provided for annotation")
+  }
+  
+  # Vectorized operation instead of loop
+  abundance$description <- ref_data[match(abundance[[1]], ref_data[[1]]), 
+                                  if(pathway_type == "KO") 5 else 2]
+  
+  abundance
+}
+
 #' Pathway information annotation of "EC", "KO", "MetaCyc" pathway
 #'
 #' This function has two primary use cases:
@@ -55,258 +339,47 @@
 #'                               daa_results_df = daa_results_df,
 #'                               ko_to_kegg = TRUE)
 #' }
-pathway_annotation <-
-  function(file = NULL,
-           pathway = NULL,
-           daa_results_df = NULL,
-           ko_to_kegg = FALSE) {
-
-    message("Starting pathway annotation...")
-
-    if (is.null(file) && is.null(daa_results_df)) {
-      stop("Please input the picrust2 output or results of pathway_daa daa_results_df")
-    }
-    if (!is.null(file)) {
-      message("Reading the input file...")
-      file_format <- substr(file, nchar(file) - 3, nchar(file))
-      switch(file_format,
-             ".txt" = {
-               message("Loading .txt file...")
-               abundance <- readr::read_delim(
-                 file,
-                 delim = "\t",
-                 escape_double = FALSE,
-                 trim_ws = TRUE
-               )
-               message(".txt file successfully loaded.")
-             },
-             ".tsv" = {
-               message("Loading .tsv file...")
-               abundance <- readr::read_delim(
-                 file,
-                 delim = "\t",
-                 escape_double = FALSE,
-                 trim_ws = TRUE
-               )
-               message(".tsv file successfully loaded.")
-             },
-             ".csv" = {
-               message("Loading .csv file...")
-               abundance <- readr::read_delim(
-                 file,
-                 delim = "\t",
-                 escape_double = FALSE,
-                 trim_ws = TRUE
-               )
-               message(".csv file successfully loaded.")
-             },
-             stop(
-               "Invalid file format. Please input file in .tsv, .txt or .csv format. The best input file format is the output file from PICRUSt2, specifically 'pred_metagenome_unstrat.tsv'."
-             )
-      )
-      abundance <-
-        abundance %>% tibble::add_column(
-          description = rep(NA, length = nrow(abundance)),
-          .after = 1
-        )
-      switch(pathway,
-             "KO" = {
-               message("Loading KO reference data...")
-               load(system.file("extdata", "KO_reference.RData", package = "ggpicrust2"))
-               message("Annotating abundance data with KO reference...")
-               for (i in seq_len(nrow(abundance))) {
-                 abundance[i, 2] <- KO_reference[KO_reference[, 1] %in% abundance[i, 1], 5][1]
-               }
-               message("Abundance data annotation with KO reference completed.")
-             },
-             "EC" = {
-               message("Loading EC reference data...")
-               load(system.file("extdata", "EC_reference.RData", package = "ggpicrust2"))
-               message("Annotating abundance data with EC reference...")
-               for (i in seq_len(nrow(abundance))) {
-                 abundance[i, 2] <- EC_reference[EC_reference[, 1] %in% abundance[i, 1], 2]
-               }
-               message("Abundance data annotation with EC reference completed.")
-               message("Note: EC description may appear to be duplicated due to shared EC numbers across different reactions.")
-             },
-             "MetaCyc" = {
-               message("Loading MetaCyc reference data...")
-               load(system.file("extdata", "MetaCyc_reference.RData", package = "ggpicrust2"))
-               message("Annotating abundance data with MetaCyc reference...")
-               for (i in seq_len(nrow(abundance))) {
-                 abundance[i, 2] <- MetaCyc_reference[MetaCyc_reference[, 1] %in% abundance[i, 1], 2]
-               }
-               message("Abundance data annotation with MetaCyc reference completed.")
-             },
-             stop("Invalid pathway option. Please provide one of the following options: 'KO', 'EC', 'MetaCyc'.")
-      )
-      return(abundance)
-    }
-    if (!is.null(daa_results_df)) {
-      message("DAA results data frame is not null. Proceeding...")
-      if (ko_to_kegg == FALSE) {
-        message("KO to KEGG is set to FALSE. Proceeding with standard workflow...")
-        daa_results_df$description <- NA
-        switch(pathway,
-               "KO" = {
-                 message("Loading KO reference data...")
-                 load(system.file("extdata", "KO_reference.RData", package = "ggpicrust2"))
-                 for (i in seq_len(nrow(daa_results_df))) {
-                   daa_results_df[i, ]$description <-
-                     KO_reference[KO_reference[, 1] %in% daa_results_df[i, ]$feature, 5][1]
-                 }
-               },
-               "EC" = {
-                 message("Loading EC reference data...")
-                 load(system.file("extdata", "EC_reference.RData", package = "ggpicrust2"))
-                 for (i in seq_len(nrow(daa_results_df))) {
-                   daa_results_df[i, ]$description <-
-                     EC_reference[EC_reference[, 1] %in% daa_results_df[i, ]$feature, 2]
-                 }
-                 message("EC description may appear to be duplicated")
-               },
-               "MetaCyc" = {
-                 message("Loading MetaCyc reference data...")
-                 load(system.file("extdata", "MetaCyc_reference.RData", package = "ggpicrust2"))
-                 for (i in seq_len(nrow(daa_results_df))) {
-                   daa_results_df[i, ]$description <-
-                     MetaCyc_reference[MetaCyc_reference[, 1] %in% daa_results_df[i, ]$feature, 2]
-                 }
-               },
-               stop("Only provide 'KO', 'EC' and 'MetaCyc' pathway")
-        )
-        message("Returning DAA results data frame...")
-        return(daa_results_df)
-      } else {
-        message("KO to KEGG is set to TRUE. Proceeding with KEGG pathway annotations...")
-        daa_results_filtered_df <- daa_results_df[daa_results_df$p_adjust < 0.05, ]
-        if (nrow(daa_results_filtered_df) == 0) {
-          stop(
-            "No statistically significant biomarkers found. 'Statistically significant biomarkers' refer to those biomarkers that demonstrate a significant difference in expression between different groups, as determined by a statistical test (p_adjust < 0.05 in this case).\n",
-            "You might consider re-evaluating your experiment design or trying alternative statistical analysis methods. Consult with a biostatistician or a data scientist if you are unsure about the next steps."
-          )
-        }
-        daa_results_filtered_df$pathway_name <- NA
-        daa_results_filtered_df$pathway_description <- NA
-        daa_results_filtered_df$pathway_class <- NA
-        daa_results_filtered_df$pathway_map <- NA
-        keggGet_results <- list()
-        message(
-          "We are connecting to the KEGG database to get the latest results, please wait patiently."
-        )
-        if (nrow(daa_results_filtered_df) > 100) {
-          cat("\n") # New line
-          message(
-            "The number of statistically significant pathways exceeds the database's query limit. Please consider breaking down the analysis into smaller queries or selecting a subset of pathways for further investigation."
-          )
-          cat("\n") # New line
-        }
-        if (nrow(daa_results_filtered_df) <= 10) {
-          cat("\n") # New line
-          message("Processing pathways individually...")
-          cat("\n") # New line
-
-          # Initialize a text progress bar
-          pb <- txtProgressBar(min = 0, max = nrow(daa_results_filtered_df), style = 3)
-
-          for (i in seq_len(nrow(daa_results_filtered_df))) {
-            cat("\n") # New line
-            message("Beginning annotation for pathway ", i, " of ", nrow(daa_results_filtered_df), "...")
-            cat("\n") # New line
-            a <- 0
-            start_time <- Sys.time() # start timer
-            repeat {
-              tryCatch(
-                {
-                  keggGet_results[[i]] <- KEGGREST::keggGet(daa_results_filtered_df$feature[i])
-                  a <- 1
-                },
-                error = function(e) {
-                  cat("\n") # New line
-                  message("An error occurred. Retrying...")
-                  cat("\n") # New line
-                }
-              )
-              if (a == 1) {
-                break
-              }
-            }
-            end_time <- Sys.time() # end timer
-            time_taken <- end_time - start_time # calculate time taken
-            cat("\n") # New line
-            message("Annotated pathway ", i, " of ", nrow(daa_results_filtered_df), ". Time taken: ", round(time_taken, 2), " seconds.")
-            cat("\n") # New line
-
-            daa_results_filtered_df[i, ]$pathway_name <- keggGet_results[[i]][[1]]$NAME
-            daa_results_filtered_df[i, ]$pathway_description <- keggGet_results[[i]][[1]]$DESCRIPTION[1]
-            daa_results_filtered_df[i, ]$pathway_class <- keggGet_results[[i]][[1]]$CLASS
-            daa_results_filtered_df[i, ]$pathway_map <- keggGet_results[[i]][[1]]$PATHWAY_MAP
-
-            # Update the progress bar
-            setTxtProgressBar(pb, i)
-          }
-          # Close the progress bar
-          close(pb)
-          cat("\n") # New line
-          message("Pathway annotation completed.")
-          cat("\n") # New line
-        }
-        if (nrow(daa_results_filtered_df) > 10 && nrow(daa_results_filtered_df) < 99) {
-          cat("\n") # New line
-          message("Processing pathways in chunks...")
-          cat("\n") # New line
-
-          # Initialize a text progress bar
-          pb <- txtProgressBar(min = 0, max = nrow(daa_results_filtered_df), style = 3)
-
-          start_time <- Sys.time() # start timer
-          n <- length(c(seq(10, nrow(daa_results_filtered_df), 10), nrow(daa_results_filtered_df)))
-          j <- 1
-          seq <- c(seq(10, nrow(daa_results_filtered_df), 10), nrow(daa_results_filtered_df))
-          for (i in seq) {
-            if (i %% 10 == 0) {
-              keggGet_results[[j]] <- KEGGREST::keggGet(daa_results_filtered_df$feature[seq(i - 9, i, 1)])
-            } else {
-              keggGet_results[[j]] <- KEGGREST::keggGet(daa_results_filtered_df$feature[seq(nrow(daa_results_filtered_df) %/% 10 * 10 + 1, i, 1)])
-            }
-            j <- j + 1
-
-            # Update the progress bar
-            setTxtProgressBar(pb, i)
-          }
-          end_time <- Sys.time() # end timer
-          time_taken <- end_time - start_time # calculate time taken
-          cat("\n") # New line
-          message("Finished processing chunks. Time taken: ", round(time_taken, 2), " seconds.")
-          cat("\n") # New line
-
-          message("Finalizing pathway annotations...")
-          cat("\n") # New line
-          start_time <- Sys.time() # start timer
-          for (k in 1:n) {
-            w <- length(keggGet_results[[k]])
-            for (j in 1:w) {
-              daa_results_filtered_df[daa_results_filtered_df$feature == keggGet_results[[k]][[j]]$ENTRY, ]$pathway_name <- keggGet_results[[k]][[j]]$NAME[1]
-              daa_results_filtered_df[daa_results_filtered_df$feature == keggGet_results[[k]][[j]]$ENTRY, ]$pathway_description <- keggGet_results[[k]][[j]]$DESCRIPTION[1]
-              daa_results_filtered_df[daa_results_filtered_df$feature == keggGet_results[[k]][[j]]$ENTRY, ]$pathway_class <- keggGet_results[[k]][[j]]$CLASS[1]
-              daa_results_filtered_df[daa_results_filtered_df$feature == keggGet_results[[k]][[j]]$ENTRY, ]$pathway_map <- keggGet_results[[k]][[j]]$PATHWAY_MAP[1]
-            }
-            # Update the progress bar
-            setTxtProgressBar(pb, k)
-          }
-          end_time <- Sys.time() # end timer
-          time_taken <- end_time - start_time # calculate time taken
-          cat("\n") # New line
-          message("Finished finalizing pathway annotations. Time taken: ", round(time_taken, 2), " seconds.")
-          cat("\n") # New line
-
-          # Close the progress bar
-          close(pb)
-        }
-        daa_results_filtered_annotation_df <-
-          daa_results_filtered_df
-        message("Returning DAA results filtered annotation data frame...")
-        return(daa_results_filtered_annotation_df)
-      }
+pathway_annotation <- function(file = NULL,
+                             pathway = NULL,
+                             daa_results_df = NULL,
+                             ko_to_kegg = FALSE) {
+  
+  # Input validation
+  if (is.null(file) && is.null(daa_results_df)) {
+    stop("Please input the picrust2 output or results of pathway_daa daa_results_df")
+  }
+  
+  if (!is.null(daa_results_df) && nrow(daa_results_df) == 0) {
+    stop("Input data frame is empty")
+  }
+  
+  # Process file input
+  if (!is.null(file)) {
+    abundance <- read_abundance_file(file)
+    ref_data <- load_reference_data(pathway)
+    return(annotate_pathways(abundance, pathway, ref_data))
+  }
+  
+  # Process DAA results
+  if (!is.null(daa_results_df)) {
+    if (!ko_to_kegg) {
+      ref_data <- load_reference_data(pathway)
+      return(annotate_pathways(daa_results_df, pathway, ref_data))
+    } else {
+      return(process_kegg_annotations(daa_results_df))
     }
   }
+}
+
+#' 添加安全提取函数
+safe_extract <- function(list, field, index = 1) {
+  tryCatch({
+    if (is.null(list[[field]]) || length(list[[field]]) == 0) {
+      NA_character_
+    } else {
+      as.character(list[[field]][index])
+    }
+  }, error = function(e) {
+    NA_character_
+  })
+}

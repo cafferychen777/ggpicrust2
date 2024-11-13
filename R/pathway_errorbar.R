@@ -85,7 +85,7 @@
 #' )
 #' # data(metadata)
 #'
-#' ko_abundance <- read.delim("path/to/your/metacyc_abundance.tsv")
+#' metacyc_abundance <- read.delim("path/to/your/metacyc_abundance.tsv")
 #'
 #' # data(metacyc_abundance)
 #'
@@ -134,6 +134,43 @@ pathway_errorbar <-
            p_value_bar = TRUE,
            colors = NULL,
            x_lab = NULL) {
+    # 在函数开始处添加更完整的输入验证
+    if(!is.matrix(abundance) && !is.data.frame(abundance)) {
+      stop("'abundance' must be a matrix or data frame")
+    }
+    
+    if(!is.data.frame(daa_results_df)) {
+      stop("'daa_results_df' must be a data frame")
+    }
+    
+    # 检查必要的列
+    required_cols <- c("feature", "method", "group1", "group2", "p_adjust")
+    missing_cols <- setdiff(required_cols, colnames(daa_results_df))
+    if(length(missing_cols) > 0) {
+      stop("Missing required columns in daa_results_df: ", 
+           paste(missing_cols, collapse = ", "))
+    }
+    
+    # 检查数据一致性
+    if(!all(rownames(abundance) %in% daa_results_df$feature)) {
+      stop("Some features in abundance matrix are not present in daa_results_df")
+    }
+    
+    # 在函数开始处添加数据验证
+    if (length(Group) != ncol(abundance)) {
+      stop("Length of Group must match number of columns in abundance matrix")
+    }
+
+    # 检查显著性特征的数量
+    sig_features <- sum(daa_results_df$p_adjust < 0.05)
+
+    if (sig_features > 30) {
+      stop(paste0(
+        "The number of features with statistical significance exceeds 30, leading to suboptimal visualization. ",
+        "Please use 'select' to reduce the number of features."
+      ))
+    }
+
     # Identify pathways with missing annotation
     missing_pathways <- daa_results_df[is.na(daa_results_df$pathway_name), "feature"]
 
@@ -360,7 +397,7 @@ pathway_errorbar <-
       GGally::geom_stripped_cols(width = 10) +
       ggplot2::scale_fill_manual(values = colors) +
       ggplot2::scale_color_manual(values = colors) +
-      ggplot2::theme_prism(base_size = 12) +
+      ggprism::theme_prism(base_size = 12) +
       ggplot2::scale_x_continuous(expand = c(0, 0),
                          guide = "prism_offset_minor",) +
       ggplot2::scale_y_discrete(labels = rev(daa_results_filtered_sub_df[, x_lab])) +
@@ -392,7 +429,7 @@ pathway_errorbar <-
         legend.box.just = "right",
         plot.margin = ggplot2::margin(0, 0.5, 0.5, 0, unit = "cm")
       ) + ggplot2::coord_cartesian(clip = "off") +
-      guides(y = guide_axis_prism()) +
+      guides(y = ggplot2::guide_axis()) +
       theme(
         axis.text.x = element_text(angle = 45, hjust = 1),
         plot.margin = unit(c(1, 1, 1, 1), "cm")
@@ -460,7 +497,7 @@ pathway_errorbar <-
       ggplot2::geom_hline(ggplot2::aes(yintercept = 0),
                  linetype = 'dashed',
                  color = 'black') +
-      ggplot2::theme_prism(base_size = 12) +
+      ggprism::theme_prism(base_size = 12) +
       ggplot2::scale_y_continuous(expand = c(0, 0),
                          guide = "prism_offset_minor") +
       ggplot2::theme(
@@ -509,7 +546,7 @@ pathway_errorbar <-
           family = "sans"
         ) +
         ggplot2::scale_y_discrete(position = "right") +
-        ggplot2::theme_prism(base_size = 12) +
+        ggprism::theme_prism(base_size = 12) +
         ggplot2::theme(
           axis.ticks = ggplot2::element_blank(),
           axis.line = ggplot2::element_blank(),
@@ -540,7 +577,7 @@ pathway_errorbar <-
       ) +
       ggplot2::labs(y = "p-value (adjusted)") +
       ggplot2::scale_y_discrete(position = "right") +
-      ggplot2::theme_prism(base_size = 12) +
+      ggprism::theme_prism(base_size = 12) +
       ggplot2::theme(
         axis.ticks = ggplot2::element_blank(),
         axis.line = ggplot2::element_blank(),

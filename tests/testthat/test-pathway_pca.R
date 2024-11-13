@@ -228,14 +228,14 @@ test_that("pathway_pca validates sample name matching", {
     group = factor(rep(c("Control", "Treatment"), each = 5)),
     stringsAsFactors = FALSE  # 确保字符串不会被转换为因子
   )
-  
+
   # 移除设置行名的步骤，因为有重复值
   # rownames(duplicate_metadata) <- duplicate_metadata$sample_name  # 删除这行
-  
+
   # 首先检查我们的测试数据是否符合预期
   expect_equal(length(unique(duplicate_metadata$sample_name)), 9)  # 应该只有9个唯一样本名
   expect_equal(ncol(test_abundance), 10)  # 确认abundance矩阵有10列
-  
+
   # 测试函数是否抛出正确的错误
   expect_error(
     pathway_pca(test_abundance, duplicate_metadata, "group"),

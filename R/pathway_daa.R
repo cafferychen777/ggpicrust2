@@ -1,661 +1,643 @@
-#' Predictional functional patwhay differential abundance (DA)
+#' Differential Abundance Analysis for Predicted Functional Pathways
 #'
-#' @param abundance a data frame containing predicted functional pathway abundance, with pathways/features as rows and samples as columns. The column names of abundance should match the sample names in metadata. Pathway abundance values should be counts
-#' @param metadata a tibble containing samples information
-#' @param group a character specifying the group name for differential abundance analysis
-#' @param daa_method a character specifying the method for differential abundance analysis, choices are:
-#' - "ALDEx2": ANOVA-Like Differential Expression tool for high throughput sequencing data
-#' - "DESeq2": Differential expression analysis based on the negative binomial distribution using DESeq2
-#' - "edgeR": Exact test for differences between two groups of negative-binomially distributed counts using edgeR
-#' - "limma voom": Limma-voom framework for the analysis of RNA-seq data
-#' - "metagenomeSeq": Fit logistic regression models to test for differential abundance between groups using metagenomeSeq
-#' - "LinDA": Linear models for differential abundance analysis of microbiome compositional data
-#' - "Maaslin2": Multivariate Association with Linear Models (MaAsLin2) for differential abundance analysis
-#' - "Lefser": Linear discriminant analysis (LDA) effect size algorithm for high-dimensional microbiome data
-#' @default "ALDEx2"
-#' @param select a vector containing sample names for analysis, if NULL all samples are included. This parameter can be used to specify which samples are included in the differential abundance analysis. Default is NULL.
-#' @param p.adjust a character specifying the method for p-value adjustment, choices are:
-#'- "BH": Benjamini-Hochberg correction
-#'- "holm": Holm's correction
-#'- "bonferroni": Bonferroni correction
-#'- "hochberg": Hochberg's correction
-#'- "fdr": False discovery rate correction
-#'- "none": No p-value adjustment.
-#' @default "BH"
-#' @param reference a character specifying the reference group level, required for several differential abundance analysis methods such as LinDA, limme voom and Maaslin2. This parameter is used to specify the reference group when there are more than two groups. Default is NULL.
+#' @description
+#' Performs differential abundance analysis on predicted functional pathway data using various statistical methods.
+#' This function supports multiple methods for analyzing differences in pathway abundance between groups,
+#' including popular approaches like ALDEx2, DESeq2, edgeR, and others.
 #'
-#' @return  a data frame containing the differential abundance analysis results.
-#' @value
-#' A data frame containing the differential abundance analysis results. The data frame has the following columns:
-#' \itemize{
-#'   \item \code{feature}: The feature ID of the pathway.
-#'   \item \code{statistic}: The test statistic for the differential abundance analysis.
-#'   \item \code{p_value}: The raw p-value for the differential abundance analysis.
-#'   \item \code{p_adjust}: The adjusted p-value for the differential abundance analysis.
-#' }
-#' @export
+#' @param abundance A data frame or matrix containing predicted functional pathway abundance,
+#'        with pathways/features as rows and samples as columns.
+#'        The column names should match the sample names in metadata.
+#'        Values should be counts or abundance measurements.
+#'
+#' @param metadata A data frame or tibble containing sample information.
+#'        Must include a 'sample' column with sample identifiers matching the column names in abundance data.
+#'
+#' @param group Character string specifying the column name in metadata that contains group information
+#'        for differential abundance analysis.
+#'
+#' @param daa_method Character string specifying the method for differential abundance analysis.
+#'        Available choices are:
+#'        \itemize{
+#'          \item \code{"ALDEx2"}: ANOVA-Like Differential Expression tool
+#'          \item \code{"DESeq2"}: Differential expression analysis based on negative binomial distribution
+#'          \item \code{"edgeR"}: Exact test for differences between groups using negative binomial model
+#'          \item \code{"limma voom"}: Limma-voom framework for RNA-seq analysis
+#'          \item \code{"metagenomeSeq"}: Zero-inflated Gaussian mixture model
+#'          \item \code{"LinDA"}: Linear models for differential abundance analysis
+#'          \item \code{"Maaslin2"}: Multivariate Association with Linear Models
+#'          \item \code{"Lefser"}: Linear discriminant analysis effect size
+#'        }
+#'        Default is "ALDEx2".
+#'
+#' @param select Vector of sample names to include in the analysis.
+#'        If NULL (default), all samples are included.
+#'
+#' @param p.adjust Character string specifying the method for p-value adjustment.
+#'        Choices are:
+#'        \itemize{
+#'          \item \code{"BH"}: Benjamini-Hochberg procedure (default)
+#'          \item \code{"holm"}: Holm's step-down method
+#'          \item \code{"bonferroni"}: Bonferroni correction
+#'          \item \code{"hochberg"}: Hochberg's step-up method
+#'          \item \code{"fdr"}: False Discovery Rate
+#'          \item \code{"none"}: No adjustment
+#'        }
+#'
+#' @param reference Character string specifying the reference group level.
+#'        Required for some methods (LinDA, limma voom, Maaslin2) when there are more than two groups.
+#'        Default is NULL.
+#'
+#' @return A data frame containing the differential abundance analysis results with the following columns:
+#'        \itemize{
+#'          \item \code{feature}: Feature/pathway identifier
+#'          \item \code{method}: Name of the analysis method used
+#'          \item \code{group1}: Name of the first group (reference group when applicable)
+#'          \item \code{group2}: Name of the second group
+#'          \item \code{p_values}: Raw p-values from the analysis
+#'          \item \code{p_adjust}: Adjusted p-values using the specified method
+#'          \item \code{adj_method}: Method used for p-value adjustment
+#'        }
 #'
 #' @examples
 #' \donttest{
-#' library(ggpicrust2)
-#' library(MicrobiomeStat)
-#' library(tibble)
-#' library(magrittr)
-#' abundance <- data.frame(sample1 = c(10, 20, 30),
-#' sample2 = c(20, 30, 40),
-#' sample3 = c(30, 40, 50),
-#' row.names = c("pathway1", "pathway2", "pathway3"))
+#' # Create example data
+#' abundance <- data.frame(
+#'   sample1 = c(10, 20, 30),
+#'   sample2 = c(20, 30, 40),
+#'   sample3 = c(30, 40, 50),
+#'   row.names = c("pathway1", "pathway2", "pathway3")
+#' )
 #'
-#' metadata <- tibble::tibble(sample = paste0("sample", 1:3),
-#' group = c("control", "control", "treatment"))
+#' metadata <- data.frame(
+#'   sample = c("sample1", "sample2", "sample3"),
+#'   group = c("control", "control", "treatment")
+#' )
 #'
-#' #Run pathway_daa function
-#' result <- pathway_daa(abundance = abundance, metadata = metadata, group = "group",
-#' daa_method = "LinDA")
+#' # Run differential abundance analysis using ALDEx2
+#' results <- pathway_daa(abundance, metadata, "group")
 #'
-#' data(metacyc_abundance)
-#' data(metadata)
-#' daa_results_df <- pathway_daa(metacyc_abundance %>%
-#' column_to_rownames("pathway"), metadata, "Environment", daa_method = "Lefser")
+#' # Using a different method (DESeq2)
+#' deseq_results <- pathway_daa(abundance, metadata, "group",
+#'                             daa_method = "DESeq2")
+#'
+#' # Analyze specific samples only
+#' subset_results <- pathway_daa(abundance, metadata, "group",
+#'                              select = c("sample1", "sample2"))
 #' }
-pathway_daa <-
-  function(abundance,
-           metadata,
-           group,
-           daa_method = "ALDEx2",
-           select = NULL,
-           p.adjust = "BH",
-           reference = NULL) {
-
-    # Define valid differential abundance analysis methods
-    valid_methods <- c("ALDEx2", "DESeq2", "edgeR", "limma voom", "metagenomeSeq", "LinDA", "Maaslin2", "Lefser")
-
-    # Check if the provided differential abundance analysis method is valid
-    if (!daa_method %in% valid_methods) {
-      stop(paste("Invalid differential abundance analysis method. Please choose from:",
-                 paste(valid_methods, collapse = ", ")))
-    }
-
-    # Convert metadata to a tibble if it is not already
-    if (!tibble::is_tibble(metadata)) {
-      message("Converting metadata to tibble...")
-      metadata <- tibble::as_tibble(metadata)
-    }
-
-    # Extract the sample names
-    sample_names <- colnames(abundance)
-    message("Sample names extracted.")
-
-    # Identify the columns in metadata that match the sample names
-    message("Identifying matching columns in metadata...")
-    matches <- base::lapply(metadata, function(x) {
-      intersect(sample_names, x)
-    })
-    matching_columns <- names(metadata)[sapply(matches, function(x) {
-      length(x) == length(sample_names)
-    })][1]
-
-    # Highlight the importance of matching_columns
-    if (!is.null(matching_columns)) {
-      message(paste("Matching columns identified:", matching_columns,
-                    ". This is important for ensuring data consistency."))
-    } else {
-      stop("No matching columns found. Please check your input data.")
-    }
-
-    # If select is null, use all columns, otherwise filter the abundance and metadata
-    switch(is.null(select),
-           "TRUE" = {
-             message("Using all columns in abundance.")
-           },
-           "FALSE" = {
-             message("Filtering the abundance and metadata...")
-             abundance <- abundance[, colnames(abundance) %in% select]
-             metadata <- metadata[as.matrix(metadata[, matching_columns]) %in% select,]
-           })
-
-    # Reextract sample names after filtering
-    sample_names <- colnames(abundance)
-
-    # Convert abundance to a matrix
-    message("Converting abundance to a matrix...")
-    abundance_mat <- as.matrix(abundance)
-
-    # Reorder metadata to match the sample names in abundance
-    message("Reordering metadata...")
-    metadata_order <- match(sample_names, as.matrix(metadata[, matching_columns]))
-    metadata <- metadata[metadata_order,]
-
-    # Convert metadata to a matrix and data frame
-    message("Converting metadata to a matrix and data frame...")
-    metadata_mat <- as.matrix(metadata)
-    metadata_df <- as.data.frame(metadata)
-
-    # Extract group information and calculate the number of levels
-    message("Extracting group information...")
-    Group <- factor(metadata_mat[, group])
-    Level <- levels(Group)
-    length_Level <- length(Level)
-
-    switch(
-      daa_method,
-      "ALDEx2" = {
-        # Round the abundance data
-        ALDEx2_abundance <- round(abundance)
-
-        # Check if there are two levels and execute the relevant analysis
-        if (length_Level == 2){
-          message("Running ALDEx2 with two groups. Performing t-test...")
-
-          # Creating ALDEx2 object for two groups
-          ALDEx2_object <- ALDEx2::aldex.clr(
-            ALDEx2_abundance,
-            Group,
-            mc.samples = 256,
-            denom = "all",
-            verbose = FALSE
-          )
-
-          # Retrieving t-test results
-          ALDEx2_results <- ALDEx2::aldex.ttest(ALDEx2_object,
-                                                paired.test = FALSE,
-                                                verbose = FALSE)
-          # Building the results dataframe
-          p_values_df <- data.frame(
-            feature = rep(rownames(ALDEx2_results), 2),
-            method = c(
-              rep("ALDEx2_Welch's t test", nrow(ALDEx2_results)),
-              rep("ALDEx2_Wilcoxon rank test", nrow(ALDEx2_results))
-            ),
-            group1 = rep(Level[1], 2 * nrow(ALDEx2_results)),
-            group2 = rep(Level[2], 2 * nrow(ALDEx2_results)),
-            p_values = c(ALDEx2_results$we.ep, ALDEx2_results$wi.ep)
-          )
-
-          message("ALDEx2 analysis with two groups complete.")
-
-        } else {
-          message("Running ALDEx2 with multiple groups. This might take some time, please wait patiently...")
-
-          # Creating ALDEx2 object for multiple groups
-          ALDEx2_object <- ALDEx2::aldex.clr(
-            ALDEx2_abundance,
-            Group,
-            mc.samples = 256,
-            denom = "all",
-            verbose = FALSE
-          )
-
-          # Retrieving Kruskal-Wallis test results
-          ALDEx2_results <- ALDEx2::aldex.kw(ALDEx2_object)
-
-          # Building the initial results dataframe
-          p_values_df <- data.frame(
-            feature = rep(rownames(ALDEx2_results), 2),
-            method = c(
-              rep("ALDEx2_Kruskal-Wallace test", nrow(ALDEx2_results)),
-              rep("ALDEx2_glm test", nrow(ALDEx2_results))
-            ),
-            p_values = c(ALDEx2_results$kw.ep, ALDEx2_results$glm.ep)
-          )
-
-          # Loop through levels to complete the results dataframe
-          for (k in 1:length_Level) {
-            p_values_df <- cbind(p_values_df[, 1:(1 + k)],
-                                 rep(Level[k], 2 * nrow(ALDEx2_results)),
-                                 p_values_df$p_values)
-          }
-          colnames(p_values_df)[3:(3 + length_Level)] <- c(paste0("group", 1:length_Level), "p_values")
-
-          message("ALDEx2 analysis with multiple groups complete.")
-        }
-      },
-      "DESeq2" = {
-        # Inform the user about the requirements of DESeq2
-        message("Running DESeq2. Note: DESeq2 is only suitable for comparison between two groups.")
-
-        # Rename columns in metadata for DESeq2
-        DESeq2_metadata <- metadata_df
-        DESeq2_abundance_mat <- abundance_mat
-        DESeq2_colnames <- colnames(DESeq2_metadata)
-        DESeq2_colnames[DESeq2_colnames == group] <- "Group_group_nonsense"
-        colnames(DESeq2_metadata) <- DESeq2_colnames
-        DESeq2_metadata[, "Group_group_nonsense"] <- factor(DESeq2_metadata[, "Group_group_nonsense"])
-
-        # Generate combinations of groups for comparison
-        DESeq2_combinations <- utils::combn(unique(DESeq2_metadata[, "Group_group_nonsense"]), 2)
-        DESeq2_results <- list()
-
-        # Loop through combinations and perform DESeq2 analysis
-        message("Performing pairwise comparisons with DESeq2...")
-        for (i in seq_len(ncol(DESeq2_combinations))) {
-          j <- DESeq2_combinations[, i]
-
-          # Subsetting the data for the current combination of groups
-          DESeq2_sub_group <- DESeq2_metadata$Group_group_nonsense %in% j
-          DESeq2_metadata_sub <- DESeq2_metadata[DESeq2_sub_group,]
-          DESeq2_abundance_mat_sub <- DESeq2_abundance_mat[, DESeq2_sub_group]
-          DESeq2_abundance_mat_sub <- round(DESeq2_abundance_mat_sub)
-
-          # Creating DESeq2 object and performing analysis
-          DESeq2_object <- DESeq2::DESeqDataSetFromMatrix(
-            countData = DESeq2_abundance_mat_sub,
-            colData = DESeq2_metadata_sub,
-            design = ~ Group_group_nonsense
-          )
-          DESeq2_object <- BiocGenerics::estimateSizeFactors(DESeq2_object, type = "poscounts")
-          DESeq2_object_finish <- DESeq2::DESeq(DESeq2_object)
-          DESeq2_results[[i]] <- DESeq2::results(DESeq2_object_finish)
-        }
-
-        # Compile the results into a data frame
-        message("Compiling DESeq2 results...")
-        DESeq2_results_nrow <- unlist(lapply(DESeq2_results, function(x) nrow(x)))
-        DESeq2_results_matrix <- as.matrix(do.call(rbind, DESeq2_results))
-        DESeq2_combinations_matrix_t <- t(DESeq2_combinations)
-        DESeq2_group_matrix <- matrix(ncol = 2)
-
-        # Loop through to build the final results matrix
-        for (i in 1:length(DESeq2_results_nrow)) {
-          DESeq2_group_matrix <- rbind(matrix(
-            rep(DESeq2_combinations_matrix_t[i,], times = DESeq2_results_nrow[i]),
-            ncol = 2,
-            byrow = TRUE
-          ), DESeq2_group_matrix)
-        }
-
-        # Cleanup and format the results matrix
-        DESeq2_group_matrix <- DESeq2_group_matrix[stats::complete.cases(DESeq2_group_matrix),]
-        colnames(DESeq2_group_matrix) <- c("group1", "group2")
-        p_values_matrix <- cbind(
-          feature = rownames(DESeq2_results_matrix),
-          method = "DESeq2",
-          DESeq2_group_matrix,
-          p_values = as.vector(DESeq2_results_matrix[, "pvalue"])
-        )
-        p_values_df <- as.data.frame(p_values_matrix)
-
-        message("DESeq2 analysis complete.")
-      },
-      "Maaslin2" = {
-        # Inform the user that Maaslin2 is starting
-        message("Running Maaslin2 analysis...")
-
-        # Preparing the data for Maaslin2
-        Maaslin2_abundance_mat <- abundance_mat
-        Maaslin2_abundance_mat <- t(Maaslin2_abundance_mat)
-        Maaslin2_metadata_df <- metadata_df
-        rownames(Maaslin2_metadata_df) <- Maaslin2_metadata_df[, matching_columns]
-        Maaslin2_metadata_df <- dplyr::select(Maaslin2_metadata_df, -matching_columns)
-
-        # Perform Maaslin2 analysis based on the number of levels
-        message("Performing Maaslin2 analysis...")
-        switch(length_Level == 2,
-               "TRUE" = {
-                 Maaslin2_results <- Maaslin2::Maaslin2(
-                   Maaslin2_abundance_mat,
-                   Maaslin2_metadata_df,
-                   output = paste0("Maaslin2_results_", group),
-                   transform = "AST",
-                   fixed_effects = group,
-                   reference = Level,
-                   normalization = "TSS",
-                   standardize = TRUE,
-                   min_prevalence = 0.1
-                 )
-                 p_values_matrix <- cbind(
-                   feature = Maaslin2_results$results$feature,
-                   method = "Maaslin2",
-                   group1 = Level[1],
-                   group2 = Level[2],
-                   p_values = Maaslin2_results$results$pval
-                 )
-                 p_values_df <- as.data.frame(p_values_matrix)
-               },
-               {
-                 Maaslin2_results <- Maaslin2::Maaslin2(
-                   Maaslin2_abundance_mat,
-                   Maaslin2_metadata_df,
-                   output = paste0("Maaslin2_results_", group),
-                   transform = "AST",
-                   fixed_effects = group,
-                   reference = paste0(group, ",", reference),
-                   normalization = "TSS",
-                   standardize = TRUE,
-                   min_prevalence = 0.1
-                 )
-                 p_values_matrix <- cbind(
-                   feature = Maaslin2_results$results$feature,
-                   method = "Maaslin2",
-                   group1 = Maaslin2_results$results$value,
-                   group2 = reference,
-                   p_values = Maaslin2_results$results$pval
-                 )
-                 p_values_df <- as.data.frame(p_values_matrix)
-               })
-
-        # Inform the user of where to find the results
-        message(paste0(
-          "Maaslin2 analysis complete. You can view the full analysis results and logs in the current default file location: ",
-          getwd(),
-          "/Maaslin2_results_",
-          group
-        ))
-      },
-      "LinDA" = {
-        # Inform the user that LinDA is starting
-        message("Running LinDA analysis...")
-
-        # Preparing the data for LinDA
-        LinDA_metadata_df <- metadata_df
-        LinDA_colnames <- colnames(LinDA_metadata_df)
-        LinDA_colnames[LinDA_colnames == group] <- "Group_group_nonsense_"
-        colnames(LinDA_metadata_df) <- LinDA_colnames
-        rownames(LinDA_metadata_df) <- LinDA_metadata_df[, matching_columns]
-        LinDA_metadata_df <- dplyr::select(LinDA_metadata_df, -matching_columns)
-        LinDA_metadata_df$Group_group_nonsense_ <- factor(LinDA_metadata_df$Group_group_nonsense_)
-
-        # Check conditions for LinDA analysis
-        if (length_Level != 2) {
-          if (is.null(reference)) {
-            stop("Error: A reference group is required when using LinDA or limma voom for comparisons among more than two groups. Please specify a reference group.")
-          }
-          LinDA_metadata_df$Group_group_nonsense_ <- stats::relevel(LinDA_metadata_df$Group_group_nonsense_, ref = reference)
-        }
-
-        # Perform LinDA analysis
-        message("Performing LinDA analysis...")
-        LinDA_results <- MicrobiomeStat::linda(abundance,
-                                               LinDA_metadata_df,
-                                               formula = "~Group_group_nonsense_",
-                                               alpha = 0.05,
-        )$output
-
-        # Processing LinDA results
-        message("Processing LinDA results...")
-        if (length_Level != 2){
-          for (i in 1:length(LinDA_results)) {
-            LinDA_results[[i]] <- cbind(
-              feature = rownames(LinDA_results[[i]]),
-              method = "LinDA",
-              group1 = substr(names(LinDA_results)[i], 22, stop = nchar(names(LinDA_results)[i])),
-              group2 = reference,
-              p_values = LinDA_results[[i]]$pvalue
-            )
-          }
-        }else{
-          for (i in 1:length(LinDA_results)) {
-            LinDA_results[[i]] <- cbind(
-              feature = rownames(LinDA_results[[i]]),
-              method = "LinDA",
-              group1 = Level[1],
-              group2 = Level[2],
-              p_values = LinDA_results[[i]]$pvalue
-            )
-          }
-        }
-
-        # Inform the user that LinDA analysis is complete
-        message("LinDA analysis is complete.")
-
-        # Combining the results
-        p_values_matrix <- as.matrix(do.call(rbind, LinDA_results))
-        p_values_df <- as.data.frame(p_values_matrix)
-      },
-      "edgeR" = {
-        message("Processing data with edgeR method...")
-
-        # Rounding the abundance matrix values
-        edgeR_abundance_mat <- round(abundance_mat)
-
-        # Initializing edgeR object
-        message("Initializing edgeR object...")
-        edgeR_object <- edgeR::DGEList(counts = edgeR_abundance_mat, group = Group)
-
-        # Normalization
-        message("Calculating normalization factors...")
-        edgeR_object <- edgeR::calcNormFactors(edgeR_object)
-
-        # Estimating common dispersion
-        message("Estimating common dispersions...")
-        edgeR_object <- edgeR::estimateCommonDisp(edgeR_object, verbose = TRUE)
-
-        # Check if there are only two levels
-        switch(length_Level == 2,
-               "TRUE" = {
-                 # For two groups, perform exact test
-                 message("Performing exact test for two groups...")
-                 edgeR_results <- edgeR::exactTest(edgeR_object, pair = c(1, 2))
-
-                 # Extracting and structuring results
-                 p_values_matrix <-
-                   cbind(
-                     feature = rownames(edgeR_abundance_mat),
-                     method = "edgeR",
-                     group1 = Level[1],
-                     group2 = Level[2],
-                     p_values = edgeR_results$table$PValue
-                   )
-                 p_values_df <- as.data.frame(p_values_matrix)
-               },
-               {
-                 # For more than two groups, perform multiple tests
-                 message("Performing multiple exact tests for multiple groups...")
-
-                 edgeR_results <- list()
-                 edgeR_numbers <- seq_along(Level)
-                 edgeR_combinations <- utils::combn(edgeR_numbers, 2)
-
-                 for (j in 1:sum(1:(length_Level - 1))) {
-                   message(paste("Processing combination", j, "of", sum(1:(length_Level - 1)), "..."))
-                   DGEExact <- edgeR::exactTest(edgeR_object, pair = edgeR_combinations[, j])
-                   edgeR_results[[j]] <- cbind(
-                     feature = rownames(DGEExact$table),
-                     method = "edgeR",
-                     group1 = DGEExact$comparison[1],
-                     group2 = DGEExact$comparison[2],
-                     p_values = DGEExact$table$PValue
-                   )
-                 }
-
-                 # Combining all results
-                 message("Combining results...")
-                 p_values_matrix <- as.matrix(do.call(rbind, edgeR_results))
-                 p_values_df <- as.data.frame(p_values_matrix)
-               })
-
-        message("edgeR processing completed.")
-      },
-      "limma voom" = {
-        # Inform the user that limma voom analysis is starting
-        message("Starting limma voom analysis...")
-
-        # Preparing the data for limma voom analysis
-        limma_voom_abundance_mat <- round(abundance_mat)
-
-        # Check the number of levels and set the reference group accordingly
-        if (length_Level != 2) {
-          if (is.null(reference)) {
-            stop("Error: A reference group is required when using limma voom for comparisons among more than two groups. Please specify a reference group.")
-          }
-          Group <- stats::relevel(Group, ref = reference)
-          message(paste0("Using '", reference, "' as the reference group for limma voom analysis."))
-        } else {
-          reference <- Level[1]
-          Group <- stats::relevel(Group, ref = reference)
-          message(paste0("Using '", reference, "' as the default reference group for limma voom analysis with two levels."))
-        }
-
-        # Perform limma voom analysis
-        message("Performing limma voom analysis...")
-        limma_voom_object <- edgeR::DGEList(counts = limma_voom_abundance_mat, group = Group)
-        limma_voom_object <- edgeR::calcNormFactors(limma_voom_object)
-        limma_voom_Fit <- limma::lmFit(limma::voom(limma_voom_object))
-        limma_voom_Fit <- limma::eBayes(limma_voom_Fit)
-
-        # Collect p-values
-        p_values_matrix <- cbind(
-          feature = rep(rownames(abundance), length_Level - 1),
-          method = "limma voom",
-          group1 = reference,
-          group2 = rep(substr(
-            colnames(limma_voom_Fit$p.value)[-1], 6, nchar(colnames(limma_voom_Fit$p.value)[-1])
-          ), each = nrow(abundance)),
-          p_values = c(limma_voom_Fit$p.value[,-1])
-        )
-
-        # Convert to a data frame
-        p_values_df <- as.data.frame(p_values_matrix)
-
-        # Inform the user that the analysis is complete
-        message("Limma voom analysis complete.")
-      },
-      "metagenomeSeq" = {
-        # Inform the user that metagenomeSeq analysis is starting
-        message("Starting metagenomeSeq analysis...")
-
-        # Preparing the data for metagenomeSeq analysis
-        metagenomeSeq_combinations <- utils::combn(Level, 2)
-        metagenomeSeq_results_list <- list()
-
-        # Loop through the combinations
-        for (i in seq_len(ncol(metagenomeSeq_combinations))) {
-          message(paste0("Processing combination ", i, " of ", ncol(metagenomeSeq_combinations), "..."))
-
-          # Subset the data for the current combination
-          sub_metadata_df <- metadata_df[metadata_df[, group] %in% metagenomeSeq_combinations[, i], ]
-          sub_abundance <- abundance[, metadata_df[, group] %in% metagenomeSeq_combinations[, i]]
-
-          # Perform metagenomeSeq analysis
-          metagenomeSeq_list <- list(sub_abundance, as.data.frame(rownames(sub_abundance)))
-          metagenomeSeq_metadata_df <- sub_metadata_df
-          rownames(metagenomeSeq_metadata_df) <- metagenomeSeq_metadata_df[, matching_columns]
-          metagenomeSeq_metadata_df <- dplyr::select(metagenomeSeq_metadata_df, -matching_columns)
-          metagenomeSeq_colnames <- colnames(metagenomeSeq_metadata_df)
-          metagenomeSeq_colnames[metagenomeSeq_colnames == group] <- "Group_group_nonsense_"
-          colnames(metagenomeSeq_metadata_df) <- metagenomeSeq_colnames
-          metagenomeSeq_phenotypeData <- Biobase::AnnotatedDataFrame(metagenomeSeq_metadata_df)
-          metagenomeSeq_object <- metagenomeSeq::newMRexperiment(metagenomeSeq_list[[1]], phenoData = metagenomeSeq_phenotypeData)
-          metagenomeSeq_object <- metagenomeSeq::cumNorm(metagenomeSeq_object, p = metagenomeSeq::cumNormStatFast(metagenomeSeq_object))
-          metagenomeSeq_mod <- stats::model.matrix(~ Group_group_nonsense_, data = Biobase::pData(metagenomeSeq_object))
-          metagenomeSeq_results <- metagenomeSeq::fitFeatureModel(metagenomeSeq_object, metagenomeSeq_mod)
-
-          # Store the results
-          metagenomeSeq_results_list[[i]] <- cbind(
-            feature = names(metagenomeSeq_results@pvalues),
-            method = "metagenomeSeq",
-            group1 = metagenomeSeq_combinations[, i][1],
-            group2 = metagenomeSeq_combinations[, i][2],
-            p_values = as.vector(metagenomeSeq_results@pvalues)
-          )
-        }
-
-        # Combine the results into a matrix
-        message("Combining results...")
-        p_values_matrix <- as.matrix(do.call(rbind, metagenomeSeq_results_list))
-
-        # Convert to a data frame
-        p_values_df <- as.data.frame(p_values_matrix)
-
-        # Inform the user that the analysis is complete
-        message("MetagenomeSeq analysis complete.")
-      }
-      ,
-      "Lefser" = {
-        # Inform the user that Lefser analysis is starting
-        message("Starting Lefser analysis...")
-
-        # Preparing the data for Lefser analysis
-        Lefser_combinations <- utils::combn(Level, 2)
-        Lefser_results <- list()
-        Lefser_metadata_df <- metadata_df
-
-        # Loop through the combinations
-        for (i in seq_len(ncol(Lefser_combinations))) {
-          message(paste0("Processing combination ", i, " of ", ncol(Lefser_combinations), "..."))
-
-          # Subset the data for the current combination
-          Lefser_sub_metadata_df <- Lefser_metadata_df[Lefser_metadata_df[, group] %in% Lefser_combinations[, i], ]
-          Lefser_sub_abundance <- abundance[, Lefser_metadata_df[, group] %in% Lefser_combinations[, i]]
-          colnames(Lefser_sub_metadata_df)[colnames(Lefser_sub_metadata_df) == group] <- "Group_group_nonsense_"
-          Lefser_sub_metadata_df$Group_group_nonsense_ <- factor(Lefser_sub_metadata_df$Group_group_nonsense_)
-
-          # Perform Lefser analysis
-          Lefser_object <- SummarizedExperiment::SummarizedExperiment(assays = list(counts = as.matrix(Lefser_sub_abundance)),
-                                                                      colData = Lefser_sub_metadata_df)
-          Lefser_kw_filter <- apply(Lefser_object@assays@data$counts, 1L, function(x) {
-            stats::kruskal.test(x ~ as.numeric(Lefser_sub_metadata_df[, "Group_group_nonsense_"]) -
-                                  1)[["p.value"]]
-          })
-          if (!sum(stats::na.omit(as.numeric(Lefser_kw_filter < 0.05)))) {
-            next
-          }
-          Lefser_results[[i]] <- cbind(
-            feature = lefser::lefser(Lefser_object, groupCol = "Group_group_nonsense_")$Names,
-            method = "Lefser",
-            group1 = Lefser_combinations[, i][1],
-            group2 = Lefser_combinations[, i][2],
-            effect_scores = lefser::lefser(Lefser_object, groupCol = "Group_group_nonsense_")$scores
-          )
-        }
-
-        # Combine the results into a matrix
-        message("Combining results...")
-        p_values_matrix <- as.matrix(do.call(rbind, Lefser_results))
-
-        # Convert to a data frame
-        p_values_df <- as.data.frame(p_values_matrix)
-
-        # Inform the user that Lefser analysis is complete
-        message("Lefser analysis complete.")
-
-        # Warn the user that Lefser results are not suitable for pathway_errorbar visualization
-        message("Warning: Lefser results are not suitable for visualization with pathway_errorbar, as Lefser does not support outputting p-values.")
-
-        # Return the results
-        return(p_values_df)
-      }
-    )
-
-    valid_p_adjust <- c("BH", "holm", "bonferroni",  "hochberg", "fdr", "none")
-
-    if (!p.adjust %in% valid_p_adjust) {
-      stop(paste("Invalid p.adjust method. Please choose from:",
-                 paste(valid_p_adjust, collapse = ", ")))
-    }
-
-    # Checking if p_values_df exists and has any rows
-    if (!exists("p_values_df") || nrow(p_values_df) == 0) {
-      stop("Notice: There are no statistical significances detected. This is not an error, but it might indicate that your data does not contain any values passing the set significance threshold (p<=0.05). You may refer to the tutorial's FAQ for further help and suggestions.")
-    }
-
-      switch(
-        p.adjust,
-        "BH" = {
-          adjusted_p_values <- p.adjust(p_values_df$p_values, method = "BH")
-        },
-        "holm" = {
-          adjusted_p_values <- p.adjust(p_values_df$p_values, method = "holm")
-        },
-        "bonferroni" = {
-          adjusted_p_values <-
-            p.adjust(p_values_df$p_values, method = "bonferroni")
-        },
-        "hochberg" = {
-          adjusted_p_values <-
-            p.adjust(p_values_df$p_values, method = "hochberg")
-        },
-        "fdr" = {
-          adjusted_p_values <-
-            p.adjust(p_values_df$p_values, method = "fdr")
-        },
-        "none" = {
-          adjusted_p_values <-
-            p.adjust(p_values_df$p_values, method = "none")
-        }
-      )
-
-      daa_results_df <-
-        cbind(p_values_df, adj_method = p.adjust, p_adjust = adjusted_p_values)
-      return(daa_results_df)
+#'
+#' @references
+#' \itemize{
+#'   \item ALDEx2: Fernandes et al. (2013) ISME J
+#'   \item DESeq2: Love et al. (2014) Genome Biology
+#'   \item edgeR: Robinson et al. (2010) Bioinformatics
+#'   \item limma: Ritchie et al. (2015) Nucleic Acids Research
+#'   \item metagenomeSeq: Paulson et al. (2013) Nature Methods
+#'   \item Maaslin2: Mallick et al. (2021) PLoS Computational Biology
+#'   \item LinDA: Zhou et al. (2022) Genome Biology
+#' }
+#'
+#' @importFrom tibble is_tibble as_tibble
+#' @importFrom stats p.adjust model.matrix
+#'
+#' @export
+pathway_daa <- function(abundance, metadata, group, daa_method = "ALDEx2",
+                       select = NULL, p.adjust = "BH", reference = NULL) {
+  # Input validation
+  if (!is.data.frame(abundance) && !is.matrix(abundance)) {
+    stop("abundance must be a data frame or matrix")
   }
+
+  if (ncol(abundance) < 4) {
+    stop("At least 4 samples are required for differential abundance analysis")
+  }
+
+  # Convert metadata to tibble
+  if (!tibble::is_tibble(metadata)) {
+    metadata <- tibble::as_tibble(metadata)
+  }
+
+  # Extract sample names from abundance data
+  abundance_samples <- colnames(abundance)
+  
+  # Identify the column in metadata that matches sample names
+  sample_col <- NULL
+  for (col in colnames(metadata)) {
+    if (all(metadata[[col]] %in% abundance_samples)) {
+      sample_col <- col
+      break
+    }
+  }
+  
+  # Check if a matching column was found
+  if (is.null(sample_col)) {
+    stop("No column in metadata matches the sample names in abundance data")
+  }
+  
+  message(sprintf("Using column '%s' as sample identifier", sample_col))
+  
+  # Get sample names from metadata
+  metadata_samples <- metadata[[sample_col]]
+  
+  # Verify sample matching
+  if (!all(metadata_samples %in% abundance_samples)) {
+    stop("Some samples in metadata are not found in abundance data")
+  }
+  
+  if (!all(abundance_samples %in% metadata_samples)) {
+    stop("Some samples in abundance data are not found in metadata")
+  }
+  
+  # Now check sample size
+  if (length(abundance_samples) < 4) {
+    stop("At least 4 samples are required for differential abundance analysis")
+  }
+  
+  # Ensure consistent sample order between data and metadata
+  metadata <- metadata[match(abundance_samples, metadata[[sample_col]]), ]
+
+  # Verify if group column exists
+  if (!group %in% colnames(metadata)) {
+    stop(sprintf("group column '%s' not found in metadata", group))
+  }
+
+  # Extract metadata samples using identified column
+  metadata_samples <- metadata[[sample_col]]
+
+  # Verify sample matching
+  if (!all(metadata_samples %in% abundance_samples)) {
+    stop("Some samples in metadata are not found in abundance data")
+  }
+
+  if (!all(abundance_samples %in% metadata_samples)) {
+    stop("Some samples in abundance data are not found in metadata")
+  }
+
+  # Ensure consistent sample order between data and metadata
+  metadata <- metadata[match(colnames(abundance), metadata[[sample_col]]), ]
+
+  # Verify group count
+  group_levels <- unique(metadata[[group]])
+  if (length(group_levels) < 2) {
+    stop("At least two groups are required for differential abundance analysis")
+  }
+
+  # Handle sample selection
+  if (!is.null(select)) {
+    if (!all(select %in% abundance_samples)) {
+      stop("Some selected samples are not present in the abundance data")
+    }
+    abundance <- abundance[, select, drop = FALSE]
+    metadata <- metadata[metadata$sample %in% select, ]
+  }
+
+  # Prepare data
+  abundance_mat <- as.matrix(abundance)
+  Group <- factor(metadata[[group]])
+  Level <- levels(Group)
+  length_Level <- length(Level)
+
+  # Perform differential analysis
+  result <- switch(
+    daa_method,
+    "ALDEx2" = perform_aldex2_analysis(abundance_mat, Group, Level, length_Level),
+    "DESeq2" = perform_deseq2_analysis(abundance_mat, metadata, group, Level),
+    "LinDA" = perform_linda_analysis(abundance, metadata, group, reference, Level, length_Level),
+    "limma voom" = perform_limma_voom_analysis(abundance_mat, Group, reference, Level, length_Level),
+    "edgeR" = perform_edger_analysis(abundance_mat, Group, Level, length_Level),
+    "metagenomeSeq" = perform_metagenomeseq_analysis(abundance_mat, metadata, group, Level),
+    "Maaslin2" = perform_maaslin2_analysis(abundance_mat, metadata, group, reference, Level, length_Level),
+    "Lefser" = perform_lefser_analysis(abundance_mat, metadata, group, Level)
+  )
+
+  # Add multiple testing correction
+  if (!is.null(result) && "p_values" %in% colnames(result)) {
+    result$p_adjust <- p.adjust(result$p_values, method = p.adjust)
+    result$adj_method <- p.adjust
+  }
+
+  return(result)
+}
+
+# Helper function: Perform ALDEx2 analysis
+perform_aldex2_analysis <- function(abundance_mat, Group, Level, length_Level) {
+  message("Running ALDEx2 analysis...")
+  
+  # Round the abundance data
+  abundance_mat <- round(abundance_mat)
+  
+  # 根据组别数量执行不同的分析
+  if (length_Level == 2) {
+    message("Running ALDEx2 with two groups. Performing t-test...")
+    
+    # 创建 ALDEx2 对象
+    ALDEx2_object <- ALDEx2::aldex.clr(
+      abundance_mat,
+      Group,
+      mc.samples = 256,
+      denom = "all",
+      verbose = FALSE
+    )
+    
+    # 获取 t-test 结果
+    results <- ALDEx2::aldex.ttest(
+      ALDEx2_object,
+      paired.test = FALSE,
+      verbose = FALSE
+    )
+    
+    # 构建结果数据框，保持原有方法名称
+    return(data.frame(
+      feature = rep(rownames(results), 2),
+      method = c(
+        rep("ALDEx2_Welch's t test", nrow(results)),
+        rep("ALDEx2_Wilcoxon rank test", nrow(results))
+      ),
+      group1 = rep(Level[1], 2 * nrow(results)),
+      group2 = rep(Level[2], 2 * nrow(results)),
+      p_values = c(results$we.ep, results$wi.ep),
+      stringsAsFactors = FALSE
+    ))
+    
+  } else {
+    message("Running ALDEx2 with multiple groups. This might take some time...")
+    
+    # 创建多组别 ALDEx2 对象
+    ALDEx2_object <- ALDEx2::aldex.clr(
+      abundance_mat,
+      Group,
+      mc.samples = 256,
+      denom = "all",
+      verbose = FALSE
+    )
+    
+    # 获取 Kruskal-Wallis 和 GLM 测试结果
+    results <- ALDEx2::aldex.kw(ALDEx2_object)
+    
+    # 构建初始结果数据框，保持原有方法名称
+    result_df <- data.frame(
+      feature = rep(rownames(results), 2),
+      method = c(
+        rep("ALDEx2_Kruskal-Wallace test", nrow(results)),
+        rep("ALDEx2_glm test", nrow(results))
+      ),
+      p_values = c(results$kw.ep, results$glm.ep),
+      stringsAsFactors = FALSE
+    )
+    
+    # 添加所有组别信息
+    group_cols <- data.frame(matrix(
+      NA, 
+      nrow = nrow(result_df), 
+      ncol = length_Level,
+      dimnames = list(NULL, paste0("group", 1:length_Level))
+    ))
+    
+    for (i in 1:length_Level) {
+      group_cols[, i] <- Level[i]
+    }
+    
+    # 合并结果
+    result_df <- cbind(
+      result_df[, c("feature", "method")],
+      group_cols,
+      result_df[, "p_values", drop = FALSE]
+    )
+    
+    message("ALDEx2 analysis with multiple groups complete.")
+    return(result_df)
+  }
+}
+
+# Helper function: Perform DESeq2 analysis
+perform_deseq2_analysis <- function(abundance_mat, metadata, group, Level) {
+  message("Running DESeq2 analysis...")
+  
+  # Convert to integer matrix
+  message("converting counts to integer mode")
+  counts <- round(as.matrix(abundance_mat))
+  
+  # 确保 group 是因子类型
+  metadata[[group]] <- factor(metadata[[group]], levels = Level)
+  
+  # Create DESeqDataSet object
+  se <- SummarizedExperiment::SummarizedExperiment(
+    assays = list(counts = counts),
+    colData = metadata
+  )
+  
+  # Use try-catch to handle possible errors
+  result <- tryCatch({
+    suppressWarnings({
+      # Create DESeqDataSet
+      dds <- DESeq2::DESeqDataSet(se, design = as.formula(paste0("~", group)))
+      
+      # 根据样本量选择合适的拟合方法
+      fitType <- if(ncol(abundance_mat) < 6) "mean" else "local"
+      
+      # Run DESeq2 pipeline
+      dds <- DESeq2::estimateSizeFactors(dds)
+      dds <- DESeq2::estimateDispersions(dds, fitType = fitType)
+      dds <- DESeq2::nbinomWaldTest(dds)
+      
+      # Extract results
+      res <- DESeq2::results(dds, contrast = c(group, Level[2], Level[1]))
+      
+      data.frame(
+        feature = rownames(abundance_mat),
+        method = "DESeq2",
+        group1 = Level[1],
+        group2 = Level[2],
+        p_values = res$pvalue,
+        stringsAsFactors = FALSE
+      )
+    })
+  }, error = function(e) {
+    stop("DESeq2 analysis failed: ", e$message)
+  })
+  
+  if (is.null(result)) {
+    stop("DESeq2 analysis failed to produce results")
+  }
+  
+  return(result)
+}
+
+# Helper function: Perform limma voom analysis
+perform_limma_voom_analysis <- function(abundance_mat, Group, reference, Level, length_Level) {
+  message("Running limma voom analysis...")
+
+  # Ensure Group is a factor type
+  Group <- factor(Group)
+  if (!is.null(reference)) {
+    Group <- relevel(Group, ref = reference)
+  }
+
+  # Create design matrix
+  design <- model.matrix(~Group)
+
+  # Perform voom transformation and analysis
+  dge <- edgeR::DGEList(counts = abundance_mat, group = Group)
+  dge <- edgeR::calcNormFactors(dge)
+  v <- limma::voom(dge, design)
+  fit <- limma::lmFit(v, design)
+  fit <- limma::eBayes(fit)
+
+  # Extract results
+  if (length_Level == 2) {
+    results <- data.frame(
+      feature = rownames(abundance_mat),
+      method = "limma voom",
+      p_values = fit$p.value[,2]
+    )
+  } else {
+    # Multi-group comparison handling
+    group_levels <- levels(Group)
+    results <- data.frame(
+      feature = rep(rownames(abundance_mat), length(group_levels) - 1),
+      method = "limma voom",
+      group1 = reference,
+      group2 = group_levels[group_levels != reference],
+      p_values = as.vector(fit$p.value[,-1])
+    )
+  }
+
+  return(results)
+}
+
+# Helper function: Perform edgeR analysis
+perform_edger_analysis <- function(abundance_mat, Group, Level, length_Level) {
+  message("Running edgeR analysis...")
+
+  # Create DGEList object
+  dge <- edgeR::DGEList(counts = round(abundance_mat), group = Group)
+  dge <- edgeR::calcNormFactors(dge)
+  dge <- edgeR::estimateCommonDisp(dge, verbose = TRUE)
+
+  if (length_Level == 2) {
+    # Two-group comparison
+    et <- edgeR::exactTest(dge, pair = c(1, 2))
+    results <- data.frame(
+      feature = rownames(abundance_mat),
+      method = "edgeR",
+      group1 = Level[1],
+      group2 = Level[2],
+      p_values = et$table$PValue
+    )
+  } else {
+    # Multi-group comparison
+    results_list <- list()
+    combinations <- utils::combn(seq_along(Level), 2)
+
+    for (i in 1:ncol(combinations)) {
+      et <- edgeR::exactTest(dge, pair = combinations[,i])
+      results_list[[i]] <- data.frame(
+        feature = rownames(abundance_mat),
+        method = "edgeR",
+        group1 = Level[combinations[1,i]],
+        group2 = Level[combinations[2,i]],
+        p_values = et$table$PValue
+      )
+    }
+    results <- do.call(rbind, results_list)
+  }
+
+  return(results)
+}
+
+# Helper function: Perform metagenomeSeq analysis
+perform_metagenomeseq_analysis <- function(abundance_mat, metadata, group, Level) {
+  message("Running metagenomeSeq analysis...")
+
+  # Convert metadata to data.frame and ensure sample names are correct
+  metadata <- as.data.frame(metadata)
+  rownames(metadata) <- metadata$sample
+
+  # Ensure abundance_mat and metadata have consistent sample order
+  abundance_mat <- abundance_mat[, rownames(metadata)]
+
+  # Create phenoData
+  phenoData <- new("AnnotatedDataFrame",
+                   data = metadata,
+                   varMetadata = data.frame(
+                     labelDescription = c("Sample ID", "Group"),
+                     row.names = colnames(metadata)
+                   ))
+
+  # Ensure data is an integer matrix
+  counts <- round(as.matrix(abundance_mat))
+
+  # Create MRexperiment object
+  obj <- try({
+    metagenomeSeq::newMRexperiment(
+      counts = counts,
+      phenoData = phenoData,
+      featureData = NULL,
+      libSize = NULL,
+      normFactors = NULL
+    )
+  }, silent = TRUE)
+
+  if (inherits(obj, "try-error")) {
+    stop("Failed to create MRexperiment object: ", attr(obj, "condition")$message)
+  }
+
+  # Normalize
+  obj <- metagenomeSeq::cumNorm(obj)
+
+  # Create model matrix
+  mod <- stats::model.matrix(as.formula(paste0("~", group)), data = metadata)
+
+  # Fit model
+  fit <- metagenomeSeq::fitFeatureModel(obj, mod)
+
+  # Extract results
+  results <- data.frame(
+    feature = rownames(abundance_mat),
+    method = "metagenomeSeq",
+    group1 = Level[1],
+    group2 = Level[2],
+    p_values = fit@pvalues,
+    stringsAsFactors = FALSE
+  )
+
+  return(results)
+}
+
+# Helper function: Perform Maaslin2 analysis
+perform_maaslin2_analysis <- function(abundance_mat, metadata, group, reference, Level, length_Level) {
+  message("Running Maaslin2 analysis...")
+
+  # Ensure necessary packages are loaded
+  if (!requireNamespace("Maaslin2", quietly = TRUE)) {
+    stop("Maaslin2 package is required but not installed")
+  }
+
+  # Transpose abundance matrix
+  abundance_mat_t <- t(abundance_mat)
+
+  # Prepare metadata
+  metadata <- as.data.frame(metadata)
+  rownames(metadata) <- metadata$sample
+
+  # Create temporary output directory
+  output_dir <- tempdir()
+
+  # Run Maaslin2 analysis
+  fit_data <- Maaslin2::Maaslin2(
+    input_data = abundance_mat_t,
+    input_metadata = metadata,
+    output = output_dir,
+    transform = "AST",
+    fixed_effects = group,
+    reference = if (length_Level > 2) paste0(group, ",", reference) else NULL,
+    normalization = "TSS",
+    standardize = TRUE,
+    min_prevalence = 0.1,
+    cores = 1,
+    plot_heatmap = FALSE,
+    plot_scatter = FALSE
+  )
+
+  # Read all results instead of significant results
+  results_file <- file.path(output_dir, "all_results.tsv")
+
+  if (file.exists(results_file)) {
+    maaslin2_results <- utils::read.table(results_file,
+                                        header = TRUE,
+                                        sep = "\t",
+                                        stringsAsFactors = FALSE)
+
+    # Format results
+    results <- data.frame(
+      feature = rownames(abundance_mat),
+      method = "Maaslin2",
+      group1 = if (length_Level == 2) Level[1] else reference,
+      group2 = if (length_Level == 2) Level[2] else Level[Level != reference],
+      p_values = maaslin2_results$pval[match(rownames(abundance_mat), maaslin2_results$feature)],
+      stringsAsFactors = FALSE
+    )
+  } else {
+    stop("Maaslin2 analysis failed to produce results file")
+  }
+
+  return(results)
+}
+
+# Helper function: Perform Lefser analysis
+perform_lefser_analysis <- function(abundance_mat, metadata, group, Level) {
+  message("Running Lefser analysis...")
+
+  # Create SummarizedExperiment object
+  se <- SummarizedExperiment::SummarizedExperiment(
+    assays = list(counts = abundance_mat),
+    colData = metadata
+  )
+
+  # Perform Lefser analysis
+  lefser_results <- lefser::lefser(se, groupCol = group)
+
+  # Extract results
+  results <- data.frame(
+    feature = lefser_results$Names,
+    method = "Lefser",
+    group1 = Level[1],
+    group2 = Level[2],
+    effect_scores = lefser_results$scores
+  )
+
+  return(results)
+}
+
+# Helper function: Perform LinDA analysis
+perform_linda_analysis <- function(abundance, metadata, group, reference, Level, length_Level) {
+  message("Running LinDA analysis...")
+
+  # Ensure necessary packages are loaded
+  if (!requireNamespace("MicrobiomeStat", quietly = TRUE)) {
+    stop("MicrobiomeStat package is required but not installed")
+  }
+
+  # Prepare data
+  feature.dat <- as.matrix(abundance)
+  meta.dat <- metadata
+
+  # Build formula
+  formula <- paste0("~ ", group)
+
+  # Run LinDA analysis
+  linda_obj <- MicrobiomeStat::linda(
+    feature.dat = feature.dat,
+    meta.dat = meta.dat,
+    formula = formula,
+    feature.dat.type = "count",
+    prev.filter = 0,
+    mean.abund.filter = 0,
+    adaptive = TRUE,
+    zero.handling = "pseudo-count",
+    pseudo.cnt = 0.5,
+    p.adj.method = "BH",
+    alpha = 0.05,
+    n.cores = 1,
+    verbose = FALSE
+  )
+
+  # Extract results
+  if (length(linda_obj$output) > 0) {
+    # Get results of the first variable (usually group comparison)
+    first_comparison <- linda_obj$output[[1]]
+
+    results <- data.frame(
+      feature = rownames(first_comparison),
+      method = "LinDA",
+      group1 = if (length_Level == 2) Level[1] else reference,
+      group2 = if (length_Level == 2) Level[2] else Level[Level != reference],
+      p_values = first_comparison$pvalue,
+      stringsAsFactors = FALSE
+    )
+  } else {
+    stop("LinDA analysis failed to produce results")
+  }
+
+  return(results)
+}

@@ -128,7 +128,7 @@ test_that("pathway_heatmap customization options work", {
 
 test_that("pathway_heatmap handles edge cases", {
   test_data <- setup_test_data()
-  
+
   # Test single sample
   single_abundance <- test_data$abundance[, 1, drop = FALSE]
   single_metadata <- data.frame(
@@ -136,10 +136,10 @@ test_that("pathway_heatmap handles edge cases", {
     group = factor("Control"),
     stringsAsFactors = FALSE
   )
-  
+
   # 跳过单样本测试，因为这是一个不支持的用例
   skip("Single sample case is not supported")
-  
+
   # Test single pathway
   single_pathway_abundance <- test_data$abundance[1, , drop = FALSE]
   expect_error(
@@ -150,7 +150,7 @@ test_that("pathway_heatmap handles edge cases", {
     ),
     NA
   )
-  
+
   # Test custom colors
   custom_colors <- c("#FF0000", "#00FF00")
   expect_error(
