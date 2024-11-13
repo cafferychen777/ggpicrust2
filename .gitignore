@@ -5,3 +5,4 @@
 .httr-oauth
 .DS_Store
 /Meta/
+tests/testthat/Rplots.pdf
