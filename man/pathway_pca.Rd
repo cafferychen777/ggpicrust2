@@ -2,58 +2,89 @@
 % Please edit documentation in R/pathway_pca.R
 \name{pathway_pca}
 \alias{pathway_pca}
-\title{Perform Principal Component Analysis (PCA) on functional pathway abundance data and create visualizations of the PCA results.}
+\title{Perform Principal Component Analysis (PCA) on functional pathway abundance data}
 \usage{
 pathway_pca(abundance, metadata, group, colors = NULL)
 }
 \arguments{
-\item{abundance}{A data frame, predicted functional pathway abundance.}
+\item{abundance}{A numeric matrix or data frame containing pathway abundance data.
+Rows represent pathways, columns represent samples.
+Column names must match the sample names in metadata.
+Values must be numeric and cannot contain missing values (NA).}
 
-\item{metadata}{A tibble, consisting of sample information.}
+\item{metadata}{A data frame containing sample information.
+Must include:
+\itemize{
+  \item A column named "sample_name" matching the column names in abundance
+  \item A column for grouping samples (specified by the 'group' parameter)
+}}
 
-\item{group}{A character, group name.}
+\item{group}{A character string specifying the column name in metadata that contains
+group information for samples (e.g., "treatment", "condition", "group").}
 
-\item{colors}{A vector of colors for different groups. If NULL, default colors will be used.}
+\item{colors}{Optional. A character vector of colors for different groups.
+Length must match the number of unique groups.
+If NULL, default colors will be used.}
 }
 \value{
-A ggplot object showing the PCA results.
+A ggplot object showing:
+       \itemize{
+         \item Center: PCA scatter plot with confidence ellipses (95%)
+         \item Top: Density plot for PC1
+         \item Right: Density plot for PC2
+       }
 }
 \description{
-Perform Principal Component Analysis (PCA) on functional pathway abundance data and create visualizations of the PCA results.
+This function performs PCA analysis on pathway abundance data and creates an informative visualization
+that includes a scatter plot of the first two principal components (PC1 vs PC2) with density plots
+for both PCs. The plot helps to visualize the clustering patterns and distribution of samples
+across different groups.
+}
+\details{
+The function performs several validations on input data:
+\itemize{
+  \item Abundance matrix must have at least 2 pathways and 3 samples
+  \item All values in abundance matrix must be numeric
+  \item Sample names must match between abundance and metadata
+  \item Group column must exist in metadata
+  \item If custom colors are provided, they must be valid color names or codes
+}
 }
 \examples{
-library(magrittr)
-library(dplyr)
-library(tibble)
-# Create example functional pathway abundance data
-kegg_abundance_example <- matrix(rnorm(30), nrow = 3, ncol = 10)
-colnames(kegg_abundance_example) <- paste0("Sample", 1:10)
-rownames(kegg_abundance_example) <- c("PathwayA", "PathwayB", "PathwayC")
+# Create example abundance data
+abundance_data <- matrix(rnorm(30), nrow = 3, ncol = 10)
+colnames(abundance_data) <- paste0("Sample", 1:10)
+rownames(abundance_data) <- c("PathwayA", "PathwayB", "PathwayC")
 
 # Create example metadata
-# Please ensure the sample IDs in the metadata have the column name "sample_name"
-metadata_example <- data.frame(
-  sample_name = colnames(kegg_abundance_example),
+metadata <- data.frame(
+  sample_name = paste0("Sample", 1:10),
   group = factor(rep(c("Control", "Treatment"), each = 5))
 )
 
-# Define custom colors for PCA plot
-custom_colors <- c("skyblue", "salmon")
+# Basic PCA plot with default colors
+pca_plot <- pathway_pca(abundance_data, metadata, "group")
 
-# Generate PCA plot with custom colors
-pca_plot <- pathway_pca(kegg_abundance_example, metadata_example, "group",
-                        colors = custom_colors)
-
-pca_plot <- pathway_pca(kegg_abundance_example, metadata_example, "group",
-                        colors = NULL)
-
-print(pca_plot)
+# PCA plot with custom colors
+pca_plot <- pathway_pca(
+  abundance_data,
+  metadata,
+  "group",
+  colors = c("blue", "red")  # One color per group
+)
 
 \donttest{
-data("metacyc_abundance")
-data("metadata")
-# Generate PCA plot for real dataset with custom colors
-pathway_pca(metacyc_abundance \%>\% column_to_rownames("pathway"),
-            metadata, "Environment", colors = c("green", "purple"))
+# Example with real data
+data("metacyc_abundance")  # Load example pathway abundance data
+data("metadata")          # Load example metadata
+
+# Generate PCA plot
+pathway_pca(
+  metacyc_abundance \%>\% column_to_rownames("pathway"),
+  metadata,
+  "Environment",
+  colors = c("green", "purple")
+)
 }
+
 }
