@@ -39,7 +39,7 @@ dataset.
 version](https://www.r-pkg.org/badges/version/ggpicrust2)](https://CRAN.R-project.org/package=ggpicrust2)
 [![Downloads](https://cranlogs.r-pkg.org/badges/grand-total/ggpicrust2)](https://CRAN.R-project.org/package=ggpicrust2)
 [![License:
-MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/license/mit/)
+MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/license/mit)
 
 ## News
 
@@ -99,13 +99,13 @@ predicted functional profile analysis and visualization.
 link](https://doi.org/10.1093/bioinformatics/btad470)
 
 BibTeX entry: [Download
-here](https://academic.oup.com/bioinformatics/advance-article/doi/10.1093/bioinformatics/btad470/7234609?utm_source=advanceaccess&utm_campaign=bioinformatics&utm_medium=email&login=false)
+here](https://academic.oup.com/Citation/Download?resourceId=7234609&resourceType=3&citationFormat=2)
 
 ResearchGate link: [Click
 here](https://www.researchgate.net/publication/372829051_ggpicrust2_an_R_package_for_PICRUSt2_predicted_functional_profile_analysis_and_visualization)
 
 Bioinformatics link: [Click
-here](https://academic.oup.com/bioinformatics/advance-article/doi/10.1093/bioinformatics/btad470/7234609?utm_source=advanceaccess&utm_campaign=bioinformatics&utm_medium=email&login=false)
+here](https://academic.oup.com/bioinformatics/article/39/8/btad470/7234609?login=false&utm_source=advanceaccess&utm_campaign=bioinformatics&utm_medium=email)
 
 ## Installation
 
@@ -128,43 +128,43 @@ devtools::install_github("cafferychen777/ggpicrust2")
 
 ## Dependent CRAN Packages
 
-| Package        | Description                                                                                      |
-|----------------|--------------------------------------------------------------------------------------------------|
-| aplot          | Create interactive plots                                                                         |
-| dplyr          | A fast consistent tool for working with data frame like objects both in memory and out of memory |
-| ggplot2        | An implementation of the Grammar of Graphics in R                                                |
-| grid           | A rewrite of the graphics layout capabilities of R                                               |
-| MicrobiomeStat | Statistical analysis of microbiome data                                                          |
-| readr          | Read rectangular data (csv tsv fwf) into R                                                       |
-| stats          | The R Stats Package                                                                              |
-| tibble         | Simple Data Frames                                                                               |
-| tidyr          | Easily tidy data with spread() and gather() functions                                            |
-| ggprism        | Interactive 3D plots with ‘prism’ graphics                                                       |
-| cowplot        | Streamlined Plot Theme and Plot Annotations for ‘ggplot2’                                        |
-| ggforce        | Easily add secondary axes, zooms, and image overlays to ‘ggplot2’                                |
-| ggplotify      | Convert complex plots into ‘grob’ or ‘ggplot’ objects                                            |
-| magrittr       | A Forward-Pipe Operator for R                                                                    |
-| utils          | The R Utils Package                                                                              |
+| Package | Description |
+|----|----|
+| aplot | Create interactive plots |
+| dplyr | A fast consistent tool for working with data frame like objects both in memory and out of memory |
+| ggplot2 | An implementation of the Grammar of Graphics in R |
+| grid | A rewrite of the graphics layout capabilities of R |
+| MicrobiomeStat | Statistical analysis of microbiome data |
+| readr | Read rectangular data (csv tsv fwf) into R |
+| stats | The R Stats Package |
+| tibble | Simple Data Frames |
+| tidyr | Easily tidy data with spread() and gather() functions |
+| ggprism | Interactive 3D plots with ‘prism’ graphics |
+| cowplot | Streamlined Plot Theme and Plot Annotations for ‘ggplot2’ |
+| ggforce | Easily add secondary axes, zooms, and image overlays to ‘ggplot2’ |
+| ggplotify | Convert complex plots into ‘grob’ or ‘ggplot’ objects |
+| magrittr | A Forward-Pipe Operator for R |
+| utils | The R Utils Package |
 
 ## Dependent Bioconductor Packages
 
-| Package              | Description                                                             |
-|----------------------|-------------------------------------------------------------------------|
-| phyloseq             | Handling and analysis of high-throughput microbiome census data         |
-| ALDEx2               | Differential abundance analysis of taxonomic and functional features    |
-| SummarizedExperiment | SummarizedExperiment container for storing data and metadata together   |
-| Biobase              | Base functions for Bioconductor                                         |
-| devtools             | Tools to make developing R packages easier                              |
-| ComplexHeatmap       | Making Complex Heatmaps in R                                            |
-| BiocGenerics         | S4 generic functions for Bioconductor                                   |
-| BiocManager          | Access the Bioconductor Project Package Repositories                    |
-| metagenomeSeq        | Statistical analysis for sparse high-throughput sequencing              |
-| Maaslin2             | Tools for microbiome analysis                                           |
-| edgeR                | Empirical Analysis of Digital Gene Expression Data in R                 |
-| lefser               | R implementation of the LEfSE method for microbiome biomarker discovery |
-| limma                | Linear Models for Microarray and RNA-Seq Data                           |
-| KEGGREST             | R Interface to KEGG REST API                                            |
-| DESeq2               | Differential gene expression analysis using RNA-seq data                |
+| Package | Description |
+|----|----|
+| phyloseq | Handling and analysis of high-throughput microbiome census data |
+| ALDEx2 | Differential abundance analysis of taxonomic and functional features |
+| SummarizedExperiment | SummarizedExperiment container for storing data and metadata together |
+| Biobase | Base functions for Bioconductor |
+| devtools | Tools to make developing R packages easier |
+| ComplexHeatmap | Making Complex Heatmaps in R |
+| BiocGenerics | S4 generic functions for Bioconductor |
+| BiocManager | Access the Bioconductor Project Package Repositories |
+| metagenomeSeq | Statistical analysis for sparse high-throughput sequencing |
+| Maaslin2 | Tools for microbiome analysis |
+| edgeR | Empirical Analysis of Digital Gene Expression Data in R |
+| lefser | R implementation of the LEfSE method for microbiome biomarker discovery |
+| limma | Linear Models for Microarray and RNA-Seq Data |
+| KEGGREST | R Interface to KEGG REST API |
+| DESeq2 | Differential gene expression analysis using RNA-seq data |
 
 ``` r
 if (!requireNamespace("BiocManager", quietly = TRUE))

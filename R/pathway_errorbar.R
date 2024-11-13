@@ -360,7 +360,7 @@ pathway_errorbar <-
       GGally::geom_stripped_cols(width = 10) +
       ggplot2::scale_fill_manual(values = colors) +
       ggplot2::scale_color_manual(values = colors) +
-      ggprism::theme_prism() +
+      ggplot2::theme_prism(base_size = 12) +
       ggplot2::scale_x_continuous(expand = c(0, 0),
                          guide = "prism_offset_minor",) +
       ggplot2::scale_y_discrete(labels = rev(daa_results_filtered_sub_df[, x_lab])) +
@@ -391,7 +391,12 @@ pathway_errorbar <-
         legend.text = ggplot2::element_text(size = 8, face = "bold"),
         legend.box.just = "right",
         plot.margin = ggplot2::margin(0, 0.5, 0.5, 0, unit = "cm")
-      ) + ggplot2::coord_cartesian(clip = "off")
+      ) + ggplot2::coord_cartesian(clip = "off") +
+      guides(y = guide_axis_prism()) +
+      theme(
+        axis.text.x = element_text(angle = 45, hjust = 1),
+        plot.margin = unit(c(1, 1, 1, 1), "cm")
+      )
 
     if (ko_to_kegg == TRUE) {
       pathway_class_group_mat <-
@@ -455,7 +460,7 @@ pathway_errorbar <-
       ggplot2::geom_hline(ggplot2::aes(yintercept = 0),
                  linetype = 'dashed',
                  color = 'black') +
-      ggprism::theme_prism() +
+      ggplot2::theme_prism(base_size = 12) +
       ggplot2::scale_y_continuous(expand = c(0, 0),
                          guide = "prism_offset_minor") +
       ggplot2::theme(
@@ -504,7 +509,7 @@ pathway_errorbar <-
           family = "sans"
         ) +
         ggplot2::scale_y_discrete(position = "right") +
-        ggprism::theme_prism() +
+        ggplot2::theme_prism(base_size = 12) +
         ggplot2::theme(
           axis.ticks = ggplot2::element_blank(),
           axis.line = ggplot2::element_blank(),
@@ -535,7 +540,7 @@ pathway_errorbar <-
       ) +
       ggplot2::labs(y = "p-value (adjusted)") +
       ggplot2::scale_y_discrete(position = "right") +
-      ggprism::theme_prism() +
+      ggplot2::theme_prism(base_size = 12) +
       ggplot2::theme(
         axis.ticks = ggplot2::element_blank(),
         axis.line = ggplot2::element_blank(),

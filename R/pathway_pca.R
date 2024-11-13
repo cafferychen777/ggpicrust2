@@ -3,6 +3,7 @@
 #' @param abundance A data frame, predicted functional pathway abundance.
 #' @param metadata A tibble, consisting of sample information.
 #' @param group A character, group name.
+#' @param colors A vector of colors for different groups. If NULL, default colors will be used.
 #' @return A ggplot object showing the PCA results.
 #' @export
 #'
@@ -17,16 +18,20 @@
 #'
 #' # Create example metadata
 #' # Please ensure the sample IDs in the metadata have the column name "sample_name"
-#' metadata_example <- data.frame(sample_name = colnames(kegg_abundance_example),
-#'                                group = factor(rep(c("Control", "Treatment"), each = 5)))
+#' metadata_example <- data.frame(
+#'   sample_name = colnames(kegg_abundance_example),
+#'   group = factor(rep(c("Control", "Treatment"), each = 5))
+#' )
 #'
 #' # Define custom colors for PCA plot
 #' custom_colors <- c("skyblue", "salmon")
 #'
 #' # Generate PCA plot with custom colors
-#' pca_plot <- pathway_pca(kegg_abundance_example, metadata_example, "group", colors = custom_colors)
+#' pca_plot <- pathway_pca(kegg_abundance_example, metadata_example, "group",
+#'                         colors = custom_colors)
 #'
-#' pca_plot <- pathway_pca(kegg_abundance_example, metadata_example, "group", colors = NULL)
+#' pca_plot <- pathway_pca(kegg_abundance_example, metadata_example, "group",
+#'                         colors = NULL)
 #'
 #' print(pca_plot)
 #'
@@ -34,7 +39,8 @@
 #' data("metacyc_abundance")
 #' data("metadata")
 #' # Generate PCA plot for real dataset with custom colors
-#' pathway_pca(metacyc_abundance %>% column_to_rownames("pathway"), metadata, "Environment", colors = c("green", "purple"))
+#' pathway_pca(metacyc_abundance %>% column_to_rownames("pathway"),
+#'             metadata, "Environment", colors = c("green", "purple"))
 #' }
 pathway_pca <- function(abundance,
                         metadata,

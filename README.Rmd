@@ -25,7 +25,7 @@ By leveraging this functionality, researchers, data scientists, and bioinformati
 
 If you are interested in exploring and analyzing your PICRUSt2 output data, *ggpicrust2* is a powerful tool that provides a comprehensive set of features, including the ability to assess the consistency and evaluate the performance of different methods applied to the same dataset.
 
-[![CRAN version](https://www.r-pkg.org/badges/version/ggpicrust2)](https://CRAN.R-project.org/package=ggpicrust2) [![Downloads](https://cranlogs.r-pkg.org/badges/grand-total/ggpicrust2)](https://CRAN.R-project.org/package=ggpicrust2) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/license/mit/)
+[![CRAN version](https://www.r-pkg.org/badges/version/ggpicrust2)](https://CRAN.R-project.org/package=ggpicrust2) [![Downloads](https://cranlogs.r-pkg.org/badges/grand-total/ggpicrust2)](https://CRAN.R-project.org/package=ggpicrust2) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/license/mit)
 
 ## News
 
@@ -64,11 +64,11 @@ If you use *ggpicrust2* in your research, please cite the following paper:
 
 Chen Yang and others. (2023). ggpicrust2: an R package for PICRUSt2 predicted functional profile analysis and visualization. *Bioinformatics*, btad470. [DOI link](https://doi.org/10.1093/bioinformatics/btad470)
 
-BibTeX entry: [Download here](https://academic.oup.com/bioinformatics/advance-article/doi/10.1093/bioinformatics/btad470/7234609?utm_source=advanceaccess&utm_campaign=bioinformatics&utm_medium=email&login=false)
+BibTeX entry: [Download here](https://academic.oup.com/Citation/Download?resourceId=7234609&resourceType=3&citationFormat=2)
 
 ResearchGate link: [Click here](https://www.researchgate.net/publication/372829051_ggpicrust2_an_R_package_for_PICRUSt2_predicted_functional_profile_analysis_and_visualization)
 
-Bioinformatics link: [Click here](https://academic.oup.com/bioinformatics/advance-article/doi/10.1093/bioinformatics/btad470/7234609?utm_source=advanceaccess&utm_campaign=bioinformatics&utm_medium=email&login=false)
+Bioinformatics link: [Click here](https://academic.oup.com/bioinformatics/article/39/8/btad470/7234609?login=false&utm_source=advanceaccess&utm_campaign=bioinformatics&utm_medium=email)
 
 ## Installation {#installation}
 
