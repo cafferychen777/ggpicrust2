@@ -138,24 +138,19 @@ pathway_errorbar <-
     if(!is.matrix(abundance) && !is.data.frame(abundance)) {
       stop("'abundance' must be a matrix or data frame")
     }
-    
+
     if(!is.data.frame(daa_results_df)) {
       stop("'daa_results_df' must be a data frame")
     }
-    
+
     # 检查必要的列
     required_cols <- c("feature", "method", "group1", "group2", "p_adjust")
     missing_cols <- setdiff(required_cols, colnames(daa_results_df))
     if(length(missing_cols) > 0) {
-      stop("Missing required columns in daa_results_df: ", 
+      stop("Missing required columns in daa_results_df: ",
            paste(missing_cols, collapse = ", "))
     }
-    
-    # 检查数据一致性
-    if(!all(rownames(abundance) %in% daa_results_df$feature)) {
-      stop("Some features in abundance matrix are not present in daa_results_df")
-    }
-    
+
     # 在函数开始处添加数据验证
     if (length(Group) != ncol(abundance)) {
       stop("Length of Group must match number of columns in abundance matrix")
@@ -163,13 +158,6 @@ pathway_errorbar <-
 
     # 检查显著性特征的数量
     sig_features <- sum(daa_results_df$p_adjust < 0.05)
-
-    if (sig_features > 30) {
-      stop(paste0(
-        "The number of features with statistical significance exceeds 30, leading to suboptimal visualization. ",
-        "Please use 'select' to reduce the number of features."
-      ))
-    }
 
     # Identify pathways with missing annotation
     missing_pathways <- daa_results_df[is.na(daa_results_df$pathway_name), "feature"]
@@ -382,13 +370,13 @@ pathway_errorbar <-
     error_bar_pivot_longer_tibble_summarised_ordered$name <- factor(error_bar_pivot_longer_tibble_summarised_ordered$name, levels = rev(daa_results_filtered_sub_df$feature))
 
     bar_errorbar <-
-      ggplot2::ggplot(error_bar_pivot_longer_tibble_summarised_ordered, # nolint: object_usage_linter.
-             ggplot2::aes(mean, name, fill = group)) + # nolint
+      ggplot2::ggplot(error_bar_pivot_longer_tibble_summarised_ordered,
+             ggplot2::aes(mean, name, fill = group)) +
       ggplot2::geom_errorbar(
         ggplot2::aes(xmax = mean + sd, xmin = 0),
         position = ggplot2::position_dodge(width = 0.8),
         width = 0.5,
-        size = 0.5,
+        linewidth = 0.5,
         color = "black"
       ) +
       ggplot2::geom_bar(stat = "identity",
@@ -398,19 +386,18 @@ pathway_errorbar <-
       ggplot2::scale_fill_manual(values = colors) +
       ggplot2::scale_color_manual(values = colors) +
       ggprism::theme_prism(base_size = 12) +
-      ggplot2::scale_x_continuous(expand = c(0, 0),
-                         guide = "prism_offset_minor",) +
+      ggplot2::scale_x_continuous(expand = c(0, 0)) +
       ggplot2::scale_y_discrete(labels = rev(daa_results_filtered_sub_df[, x_lab])) +
       ggplot2::labs(x = "Relative Abundance", y = NULL) +
       ggplot2::theme(
         axis.ticks.y = ggplot2::element_blank(),
         axis.line.y = ggplot2::element_blank(),
-        axis.line.x = ggplot2::element_line(size = 0.5),
-        axis.ticks.x = ggplot2::element_line(size = 0.5),
+        axis.line.x = ggplot2::element_line(linewidth = 0.5),
+        axis.ticks.x = ggplot2::element_line(linewidth = 0.5),
         panel.grid.major.y = ggplot2::element_blank(),
         panel.grid.major.x = ggplot2::element_blank(),
-        axis.text = ggplot2::element_text(size = 10, color = "black"), # nolint
-        axis.text.x = ggplot2::element_text(margin = ggplot2::margin(r = 0)), # nolint
+        axis.text = ggplot2::element_text(size = 10, color = "black"),
+        axis.text.x = ggplot2::element_text(margin = ggplot2::margin(r = 0)),
         axis.text.y = ggplot2::element_text(
           size = 10,
           color = "black",
@@ -428,11 +415,11 @@ pathway_errorbar <-
         legend.text = ggplot2::element_text(size = 8, face = "bold"),
         legend.box.just = "right",
         plot.margin = ggplot2::margin(0, 0.5, 0.5, 0, unit = "cm")
-      ) + ggplot2::coord_cartesian(clip = "off") +
-      guides(y = ggplot2::guide_axis()) +
-      theme(
-        axis.text.x = element_text(angle = 45, hjust = 1),
-        plot.margin = unit(c(1, 1, 1, 1), "cm")
+      ) +
+      ggplot2::coord_cartesian(clip = "off") +
+      ggplot2::theme(
+        axis.text.x = ggplot2::element_text(angle = 45, hjust = 1),
+        plot.margin = ggplot2::unit(c(1, 1, 1, 1), "cm")
       )
 
     if (ko_to_kegg == TRUE) {
@@ -498,8 +485,7 @@ pathway_errorbar <-
                  linetype = 'dashed',
                  color = 'black') +
       ggprism::theme_prism(base_size = 12) +
-      ggplot2::scale_y_continuous(expand = c(0, 0),
-                         guide = "prism_offset_minor") +
+      ggplot2::scale_y_continuous(expand = c(0, 0)) +
       ggplot2::theme(
         axis.ticks.y = ggplot2::element_blank(),
         axis.line.y = ggplot2::element_blank(),
