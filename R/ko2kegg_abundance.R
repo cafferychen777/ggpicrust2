@@ -169,59 +169,75 @@ ko2kegg_abundance <- function (file = NULL, data = NULL) {
   })
   
   message("Loading KEGG reference data. This might take a while...")
-  load(system.file("extdata", "kegg_reference.RData", package = "ggpicrust2"))
-
-  message("Performing KO to KEGG conversion. Please be patient, this might take a while...")
+  if (!exists("ko_to_kegg_reference")) {
+    data("ko_to_kegg_reference", package = "ggpicrust2", envir = environment())
+  }
+  
+  # 转换参考数据格式
+  ko_to_kegg_reference <- as.data.frame(ko_to_kegg_reference)
+  kegg_names <- ko_to_kegg_reference[, 1]  # 第一列是KEGG pathway IDs
+  
+  message(sprintf("Processing %d KEGG pathways...", length(unique(kegg_names))))
+  
+  # 创建结果数据框
+  kegg_abundance <- data.frame(
+    row.names = unique(kegg_names)  # 将 pathway 设置为行名
+  )
+  
+  # 为每个样本添加列
   sample_names <- colnames(abundance)[-1]
-  kegg_names <- ko_to_kegg_reference[, 1]
-
-  # 创建结果矩阵并确保正确设置列名
-  kegg_abundance <- matrix(0, 
-                          nrow = length(kegg_names), 
-                          ncol = length(sample_names))
-  colnames(kegg_abundance) <- sample_names  # 设置列名
-  rownames(kegg_abundance) <- kegg_names    # 设置行名
+  for (sample in sample_names) {
+    kegg_abundance[[sample]] <- 0
+  }
 
   # 使用 tryCatch 进行错误处理
   tryCatch({
-    pb <- txtProgressBar(min = 0, max = length(kegg_names), style = 3)
+    pb <- txtProgressBar(min = 0, max = nrow(kegg_abundance), style = 3)
     start_time <- Sys.time()
     
-    for (kegg_idx in seq_along(kegg_names)) {
-      setTxtProgressBar(pb, kegg_idx)
-      current_kegg <- kegg_names[kegg_idx]
-      relevant_kos <- ko_to_kegg_reference[ko_to_kegg_reference[,1] == current_kegg, -1]
-      relevant_kos <- relevant_kos[!is.na(relevant_kos)]
+    total_matches <- 0
+    
+    for (i in seq_len(nrow(kegg_abundance))) {
+      setTxtProgressBar(pb, i)
+      current_kegg <- rownames(kegg_abundance)[i]
       
-      matching_rows <- abundance[,1] %in% relevant_kos
+      # 获取当前KEGG pathway对应的所有KOs
+      pathway_row <- ko_to_kegg_reference[ko_to_kegg_reference[,1] == current_kegg, ]
+      relevant_kos <- unlist(pathway_row[,-1])  # 除第一列外的所有KO IDs
+      relevant_kos <- relevant_kos[!is.na(relevant_kos) & relevant_kos != ""]
+      
+      # 查找匹配的KOs
+      matching_rows <- abundance[[1]] %in% relevant_kos
       if (any(matching_rows)) {
-        kegg_abundance[kegg_idx,] <- colSums(abundance[matching_rows, -1, drop = FALSE])
+        total_matches <- total_matches + sum(matching_rows)
+        kegg_abundance[i, ] <- colSums(abundance[matching_rows, -1, drop = FALSE])
       }
     }
     
     end_time <- Sys.time()
     close(pb)
     
-    message(sprintf("KO to KEGG conversion completed. Time elapsed: %.2f seconds.", 
-                   as.numeric(end_time - start_time)))
+    # 添加调试信息
+    message(sprintf("Total KO matches found: %d", total_matches))
+    message(sprintf("Number of non-zero pathways before filtering: %d", 
+                   sum(rowSums(kegg_abundance[,-1, drop = FALSE]) > 0)))
     
     # 移除零丰度通路
     message("Removing KEGG pathways with zero abundance across all samples...")
-    kegg_abundance <- kegg_abundance[rowSums(kegg_abundance) != 0, , drop = FALSE]
+    zero_rows <- rowSums(kegg_abundance[,-1, drop = FALSE]) == 0
+    kegg_abundance <- kegg_abundance[!zero_rows, , drop = FALSE]
     
-    # 转换为数据框时保持列名
-    kegg_abundance <- as.data.frame(kegg_abundance, stringsAsFactors = FALSE)
+    message(sprintf("Final number of KEGG pathways: %d", nrow(kegg_abundance)))
     
-    message("KEGG abundance calculation completed successfully.")
+    if (nrow(kegg_abundance) == 0) {
+      stop("No non-zero KEGG pathways found after processing")
+    }
+    
     return(kegg_abundance)
     
   }, error = function(e) {
     if (exists("pb")) close(pb)
     message("Error occurred during processing: ", e$message)
     stop(e)
-  }, warning = function(w) {
-    message("Warning during processing: ", w$message)
-  }, finally = {
-    if (exists("pb") && !inherits(pb, "try-error")) close(pb)
   })
 }
