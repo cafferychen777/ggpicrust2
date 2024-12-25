@@ -109,20 +109,19 @@ here](https://academic.oup.com/bioinformatics/article/39/8/btad470/7234609?login
 
 ## Installation
 
-You can install the stable version of *ggpicrust2* from CRAN with:
+> ⚠️ **Important Notice (December 25, 2024)**: Due to some dependency
+> package issues, `ggpicrust2` has been temporarily removed from CRAN.
+> We are actively working to resolve these issues. However, due to
+> CRAN’s holiday break (December 23, 2024 to January 07, 2025), the
+> resubmission will be delayed until after January 7, 2025.
+>
+> In the meantime, you can install the development version from GitHub:
+
+You can install the development version of *ggpicrust2* from GitHub
+with:
 
 ``` r
-install.packages("ggpicrust2")
-```
-
-To install the latest development version of *ggpicrust2* from GitHub,
-you can use:
-
-``` r
-# Install the devtools package if not already installed
 # install.packages("devtools")
-
-# Install ggpicrust2 from GitHub
 devtools::install_github("cafferychen777/ggpicrust2")
 ```
 
@@ -669,7 +668,7 @@ Use the fake dataset
 ``` r
 # Create example functional pathway abundance data
 abundance_example <- matrix(rnorm(30), nrow = 3, ncol = 10)
-colnames(abundance_example) <- paste0("Sample", 1:10)
+colnames(kegg_abundance_example) <- paste0("Sample", 1:10)
 rownames(kegg_abundance_example) <- c("PathwayA", "PathwayB", "PathwayC")
 
 # Create example metadata
@@ -842,8 +841,7 @@ the smallest adjusted p-values:
       ko_to_kegg = TRUE,
       p_value_bar = FALSE,
       colors = NULL,
-      x_lab = "pathway_name"
-    )
+      x_lab = "pathway_name")
 
 ### Issue 7: There are no statistically significant biomarkers
 
@@ -913,7 +911,3 @@ please contact <cafferychen7850@gmail.com>.
 ![](https://raw.githubusercontent.com/cafferychen777/ggpicrust2_paper/main/paper_figure/MicrobiomeGallery_preview.jpg)
 
 We look forward to sharing more updates as these projects progress.
-
-## Star History
-
-[![Star History Chart](https://api.star-history.com/svg?repos=cafferychen777/ggpicrust2&type=Date)](https://star-history.com/#cafferychen777/ggpicrust2&Date)
