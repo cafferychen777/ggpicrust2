@@ -1,3 +1,6 @@
+#' @importFrom magrittr %>%
+NULL
+
 #' Differential Abundance Analysis for Predicted Functional Pathways
 #'
 #' @description
@@ -44,34 +47,47 @@
 #'          \item \code{"none"}: No adjustment
 #'        }
 #'
-#' @param reference Character string specifying the reference group level.
-#'        Required for some methods (LinDA, limma voom, Maaslin2) when there are more than two groups.
-#'        Default is NULL.
+#' @param reference Character string specifying the reference level for the group comparison.
+#'        If NULL (default), the first level is used as reference.
 #'
-#' @return A data frame containing the differential abundance analysis results with the following columns:
-#'        \itemize{
-#'          \item \code{feature}: Feature/pathway identifier
-#'          \item \code{method}: Name of the analysis method used
-#'          \item \code{group1}: Name of the first group (reference group when applicable)
-#'          \item \code{group2}: Name of the second group
-#'          \item \code{p_values}: Raw p-values from the analysis
-#'          \item \code{p_adjust}: Adjusted p-values using the specified method
-#'          \item \code{adj_method}: Method used for p-value adjustment
-#'        }
+#' @param ... Additional arguments passed to the specific DAA method
+#'
+#' @return A data frame containing the differential abundance analysis results
 #'
 #' @examples
 #' \donttest{
-#' # Create example data
+#' # Load example data
+#' data(ko_abundance)
+#' data(metadata)
+#'
+#' # Run differential abundance analysis using ALDEx2
+#' results <- pathway_daa(
+#'   abundance = ko_abundance %>% column_to_rownames("#NAME"),
+#'   metadata = metadata,
+#'   group = "Environment"
+#' )
+#'
+#' # Using a different method (DESeq2)
+#' deseq_results <- pathway_daa(
+#'   abundance = ko_abundance %>% column_to_rownames("#NAME"),
+#'   metadata = metadata,
+#'   group = "Environment",
+#'   daa_method = "DESeq2"
+#' )
+#'
+#' # Create example data with more samples
 #' abundance <- data.frame(
 #'   sample1 = c(10, 20, 30),
 #'   sample2 = c(20, 30, 40),
 #'   sample3 = c(30, 40, 50),
+#'   sample4 = c(40, 50, 60),
+#'   sample5 = c(50, 60, 70),
 #'   row.names = c("pathway1", "pathway2", "pathway3")
 #' )
 #'
 #' metadata <- data.frame(
-#'   sample = c("sample1", "sample2", "sample3"),
-#'   group = c("control", "control", "treatment")
+#'   sample = c("sample1", "sample2", "sample3", "sample4", "sample5"),
+#'   group = c("control", "control", "treatment", "treatment", "treatment")
 #' )
 #'
 #' # Run differential abundance analysis using ALDEx2
@@ -83,22 +99,25 @@
 #'
 #' # Analyze specific samples only
 #' subset_results <- pathway_daa(abundance, metadata, "group",
-#'                              select = c("sample1", "sample2"))
+#'                              select = c("sample1", "sample2", "sample3", "sample4"))
 #' }
 #'
 #' @references
 #' \itemize{
-#'   \item ALDEx2: Fernandes et al. (2013) ISME J
-#'   \item DESeq2: Love et al. (2014) Genome Biology
-#'   \item edgeR: Robinson et al. (2010) Bioinformatics
-#'   \item limma: Ritchie et al. (2015) Nucleic Acids Research
-#'   \item metagenomeSeq: Paulson et al. (2013) Nature Methods
-#'   \item Maaslin2: Mallick et al. (2021) PLoS Computational Biology
-#'   \item LinDA: Zhou et al. (2022) Genome Biology
+#'   \item ALDEx2: Fernandes et al. (2014) Unifying the analysis of high-throughput sequencing datasets:
+#'         characterizing RNA-seq, 16S rRNA gene sequencing and selective growth experiments by
+#'         compositional data analysis. Microbiome.
+#'   \item DESeq2: Love et al. (2014) Moderated estimation of fold change and dispersion for
+#'         RNA-seq data with DESeq2. Genome Biology.
+#'   \item edgeR: Robinson et al. (2010) edgeR: a Bioconductor package for differential expression
+#'         analysis of digital gene expression data. Bioinformatics.
+#'   \item limma-voom: Law et al. (2014) voom: precision weights unlock linear model analysis tools
+#'         for RNA-seq read counts. Genome Biology.
+#'   \item metagenomeSeq: Paulson et al. (2013) Differential abundance analysis for microbial
+#'         marker-gene surveys. Nature Methods.
+#'   \item Maaslin2: Mallick et al. (2021) Multivariable Association Discovery in Population-scale
+#'         Meta-omics Studies.
 #' }
-#'
-#' @importFrom tibble is_tibble as_tibble
-#' @importFrom stats p.adjust model.matrix
 #'
 #' @export
 pathway_daa <- function(abundance, metadata, group, daa_method = "ALDEx2",
@@ -226,11 +245,15 @@ perform_aldex2_analysis <- function(abundance_mat, Group, Level, length_Level) {
   # Round the abundance data
   abundance_mat <- round(abundance_mat)
   
-  # 根据组别数量执行不同的分析
+  # Save the original Group factor and convert to numeric for ALDEx2
+  original_Group <- Group
+  Group <- as.numeric(Group)
+  
+  # Perform different analyses based on the number of groups
   if (length_Level == 2) {
     message("Running ALDEx2 with two groups. Performing t-test...")
     
-    # 创建 ALDEx2 对象
+    # Create ALDEx2 object with numeric Group
     ALDEx2_object <- ALDEx2::aldex.clr(
       abundance_mat,
       Group,
@@ -239,14 +262,14 @@ perform_aldex2_analysis <- function(abundance_mat, Group, Level, length_Level) {
       verbose = FALSE
     )
     
-    # 获取 t-test 结果
+    # Get t-test results
     results <- ALDEx2::aldex.ttest(
       ALDEx2_object,
       paired.test = FALSE,
       verbose = FALSE
     )
     
-    # 构建结果数据框，保持原有方法名称
+    # Build result dataframe using original Level names
     return(data.frame(
       feature = rep(rownames(results), 2),
       method = c(
@@ -262,7 +285,7 @@ perform_aldex2_analysis <- function(abundance_mat, Group, Level, length_Level) {
   } else {
     message("Running ALDEx2 with multiple groups. This might take some time...")
     
-    # 创建多组别 ALDEx2 对象
+    # Create ALDEx2 object for multiple groups with numeric Group
     ALDEx2_object <- ALDEx2::aldex.clr(
       abundance_mat,
       Group,
@@ -271,10 +294,10 @@ perform_aldex2_analysis <- function(abundance_mat, Group, Level, length_Level) {
       verbose = FALSE
     )
     
-    # 获取 Kruskal-Wallis 和 GLM 测试结果
+    # Get Kruskal-Wallis and GLM test results
     results <- ALDEx2::aldex.kw(ALDEx2_object)
     
-    # 构建初始结果数据框，保持原有方法名称
+    # Build initial result dataframe
     result_df <- data.frame(
       feature = rep(rownames(results), 2),
       method = c(
@@ -285,7 +308,7 @@ perform_aldex2_analysis <- function(abundance_mat, Group, Level, length_Level) {
       stringsAsFactors = FALSE
     )
     
-    # 添加所有组别信息
+    # Add all group information using original Level names
     group_cols <- data.frame(matrix(
       NA, 
       nrow = nrow(result_df), 
@@ -297,7 +320,7 @@ perform_aldex2_analysis <- function(abundance_mat, Group, Level, length_Level) {
       group_cols[, i] <- Level[i]
     }
     
-    # 合并结果
+    # Merge results
     result_df <- cbind(
       result_df[, c("feature", "method")],
       group_cols,
