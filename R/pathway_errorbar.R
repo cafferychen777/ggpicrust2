@@ -352,11 +352,14 @@ pathway_errorbar <-
         )
     }
 
-    if (ko_to_kegg == FALSE){
-      error_bar_pivot_longer_tibble_summarised_ordered[, x_lab] <-
-        rep(daa_results_filtered_sub_df[, x_lab], each = length(levels(
-          factor(error_bar_pivot_longer_tibble_summarised_ordered$group)
-        )))
+    if (ko_to_kegg == FALSE) {
+      # 通过 match 函数按特征名匹配
+      matched_indices <- match(
+        error_bar_pivot_longer_tibble_summarised_ordered$name,
+        daa_results_filtered_sub_df$feature
+      )
+      error_bar_pivot_longer_tibble_summarised_ordered[, x_lab] <- 
+        daa_results_filtered_sub_df[matched_indices, x_lab]
     }
 
     if (ko_to_kegg == TRUE) {
