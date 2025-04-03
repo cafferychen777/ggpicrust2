@@ -2,7 +2,7 @@
 % Please edit documentation in R/pathway_daa.R
 \name{pathway_daa}
 \alias{pathway_daa}
-\title{Predictional functional patwhay differential abundance (DA)}
+\title{Differential Abundance Analysis for Predicted Functional Pathways}
 \usage{
 pathway_daa(
   abundance,
@@ -11,65 +11,131 @@ pathway_daa(
   daa_method = "ALDEx2",
   select = NULL,
   p.adjust = "BH",
-  reference = NULL
+  reference = NULL,
+  ...
 )
 }
 \arguments{
-\item{abundance}{a data frame containing predicted functional pathway abundance, with pathways/features as rows and samples as columns. The column names of abundance should match the sample names in metadata. Pathway abundance values should be counts}
+\item{abundance}{A data frame or matrix containing predicted functional pathway abundance,
+with pathways/features as rows and samples as columns.
+The column names should match the sample names in metadata.
+Values should be counts or abundance measurements.}
 
-\item{metadata}{a tibble containing samples information}
+\item{metadata}{A data frame or tibble containing sample information.
+Must include a 'sample' column with sample identifiers matching the column names in abundance data.}
 
-\item{group}{a character specifying the group name for differential abundance analysis}
+\item{group}{Character string specifying the column name in metadata that contains group information
+for differential abundance analysis.}
 
-\item{daa_method}{a character specifying the method for differential abundance analysis, choices are:
-- "ALDEx2": ANOVA-Like Differential Expression tool for high throughput sequencing data
-- "DESeq2": Differential expression analysis based on the negative binomial distribution using DESeq2
-- "edgeR": Exact test for differences between two groups of negative-binomially distributed counts using edgeR
-- "limma voom": Limma-voom framework for the analysis of RNA-seq data
-- "metagenomeSeq": Fit logistic regression models to test for differential abundance between groups using metagenomeSeq
-- "LinDA": Linear models for differential abundance analysis of microbiome compositional data
-- "Maaslin2": Multivariate Association with Linear Models (MaAsLin2) for differential abundance analysis
-- "Lefser": Linear discriminant analysis (LDA) effect size algorithm for high-dimensional microbiome data}
+\item{daa_method}{Character string specifying the method for differential abundance analysis.
+Available choices are:
+\itemize{
+  \item \code{"ALDEx2"}: ANOVA-Like Differential Expression tool
+  \item \code{"DESeq2"}: Differential expression analysis based on negative binomial distribution
+  \item \code{"edgeR"}: Exact test for differences between groups using negative binomial model
+  \item \code{"limma voom"}: Limma-voom framework for RNA-seq analysis
+  \item \code{"metagenomeSeq"}: Zero-inflated Gaussian mixture model
+  \item \code{"LinDA"}: Linear models for differential abundance analysis
+  \item \code{"Maaslin2"}: Multivariate Association with Linear Models
+  \item \code{"Lefser"}: Linear discriminant analysis effect size
+}
+Default is "ALDEx2".}
 
-\item{select}{a vector containing sample names for analysis, if NULL all samples are included. This parameter can be used to specify which samples are included in the differential abundance analysis. Default is NULL.}
+\item{select}{Vector of sample names to include in the analysis.
+If NULL (default), all samples are included.}
 
-\item{p.adjust}{a character specifying the method for p-value adjustment, choices are:
-- "BH": Benjamini-Hochberg correction
-- "holm": Holm's correction
-- "bonferroni": Bonferroni correction
-- "hochberg": Hochberg's correction
-- "fdr": False discovery rate correction
-- "none": No p-value adjustment.}
+\item{p.adjust}{Character string specifying the method for p-value adjustment.
+Choices are:
+\itemize{
+  \item \code{"BH"}: Benjamini-Hochberg procedure (default)
+  \item \code{"holm"}: Holm's step-down method
+  \item \code{"bonferroni"}: Bonferroni correction
+  \item \code{"hochberg"}: Hochberg's step-up method
+  \item \code{"fdr"}: False Discovery Rate
+  \item \code{"none"}: No adjustment
+}}
 
-\item{reference}{a character specifying the reference group level, required for several differential abundance analysis methods such as LinDA, limme voom and Maaslin2. This parameter is used to specify the reference group when there are more than two groups. Default is NULL.}
+\item{reference}{Character string specifying the reference level for the group comparison.
+If NULL (default), the first level is used as reference.}
+
+\item{...}{Additional arguments passed to the specific DAA method}
 }
 \value{
-a data frame containing the differential abundance analysis results.
+A data frame containing the differential abundance analysis results
 }
 \description{
-Predictional functional patwhay differential abundance (DA)
+Performs differential abundance analysis on predicted functional pathway data using various statistical methods.
+This function supports multiple methods for analyzing differences in pathway abundance between groups,
+including popular approaches like ALDEx2, DESeq2, edgeR, and others.
 }
 \examples{
 \donttest{
-library(ggpicrust2)
-library(MicrobiomeStat)
-library(tibble)
-library(magrittr)
-abundance <- data.frame(sample1 = c(10, 20, 30),
-sample2 = c(20, 30, 40),
-sample3 = c(30, 40, 50),
-row.names = c("pathway1", "pathway2", "pathway3"))
-
-metadata <- tibble::tibble(sample = paste0("sample", 1:3),
-group = c("control", "control", "treatment"))
-
-#Run pathway_daa function
-result <- pathway_daa(abundance = abundance, metadata = metadata, group = "group",
-daa_method = "LinDA")
-
-data(metacyc_abundance)
+# Load example data
+data(ko_abundance)
 data(metadata)
-daa_results_df <- pathway_daa(metacyc_abundance \%>\%
-column_to_rownames("pathway"), metadata, "Environment", daa_method = "Lefser")
+
+# Prepare abundance data
+abundance_data <- as.data.frame(ko_abundance)
+rownames(abundance_data) <- abundance_data[, "#NAME"]
+abundance_data <- abundance_data[, -1]
+
+# Run differential abundance analysis using ALDEx2
+results <- pathway_daa(
+  abundance = abundance_data,
+  metadata = metadata,
+  group = "Environment"
+)
+
+# Using a different method (DESeq2)
+deseq_results <- pathway_daa(
+  abundance = abundance_data,
+  metadata = metadata,
+  group = "Environment",
+  daa_method = "DESeq2"
+)
+
+# Create example data with more samples
+abundance <- data.frame(
+  sample1 = c(10, 20, 30),
+  sample2 = c(20, 30, 40),
+  sample3 = c(30, 40, 50),
+  sample4 = c(40, 50, 60),
+  sample5 = c(50, 60, 70),
+  row.names = c("pathway1", "pathway2", "pathway3")
+)
+
+metadata <- data.frame(
+  sample = c("sample1", "sample2", "sample3", "sample4", "sample5"),
+  group = c("control", "control", "treatment", "treatment", "treatment")
+)
+
+# Run differential abundance analysis using ALDEx2
+results <- pathway_daa(abundance, metadata, "group")
+
+# Using a different method (limma voom instead of DESeq2 for this small example)
+limma_results <- pathway_daa(abundance, metadata, "group",
+                            daa_method = "limma voom")
+
+# Analyze specific samples only
+subset_results <- pathway_daa(abundance, metadata, "group",
+                             select = c("sample1", "sample2", "sample3", "sample4"))
+}
+
+}
+\references{
+\itemize{
+  \item ALDEx2: Fernandes et al. (2014) Unifying the analysis of high-throughput sequencing datasets:
+        characterizing RNA-seq, 16S rRNA gene sequencing and selective growth experiments by
+        compositional data analysis. Microbiome.
+  \item DESeq2: Love et al. (2014) Moderated estimation of fold change and dispersion for
+        RNA-seq data with DESeq2. Genome Biology.
+  \item edgeR: Robinson et al. (2010) edgeR: a Bioconductor package for differential expression
+        analysis of digital gene expression data. Bioinformatics.
+  \item limma-voom: Law et al. (2014) voom: precision weights unlock linear model analysis tools
+        for RNA-seq read counts. Genome Biology.
+  \item metagenomeSeq: Paulson et al. (2013) Differential abundance analysis for microbial
+        marker-gene surveys. Nature Methods.
+  \item Maaslin2: Mallick et al. (2021) Multivariable Association Discovery in Population-scale
+        Meta-omics Studies.
 }
 }

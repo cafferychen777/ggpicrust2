@@ -12,9 +12,8 @@
 #' @param colors A vector of colors to be used to represent the groups in the figure. Each color corresponds to a group.
 #' @param x_lab A character string to be used as the x-axis label in the figure. The default value is "description" for KOs'descriptions and "pathway_name" for KEGG pathway names.
 #' @importFrom stats sd
-#' @value A ggplot2 plot (`plot`)
+#' @return A ggplot2 plot showing the error bar plot of the differential abundance analysis results for the functional pathways.
 #' The plot visualizes the differential abundance results of a specific differential abundance analysis method. The corresponding dataframe contains the results used to create the plot.
-#' @return A figure showing the error bar plot of the differential abundance analysis results for the functional pathways.
 #' @export
 #'
 #' @examples

@@ -70,8 +70,14 @@
 #' data("metadata")          # Load example metadata
 #'
 #' # Generate PCA plot
+#' # Prepare abundance data
+#' abundance_data <- as.data.frame(metacyc_abundance)
+#' rownames(abundance_data) <- abundance_data$pathway
+#' abundance_data <- abundance_data[, -which(names(abundance_data) == "pathway")]
+#' 
+#' # Create PCA plot
 #' pathway_pca(
-#'   metacyc_abundance %>% column_to_rownames("pathway"),
+#'   abundance_data,
 #'   metadata,
 #'   "Environment",
 #'   colors = c("green", "purple")

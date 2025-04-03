@@ -25,7 +25,8 @@
 \item{x_lab}{A character string to be used as the x-axis label in the figure. The default value is "description" for KOs'descriptions and "pathway_name" for KEGG pathway names.}
 }
 \value{
-A figure showing the error bar plot of the differential abundance analysis results for the functional pathways.
+A ggplot2 plot showing the error bar plot of the differential abundance analysis results for the functional pathways.
+The plot visualizes the differential abundance results of a specific differential abundance analysis method. The corresponding dataframe contains the results used to create the plot.
 }
 \description{
 The function pathway_errorbar() is used to visualize the results of functional pathway differential abundance analysis as error bar plots.
@@ -98,7 +99,7 @@ metadata <- read_delim(
 )
 # data(metadata)
 
-ko_abundance <- read.delim("path/to/your/metacyc_abundance.tsv")
+metacyc_abundance <- read.delim("path/to/your/metacyc_abundance.tsv")
 
 # data(metacyc_abundance)
 

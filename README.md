@@ -98,14 +98,12 @@ predicted functional profile analysis and visualization.
 *Bioinformatics*, btad470. [DOI
 link](https://doi.org/10.1093/bioinformatics/btad470)
 
-BibTeX entry: [Download
-here](https://academic.oup.com/Citation/Download?resourceId=7234609&resourceType=3&citationFormat=2)
+BibTeX entry: [Available via DOI](https://doi.org/10.1093/bioinformatics/btad470)
 
 ResearchGate link: [Click
 here](https://www.researchgate.net/publication/372829051_ggpicrust2_an_R_package_for_PICRUSt2_predicted_functional_profile_analysis_and_visualization)
 
-Bioinformatics link: [Click
-here](https://academic.oup.com/bioinformatics/article/39/8/btad470/7234609?login=false&utm_source=advanceaccess&utm_campaign=bioinformatics&utm_medium=email)
+Bioinformatics link: [Click here](https://doi.org/10.1093/bioinformatics/btad470)
 
 ## Installation
 
@@ -721,7 +719,7 @@ print(results$correlation$p_matrix)
 
 [![LinkedIn](https://img.shields.io/badge/Share_on-LinkedIn-0077B5?logo=linkedin&style=social)](https://www.linkedin.com/shareArticle?mini=true&url=https%3A%2F%2Fgithub.com%2Fcafferychen777%2Fggpicrust2&title=Check%20out%20this%20awesome%20package%20on%20GitHub%21)
 
-[![Reddit](https://img.shields.io/badge/Share_on-Reddit-FF4500?logo=reddit&style=social)](https://www.reddit.com/submit?url=https%3A%2F%2Fgithub.com%2Fcafferychen777%2Fggpicrust2&title=Check%20out%20this%20awesome%20package%20on%20GitHub%21)
+
 
 ## FAQ
 

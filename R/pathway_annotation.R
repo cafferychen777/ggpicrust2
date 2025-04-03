@@ -101,7 +101,6 @@ get_kegg_with_cache <- function(ko_id) {
 #' @noRd
 with_retry <- function(expr, max_attempts = getOption("ggpicrust2.max_retries", 3)) {
   attempt <- 1
-  last_error <- NULL
   
   while (attempt <= max_attempts) {
     result <- tryCatch({
@@ -112,7 +111,6 @@ with_retry <- function(expr, max_attempts = getOption("ggpicrust2.max_retries", 
         return(NULL)  # 直接返回 NULL，不再重试
       }
       
-      last_error <- e
       if (attempt == max_attempts) {
         return(e)
       }
@@ -219,9 +217,7 @@ process_kegg_annotations <- function(df) {
   pb <- create_progress_bar(total_features)
   log_message("Starting KEGG annotation process")
   
-  # 添加重试计数器
-  retry_count <- 0
-  max_retries <- 3
+  # 初始化进度条
   
   # 处理每个特征
   for (i in seq_len(nrow(filtered_df))) {
@@ -371,7 +367,29 @@ pathway_annotation <- function(file = NULL,
   }
 }
 
-#' 添加安全提取函数
+#' Safely Extract Elements from a List
+#'
+#' Safely extracts elements from a list, returning NA if the extraction fails
+#'
+#' @param list A list object from which to extract elements
+#' @param field The name of the field to extract from the list
+#' @param index The index position to extract from the field. Default is 1
+#'
+#' @return The extracted element if successful, NA if extraction fails
+#'
+#' @examples
+#' # Create a sample list
+#' my_list <- list(
+#'   a = list(x = 1:3),
+#'   b = list(y = 4:6)
+#' )
+#'
+#' # Extract existing element
+#' safe_extract(my_list, "a", 1)
+#'
+#' # Extract non-existing element (returns NA)
+#' safe_extract(my_list, "c", 1)
+#' @export
 safe_extract <- function(list, field, index = 1) {
   tryCatch({
     if (is.null(list[[field]]) || length(list[[field]]) == 0) {

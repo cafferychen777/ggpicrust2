@@ -1,3 +1,8 @@
+#' @importFrom grDevices col2rgb
+#' @importFrom methods new
+#' @importFrom stats as.formula model.matrix relevel
+#' @importFrom utils head
+
 .onLoad <- function(libname, pkgname) {
   op <- options()
   op.ggpicrust2 <- list(

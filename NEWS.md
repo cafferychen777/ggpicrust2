@@ -1,3 +1,25 @@
+# ggpicrust2 2.0.0
+
+## 主要变更
+
+* Refactored the package dependencies, moving most Bioconductor packages from Imports to Suggests, reducing mandatory dependencies.
+
+* Added conditional checks to ensure that packages are only used when they are available.
+
+* Fixed the function export issue, ensuring that all public API functions are correctly exported.
+
+* Updated the example code, improving its stability and compatibility.
+
+* Updated the documentation format to comply with the latest CRAN standards.
+
+* Fixed invalid URL links in the README.
+
+* Optimized code quality, removing unused variables.
+
+* Added missing import declarations to ensure package integrity.
+
+# ggpicrust2 1.7.5
+
 # ggpicrust2 1.7.2
 
 # ggpicrust2 1.7.1

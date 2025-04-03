@@ -60,16 +60,21 @@ NULL
 #' data(ko_abundance)
 #' data(metadata)
 #'
+#' # Prepare abundance data
+#' abundance_data <- as.data.frame(ko_abundance)
+#' rownames(abundance_data) <- abundance_data[, "#NAME"]
+#' abundance_data <- abundance_data[, -1]
+#'
 #' # Run differential abundance analysis using ALDEx2
 #' results <- pathway_daa(
-#'   abundance = ko_abundance %>% column_to_rownames("#NAME"),
+#'   abundance = abundance_data,
 #'   metadata = metadata,
 #'   group = "Environment"
 #' )
 #'
 #' # Using a different method (DESeq2)
 #' deseq_results <- pathway_daa(
-#'   abundance = ko_abundance %>% column_to_rownames("#NAME"),
+#'   abundance = abundance_data,
 #'   metadata = metadata,
 #'   group = "Environment",
 #'   daa_method = "DESeq2"
@@ -93,9 +98,9 @@ NULL
 #' # Run differential abundance analysis using ALDEx2
 #' results <- pathway_daa(abundance, metadata, "group")
 #'
-#' # Using a different method (DESeq2)
-#' deseq_results <- pathway_daa(abundance, metadata, "group",
-#'                             daa_method = "DESeq2")
+#' # Using a different method (limma voom instead of DESeq2 for this small example)
+#' limma_results <- pathway_daa(abundance, metadata, "group",
+#'                             daa_method = "limma voom")
 #'
 #' # Analyze specific samples only
 #' subset_results <- pathway_daa(abundance, metadata, "group",
@@ -121,7 +126,24 @@ NULL
 #'
 #' @export
 pathway_daa <- function(abundance, metadata, group, daa_method = "ALDEx2",
-                       select = NULL, p.adjust = "BH", reference = NULL) {
+                       select = NULL, p.adjust = "BH", reference = NULL, ...) {
+  # Check if the requested DAA method package is available
+  method_packages <- list(
+    "ALDEx2" = "ALDEx2",
+    "DESeq2" = "DESeq2",
+    "edgeR" = "edgeR",
+    "limma voom" = "limma",
+    "metagenomeSeq" = "metagenomeSeq",
+    "Maaslin2" = "Maaslin2"
+  )
+  
+  if (daa_method %in% names(method_packages)) {
+    pkg_name <- method_packages[[daa_method]]
+    if (!requireNamespace(pkg_name, quietly = TRUE)) {
+      stop(sprintf("Package '%s' is required for method '%s'. Please install it using BiocManager::install('%s')", 
+                   pkg_name, daa_method, pkg_name))
+    }
+  }
   # Input validation
   if (!is.data.frame(abundance) && !is.matrix(abundance)) {
     stop("abundance must be a data frame or matrix")
@@ -241,6 +263,11 @@ pathway_daa <- function(abundance, metadata, group, daa_method = "ALDEx2",
 # Helper function: Perform ALDEx2 analysis
 perform_aldex2_analysis <- function(abundance_mat, Group, Level, length_Level) {
   message("Running ALDEx2 analysis...")
+  
+  # Check if ALDEx2 is available
+  if (!requireNamespace("ALDEx2", quietly = TRUE)) {
+    stop("Package 'ALDEx2' is required for ALDEx2 analysis. Please install it using BiocManager::install('ALDEx2')")
+  }
   
   # Round the abundance data
   abundance_mat <- round(abundance_mat)
@@ -390,6 +417,11 @@ perform_deseq2_analysis <- function(abundance_mat, metadata, group, Level) {
 perform_limma_voom_analysis <- function(abundance_mat, Group, reference, Level, length_Level) {
   message("Running limma voom analysis...")
 
+  # Check if limma is available
+  if (!requireNamespace("limma", quietly = TRUE)) {
+    stop("Package 'limma' is required for limma voom analysis. Please install it using BiocManager::install('limma')")
+  }
+  
   # Ensure Group is a factor type
   Group <- factor(Group)
   if (!is.null(reference)) {
@@ -531,7 +563,7 @@ perform_metagenomeseq_analysis <- function(abundance_mat, metadata, group, Level
 perform_maaslin2_analysis <- function(abundance_mat, metadata, group, reference, Level, length_Level) {
   message("Running Maaslin2 analysis...")
 
-  # Ensure necessary packages are loaded
+  # Check if Maaslin2 is available
   if (!requireNamespace("Maaslin2", quietly = TRUE)) {
     stop("Maaslin2 package is required but not installed")
   }
@@ -590,6 +622,11 @@ perform_maaslin2_analysis <- function(abundance_mat, metadata, group, reference,
 # Helper function: Perform Lefser analysis
 perform_lefser_analysis <- function(abundance_mat, metadata, group, Level) {
   message("Running Lefser analysis...")
+  
+  # Check if lefser package is available
+  if (!requireNamespace("lefser", quietly = TRUE)) {
+    stop("The 'lefser' package is required for Lefser analysis. Please install it using BiocManager::install('lefser')")
+  }
 
   # Create SummarizedExperiment object
   se <- SummarizedExperiment::SummarizedExperiment(
