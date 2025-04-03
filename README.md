@@ -109,14 +109,6 @@ here](https://academic.oup.com/bioinformatics/article/39/8/btad470/7234609?login
 
 ## Installation
 
-> ⚠️ **Important Notice (December 25, 2024)**: Due to some dependency
-> package issues, `ggpicrust2` has been temporarily removed from CRAN.
-> We are actively working to resolve these issues. However, due to
-> CRAN’s holiday break (December 23, 2024 to January 07, 2025), the
-> resubmission will be delayed until after January 7, 2025.
->
-> In the meantime, you can install the development version from GitHub:
-
 You can install the development version of *ggpicrust2* from GitHub
 with:
 
