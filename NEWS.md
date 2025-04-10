@@ -1,3 +1,19 @@
+# ggpicrust2 2.1.1
+
+## Bug Fixes
+
+* Improved error handling for KEGG database connections (Issue #138):
+  - Added robust error handling for HTTP 404 errors when connecting to the KEGG database
+  - Function now continues processing other KO IDs even when some IDs return HTTP 404 errors
+  - Added detailed logging about which KO IDs were not found
+  - Only throws a fatal error when all KO IDs fail to be processed
+  - Includes summary statistics about successful, not found, and error counts
+
+* Fixed the LinDA analysis for multi-group comparisons (Issue #144):
+  - Modified the `perform_linda_analysis` function to handle multi-group comparisons correctly
+  - The function now creates separate result entries for each pairwise comparison
+  - Added the `log2FoldChange` column to the results for effect size information
+
 # ggpicrust2 2.1.0
 
 ## Major Changes
