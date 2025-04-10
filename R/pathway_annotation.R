@@ -80,18 +80,31 @@ kegg_cache <- new.env(parent = emptyenv())
 #' @noRd
 get_kegg_with_cache <- function(ko_id) {
   if (!exists(ko_id, envir = kegg_cache)) {
-    # 添加请求间隔
-    Sys.sleep(0.1)  # 100ms 延迟避免过快请求
+    # Add request interval
+    Sys.sleep(0.1)  # 100ms delay to avoid too frequent requests
     
     result <- with_retry({
       KEGGREST::keggGet(ko_id)
     })
     
+    # Handle error objects
+    if (inherits(result, "kegg_error")) {
+      result$ko_id <- ko_id
+      return(result)
+    }
+    
     if (!is.null(result)) {
       assign(ko_id, result, envir = kegg_cache)
     }
   }
-  get(ko_id, envir = kegg_cache, inherits = FALSE)
+  
+  # If exists in cache, retrieve it
+  if (exists(ko_id, envir = kegg_cache)) {
+    return(get(ko_id, envir = kegg_cache, inherits = FALSE))
+  }
+  
+  # If not in cache, return NULL
+  NULL
 }
 
 #' Retry mechanism for KEGG queries
@@ -106,27 +119,42 @@ with_retry <- function(expr, max_attempts = getOption("ggpicrust2.max_retries", 
     result <- tryCatch({
       if (is.function(expr)) expr() else if (is.expression(expr)) eval(expr) else expr
     }, error = function(e) {
-      # 特别处理 HTTP 404 错误
+      # Special handling for HTTP 404 errors
       if (grepl("HTTP 404", e$message)) {
-        return(NULL)  # 直接返回 NULL，不再重试
+        # Return a special error object instead of NULL
+        # This allows the caller to distinguish between "resource not found" and "query failed"
+        return(structure(list(
+          status = "not_found",
+          message = e$message,
+          ko_id = NULL  # Caller can populate this
+        ), class = "kegg_error"))
       }
       
+      # Handle other errors
       if (attempt == max_attempts) {
-        return(e)
+        # Return a special error object
+        return(structure(list(
+          status = "failed",
+          message = e$message,
+          ko_id = NULL
+        ), class = "kegg_error"))
       }
+      
       log_message(sprintf("Attempt %d failed: %s, retrying...", attempt, e$message), "WARN")
-      Sys.sleep(min(2^attempt, 30))  # 限制最大等待时间为30秒
+      Sys.sleep(min(2^attempt, 30))  # Limit maximum wait time to 30 seconds
       NULL
     })
     
-    if (!is.null(result) && !inherits(result, "error")) {
+    # If result is not NULL or is a special error object, return it
+    if (!is.null(result) || inherits(result, "kegg_error")) {
       return(result)
     }
     
     attempt <- attempt + 1
   }
   
-  NULL  # 如果所有尝试都失败，返回 NULL
+  # If all attempts fail, return NULL
+  NULL
 }
 
 #' Enhanced logging system
@@ -208,38 +236,64 @@ process_kegg_annotations <- function(df) {
     )
   }
   
-  # 初始化新列
+  # Initialize new columns
   new_cols <- c("pathway_name", "pathway_description", "pathway_class", "pathway_map")
   filtered_df[new_cols] <- NA_character_
   
-  # 创建进度条
+  # Create progress bar
   total_features <- nrow(filtered_df)
   pb <- create_progress_bar(total_features)
   log_message("Starting KEGG annotation process")
   
-  # 初始化进度条
+  # Track statistics
+  success_count <- 0
+  not_found_count <- 0
+  error_count <- 0
+  not_found_ids <- character(0)
+  error_ids <- character(0)
   
-  # 处理每个特征
+  # Process each feature
   for (i in seq_len(nrow(filtered_df))) {
     ko_id <- filtered_df$feature[i]
     
-    # 更新进度条
+    # Update progress bar
     pb$tick(tokens = list(what = sprintf("Processing %s", ko_id)))
     
-    # 获取 KEGG 注释
+    # Get KEGG annotation
     entry <- tryCatch({
       result <- get_kegg_with_cache(ko_id)
-      if (is.null(result)) {
-        log_message(sprintf("No KEGG data found for %s", ko_id), "WARN")
+      
+      # Handle error objects
+      if (inherits(result, "kegg_error")) {
+        if (result$status == "not_found") {
+          not_found_count <- not_found_count + 1
+          not_found_ids <- c(not_found_ids, ko_id)
+          log_message(sprintf("KO ID %s not found in KEGG database (HTTP 404)", ko_id), "WARN")
+        } else {
+          error_count <- error_count + 1
+          error_ids <- c(error_ids, ko_id)
+          log_message(sprintf("Error querying KEGG for %s: %s", ko_id, result$message), "ERROR")
+        }
         next
       }
+      
+      if (is.null(result)) {
+        log_message(sprintf("No KEGG data found for %s", ko_id), "WARN")
+        not_found_count <- not_found_count + 1
+        not_found_ids <- c(not_found_ids, ko_id)
+        next
+      }
+      
+      success_count <- success_count + 1
       result
     }, error = function(e) {
       log_message(sprintf("Error processing %s: %s", ko_id, e$message), "ERROR")
+      error_count <- error_count + 1
+      error_ids <- c(error_ids, ko_id)
       NULL
     })
     
-    # 安全地提取数据，检查字段是否存在
+    # Safely extract data, check if fields exist
     if (!is.null(entry) && length(entry) > 0) {
       filtered_df$pathway_name[i] <- safe_extract(entry[[1]], "NAME", 1)
       filtered_df$pathway_description[i] <- if("DESCRIPTION" %in% names(entry[[1]])) safe_extract(entry[[1]], "DESCRIPTION", 1) else NA_character_
@@ -250,51 +304,109 @@ process_kegg_annotations <- function(df) {
   
   log_message("KEGG annotation process completed")
   
-  # 移除所有 NA 行
-  filtered_df <- filtered_df[!is.na(filtered_df$pathway_name), ]
+  # Provide summary information after processing all KO IDs
+  log_message(sprintf("KEGG annotation complete: %d successful, %d not found, %d errors", 
+                      success_count, not_found_count, error_count))
   
-  if (nrow(filtered_df) == 0) {
+  if (not_found_count > 0) {
+    if (length(not_found_ids) <= 10) {
+      log_message(sprintf("KO IDs not found: %s", paste(not_found_ids, collapse = ", ")), "WARN")
+    } else {
+      log_message(sprintf("First 10 KO IDs not found: %s...", 
+                          paste(not_found_ids[1:10], collapse = ", ")), "WARN")
+    }
+  }
+  
+  # Only throw an error when all KO IDs fail
+  if (success_count == 0) {
+    if (not_found_count > 0 && error_count == 0) {
+      stop("All KO IDs were not found in the KEGG database (HTTP 404). ",
+           "This could be due to invalid KO IDs or KEGG database changes.")
+    } else if (error_count > 0) {
+      stop("Failed to retrieve any KEGG annotations due to errors. ",
+           "This could be due to network issues or KEGG API changes.")
+    } else {
+      stop("Failed to retrieve any KEGG annotations for unknown reasons.")
+    }
+  }
+  
+  # Check if any annotations were found
+  has_annotations <- any(!is.na(filtered_df$pathway_name))
+  if (!has_annotations) {
     warning("No valid KEGG annotations found for any features")
-    return(NULL)
   }
   
   filtered_df
 }
 
-#' Pathway information annotation
-#'
-#' @inheritParams pathway_annotation
+#' Annotate pathways using reference data
+#' @param data Data frame to annotate
+#' @param pathway_type Type of pathway
+#' @param ref_data Reference data
 #' @return Annotated data frame
 #' @noRd
-annotate_pathways <- function(abundance, pathway_type, ref_data) {
-  if (nrow(abundance) == 0) {
-    stop("Empty data frame provided for annotation")
+annotate_pathways <- function(data, pathway_type, ref_data) {
+  message("Starting pathway annotation...")
+  
+  # Check if data is from DAA results
+  is_daa_results <- all(c("feature", "p_values") %in% colnames(data))
+  
+  # Extract features
+  if (is_daa_results) {
+    message("DAA results data frame is not null. Proceeding...")
+    features <- data$feature
+  } else {
+    features <- colnames(data)[-c(1, 2)]  # Skip first two columns (typically ID and description)
   }
   
-  # Vectorized operation instead of loop
-  abundance$description <- ref_data[match(abundance[[1]], ref_data[[1]]), 
-                                  if(pathway_type == "KO") 5 else 2]
+  # Match features with reference data
+  matches <- match(features, ref_data$id)
   
-  abundance
+  # Create description column
+  descriptions <- rep(NA_character_, length(features))
+  valid_matches <- !is.na(matches)
+  if (any(valid_matches)) {
+    descriptions[valid_matches] <- ref_data$description[matches[valid_matches]]
+  }
+  
+  # Update data frame
+  if (is_daa_results) {
+    # For DAA results, add description column
+    data$description <- descriptions
+  } else {
+    # For abundance data, update description column
+    for (i in seq_along(features)) {
+      feature_idx <- which(colnames(data) == features[i])
+      if (length(feature_idx) > 0) {
+        data$description[feature_idx - 2] <- descriptions[i]  # Adjust for offset
+      }
+    }
+  }
+  
+  message("Pathway annotation completed.")
+  data
 }
 
-#' Pathway information annotation of "EC", "KO", "MetaCyc" pathway
+#' Pathway information annotation
 #'
-#' This function has two primary use cases:
-#' 1. Annotating pathway information using the output file from PICRUSt2.
+#' @description
+#' This function serves two main purposes:
+#' 1. Annotating pathway information from PICRUSt2 output files.
 #' 2. Annotating pathway information from the output of `pathway_daa` function, and converting KO abundance to KEGG pathway abundance when `ko_to_kegg` is set to TRUE.
 #'
-#' @param file A character, address to store PICRUSt2 export files. Provide this parameter when using the function for the first use case.
-#' @param pathway A character, consisting of "EC", "KO", "MetaCyc"
-#' @param daa_results_df A data frame, output of pathway_daa. Provide this parameter when using the function for the second use case.
+#' @param file A character string, the path to the PICRUSt2 output file.
+#' @param pathway A character string, the type of pathway to annotate. Options are "KO", "EC", or "MetaCyc".
+#' @param daa_results_df A data frame, the output from `pathway_daa` function.
 #' @param ko_to_kegg A logical, decide if convert KO abundance to KEGG pathway abundance. Default is FALSE. Set to TRUE when using the function for the second use case.
 #'
-#' @return A data frame containing pathway annotation information. The data frame has the following columns:
+#' @return A data frame with annotated pathway information. 
+#' If using the function for the first use case, the output data frame will include the following columns:
 #' \itemize{
-#'   \item \code{feature}: The feature ID of the pathway (e.g., KO, EC, or MetaCyc ID).
-#'   \item \code{description}: The description or name of the pathway.
-#'   \item Other columns depending on the input parameters and type of pathway.
+#'   \item \code{id}: The pathway ID.
+#'   \item \code{description}: The description of the pathway.
+#'   \item \code{sample1, sample2, ...}: Abundance values for each sample.
 #' }
+#' 
 #' If \code{ko_to_kegg} is set to TRUE, the output data frame will also include the following columns:
 #' \itemize{
 #'   \item \code{pathway_name}: The name of the KEGG pathway.
@@ -303,38 +415,26 @@ annotate_pathways <- function(abundance, pathway_type, ref_data) {
 #'   \item \code{pathway_map}: The KEGG pathway map ID.
 #' }
 #'
-#' @export
-#'
 #' @examples
-#' \dontrun{
-#' # Prepare the required input files and data frames
-#' # Then, you can use the pathway_annotation function as follows:
+#' \donttest{
+#' # Example 1: Annotate pathways from PICRUSt2 output file
+#' pathway_annotation(file = "path/to/picrust2_output.tsv",
+#'                               pathway = "KO")
 #'
-#' # Use case 1: Annotating pathway information using the output file from PICRUSt2
-#' result1 <- pathway_annotation(file = "path/to/picrust2/export/file.txt",
-#'                               pathway = "KO",
-#'                               daa_results_df = NULL,
-#'                               ko_to_kegg = FALSE)
-#'
-#' # Use case 2: Annotating pathway information from the output of pathway_daa function
+#' # Example 2: Annotate pathways from pathway_daa output
 #' # and converting KO abundance to KEGG pathway abundance
-#' # This use case will be demonstrated using both a hypothetical example, and a real dataset.
-#'
-#' ## Hypothetical example
-#' hypothetical_daa_results_df <- data.frame() # Replace this with your actual data frame
-#' result2 <- pathway_annotation(file = NULL,
-#'                               pathway = "KO",
-#'                               daa_results_df = hypothetical_daa_results_df,
+#' daa_results <- pathway_daa(abundance, metadata, group = "Group")
+#' annotated_results <- pathway_annotation(pathway = "KO",
+#'                               daa_results_df = daa_results,
 #'                               ko_to_kegg = TRUE)
 #'
-#' ## Real dataset example
-#' # Load the real dataset
-#' data(daa_results_df)
-#' result3 <- pathway_annotation(file = NULL,
-#'                               pathway = "KO",
-#'                               daa_results_df = daa_results_df,
+#' # Example 3: Annotate EC pathways
+#' ec_results <- pathway_daa(abundance, metadata, group = "Group")
+#' annotated_ec <- pathway_annotation(pathway = "EC",
+#'                               daa_results_df = ec_results,
 #'                               ko_to_kegg = TRUE)
 #' }
+#' @export
 pathway_annotation <- function(file = NULL,
                              pathway = NULL,
                              daa_results_df = NULL,
@@ -362,6 +462,9 @@ pathway_annotation <- function(file = NULL,
       ref_data <- load_reference_data(pathway)
       return(annotate_pathways(daa_results_df, pathway, ref_data))
     } else {
+      message("KO to KEGG is set to TRUE. Proceeding with KEGG pathway annotations...")
+      message("We are connecting to the KEGG database to get the latest results, please wait patiently.")
+      message("Processing pathways in chunks...")
       return(process_kegg_annotations(daa_results_df))
     }
   }
