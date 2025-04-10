@@ -239,12 +239,12 @@ process_kegg_annotations <- function(df) {
       NULL
     })
     
-    # 安全地提取数据
+    # 安全地提取数据，检查字段是否存在
     if (!is.null(entry) && length(entry) > 0) {
       filtered_df$pathway_name[i] <- safe_extract(entry[[1]], "NAME", 1)
-      filtered_df$pathway_description[i] <- safe_extract(entry[[1]], "DESCRIPTION", 1)
-      filtered_df$pathway_class[i] <- safe_extract(entry[[1]], "CLASS", 1)
-      filtered_df$pathway_map[i] <- safe_extract(entry[[1]], "PATHWAY_MAP", 1)
+      filtered_df$pathway_description[i] <- if("DESCRIPTION" %in% names(entry[[1]])) safe_extract(entry[[1]], "DESCRIPTION", 1) else NA_character_
+      filtered_df$pathway_class[i] <- if("CLASS" %in% names(entry[[1]])) safe_extract(entry[[1]], "CLASS", 1) else NA_character_
+      filtered_df$pathway_map[i] <- if("PATHWAY_MAP" %in% names(entry[[1]])) safe_extract(entry[[1]], "PATHWAY_MAP", 1) else NA_character_
     }
   }
   
@@ -392,12 +392,13 @@ pathway_annotation <- function(file = NULL,
 #' @export
 safe_extract <- function(list, field, index = 1) {
   tryCatch({
-    if (is.null(list[[field]]) || length(list[[field]]) == 0) {
+    if (is.null(list) || !field %in% names(list) || is.null(list[[field]]) || length(list[[field]]) == 0) {
       NA_character_
     } else {
       as.character(list[[field]][index])
     }
   }, error = function(e) {
+    message(paste("Error in safe_extract:", e$message))
     NA_character_
   })
 }
