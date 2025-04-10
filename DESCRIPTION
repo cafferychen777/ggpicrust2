@@ -12,7 +12,7 @@ License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.3.2
-Imports: 
+Imports:
     aplot,
     dplyr,
     ggplot2,
@@ -30,9 +30,9 @@ Imports:
     methods,
     grDevices,
     utils
-Depends: 
+Depends:
     R (>= 3.5.0)
-Suggests: 
+Suggests:
     Biobase,
     KEGGREST,
     ComplexHeatmap,
@@ -50,6 +50,15 @@ Suggests:
     MicrobiomeStat,
     SummarizedExperiment,
     circlize,
-    lefser
+    lefser,
+    fgsea,
+    clusterProfiler,
+    enrichplot,
+    DOSE,
+    pathview,
+    ggVennDiagram,
+    UpSetR,
+    igraph,
+    ggraph
 Config/testthat/edition: 3
 biocViews: Microbiome, Metagenomics, Software
