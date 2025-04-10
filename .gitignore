@@ -1,3 +1,4 @@
+# R specific files
 .Rproj.user
 .Rhistory
 .RData
@@ -6,3 +7,31 @@
 .DS_Store
 /Meta/
 tests/testthat/Rplots.pdf
+
+# Build artifacts
+*.tar.gz
+*.tgz
+*.Rcheck/
+
+# Compiled files
+*.o
+*.so
+*.dll
+
+# Output files
+README.html
+README.knit.md
+
+# renv
+renv/library/
+renv/staging/
+renv/local/
+
+# pkgdown site
+docs/
+
+# Other
+.vscode/
+.idea/
+*.swp
+*~
