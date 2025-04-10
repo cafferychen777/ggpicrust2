@@ -52,7 +52,22 @@ NULL
 #'
 #' @param ... Additional arguments passed to the specific DAA method
 #'
-#' @return A data frame containing the differential abundance analysis results
+#' @return A data frame containing the differential abundance analysis results. The structure of the results
+#' depends on the chosen DAA method. For methods that support multi-group comparisons (like LinDA),
+#' when there are more than two groups, the results will contain separate rows for each feature in each
+#' pairwise comparison between the reference group and each non-reference group. The data frame includes
+#' the following columns:
+#' \itemize{
+#'   \item \code{feature}: Feature/pathway identifier
+#'   \item \code{method}: The DAA method used
+#'   \item \code{group1}: Reference group
+#'   \item \code{group2}: Comparison group
+#'   \item \code{p_values}: P-values for the comparison
+#'   \item \code{p_adjust}: Adjusted p-values
+#'   \item \code{adj_method}: Method used for p-value adjustment
+#' }
+#' 
+#' Some methods may provide additional columns, such as \code{log2FoldChange} for effect size information.
 #'
 #' @examples
 #' \donttest{
@@ -684,17 +699,32 @@ perform_linda_analysis <- function(abundance, metadata, group, reference, Level,
 
   # Extract results
   if (length(linda_obj$output) > 0) {
-    # Get results of the first variable (usually group comparison)
-    first_comparison <- linda_obj$output[[1]]
-
-    results <- data.frame(
-      feature = rownames(first_comparison),
-      method = "LinDA",
-      group1 = if (length_Level == 2) Level[1] else reference,
-      group2 = if (length_Level == 2) Level[2] else Level[Level != reference],
-      p_values = first_comparison$pvalue,
-      stringsAsFactors = FALSE
-    )
+    # Create an empty list to store results for each comparison
+    results_list <- list()
+    
+    # Get all non-reference groups
+    non_ref_groups <- Level[Level != reference]
+    
+    # Process each output element (each corresponds to a group comparison)
+    for (i in seq_along(linda_obj$output)) {
+      if (i <= length(non_ref_groups)) {
+        comparison_df <- linda_obj$output[[i]]
+        
+        # Create a results data frame for this comparison
+        results_list[[i]] <- data.frame(
+          feature = rownames(comparison_df),
+          method = "LinDA",
+          group1 = reference,
+          group2 = non_ref_groups[i],
+          p_values = comparison_df$pvalue,
+          log2FoldChange = comparison_df$log2FoldChange,
+          stringsAsFactors = FALSE
+        )
+      }
+    }
+    
+    # Combine all results
+    results <- do.call(rbind, results_list)
   } else {
     stop("LinDA analysis failed to produce results")
   }

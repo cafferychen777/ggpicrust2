@@ -61,7 +61,22 @@ If NULL (default), the first level is used as reference.}
 \item{...}{Additional arguments passed to the specific DAA method}
 }
 \value{
-A data frame containing the differential abundance analysis results
+A data frame containing the differential abundance analysis results. The structure of the results
+depends on the chosen DAA method. For methods that support multi-group comparisons (like LinDA),
+when there are more than two groups, the results will contain separate rows for each feature in each
+pairwise comparison between the reference group and each non-reference group. The data frame includes
+the following columns:
+\itemize{
+  \item \code{feature}: Feature/pathway identifier
+  \item \code{method}: The DAA method used
+  \item \code{group1}: Reference group
+  \item \code{group2}: Comparison group
+  \item \code{p_values}: P-values for the comparison
+  \item \code{p_adjust}: Adjusted p-values
+  \item \code{adj_method}: Method used for p-value adjustment
+}
+
+Some methods may provide additional columns, such as \code{log2FoldChange} for effect size information.
 }
 \description{
 Performs differential abundance analysis on predicted functional pathway data using various statistical methods.
