@@ -1,3 +1,26 @@
+# ggpicrust2 2.1.0
+
+## Major Changes
+
+* Added Gene Set Enrichment Analysis (GSEA) functionality with the following new functions:
+  - `pathway_gsea()`: Performs GSEA analysis, supporting KEGG, MetaCyc, and GO pathways
+  - `visualize_gsea()`: Creates visualizations of GSEA results, including enrichment plots, dotplots, barplots, network plots, and heatmaps
+  - `compare_gsea_daa()`: Compares GSEA and Differential Abundance Analysis (DAA) results
+  - `gsea_pathway_annotation()`: Adds pathway annotations to GSEA results
+  - `ggpicrust2_extended()`: Provides integrated analysis combining ggpicrust2 and GSEA functionality
+
+* Improved network and heatmap visualization capabilities with richer parameter options and better error handling
+
+* Added preliminary support for MetaCyc and GO pathways
+
+* Fixed various bugs and optimized code structure
+
+# ggpicrust2 2.0.1
+
+## Major Changes
+
+* Fixed a bug in the pathway_annotation function, resolving issues caused by changes in the KEGG API response structure
+
 # ggpicrust2 2.0.0
 
 ## 主要变更
