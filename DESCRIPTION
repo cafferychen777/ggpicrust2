@@ -1,7 +1,7 @@
 Package: ggpicrust2
 Type: Package
 Title: Make 'PICRUSt2' Output Analysis and Visualization Easier
-Version: 2.1.2
+Version: 2.1.3
 Authors@R: c(
     person("Chen", "Yang", email = "cafferychen7850@gmail.com", role = c("aut", "cre")),
     person("Liangliang", "Zhang", email = "lxz716@case.edu ", role = "aut"))
@@ -29,6 +29,8 @@ Imports:
     stats,
     methods,
     grDevices,
+    tidygraph,
+    ggraph,
     utils
 Depends:
     R (>= 3.5.0)
@@ -58,7 +60,7 @@ Suggests:
     pathview,
     ggVennDiagram,
     UpSetR,
-    igraph,
-    ggraph
+    igraph
 Config/testthat/edition: 3
 biocViews: Microbiome, Metagenomics, Software
+VignetteBuilder: knitr
