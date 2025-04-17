@@ -3,6 +3,8 @@
 
 # ggpicrust2 vignettes
 
+<img src="inst/extdata/images/logo.png" align="right" width="200">
+
 🌟 **If you find `ggpicrust2` helpful, please consider giving us a star
 on GitHub!** Your support greatly motivates us to improve and maintain
 this project. 🌟
