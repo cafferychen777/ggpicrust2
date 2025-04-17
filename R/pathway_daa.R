@@ -650,18 +650,30 @@ perform_lefser_analysis <- function(abundance_mat, metadata, group, Level) {
   )
 
   # Perform Lefser analysis
-  lefser_results <- lefser::lefser(se, groupCol = group)
-
-  # Extract results
-  results <- data.frame(
-    feature = lefser_results$Names,
-    method = "Lefser",
-    group1 = Level[1],
-    group2 = Level[2],
-    effect_scores = lefser_results$scores
-  )
-
-  return(results)
+  lefser_results <- lefser::lefser(se, classCol = group)  # Using classCol instead of deprecated groupCol
+  
+  # Check if results are empty
+  if (length(lefser_results$Names) == 0 || is.null(lefser_results$Names)) {
+    # If no significant features found, return an empty data frame with correct columns
+    message("No significant features found by Lefser analysis.")
+    return(data.frame(
+      feature = character(0),
+      method = character(0),
+      group1 = character(0),
+      group2 = character(0),
+      effect_scores = numeric(0)
+    ))
+  } else {
+    # If significant features found, return normal results
+    results <- data.frame(
+      feature = lefser_results$Names,
+      method = "Lefser",
+      group1 = Level[1],
+      group2 = Level[2],
+      effect_scores = lefser_results$scores
+    )
+    return(results)
+  }
 }
 
 # Helper function: Perform LinDA analysis
