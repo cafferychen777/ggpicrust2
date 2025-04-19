@@ -31,6 +31,15 @@ If you are interested in exploring and analyzing your PICRUSt2 output data, *ggp
 
 ## News
 
+🔄 **Updated Reference Databases for Improved Pathway Annotation (v2.1.4)**
+
+We've significantly enhanced the reference databases used for pathway annotation:
+
+- **EC reference data**: Updated from 3,180 to 8,371 entries (163% increase)
+- **KO reference data**: Updated from 23,917 to 27,531 unique KO IDs (15.4% increase)
+
+These updates provide more comprehensive and accurate pathway annotations, especially for recently discovered enzymes and KEGG orthology entries. Users will experience improved coverage and precision in pathway analysis without needing to change any code.
+
 🌟 **New Feature: Gene Set Enrichment Analysis (GSEA) for PICRUSt2 Data**
 
 We're excited to announce the addition of GSEA functionality to the ggpicrust2 package! This powerful new feature allows researchers to perform Gene Set Enrichment Analysis on PICRUSt2 predicted functional profiles, offering a more nuanced understanding of functional differences between conditions.

@@ -45,6 +45,22 @@ MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.or
 
 ## News
 
+🔄 **Updated Reference Databases for Improved Pathway Annotation
+(v2.1.4)**
+
+We’ve significantly enhanced the reference databases used for pathway
+annotation:
+
+- **EC reference data**: Updated from 3,180 to 8,371 entries (163%
+  increase)
+- **KO reference data**: Updated from 23,917 to 27,531 unique KO IDs
+  (15.4% increase)
+
+These updates provide more comprehensive and accurate pathway
+annotations, especially for recently discovered enzymes and KEGG
+orthology entries. Users will experience improved coverage and precision
+in pathway analysis without needing to change any code.
+
 🌟 **New Feature: Gene Set Enrichment Analysis (GSEA) for PICRUSt2
 Data**
 
