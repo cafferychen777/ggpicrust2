@@ -461,6 +461,8 @@ comparison_results <- compare_daa_results(daa_results_list = daa_results_list, m
 
 **If you are in China and you are using kegg pathway annotation, Please make sure your internet can break through the firewall.**
 
+**New Feature (v2.1.4)**: The `pathway_annotation()` function now supports species-specific KEGG pathway annotation through the new `organism` parameter. You can specify KEGG organism codes (e.g., "hsa" for human, "eco" for E. coli) to get species-specific pathway information. If no organism is specified (default), the function retrieves generic KO information not specific to any organism.
+
 ```{r pathway_annotation sample,echo = TRUE,eval=FALSE}
 
 # Make sure to check if the features in `daa_results_df` correspond to the selected pathway
@@ -470,7 +472,15 @@ data("kegg_abundance")
 data("metadata")
 # Please change group to "your_group_column" if you are not using example dataset
 daa_results_df <- pathway_daa(abundance = kegg_abundance, metadata = metadata, group = "Environment", daa_method = "LinDA")
+
+# Generic KO to KEGG pathway annotation (not specific to any organism)
 daa_annotated_results_df <- pathway_annotation(pathway = "KO", daa_results_df = daa_results_df, ko_to_kegg = TRUE)
+
+# Species-specific KEGG pathway annotation (e.g., for human)
+human_annotated_results_df <- pathway_annotation(pathway = "KO", daa_results_df = daa_results_df, ko_to_kegg = TRUE, organism = "hsa")
+
+# Species-specific KEGG pathway annotation (e.g., for E. coli)
+ecoli_annotated_results_df <- pathway_annotation(pathway = "KO", daa_results_df = daa_results_df, ko_to_kegg = TRUE, organism = "eco")
 
 # Annotate KO
 data("ko_abundance")
