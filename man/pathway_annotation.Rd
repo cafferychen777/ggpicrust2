@@ -2,31 +2,36 @@
 % Please edit documentation in R/pathway_annotation.R
 \name{pathway_annotation}
 \alias{pathway_annotation}
-\title{Pathway information annotation of "EC", "KO", "MetaCyc" pathway}
+\title{Pathway information annotation}
 \usage{
 pathway_annotation(
   file = NULL,
   pathway = NULL,
   daa_results_df = NULL,
-  ko_to_kegg = FALSE
+  ko_to_kegg = FALSE,
+  organism = NULL
 )
 }
 \arguments{
-\item{file}{A character, address to store PICRUSt2 export files. Provide this parameter when using the function for the first use case.}
+\item{file}{A character string, the path to the PICRUSt2 output file.}
 
-\item{pathway}{A character, consisting of "EC", "KO", "MetaCyc"}
+\item{pathway}{A character string, the type of pathway to annotate. Options are "KO", "EC", or "MetaCyc".}
 
-\item{daa_results_df}{A data frame, output of pathway_daa. Provide this parameter when using the function for the second use case.}
+\item{daa_results_df}{A data frame, the output from `pathway_daa` function.}
 
 \item{ko_to_kegg}{A logical, decide if convert KO abundance to KEGG pathway abundance. Default is FALSE. Set to TRUE when using the function for the second use case.}
+
+\item{organism}{A character string specifying the KEGG organism code (e.g., 'hsa' for human, 'eco' for E. coli). Default is NULL, which retrieves generic KO information not specific to any organism. Only used when ko_to_kegg is TRUE.}
 }
 \value{
-A data frame containing pathway annotation information. The data frame has the following columns:
+A data frame with annotated pathway information. 
+If using the function for the first use case, the output data frame will include the following columns:
 \itemize{
-  \item \code{feature}: The feature ID of the pathway (e.g., KO, EC, or MetaCyc ID).
-  \item \code{description}: The description or name of the pathway.
-  \item Other columns depending on the input parameters and type of pathway.
+  \item \code{id}: The pathway ID.
+  \item \code{description}: The description of the pathway.
+  \item \code{sample1, sample2, ...}: Abundance values for each sample.
 }
+
 If \code{ko_to_kegg} is set to TRUE, the output data frame will also include the following columns:
 \itemize{
   \item \code{pathway_name}: The name of the KEGG pathway.
@@ -34,40 +39,38 @@ If \code{ko_to_kegg} is set to TRUE, the output data frame will also include the
   \item \code{pathway_class}: The class of the KEGG pathway.
   \item \code{pathway_map}: The KEGG pathway map ID.
 }
+
+When \code{ko_to_kegg} is TRUE, the function queries the KEGG database for pathway information. By default (organism = NULL), it retrieves generic KO information that is not specific to any organism. If you are interested in organism-specific pathway information, you can specify the KEGG organism code using the \code{organism} parameter.
 }
 \description{
-This function has two primary use cases:
-1. Annotating pathway information using the output file from PICRUSt2.
+This function serves two main purposes:
+1. Annotating pathway information from PICRUSt2 output files.
 2. Annotating pathway information from the output of `pathway_daa` function, and converting KO abundance to KEGG pathway abundance when `ko_to_kegg` is set to TRUE.
 }
 \examples{
-\dontrun{
-# Prepare the required input files and data frames
-# Then, you can use the pathway_annotation function as follows:
+\donttest{
+# Example 1: Annotate pathways from PICRUSt2 output file
+pathway_annotation(file = "path/to/picrust2_output.tsv",
+                              pathway = "KO")
 
-# Use case 1: Annotating pathway information using the output file from PICRUSt2
-result1 <- pathway_annotation(file = "path/to/picrust2/export/file.txt",
-                              pathway = "KO",
-                              daa_results_df = NULL,
-                              ko_to_kegg = FALSE)
-
-# Use case 2: Annotating pathway information from the output of pathway_daa function
+# Example 2: Annotate pathways from pathway_daa output
 # and converting KO abundance to KEGG pathway abundance
-# This use case will be demonstrated using both a hypothetical example, and a real dataset.
-
-## Hypothetical example
-hypothetical_daa_results_df <- data.frame() # Replace this with your actual data frame
-result2 <- pathway_annotation(file = NULL,
-                              pathway = "KO",
-                              daa_results_df = hypothetical_daa_results_df,
+daa_results <- pathway_daa(abundance, metadata, group = "Group")
+annotated_results <- pathway_annotation(pathway = "KO",
+                              daa_results_df = daa_results,
                               ko_to_kegg = TRUE)
 
-## Real dataset example
-# Load the real dataset
-data(daa_results_df)
-result3 <- pathway_annotation(file = NULL,
-                              pathway = "KO",
-                              daa_results_df = daa_results_df,
+# Example 3: Annotate EC pathways
+ec_results <- pathway_daa(abundance, metadata, group = "Group")
+annotated_ec <- pathway_annotation(pathway = "EC",
+                              daa_results_df = ec_results,
                               ko_to_kegg = TRUE)
+
+# Example 4: Annotate KO pathways with human-specific information
+daa_results <- pathway_daa(abundance, metadata, group = "Group")
+human_results <- pathway_annotation(pathway = "KO",
+                              daa_results_df = daa_results,
+                              ko_to_kegg = TRUE,
+                              organism = "hsa")
 }
 }
