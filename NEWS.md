@@ -1,3 +1,12 @@
+# ggpicrust2 2.1.4
+
+## Reference Data Updates
+
+* Updated reference databases for improved pathway annotation:
+  - EC reference data updated from 3,180 to 8,371 entries (163% increase)
+  - KO reference data updated from 23,917 to 27,531 unique KO IDs (15.4% increase)
+  - These updates provide more comprehensive and accurate pathway annotations
+
 # ggpicrust2 2.1.1
 
 ## Bug Fixes
