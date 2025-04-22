@@ -23,6 +23,8 @@
 \item{colors}{A vector of colors to be used to represent the groups in the figure. Each color corresponds to a group.}
 
 \item{x_lab}{A character string to be used as the x-axis label in the figure. The default value is "description" for KOs'descriptions and "pathway_name" for KEGG pathway names.}
+
+\item{log2_fold_change_color}{A character string specifying the color for log2 fold change bars. Default is "#87ceeb" (light blue).}
 }
 \value{
 A ggplot2 plot showing the error bar plot of the differential abundance analysis results for the functional pathways.
@@ -87,7 +89,8 @@ p <- pathway_errorbar(
   ko_to_kegg = TRUE,
   p_value_bar = TRUE,
   colors = NULL,
-  x_lab = "pathway_name"
+  x_lab = "pathway_name",
+  log2_fold_change_color = "#FF5733" # Custom color for log2 fold change bars
 )
 
 # Example 2: Analyzing EC, MetaCyc, KO without conversions
@@ -133,7 +136,8 @@ p <- pathway_errorbar(
   ko_to_kegg = FALSE,
   p_value_bar = TRUE,
   colors = NULL,
-  x_lab = "description"
+  x_lab = "description",
+  log2_fold_change_color = "#006400" # Dark green for log2 fold change bars
 )
 }
 }
