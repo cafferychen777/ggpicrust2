@@ -19,6 +19,9 @@
 #' @param show_row_names A logical value indicating whether to show row names in the heatmap.
 #' @param show_legend A logical value indicating whether to show the legend in the heatmap.
 #' @param custom_theme A custom theme for the heatmap.
+#' @param low_color A character string specifying the color for low values in the heatmap gradient. Default is "#0571b0" (blue).
+#' @param mid_color A character string specifying the color for middle values in the heatmap gradient. Default is "white".
+#' @param high_color A character string specifying the color for high values in the heatmap gradient. Default is "#ca0020" (red).
 #'
 #' @return A ggplot heatmap object representing the heatmap of the predicted functional
 #'   pathway abundance data.
@@ -82,7 +85,10 @@
 #'     column_to_rownames("description"),
 #'   metadata = metadata,
 #'   group = "Environment",
-#'   colors = custom_colors
+#'   colors = custom_colors,
+#'   low_color = "#2166ac",  # Custom blue for low values
+#'   mid_color = "#f7f7f7",  # Light gray for mid values
+#'   high_color = "#b2182b"   # Custom red for high values
 #' )
 #' }
 utils::globalVariables(c("rowname","Sample","Value","quantile","facet_nested","strip_nested","elem_list_rect"))
@@ -93,7 +99,10 @@ pathway_heatmap <- function(abundance,
                             font_size = 12,
                             show_row_names = TRUE,
                             show_legend = TRUE,
-                            custom_theme = NULL) {
+                            custom_theme = NULL,
+                            low_color = "#0571b0",
+                            mid_color = "white",
+                            high_color = "#ca0020") {
   # Input validation
   if (!is.matrix(abundance) && !is.data.frame(abundance)) {
     stop("abundance must be a data frame or matrix")
@@ -206,7 +215,7 @@ pathway_heatmap <- function(abundance,
   p <- ggplot2::ggplot(data = long_df,
                     mapping = ggplot2::aes(x = Sample, y = rowname, fill = Value)) +
     ggplot2::geom_tile() +
-    ggplot2::scale_fill_gradient2(low = "#0571b0", mid = "white", high = "#ca0020", midpoint = 0) +
+    ggplot2::scale_fill_gradient2(low = low_color, mid = mid_color, high = high_color, midpoint = 0) +
     ggplot2::labs(x = NULL, y = NULL) +
     ggplot2::scale_y_discrete(expand = c(0, 0), position = "left") +
     ggplot2::scale_x_discrete(expand = c(0, 0)) +

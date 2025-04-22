@@ -24,6 +24,12 @@ heatmap. If NULL or not provided, a default color set is used for the facet stri
 \item{show_legend}{A logical value indicating whether to show the legend in the heatmap.}
 
 \item{custom_theme}{A custom theme for the heatmap.}
+
+\item{low_color}{A character string specifying the color for low values in the heatmap gradient. Default is "#0571b0" (blue).}
+
+\item{mid_color}{A character string specifying the color for middle values in the heatmap gradient. Default is "white".}
+
+\item{high_color}{A character string specifying the color for high values in the heatmap gradient. Default is "#ca0020" (red).}
 }
 \value{
 A ggplot heatmap object representing the heatmap of the predicted functional
@@ -88,7 +94,10 @@ pathway_heatmap(
     column_to_rownames("description"),
   metadata = metadata,
   group = "Environment",
-  colors = custom_colors
+  colors = custom_colors,
+  low_color = "#2166ac",  # Custom blue for low values
+  mid_color = "#f7f7f7",  # Light gray for mid values
+  high_color = "#b2182b"   # Custom red for high values
 )
 }
 }
