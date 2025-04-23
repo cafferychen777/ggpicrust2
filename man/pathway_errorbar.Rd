@@ -25,6 +25,8 @@
 \item{x_lab}{A character string to be used as the x-axis label in the figure. The default value is "description" for KOs'descriptions and "pathway_name" for KEGG pathway names.}
 
 \item{log2_fold_change_color}{A character string specifying the color for log2 fold change bars. Default is "#87ceeb" (light blue).}
+
+\item{max_features}{A numeric parameter specifying the maximum number of features to display before issuing a warning. Default is 30. Set to a higher value to display more features, or Inf to disable the limit entirely.}
 }
 \value{
 A ggplot2 plot showing the error bar plot of the differential abundance analysis results for the functional pathways.

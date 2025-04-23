@@ -12,6 +12,7 @@
 #' @param colors A vector of colors to be used to represent the groups in the figure. Each color corresponds to a group.
 #' @param x_lab A character string to be used as the x-axis label in the figure. The default value is "description" for KOs'descriptions and "pathway_name" for KEGG pathway names.
 #' @param log2_fold_change_color A character string specifying the color for log2 fold change bars. Default is "#87ceeb" (light blue).
+#' @param max_features A numeric parameter specifying the maximum number of features to display before issuing a warning. Default is 30. Set to a higher value to display more features, or Inf to disable the limit entirely.
 #' @importFrom stats sd
 #' @return A ggplot2 plot showing the error bar plot of the differential abundance analysis results for the functional pathways.
 #' The plot visualizes the differential abundance results of a specific differential abundance analysis method. The corresponding dataframe contains the results used to create the plot.
@@ -136,7 +137,8 @@ pathway_errorbar <-
            p_value_bar = TRUE,
            colors = NULL,
            x_lab = NULL,
-           log2_fold_change_color = "#87ceeb") {
+           log2_fold_change_color = "#87ceeb",
+           max_features = 30) {
     # Add more complete input validation at the beginning of the function
     if(!is.matrix(abundance) && !is.data.frame(abundance)) {
       stop("'abundance' must be a matrix or data frame")
@@ -236,18 +238,19 @@ pathway_errorbar <-
       daa_results_filtered_sub_df <- daa_results_filtered_df
     }
 
-    if (nrow(daa_results_filtered_sub_df) > 30) {
+    if (nrow(daa_results_filtered_sub_df) > max_features) {
       message(
         paste0(
-          "The number of features with statistical significance exceeds 30, leading to suboptimal visualization. ",
-          "Please use 'select' to reduce the number of features.\n",
+          "The number of features with statistical significance exceeds ", max_features, ", which may lead to suboptimal visualization. ",
+          "Please use 'select' to reduce the number of features or increase the 'max_features' parameter.\n",
           "Currently, you have these features: ",
           paste(paste0('"', daa_results_filtered_sub_df$feature, '"'), collapse = ", "), ".\n",
           "You can find the statistically significant features with the following command:\n",
           "daa_results_df %>% filter(p_adjust < 0.05) %>% select(c(\"feature\",\"p_adjust\"))"
         )
       )
-      stop("The number of features with statistical significance exceeds 30, leading to suboptimal visualization.")
+      warning("The number of features with statistical significance exceeds ", max_features, ", which may lead to suboptimal visualization. Setting max_features=Inf will disable this warning.")
+      # Changed from stop() to warning() to allow users to proceed with visualization if desired
     }
 
     if (nrow(daa_results_filtered_sub_df) == 0){
