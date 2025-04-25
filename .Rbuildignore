@@ -19,8 +19,10 @@
 ^_pkgdown\.yml$
 ^pkgdown$
 ^cran-comments\.md$
+^cleanup\.R$
+^cleanup_github\.sh$
 ^CRAN-SUBMISSION$
 ^revdep$
 ^vignettes/articles$
 ^vignettes/figures$
-^inst/extdata/.*\.RData$
+# ^inst/extdata/.*\.RData$ - Commented out to include reference data files
