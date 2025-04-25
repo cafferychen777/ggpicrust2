@@ -1,3 +1,21 @@
+# ggpicrust2 2.2.2
+
+## Bug Fixes
+
+* Fixed column name compatibility issues in reference data files:
+  - Standardized column names in KO_reference.RData and EC_reference.RData
+  - Resolved warnings when using pathway_annotation() with ko_to_kegg=FALSE
+  - Improved backward compatibility with existing code
+
+# ggpicrust2 2.2.1
+
+## Bug Fixes
+
+* Added aggregate_by_group parameter to pathway_heatmap function:
+  - Allows displaying representative samples (e.g., mean) for each group instead of all individual samples
+  - Improved handling of NA values in heatmap visualization
+  - Added aggregate_fun parameter for customizing the aggregation function
+
 # ggpicrust2 2.1.4
 
 ## Reference Data Updates
