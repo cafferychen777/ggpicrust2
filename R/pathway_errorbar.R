@@ -122,11 +122,7 @@
 #'   p_value_bar = TRUE,
 #'   colors = NULL,
 #'   x_lab = "description",
-#'   log2_fold_change_color = "#006400" # Dark green for log2 fold change bars,
-#'   df_meta = "metadata_dataframe",
-#'   df_data = abundance,
-#'   meta_id_col = "name_of_id_column_in_metadata_dataframe",
-#'   meta_group_col = Group
+#'   log2_fold_change_color = "#006400" # Dark green for log2 fold change bars
 #' )
 #' }
 utils::globalVariables(c("group", "name", "value", "feature", "negative_log10_p", "group_nonsense", "nonsense", "pathway_class", "p_adjust", "log_2_fold_change", "transform_sample_counts", "column_to_rownames", "txtProgressBar", "setTxtProgressBar", "utils"))
@@ -142,11 +138,7 @@ pathway_errorbar <-
            colors = NULL,
            x_lab = NULL,
            log2_fold_change_color = "#87ceeb",
-           max_features = 30,
-           df_meta,
-           df_data = abundance,
-           meta_id_col,
-           meta_group_col = Group) {
+           max_features = 30) {
     # Add more complete input validation at the beginning of the function
     if(!is.matrix(abundance) && !is.data.frame(abundance)) {
       stop("'abundance' must be a matrix or data frame")
@@ -282,24 +274,18 @@ pathway_errorbar <-
     
     # Create a mapping from sample names to their corresponding groups
     # Note: We can't directly use the Group vector as its order may not match the column names in sub_relative_abundance_mat
+    sample_to_group_map <- stats::setNames(as.character(Group), colnames(abundance))
     
-    # Select only the ID and Group columns from metadata
-        sample_to_group_map <- df_meta %>%
-            select(!!sym(meta_id_col), !!sym(meta_group_col)) %>%
-            rename(sample = !!sym(meta_id_col))  %>% # Rename for clarity in joining
-            rename(group = !!sym(meta_group_col))
-        
-        # Use pivot_longer to convert sample columns into rows
-        
-        error_bar_matrix <- cbind(
-            sample = colnames(sub_relative_abundance_mat),
-            t(sub_relative_abundance_mat)
-        )
-        error_bar_df <- as.data.frame(error_bar_matrix)
-        
-        # Join the long data with the group information based on SampleName
-        error_bar_df <- error_bar_df %>%
-            left_join(sample_to_group_map, by = "sample")
+    # Get the correct groups based on the column names in sub_relative_abundance_mat
+    correct_groups <- sample_to_group_map[colnames(sub_relative_abundance_mat)]
+    
+    # Create the error bar matrix using the correctly mapped groups
+    error_bar_matrix <- cbind(
+      sample = colnames(sub_relative_abundance_mat),
+      group = correct_groups,
+      t(sub_relative_abundance_mat)
+    )
+    error_bar_df <- as.data.frame(error_bar_matrix)
 
     error_bar_df$group <- factor(correct_groups, levels = levels(as.factor(Group)))
 
