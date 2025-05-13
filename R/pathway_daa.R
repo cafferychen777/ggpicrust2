@@ -688,29 +688,62 @@ perform_linda_analysis <- function(abundance, metadata, group, reference, Level,
   # Prepare data
   feature.dat <- as.matrix(abundance)
   meta.dat <- metadata
+  
+  # Ensure the group variable in meta.dat is a factor
+  if (!is.factor(meta.dat[[group]])) {
+    meta.dat[[group]] <- factor(meta.dat[[group]])
+  }
+  
+  # If reference is provided, ensure it is one of the values in Level
+  if (!is.null(reference) && !(reference %in% Level)) {
+    warning(sprintf("Reference '%s' not found in levels of group variable. Using first level as reference.", reference))
+    reference <- Level[1]
+  } else if (is.null(reference)) {
+    reference <- Level[1]
+  }
 
   # Build formula
   formula <- paste0("~ ", group)
 
-  # Run LinDA analysis
-  linda_obj <- MicrobiomeStat::linda(
-    feature.dat = feature.dat,
-    meta.dat = meta.dat,
-    formula = formula,
-    feature.dat.type = "count",
-    prev.filter = 0,
-    mean.abund.filter = 0,
-    adaptive = TRUE,
-    zero.handling = "pseudo-count",
-    pseudo.cnt = 0.5,
-    p.adj.method = "BH",
-    alpha = 0.05,
-    n.cores = 1,
-    verbose = FALSE
-  )
+  # Add more debug information
+  message(sprintf("Group variable: %s with levels: %s", group, paste(Level, collapse=", ")))
+  message(sprintf("Reference level: %s", reference))
+  message(sprintf("Number of features: %d, Number of samples: %d", nrow(feature.dat), ncol(feature.dat)))
 
-  # Extract results
-  if (length(linda_obj$output) > 0) {
+  # Use tryCatch to catch errors in LinDA analysis
+  linda_result <- tryCatch({
+    # Run LinDA analysis
+    linda_obj <- MicrobiomeStat::linda(
+      feature.dat = feature.dat,
+      meta.dat = meta.dat,
+      formula = formula,
+      feature.dat.type = "count",
+      prev.filter = 0,
+      mean.abund.filter = 0,
+      adaptive = TRUE,
+      zero.handling = "pseudo-count",
+      pseudo.cnt = 0.5,
+      p.adj.method = "BH",
+      alpha = 0.05,
+      n.cores = 1,
+      verbose = TRUE    # Changed to TRUE to provide more detailed output
+    )
+    
+    # Check the structure of linda_obj
+    if (is.null(linda_obj) || is.null(linda_obj$output) || length(linda_obj$output) == 0) {
+      message("LinDA analysis returned empty results. This might be due to insufficient variation in the data.")
+      # Return an empty data frame instead of NULL, so that the pathway_daa function can handle it properly
+      return(data.frame(
+        feature = character(0),
+        method = character(0),
+        group1 = character(0),
+        group2 = character(0),
+        p_values = numeric(0),
+        log2FoldChange = numeric(0),
+        stringsAsFactors = FALSE
+      ))
+    }
+    
     # Create an empty list to store results for each comparison
     results_list <- list()
     
@@ -719,27 +752,60 @@ perform_linda_analysis <- function(abundance, metadata, group, reference, Level,
     
     # Process each output element (each corresponds to a group comparison)
     for (i in seq_along(linda_obj$output)) {
-      if (i <= length(non_ref_groups)) {
-        comparison_df <- linda_obj$output[[i]]
-        
-        # Create a results data frame for this comparison
-        results_list[[i]] <- data.frame(
-          feature = rownames(comparison_df),
-          method = "LinDA",
-          group1 = reference,
-          group2 = non_ref_groups[i],
-          p_values = comparison_df$pvalue,
-          log2FoldChange = comparison_df$log2FoldChange,
-          stringsAsFactors = FALSE
-        )
+      # Get output name, typically in the format "groupVariableNameNonReferenceGroup"
+      output_name <- names(linda_obj$output)[i]
+      # Extract non-reference group name from output name
+      # Here we assume the output name format is "groupVariableNameNonReferenceGroup"
+      group_prefix <- paste0(group, "")
+      if (startsWith(output_name, group_prefix)) {
+        comparison_group <- substring(output_name, nchar(group_prefix) + 1)
+      } else {
+        # If we cannot extract group name from output name, use index to get from non_ref_groups
+        comparison_group <- if (i <= length(non_ref_groups)) non_ref_groups[i] else paste0("Group", i)
       }
+      
+      comparison_df <- linda_obj$output[[i]]
+      
+      # Create a results data frame for this comparison
+      results_list[[i]] <- data.frame(
+        feature = rownames(comparison_df),
+        method = "LinDA",
+        group1 = reference,
+        group2 = comparison_group,
+        p_values = comparison_df$pvalue,
+        log2FoldChange = comparison_df$log2FoldChange,
+        stringsAsFactors = FALSE
+      )
     }
     
     # Combine all results
-    results <- do.call(rbind, results_list)
-  } else {
-    stop("LinDA analysis failed to produce results")
-  }
-
-  return(results)
+    if (length(results_list) > 0) {
+      do.call(rbind, results_list)
+    } else {
+      # If there are no results, return an empty data frame
+      data.frame(
+        feature = character(0),
+        method = character(0),
+        group1 = character(0),
+        group2 = character(0),
+        p_values = numeric(0),
+        log2FoldChange = numeric(0),
+        stringsAsFactors = FALSE
+      )
+    }
+  }, error = function(e) {
+    # Catch and report errors, but return an empty data frame instead of NULL
+    message(sprintf("Error in LinDA analysis: %s", e$message))
+    data.frame(
+      feature = character(0),
+      method = character(0),
+      group1 = character(0),
+      group2 = character(0),
+      p_values = numeric(0),
+      log2FoldChange = numeric(0),
+      stringsAsFactors = FALSE
+    )
+  })
+  
+  return(linda_result)
 }
