@@ -59,6 +59,13 @@ load_reference_data <- function(pathway_type) {
     load(ref_path)
     ref_data <- get(paste0(pathway_type, "_reference"))
     
+    # Standardize column names for MetaCyc reference data
+    # This fixes the issue with MetaCyc descriptions being NA
+    if (pathway_type == "MetaCyc" && all(c("X1", "X2") %in% colnames(ref_data))) {
+      message("Standardizing MetaCyc reference data column names...")
+      colnames(ref_data) <- c("id", "description")
+    }
+    
     if (pathway_type == "EC") {
       message("Note: EC description may appear to be duplicated due to shared EC numbers across different reactions.")
     }
