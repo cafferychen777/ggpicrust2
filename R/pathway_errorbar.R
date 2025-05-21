@@ -319,18 +319,30 @@ pathway_errorbar <-
         order <- order(daa_results_filtered_sub_df$feature)
       },
       "group" = {
+        # Initialize pro column with default value 1
         daa_results_filtered_sub_df$pro <- 1
+        
         for (i in levels(error_bar_pivot_longer_tibble_summarised$name)) {
+          # Get subset for current feature
           error_bar_pivot_longer_tibble_summarised_sub <-
-            error_bar_pivot_longer_tibble_summarised[error_bar_pivot_longer_tibble_summarised$name ==
-                                                       i,]
+            error_bar_pivot_longer_tibble_summarised[error_bar_pivot_longer_tibble_summarised$name == i,]
+          
+          # Find group with maximum mean abundance
           pro_group <-
             error_bar_pivot_longer_tibble_summarised_sub[error_bar_pivot_longer_tibble_summarised_sub$mean ==
-                                                           max(error_bar_pivot_longer_tibble_summarised_sub$mean),]$group
+                                                            max(error_bar_pivot_longer_tibble_summarised_sub$mean),]$group
           pro_group <- as.vector(pro_group)
-          daa_results_filtered_sub_df[daa_results_filtered_sub_df$feature ==
-                                        i,]$pro <- pro_group
+          
+          # Find indices of rows matching the current feature, excluding NA values
+          idx <- which(daa_results_filtered_sub_df$feature == i & !is.na(daa_results_filtered_sub_df$feature))
+          
+          # Only assign values if valid indices exist
+          if (length(idx) > 0) {
+            daa_results_filtered_sub_df$pro[idx] <- pro_group
+          }
         }
+        
+        # Order by group and p-value
         order <-
           order(daa_results_filtered_sub_df$pro,
                 daa_results_filtered_sub_df$p_adjust)

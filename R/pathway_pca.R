@@ -127,6 +127,32 @@ pathway_pca <- function(abundance,
     stop("Abundance matrix must contain at least 3 samples")
   }
   
+  # Filter out columns (samples) with zero variance
+  sample_var <- apply(abundance, 2, var)
+  zero_var_samples <- sample_var == 0
+  if (any(zero_var_samples)) {
+    warning(paste("Removing", sum(zero_var_samples), "sample(s) with zero variance"))
+    abundance <- abundance[, !zero_var_samples, drop = FALSE]
+    # Update metadata to match remaining samples
+    metadata <- metadata[metadata$sample_name %in% colnames(abundance), ]
+  }
+  
+  # Filter out rows (pathways) with zero variance
+  pathway_var <- apply(abundance, 1, var)
+  zero_var_pathways <- pathway_var == 0
+  if (any(zero_var_pathways)) {
+    warning(paste("Removing", sum(zero_var_pathways), "pathway(s) with zero variance"))
+    abundance <- abundance[!zero_var_pathways, , drop = FALSE]
+  }
+  
+  # Check if we still have enough data after filtering
+  if (nrow(abundance) < 2) {
+    stop("After filtering, less than 2 pathways remain. PCA requires at least 2 pathways.")
+  }
+  if (ncol(abundance) < 3) {
+    stop("After filtering, less than 3 samples remain. PCA requires at least 3 samples.")
+  }
+  
   # Check metadata
   if (!is.data.frame(metadata)) {
     stop("Metadata must be a data frame")
@@ -174,11 +200,24 @@ pathway_pca <- function(abundance,
   # due to NSE notes in R CMD check
   PC1 = PC2 = Group = NULL
   
-  # Perform PCA on the abundance data, keeping the first two principal components
-  pca_axis <- stats::prcomp(t(abundance), center = TRUE, scale = TRUE)$x[,1:2]
+  # Perform PCA on the abundance data
+  pca_result <- tryCatch({
+    stats::prcomp(t(abundance), center = TRUE, scale = TRUE)
+  }, error = function(e) {
+    if (grepl("cannot rescale a constant/zero column", e$message)) {
+      stop("PCA failed: Some samples or pathways have zero variance. ",
+           "This has been checked earlier, but there might still be near-zero variance columns. ",
+           "Consider using a more stringent filtering or transforming your data.")
+    } else {
+      stop("PCA failed: ", e$message)
+    }
+  })
+  
+  # Keep the first two principal components
+  pca_axis <- pca_result$x[,1:2]
 
   # Calculate the proportion of total variation explained by each PC
-  pca_proportion <- stats::prcomp(t(abundance), center = TRUE, scale = TRUE)$sdev[1:2]/sum(stats::prcomp(t(abundance), center = TRUE, scale = TRUE)$sdev)*100
+  pca_proportion <- pca_result$sdev[1:2]/sum(pca_result$sdev)*100
 
   # Combine the PCA results with the metadata information
   pca <- cbind(pca_axis, metadata %>% select(all_of(c(group))))
