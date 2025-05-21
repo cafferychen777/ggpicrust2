@@ -50,10 +50,11 @@ ko2kegg_abundance <- function (file = NULL, data = NULL) {
   validate_file_format <- function(file_path) {
     valid_extensions <- c(".txt", ".tsv", ".csv")
     ext <- tolower(tools::file_ext(file_path))
-    if (!paste0(".", ext) %in% valid_extensions) {
+    if (!(paste0(".", ext) %in% valid_extensions)) {
       stop(sprintf("Error: Input file should be in %s format.",
                   paste(valid_extensions, collapse = ", ")))
     }
+    return(paste0(".", ext))
   }
   
   # 数据框验证函数
@@ -145,9 +146,8 @@ ko2kegg_abundance <- function (file = NULL, data = NULL) {
   
   # 文件格式验证
   if (!is.null(file)) {
-    validate_file_format(file)
+    file_format <- validate_file_format(file)
     message("Loading data from file...")
-    file_format <- substr(file, nchar(file) - 3, nchar(file))
     abundance <- switch(
       file_format,
       ".txt" = readr::read_delim(file, delim = "\t", escape_double = FALSE, trim_ws = TRUE),
