@@ -1,3 +1,24 @@
+# ggpicrust2 2.3.0
+
+## Bug Fixes
+
+* Fixed NA handling in pathway_errorbar function:
+  - Improved handling of NA values in the feature column
+  - Added robust error checking for group ordering option
+  - Prevents errors when processing MetaCyc pathway data with missing annotations
+
+* Enhanced pathway_pca function to handle zero variance data:
+  - Automatically detects and filters out columns (samples) with zero variance
+  - Automatically detects and filters out rows (pathways) with zero variance
+  - Updates metadata to match remaining samples after filtering
+  - Provides informative warnings about removed samples/pathways
+  - Improves error handling with clear diagnostic messages
+
+* Fixed file extension handling in ko2kegg_abundance function:
+  - Resolved "the condition has length > 1" error when processing files
+  - Improved extension detection for different file types
+  - Enhanced robustness for handling various input formats
+
 # ggpicrust2 2.2.2
 
 ## Bug Fixes
