@@ -49,32 +49,35 @@ load_reference_data <- function(pathway_type) {
   }
   
   ref_file <- sprintf("%s_reference.RData", pathway_type)
-  ref_path <- system.file("extdata", ref_file, package = "ggpicrust2")
   
-  if (!file.exists(ref_path)) {
-    stop("Reference data file not found: ", ref_file)
+  # First try to load from data/ (lazy loading)
+  ref_data_name <- paste0(pathway_type, "_reference")
+  if (exists(ref_data_name, envir = asNamespace("ggpicrust2"))) {
+    return(get(ref_data_name, envir = asNamespace("ggpicrust2")))
   }
   
-  tryCatch({
+  # If not found in data/, try inst/extdata/
+  ref_path <- system.file("extdata", ref_file, package = "ggpicrust2", mustWork = FALSE)
+  
+  if (file.exists(ref_path)) {
     load(ref_path)
-    ref_data <- get(paste0(pathway_type, "_reference"))
-    
-    # Standardize column names for MetaCyc reference data
-    # This fixes the issue with MetaCyc descriptions being NA
-    if (pathway_type == "MetaCyc" && all(c("X1", "X2") %in% colnames(ref_data))) {
-      message("Standardizing MetaCyc reference data column names...")
-      colnames(ref_data) <- c("id", "description")
-    }
-    
-    if (pathway_type == "EC") {
-      message("Note: EC description may appear to be duplicated due to shared EC numbers across different reactions.")
-    }
-    
-    ref_data
-  },
-  error = function(e) {
-    stop("Error loading reference data: ", e$message)
-  })
+    ref_data <- get(ref_data_name)
+    return(ref_data)
+  }
+  
+  # If still not found, try loading from the package's installed location
+  ref_path <- system.file("inst/extdata", ref_file, package = "ggpicrust2", mustWork = FALSE)
+  if (file.exists(ref_path)) {
+    load(ref_path)
+    ref_data <- get(ref_data_name)
+    return(ref_data)
+  }
+  
+  # If we reach here, the file was not found in any location
+  stop(sprintf("Reference data file '%s' not found in any standard location.\nPlease ensure the package was installed correctly.", ref_file))
+  
+  # This code is unreachable, just for reference
+  ref_data
 }
 
 #' Cache manager for KEGG annotations
