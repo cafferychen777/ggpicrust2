@@ -1,3 +1,13 @@
+# ggpicrust2 2.3.1
+
+## Bug Fixes
+
+* Fixed MetaCyc reference data loading issue:
+  - Enhanced the file search mechanism in the `load_reference_data` function
+  - Added multiple search paths for reference data files
+  - Improved error messages with more diagnostic information
+  - Fixed "Reference data file not found" error that some users encountered
+
 # ggpicrust2 2.3.0
 
 ## Bug Fixes
