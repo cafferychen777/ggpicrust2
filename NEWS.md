@@ -1,3 +1,14 @@
+# ggpicrust2 2.3.2
+
+## Bug Fixes
+
+* Fixed MetaCyc pathway annotation NA description issue (#154):
+  - Standardized MetaCyc reference data column names from 'X1'/'X2' to 'id'/'description'
+  - Applied fix in all three loading paths of load_reference_data function
+  - Resolves column name mismatch that caused all MetaCyc annotations to return NA
+  - Tested with 100% success rate on sample data
+  - Maintains backward compatibility with KO and EC pathway types
+
 # ggpicrust2 2.3.1
 
 ## Bug Fixes
