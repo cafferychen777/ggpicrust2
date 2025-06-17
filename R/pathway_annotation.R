@@ -47,35 +47,54 @@ load_reference_data <- function(pathway_type) {
   if (!pathway_type %in% c("KO", "EC", "MetaCyc")) {
     stop("Invalid pathway option. Please provide one of the following options: 'KO', 'EC', 'MetaCyc'.")
   }
-  
+
   ref_file <- sprintf("%s_reference.RData", pathway_type)
-  
+
   # First try to load from data/ (lazy loading)
   ref_data_name <- paste0(pathway_type, "_reference")
   if (exists(ref_data_name, envir = asNamespace("ggpicrust2"))) {
-    return(get(ref_data_name, envir = asNamespace("ggpicrust2")))
+    ref_data <- get(ref_data_name, envir = asNamespace("ggpicrust2"))
+
+    # FIX: Standardize MetaCyc column names
+    if (pathway_type == "MetaCyc" && all(c("X1", "X2") %in% colnames(ref_data))) {
+      colnames(ref_data) <- c("id", "description")
+    }
+
+    return(ref_data)
   }
-  
+
   # If not found in data/, try inst/extdata/
   ref_path <- system.file("extdata", ref_file, package = "ggpicrust2", mustWork = FALSE)
-  
+
   if (file.exists(ref_path)) {
     load(ref_path)
     ref_data <- get(ref_data_name)
+
+    # FIX: Standardize MetaCyc column names
+    if (pathway_type == "MetaCyc" && all(c("X1", "X2") %in% colnames(ref_data))) {
+      colnames(ref_data) <- c("id", "description")
+    }
+
     return(ref_data)
   }
-  
+
   # If still not found, try loading from the package's installed location
   ref_path <- system.file("inst/extdata", ref_file, package = "ggpicrust2", mustWork = FALSE)
   if (file.exists(ref_path)) {
     load(ref_path)
     ref_data <- get(ref_data_name)
+
+    # FIX: Standardize MetaCyc column names
+    if (pathway_type == "MetaCyc" && all(c("X1", "X2") %in% colnames(ref_data))) {
+      colnames(ref_data) <- c("id", "description")
+    }
+
     return(ref_data)
   }
-  
+
   # If we reach here, the file was not found in any location
   stop(sprintf("Reference data file '%s' not found in any standard location.\nPlease ensure the package was installed correctly.", ref_file))
-  
+
   # This code is unreachable, just for reference
   ref_data
 }
