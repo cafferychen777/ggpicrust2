@@ -461,7 +461,7 @@ pathway_errorbar <-
       pathway_class_group_mat <-
         daa_results_filtered_sub_df$pathway_class %>%
         table() %>%
-        data.frame() %>% column_to_rownames(".")
+        data.frame() %>% tibble::column_to_rownames(".")
       pathway_class_group <- data.frame(.= unique(daa_results_filtered_sub_df$pathway_class),Freq = pathway_class_group_mat[unique(daa_results_filtered_sub_df$pathway_class),])
       start <-
         c(1, rev(pathway_class_group$Freq)[1:(length(pathway_class_group$Freq) - 1)]) %>%
@@ -581,16 +581,18 @@ pathway_errorbar <-
           legend.position = "non"
         )
     }
-    daa_results_filtered_sub_df$p_adjust <-
-      as.character(daa_results_filtered_sub_df$p_adjust)
+
+    # Helper function to format p-values for display
+    format_p_value <- function(p) {
+      ifelse(p < 0.001, sprintf("%.1e", p), sprintf("%.3f", p))
+    }
+
     daa_results_filtered_sub_df$unique <-
       nrow(daa_results_filtered_sub_df) - seq_len(nrow(daa_results_filtered_sub_df)) + 1
-    daa_results_filtered_sub_df$p_adjust <-
-      substr(daa_results_filtered_sub_df$p_adjust, 1, 5)
     p_annotation <- daa_results_filtered_sub_df %>%
       ggplot2::ggplot(ggplot2::aes(group_nonsense, p_adjust)) +
       ggplot2::geom_text(
-        ggplot2::aes(group_nonsense, unique, label = p_adjust),
+        ggplot2::aes(group_nonsense, unique, label = format_p_value(p_adjust)),
         size = 3.5,
         color = "black",
         fontface = "bold",
