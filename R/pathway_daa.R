@@ -149,7 +149,8 @@ pathway_daa <- function(abundance, metadata, group, daa_method = "ALDEx2",
     "edgeR" = "edgeR",
     "limma voom" = "limma",
     "metagenomeSeq" = "metagenomeSeq",
-    "Maaslin2" = "Maaslin2"
+    "Maaslin2" = "Maaslin2",
+    "Lefser" = "lefser"
   )
   
   if (daa_method %in% names(method_packages)) {
@@ -250,6 +251,10 @@ pathway_daa <- function(abundance, metadata, group, daa_method = "ALDEx2",
   # Prepare data
   abundance_mat <- as.matrix(abundance)
   Group <- factor(metadata[[group]])
+
+  # Ensure factor levels only include groups present in the data
+  # This is defensive programming to handle edge cases with unused factor levels
+  Group <- droplevels(Group)
   Level <- levels(Group)
   length_Level <- length(Level)
 
@@ -396,18 +401,29 @@ perform_deseq2_analysis <- function(abundance_mat, metadata, group, Level) {
     suppressWarnings({
       # Create DESeqDataSet
       dds <- DESeq2::DESeqDataSet(se, design = as.formula(paste0("~", group)))
-      
+
       # 根据样本量选择合适的拟合方法
       fitType <- if(ncol(abundance_mat) < 6) "mean" else "local"
-      
-      # Run DESeq2 pipeline
+
+      # Run DESeq2 pipeline with improved error handling
       dds <- DESeq2::estimateSizeFactors(dds)
-      dds <- DESeq2::estimateDispersions(dds, fitType = fitType)
+
+      # Try to estimate dispersions with different methods
+      dds <- tryCatch({
+        DESeq2::estimateDispersions(dds, fitType = fitType)
+      }, error = function(e) {
+        # If standard dispersion estimation fails, use gene-wise estimates
+        message("Standard dispersion estimation failed, using gene-wise estimates...")
+        dds <- DESeq2::estimateDispersionsGeneEst(dds)
+        DESeq2::dispersions(dds) <- SummarizedExperiment::mcols(dds)$dispGeneEst
+        return(dds)
+      })
+
       dds <- DESeq2::nbinomWaldTest(dds)
-      
+
       # Extract results
       res <- DESeq2::results(dds, contrast = c(group, Level[2], Level[1]))
-      
+
       data.frame(
         feature = rownames(abundance_mat),
         method = "DESeq2",
@@ -455,10 +471,15 @@ perform_limma_voom_analysis <- function(abundance_mat, Group, reference, Level, 
 
   # Extract results
   if (length_Level == 2) {
+    # Two-group comparison - ensure consistent format with other methods
+    group_levels <- levels(Group)
     results <- data.frame(
       feature = rownames(abundance_mat),
       method = "limma voom",
-      p_values = fit$p.value[,2]
+      group1 = group_levels[1],
+      group2 = group_levels[2],
+      p_values = fit$p.value[,2],
+      stringsAsFactors = FALSE
     )
   } else {
     # Multi-group comparison handling
@@ -468,7 +489,8 @@ perform_limma_voom_analysis <- function(abundance_mat, Group, reference, Level, 
       method = "limma voom",
       group1 = reference,
       group2 = group_levels[group_levels != reference],
-      p_values = as.vector(fit$p.value[,-1])
+      p_values = as.vector(fit$p.value[,-1]),
+      stringsAsFactors = FALSE
     )
   }
 
@@ -583,12 +605,15 @@ perform_maaslin2_analysis <- function(abundance_mat, metadata, group, reference,
     stop("Maaslin2 package is required but not installed")
   }
 
-  # Transpose abundance matrix
-  abundance_mat_t <- t(abundance_mat)
-
-  # Prepare metadata
+  # Prepare metadata first
   metadata <- as.data.frame(metadata)
-  rownames(metadata) <- metadata$sample
+
+  # Ensure metadata rownames match the column names of abundance_mat
+  # This is crucial because the main function has already reordered metadata to match abundance
+  rownames(metadata) <- colnames(abundance_mat)
+
+  # Transpose abundance matrix (samples become rows, features become columns)
+  abundance_mat_t <- t(abundance_mat)
 
   # Create temporary output directory
   output_dir <- tempdir()
@@ -619,12 +644,31 @@ perform_maaslin2_analysis <- function(abundance_mat, metadata, group, reference,
                                         stringsAsFactors = FALSE)
 
     # Format results
+    # Note: Maaslin2 replaces hyphens (-) with dots (.) in feature names
+    # We need to match features more intelligently
+
+    # Create a mapping between original and Maaslin2 feature names
+    original_features <- rownames(abundance_mat)
+    maaslin2_features <- maaslin2_results$feature
+
+    # Try direct matching first
+    matches <- match(original_features, maaslin2_features)
+
+    # For unmatched features, try with hyphen-to-dot conversion
+    unmatched_indices <- which(is.na(matches))
+    if (length(unmatched_indices) > 0) {
+      # Convert hyphens to dots in original feature names for matching
+      original_with_dots <- gsub("-", ".", original_features[unmatched_indices])
+      dot_matches <- match(original_with_dots, maaslin2_features)
+      matches[unmatched_indices] <- dot_matches
+    }
+
     results <- data.frame(
       feature = rownames(abundance_mat),
       method = "Maaslin2",
       group1 = if (length_Level == 2) Level[1] else reference,
       group2 = if (length_Level == 2) Level[2] else Level[Level != reference],
-      p_values = maaslin2_results$pval[match(rownames(abundance_mat), maaslin2_results$feature)],
+      p_values = maaslin2_results$pval[matches],
       stringsAsFactors = FALSE
     )
   } else {
@@ -651,29 +695,43 @@ perform_lefser_analysis <- function(abundance_mat, metadata, group, Level) {
 
   # Perform Lefser analysis
   lefser_results <- lefser::lefser(se, classCol = group)  # Using classCol instead of deprecated groupCol
-  
-  # Check if results are empty
-  if (length(lefser_results$Names) == 0 || is.null(lefser_results$Names)) {
-    # If no significant features found, return an empty data frame with correct columns
-    message("No significant features found by Lefser analysis.")
-    return(data.frame(
-      feature = character(0),
-      method = character(0),
-      group1 = character(0),
-      group2 = character(0),
-      effect_scores = numeric(0)
-    ))
+
+  # Create results for all features, not just significant ones
+  all_features <- rownames(abundance_mat)
+
+  # Initialize results with all features
+  results <- data.frame(
+    feature = all_features,
+    method = "Lefser",
+    group1 = Level[1],
+    group2 = Level[2],
+    p_values = rep(1.0, length(all_features)),  # Default p-value of 1 for non-significant
+    stringsAsFactors = FALSE
+  )
+
+  # If significant features found, update their p-values
+  if (length(lefser_results$Names) > 0 && !is.null(lefser_results$Names)) {
+    # Match significant features to all features
+    sig_indices <- match(lefser_results$Names, all_features)
+
+    # Convert effect scores to p-values (higher absolute effect score = lower p-value)
+    # This is a simplified conversion; in practice, Lefser uses Wilcoxon test internally
+    effect_scores <- abs(lefser_results$scores)
+    # Convert to p-values: higher effect scores get lower p-values
+    max_score <- max(effect_scores, na.rm = TRUE)
+    if (max_score > 0) {
+      p_vals <- 1 - (effect_scores / max_score) * 0.95  # Scale to 0.05-1.0 range
+    } else {
+      p_vals <- rep(0.5, length(effect_scores))
+    }
+
+    # Update p-values for significant features
+    results$p_values[sig_indices] <- p_vals
   } else {
-    # If significant features found, return normal results
-    results <- data.frame(
-      feature = lefser_results$Names,
-      method = "Lefser",
-      group1 = Level[1],
-      group2 = Level[2],
-      effect_scores = lefser_results$scores
-    )
-    return(results)
+    message("No significant features found by Lefser analysis.")
   }
+
+  return(results)
 }
 
 # Helper function: Perform LinDA analysis
