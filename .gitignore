@@ -15,6 +15,7 @@ Rplots.pdf
 *.tar.gz
 *.tgz
 *.Rcheck/
+ggpicrust2.Rcheck/
 
 # Compiled files
 *.o
