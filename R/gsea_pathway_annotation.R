@@ -56,7 +56,8 @@ gsea_pathway_annotation <- function(gsea_results,
   if (pathway_type == "KEGG") {
     # Load KEGG pathway reference data
     if (!exists("kegg_reference")) {
-      data("kegg_reference", package = "ggpicrust2", envir = environment())
+      kegg_path <- system.file("extdata", "ko_pathway_reference.RData", package = "ggpicrust2")
+      load(kegg_path, envir = environment())
     }
     
     # Convert to data frame
@@ -67,7 +68,7 @@ gsea_pathway_annotation <- function(gsea_results,
       gsea_results,
       kegg_reference,
       by.x = "pathway_id",
-      by.y = "pathway",
+      by.y = "pathway_id",
       all.x = TRUE
     )
     
