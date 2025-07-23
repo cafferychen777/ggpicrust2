@@ -149,6 +149,52 @@ test_that("pathway_daa handles sample selection correctly", {
   )
 })
 
+test_that("pathway_daa handles factor levels correctly with subset", {
+  # Test case for GitHub issue #158
+  abundance <- data.frame(
+    sample1 = c(10, 20, 30),
+    sample2 = c(20, 30, 40),
+    sample3 = c(15, 25, 35),
+    sample4 = c(30, 40, 50),
+    sample5 = c(25, 35, 45),
+    row.names = c("pathway1", "pathway2", "pathway3")
+  )
+
+  metadata <- tibble::tibble(
+    sample = paste0("sample", 1:5),
+    group = c("A", "A", "B", "B", "C")  # 3 groups total
+  )
+
+  # Select only samples from groups A and B
+  selected_samples <- c("sample1", "sample2", "sample3", "sample4")
+
+  # Method 1: Internal subsetting
+  result1 <- pathway_daa(abundance, metadata, "group",
+                        daa_method = "ALDEx2",
+                        select = selected_samples)
+
+  # Method 2: Pre-subsetting
+  abundance_subset <- abundance[, selected_samples, drop = FALSE]
+  metadata_subset <- metadata[metadata$sample %in% selected_samples, ]
+
+  result2 <- pathway_daa(abundance_subset, metadata_subset, "group",
+                        daa_method = "ALDEx2")
+
+  # Results should be very similar
+  expect_equal(nrow(result1), nrow(result2))
+  expect_equal(result1$feature, result2$feature)
+  expect_equal(result1$method, result2$method)
+
+  # Groups should only include A and B, not C
+  expect_true(all(result1$group1 %in% c("A", "B")))
+  expect_true(all(result1$group2 %in% c("A", "B")))
+  expect_false(any(c(result1$group1, result1$group2) == "C"))
+
+  # P-values should be highly correlated (allowing for ALDEx2 randomness)
+  p_correlation <- cor(result1$p_values, result2$p_values, use = "complete.obs")
+  expect_true(p_correlation > 0.9)
+})
+
 test_that("pathway_daa handles multiple groups correctly", {
   abundance <- data.frame(
     sample1 = c(10, 20, 30),

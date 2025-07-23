@@ -15,6 +15,7 @@
 #'   \item \code{num_features}: The total number of statistically significant features obtained by the method.
 #'   \item \code{num_common_features}: The number of features that are common to other methods.
 #'   \item \code{num_diff_features}: The number of features that are different from other methods.
+#'   \item \code{common_features}: The names of the features that are common to all methods.
 #'   \item \code{diff_features}: The names of the features that are different from other methods.
 #' }
 #'
@@ -107,6 +108,7 @@ compare_daa_results <- function(daa_results_list, method_names, p_values_thresho
     num_features = integer(),
     num_common_features = integer(),
     num_diff_features = integer(),
+    common_features = character(),
     diff_features = character(),
     stringsAsFactors = FALSE
   )
@@ -117,6 +119,7 @@ compare_daa_results <- function(daa_results_list, method_names, p_values_thresho
     num_features <- length(unlist(features[[i]]))
     num_common_features <- length(intersect_features)
     num_diff_features <- length(unlist(diff_features[[i]]))
+    common_features_names <- paste(intersect_features, collapse = ", ")
     diff_features_names <- paste(unlist(diff_features[[i]]), collapse = ", ")
 
     cat("The", method_names[i], "method obtained", num_features, "statistically significant features.\n")
@@ -129,6 +132,7 @@ compare_daa_results <- function(daa_results_list, method_names, p_values_thresho
       num_features = num_features,
       num_common_features = num_common_features,
       num_diff_features = num_diff_features,
+      common_features = common_features_names,
       diff_features = diff_features_names,
       stringsAsFactors = FALSE
     ))

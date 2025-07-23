@@ -1,7 +1,7 @@
 #' @importFrom grDevices col2rgb
 #' @importFrom methods new
-#' @importFrom stats as.formula model.matrix relevel
-#' @importFrom utils head
+#' @importFrom stats as.formula model.matrix relevel p.adjust reorder var prcomp sd
+#' @importFrom utils head data
 
 .onLoad <- function(libname, pkgname) {
   op <- options()

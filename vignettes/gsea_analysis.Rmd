@@ -1,0 +1,214 @@
+---
+title: "Gene Set Enrichment Analysis with ggpicrust2"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Gene Set Enrichment Analysis with ggpicrust2}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 7,
+  fig.height = 5
+)
+```
+
+## Introduction
+
+This vignette demonstrates how to perform Gene Set Enrichment Analysis (GSEA) on PICRUSt2 predicted functional data using the ggpicrust2 package. GSEA is a powerful method for interpreting gene expression data by focusing on gene sets (pathways) rather than individual genes. In the context of microbiome functional prediction, GSEA can help identify pathways that are enriched in different conditions.
+
+## Installation
+
+First, make sure you have the necessary packages installed:
+
+```{r setup, eval=FALSE}
+# Install ggpicrust2
+if (!requireNamespace("ggpicrust2", quietly = TRUE)) {
+  devtools::install_github("cafferychen777/ggpicrust2")
+}
+
+# Install required Bioconductor packages
+if (!requireNamespace("BiocManager", quietly = TRUE)) {
+  install.packages("BiocManager")
+}
+
+BiocManager::install(c("fgsea", "clusterProfiler", "enrichplot", "DOSE", "pathview"))
+
+# Load the package
+library(ggpicrust2)
+library(dplyr)
+library(ggplot2)
+```
+
+## Basic GSEA Analysis
+
+Let's start with a basic GSEA analysis using the example data provided in the ggpicrust2 package:
+
+```{r basic-gsea, eval=FALSE}
+# Load example data
+data(ko_abundance)
+data(metadata)
+
+# Prepare abundance data
+abundance_data <- as.data.frame(ko_abundance)
+rownames(abundance_data) <- abundance_data[, "#NAME"]
+abundance_data <- abundance_data[, -1]
+
+# Run GSEA analysis
+gsea_results <- pathway_gsea(
+  abundance = abundance_data,
+  metadata = metadata,
+  group = "Environment",
+  pathway_type = "KEGG",
+  method = "fgsea",
+  rank_method = "signal2noise",
+  nperm = 1000,
+  min_size = 10,
+  max_size = 500,
+  p.adjust = "BH",
+  seed = 42
+)
+
+# View the top results
+head(gsea_results)
+```
+
+## Annotating GSEA Results
+
+To make the results more interpretable, we can annotate them with pathway names and descriptions:
+
+```{r annotate-gsea, eval=FALSE}
+# Annotate GSEA results
+annotated_results <- gsea_pathway_annotation(
+  gsea_results = gsea_results,
+  pathway_type = "KEGG"
+)
+
+# View the annotated results
+head(annotated_results)
+```
+
+## Visualizing GSEA Results
+
+The ggpicrust2 package provides several visualization options for GSEA results:
+
+### Barplot
+
+```{r barplot, eval=FALSE}
+# Create a barplot of the top enriched pathways
+barplot <- visualize_gsea(
+  gsea_results = annotated_results,
+  plot_type = "barplot",
+  n_pathways = 20,
+  sort_by = "p.adjust"
+)
+
+# Display the plot
+barplot
+```
+
+### Dotplot
+
+```{r dotplot, eval=FALSE}
+# Create a dotplot of the top enriched pathways
+dotplot <- visualize_gsea(
+  gsea_results = annotated_results,
+  plot_type = "dotplot",
+  n_pathways = 20,
+  sort_by = "p.adjust"
+)
+
+# Display the plot
+dotplot
+```
+
+### Enrichment Plot
+
+```{r enrichment-plot, eval=FALSE}
+# Create an enrichment plot for a specific pathway
+enrichment_plot <- visualize_gsea(
+  gsea_results = annotated_results,
+  plot_type = "enrichment_plot",
+  n_pathways = 10,
+  sort_by = "NES"
+)
+
+# Display the plot
+enrichment_plot
+```
+
+## Comparing GSEA and DAA Results
+
+It can be informative to compare the results from GSEA with those from Differential Abundance Analysis (DAA):
+
+```{r compare-gsea-daa, eval=FALSE}
+# Run DAA analysis
+daa_results <- pathway_daa(
+  abundance = abundance_data,
+  metadata = metadata,
+  group = "Environment",
+  daa_method = "ALDEx2"
+)
+
+# Annotate DAA results
+annotated_daa_results <- pathway_annotation(
+  pathway = "KO",
+  daa_results_df = daa_results,
+  ko_to_kegg = TRUE
+)
+
+# Compare GSEA and DAA results
+comparison <- compare_gsea_daa(
+  gsea_results = annotated_results,
+  daa_results = annotated_daa_results,
+  plot_type = "venn",
+  p_threshold = 0.05
+)
+
+# Display the comparison plot
+comparison$plot
+
+# View the comparison results
+comparison$results
+```
+
+## Integrated Analysis with ggpicrust2_extended
+
+For a more streamlined workflow, you can use the `ggpicrust2_extended` function, which integrates both DAA and GSEA analyses:
+
+```{r integrated-analysis, eval=FALSE}
+# Run integrated analysis
+integrated_results <- ggpicrust2_extended(
+  data = ko_abundance,
+  metadata = metadata,
+  group = "Environment",
+  pathway = "KO",
+  daa_method = "LinDA",
+  ko_to_kegg = TRUE,
+  run_gsea = TRUE,
+  gsea_params = list(
+    method = "fgsea",
+    rank_method = "signal2noise",
+    nperm = 1000
+  )
+)
+
+# Access DAA results
+daa_results <- integrated_results$daa_results
+
+# Access GSEA results
+gsea_results <- integrated_results$gsea_results
+
+# Access plots
+daa_plot <- integrated_results$daa_plot
+gsea_plot <- integrated_results$gsea_plot
+```
+
+## Conclusion
+
+Gene Set Enrichment Analysis provides a complementary approach to Differential Abundance Analysis for interpreting PICRUSt2 predicted functional data. By focusing on pathways rather than individual features, GSEA can help identify biologically meaningful patterns that might be missed by traditional methods.
+
+The ggpicrust2 package now offers a comprehensive suite of tools for both DAA and GSEA analyses, making it easier to gain insights from microbiome functional prediction data.

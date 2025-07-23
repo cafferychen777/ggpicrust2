@@ -105,6 +105,33 @@ ggpicrust2 <- function(file = NULL,
                        select = NULL,
                        reference = NULL,
                        colors = NULL) {
+  # Input validation
+  if (is.null(file) && is.null(data)) {
+    stop("Error: Please provide either a 'file' path (character string) or a 'data' data frame.")
+  }
+
+  if (!is.null(file) && !is.null(data)) {
+    warning("Both 'file' and 'data' provided. Using 'data' and ignoring 'file'.")
+    file <- NULL  # Set file to NULL to use data
+  }
+
+  # Validate file parameter if provided
+  if (!is.null(file)) {
+    if (!is.character(file) || length(file) != 1) {
+      stop("Error: 'file' parameter must be a character string representing a file path. If you have already loaded your data into R, please use the 'data' parameter instead.")
+    }
+    if (!file.exists(file)) {
+      stop("Error: File does not exist: ", file)
+    }
+  }
+
+  # Validate data parameter if provided
+  if (!is.null(data)) {
+    if (!is.data.frame(data)) {
+      stop("Error: 'data' parameter must be a data frame. If you want to provide a file path, please use the 'file' parameter instead.")
+    }
+  }
+
   # Create an empty list
   plot_result_list <- list()
 

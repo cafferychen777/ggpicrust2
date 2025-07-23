@@ -56,7 +56,14 @@ gsea_pathway_annotation <- function(gsea_results,
   if (pathway_type == "KEGG") {
     # Load KEGG pathway reference data
     if (!exists("kegg_reference")) {
-      data("kegg_reference", package = "ggpicrust2", envir = environment())
+      # Load directly from extdata file since data() doesn't work for this dataset
+      kegg_ref_path <- system.file("extdata", "kegg_reference.RData", package = "ggpicrust2")
+      if (file.exists(kegg_ref_path)) {
+        # Load the file into current environment
+        load(kegg_ref_path)
+      } else {
+        stop("kegg_reference data file not found")
+      }
     }
     
     # Convert to data frame

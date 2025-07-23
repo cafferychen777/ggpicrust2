@@ -48,13 +48,25 @@ ko2kegg_abundance <- function (file = NULL, data = NULL) {
   
   # 文件格式验证函数
   validate_file_format <- function(file_path) {
+    # Check if file_path is actually a character string (file path)
+    if (!is.character(file_path) || length(file_path) != 1) {
+      stop("Error: 'file' parameter must be a character string representing a file path, not a data frame. If you have already loaded your data, please use the 'data' parameter instead.")
+    }
+
     valid_extensions <- c(".txt", ".tsv", ".csv")
     ext <- tolower(tools::file_ext(file_path))
-    if (!(paste0(".", ext) %in% valid_extensions)) {
+
+    # Handle case where file_ext returns empty string or multiple values
+    if (length(ext) == 0 || any(ext == "")) {
+      stop("Error: Unable to determine file extension. Please ensure the file has a valid extension (.txt, .tsv, or .csv).")
+    }
+
+    # Use any() to ensure we get a single logical value
+    if (!any(paste0(".", ext) %in% valid_extensions)) {
       stop(sprintf("Error: Input file should be in %s format.",
                   paste(valid_extensions, collapse = ", ")))
     }
-    return(paste0(".", ext))
+    return(paste0(".", ext[1]))  # Return first extension if multiple
   }
   
   # 数据框验证函数

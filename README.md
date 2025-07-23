@@ -86,11 +86,23 @@ If you use *ggpicrust2* in your research, please cite the following paper:
 
 Chen Yang and others. (2023). ggpicrust2: an R package for PICRUSt2 predicted functional profile analysis and visualization. *Bioinformatics*, btad470. [DOI link](https://doi.org/10.1093/bioinformatics/btad470)
 
-BibTeX entry: [Download here](https://academic.oup.com/Citation/Download?resourceId=7234609&resourceType=3&citationFormat=2)
+BibTeX entry:
+```bibtex
+@article{yang2023ggpicrust2,
+  title={ggpicrust2: an R package for PICRUSt2 predicted functional profile analysis and visualization},
+  author={Yang, Chen and others},
+  journal={Bioinformatics},
+  volume={39},
+  number={8},
+  pages={btad470},
+  year={2023},
+  publisher={Oxford University Press}
+}
+```
 
 ResearchGate link: [Click here](https://www.researchgate.net/publication/372829051_ggpicrust2_an_R_package_for_PICRUSt2_predicted_functional_profile_analysis_and_visualization)
 
-Bioinformatics link: [Click here](https://academic.oup.com/bioinformatics/article/39/8/btad470/7234609?login=false&utm_source=advanceaccess&utm_campaign=bioinformatics&utm_medium=email)
+Bioinformatics link: [https://doi.org/10.1093/bioinformatics/btad470](https://doi.org/10.1093/bioinformatics/btad470)
 
 ## Installation {#installation}
 
@@ -922,7 +934,7 @@ When encountering the following error:
 Error in grid.Call(C_textBounds, as.graphicsAnnot(xlabel),x$x, x$y, :
 ```
 
-Please having some required fonts installed. You can refer to this [thread](https://stackoverflow.com/questions/71362738/r-error-in-grid-callc-textbounds-as-graphicsannotxlabel-xx-xy-polygo).
+This error typically occurs when required fonts are missing. Please ensure you have the necessary system fonts installed. On macOS, you may need to install XQuartz. On Linux systems, you may need to install additional font packages.
 
 ### Issue 6: Visualization becomes cluttered when there are more than 30 features of statistical significance.
 

@@ -185,7 +185,7 @@ compare_gsea_daa <- function(gsea_results,
         count = c(gsea_only, intersect_size, daa_only)
       )
 
-      p <- ggplot2::ggplot(plot_data, ggplot2::aes(x = set, y = count, fill = set)) +
+      p <- ggplot2::ggplot(plot_data, ggplot2::aes(x = .data$set, y = .data$count, fill = .data$set)) +
         ggplot2::geom_bar(stat = "identity") +
         ggplot2::labs(
           title = "Set Intersection",
@@ -217,8 +217,8 @@ compare_gsea_daa <- function(gsea_results,
     } else {
       # Create scatter plot
       p <- ggplot2::ggplot(merged_results,
-                         ggplot2::aes(x = NES, y = log_2_fold_change,
-                                    color = -log10(p.adjust))) +
+                         ggplot2::aes(x = .data$NES, y = .data$log_2_fold_change,
+                                    color = -log10(.data$p.adjust))) +
         ggplot2::geom_point() +
         ggplot2::scale_color_gradient(low = "blue", high = "red") +
         ggplot2::labs(

@@ -515,30 +515,19 @@ annotate_pathways <- function(data, pathway_type, ref_data) {
 #' When \code{ko_to_kegg} is TRUE, the function queries the KEGG database for pathway information. By default (organism = NULL), it retrieves generic KO information that is not specific to any organism. If you are interested in organism-specific pathway information, you can specify the KEGG organism code using the \code{organism} parameter.
 #'
 #' @examples
-#' \donttest{
+#' \dontrun{
 #' # Example 1: Annotate pathways from PICRUSt2 output file
 #' pathway_annotation(file = "path/to/picrust2_output.tsv",
 #'                               pathway = "KO")
-#'
+#' }
+#' 
+#' \dontrun{
 #' # Example 2: Annotate pathways from pathway_daa output
-#' # and converting KO abundance to KEGG pathway abundance
+#' # Assuming you have daa_results from pathway_daa function
 #' daa_results <- pathway_daa(abundance, metadata, group = "Group")
 #' annotated_results <- pathway_annotation(pathway = "KO",
 #'                               daa_results_df = daa_results,
-#'                               ko_to_kegg = TRUE)
-#'
-#' # Example 3: Annotate EC pathways
-#' ec_results <- pathway_daa(abundance, metadata, group = "Group")
-#' annotated_ec <- pathway_annotation(pathway = "EC",
-#'                               daa_results_df = ec_results,
-#'                               ko_to_kegg = TRUE)
-#'
-#' # Example 4: Annotate KO pathways with human-specific information
-#' daa_results <- pathway_daa(abundance, metadata, group = "Group")
-#' human_results <- pathway_annotation(pathway = "KO",
-#'                               daa_results_df = daa_results,
-#'                               ko_to_kegg = TRUE,
-#'                               organism = "hsa")
+#'                               ko_to_kegg = FALSE)
 #' }
 #' @export
 pathway_annotation <- function(file = NULL,

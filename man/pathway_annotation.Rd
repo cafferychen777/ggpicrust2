@@ -48,29 +48,18 @@ This function serves two main purposes:
 2. Annotating pathway information from the output of `pathway_daa` function, and converting KO abundance to KEGG pathway abundance when `ko_to_kegg` is set to TRUE.
 }
 \examples{
-\donttest{
+\dontrun{
 # Example 1: Annotate pathways from PICRUSt2 output file
 pathway_annotation(file = "path/to/picrust2_output.tsv",
                               pathway = "KO")
+}
 
+\dontrun{
 # Example 2: Annotate pathways from pathway_daa output
-# and converting KO abundance to KEGG pathway abundance
+# Assuming you have daa_results from pathway_daa function
 daa_results <- pathway_daa(abundance, metadata, group = "Group")
 annotated_results <- pathway_annotation(pathway = "KO",
                               daa_results_df = daa_results,
-                              ko_to_kegg = TRUE)
-
-# Example 3: Annotate EC pathways
-ec_results <- pathway_daa(abundance, metadata, group = "Group")
-annotated_ec <- pathway_annotation(pathway = "EC",
-                              daa_results_df = ec_results,
-                              ko_to_kegg = TRUE)
-
-# Example 4: Annotate KO pathways with human-specific information
-daa_results <- pathway_daa(abundance, metadata, group = "Group")
-human_results <- pathway_annotation(pathway = "KO",
-                              daa_results_df = daa_results,
-                              ko_to_kegg = TRUE,
-                              organism = "hsa")
+                              ko_to_kegg = FALSE)
 }
 }
