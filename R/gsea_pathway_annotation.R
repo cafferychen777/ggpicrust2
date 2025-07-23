@@ -61,7 +61,7 @@ gsea_pathway_annotation <- function(gsea_results,
     }
     
     # Convert to data frame
-    kegg_reference <- as.data.frame(kegg_reference)
+    kegg_reference <- as.data.frame(ko_pathway_reference)
     
     # Merge with GSEA results
     annotated_results <- merge(
