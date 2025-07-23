@@ -7,6 +7,9 @@
 .DS_Store
 /Meta/
 tests/testthat/Rplots.pdf
+.Rprofile
+R/.Rapp.history
+Rplots.pdf
 
 # Build artifacts
 *.tar.gz
