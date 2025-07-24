@@ -55,11 +55,16 @@ load_reference_data <- function(pathway_type) {
   if (exists(ref_data_name, envir = asNamespace("ggpicrust2"))) {
     ref_data <- get(ref_data_name, envir = asNamespace("ggpicrust2"))
 
-    # FIX: Standardize column names for MetaCyc and EC
+    # FIX: Standardize column names for MetaCyc, EC, and KO
     if (pathway_type == "MetaCyc" && all(c("X1", "X2") %in% colnames(ref_data))) {
       colnames(ref_data) <- c("id", "description")
     }
     if (pathway_type == "EC" && all(c("V1", "V2") %in% colnames(ref_data))) {
+      colnames(ref_data) <- c("id", "description")
+    }
+    if (pathway_type == "KO" && all(c("KO", "KoDescription") %in% colnames(ref_data))) {
+      # For KO data, map KO -> id and KoDescription -> description
+      ref_data <- ref_data[, c("KO", "KoDescription")]
       colnames(ref_data) <- c("id", "description")
     }
 
@@ -73,11 +78,16 @@ load_reference_data <- function(pathway_type) {
     load(ref_path)
     ref_data <- get(ref_data_name)
 
-    # FIX: Standardize column names for MetaCyc and EC
+    # FIX: Standardize column names for MetaCyc, EC, and KO
     if (pathway_type == "MetaCyc" && all(c("X1", "X2") %in% colnames(ref_data))) {
       colnames(ref_data) <- c("id", "description")
     }
     if (pathway_type == "EC" && all(c("V1", "V2") %in% colnames(ref_data))) {
+      colnames(ref_data) <- c("id", "description")
+    }
+    if (pathway_type == "KO" && all(c("KO", "KoDescription") %in% colnames(ref_data))) {
+      # For KO data, map KO -> id and KoDescription -> description
+      ref_data <- ref_data[, c("KO", "KoDescription")]
       colnames(ref_data) <- c("id", "description")
     }
 
@@ -90,11 +100,16 @@ load_reference_data <- function(pathway_type) {
     load(ref_path)
     ref_data <- get(ref_data_name)
 
-    # FIX: Standardize column names for MetaCyc and EC
+    # FIX: Standardize column names for MetaCyc, EC, and KO
     if (pathway_type == "MetaCyc" && all(c("X1", "X2") %in% colnames(ref_data))) {
       colnames(ref_data) <- c("id", "description")
     }
     if (pathway_type == "EC" && all(c("V1", "V2") %in% colnames(ref_data))) {
+      colnames(ref_data) <- c("id", "description")
+    }
+    if (pathway_type == "KO" && all(c("KO", "KoDescription") %in% colnames(ref_data))) {
+      # For KO data, map KO -> id and KoDescription -> description
+      ref_data <- ref_data[, c("KO", "KoDescription")]
       colnames(ref_data) <- c("id", "description")
     }
 
