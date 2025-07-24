@@ -18,6 +18,7 @@ A data frame with the comparison results. The data frame has the following colum
   \item \code{num_features}: The total number of statistically significant features obtained by the method.
   \item \code{num_common_features}: The number of features that are common to other methods.
   \item \code{num_diff_features}: The number of features that are different from other methods.
+  \item \code{common_features}: The names of the features that are common to all methods.
   \item \code{diff_features}: The names of the features that are different from other methods.
 }
 }
