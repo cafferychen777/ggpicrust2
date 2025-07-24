@@ -12,6 +12,7 @@ pathway_daa(
   select = NULL,
   p.adjust = "BH",
   reference = NULL,
+  include_abundance_stats = FALSE,
   ...
 )
 }
@@ -30,35 +31,34 @@ for differential abundance analysis.}
 \item{daa_method}{Character string specifying the method for differential abundance analysis.
 Available choices are:
 \itemize{
-  \item \code{"ALDEx2"}: ANOVA-Like Differential Expression tool
-  \item \code{"DESeq2"}: Differential expression analysis based on negative binomial distribution
-  \item \code{"edgeR"}: Exact test for differences between groups using negative binomial model
-  \item \code{"limma voom"}: Limma-voom framework for RNA-seq analysis
-  \item \code{"metagenomeSeq"}: Zero-inflated Gaussian mixture model
-  \item \code{"LinDA"}: Linear models for differential abundance analysis
-  \item \code{"Maaslin2"}: Multivariate Association with Linear Models
-  \item \code{"Lefser"}: Linear discriminant analysis effect size
+\item \code{"ALDEx2"}: ANOVA-Like Differential Expression tool
+\item \code{"DESeq2"}: Differential expression analysis based on negative binomial distribution
+\item \code{"edgeR"}: Exact test for differences between groups using negative binomial model
+\item \code{"limma voom"}: Limma-voom framework for RNA-seq analysis
+\item \code{"metagenomeSeq"}: Zero-inflated Gaussian mixture model
+\item \code{"LinDA"}: Linear models for differential abundance analysis
+\item \code{"Maaslin2"}: Multivariate Association with Linear Models
+\item \code{"Lefser"}: Linear discriminant analysis Effect Size
 }
 Default is "ALDEx2".}
 
-\item{select}{Vector of sample names to include in the analysis.
-If NULL (default), all samples are included.}
+\item{select}{Character vector of sample names to include in the analysis.
+If NULL (default), all samples in the abundance data are used.}
 
-\item{p.adjust}{Character string specifying the method for p-value adjustment.
-Choices are:
-\itemize{
-  \item \code{"BH"}: Benjamini-Hochberg procedure (default)
-  \item \code{"holm"}: Holm's step-down method
-  \item \code{"bonferroni"}: Bonferroni correction
-  \item \code{"hochberg"}: Hochberg's step-up method
-  \item \code{"fdr"}: False Discovery Rate
-  \item \code{"none"}: No adjustment
-}}
+\item{p.adjust}{Character string specifying the method for multiple testing correction.
+Options include "BH" (Benjamini-Hochberg), "bonferroni", "holm", etc.
+Default is "BH".}
 
-\item{reference}{Character string specifying the reference level for the group comparison.
-If NULL (default), the first level is used as reference.}
+\item{reference}{Character string specifying the reference group for comparison.
+Only used for methods that support multi-group comparisons (LinDA, limma voom, Maaslin2).
+If NULL, the first level of the group factor is used as reference.}
 
-\item{...}{Additional arguments passed to the specific DAA method}
+\item{include_abundance_stats}{Logical value indicating whether to include 
+abundance statistics (mean relative abundance, standard deviation, 
+and log2 fold change) in the output. Default is FALSE for backward 
+compatibility.}
+
+\item{...}{Additional arguments passed to the specific DAA method.}
 }
 \value{
 A data frame containing the differential abundance analysis results. The structure of the results
@@ -67,16 +67,29 @@ when there are more than two groups, the results will contain separate rows for 
 pairwise comparison between the reference group and each non-reference group. The data frame includes
 the following columns:
 \itemize{
-  \item \code{feature}: Feature/pathway identifier
-  \item \code{method}: The DAA method used
-  \item \code{group1}: Reference group
-  \item \code{group2}: Comparison group
-  \item \code{p_values}: P-values for the comparison
-  \item \code{p_adjust}: Adjusted p-values
-  \item \code{adj_method}: Method used for p-value adjustment
+\item \code{feature}: Feature/pathway identifier
+\item \code{method}: The DAA method used
+\item \code{group1}: Reference group
+\item \code{group2}: Comparison group
+\item \code{p_values}: P-values for the comparison
+\item \code{p_adjust}: Adjusted p-values
+\item \code{adj_method}: Method used for p-value adjustment
 }
 
-Some methods may provide additional columns, such as \code{log2FoldChange} for effect size information.
+When \code{include_abundance_stats = TRUE}, the following additional columns 
+are included:
+\itemize{
+\item \code{mean_rel_abundance_group1}: Mean relative abundance for group1
+\item \code{sd_rel_abundance_group1}: Standard deviation of relative 
+abundance for group1
+\item \code{mean_rel_abundance_group2}: Mean relative abundance for group2
+\item \code{sd_rel_abundance_group2}: Standard deviation of relative 
+abundance for group2
+\item \code{log2_fold_change}: Log2 fold change (group2/group1)
+}
+
+Some methods may provide additional columns, such as \code{log2FoldChange} 
+for effect size information.
 }
 \description{
 Performs differential abundance analysis on predicted functional pathway data using various statistical methods.
@@ -101,6 +114,14 @@ results <- pathway_daa(
   group = "Environment"
 )
 
+# Include abundance statistics
+results_with_stats <- pathway_daa(
+  abundance = abundance_data,
+  metadata = metadata,
+  group = "Environment",
+  include_abundance_stats = TRUE
+)
+
 # Using a different method (DESeq2)
 deseq_results <- pathway_daa(
   abundance = abundance_data,
@@ -108,49 +129,5 @@ deseq_results <- pathway_daa(
   group = "Environment",
   daa_method = "DESeq2"
 )
-
-# Create example data with more samples
-abundance <- data.frame(
-  sample1 = c(10, 20, 30),
-  sample2 = c(20, 30, 40),
-  sample3 = c(30, 40, 50),
-  sample4 = c(40, 50, 60),
-  sample5 = c(50, 60, 70),
-  row.names = c("pathway1", "pathway2", "pathway3")
-)
-
-metadata <- data.frame(
-  sample = c("sample1", "sample2", "sample3", "sample4", "sample5"),
-  group = c("control", "control", "treatment", "treatment", "treatment")
-)
-
-# Run differential abundance analysis using ALDEx2
-results <- pathway_daa(abundance, metadata, "group")
-
-# Using a different method (limma voom instead of DESeq2 for this small example)
-limma_results <- pathway_daa(abundance, metadata, "group",
-                            daa_method = "limma voom")
-
-# Analyze specific samples only
-subset_results <- pathway_daa(abundance, metadata, "group",
-                             select = c("sample1", "sample2", "sample3", "sample4"))
-}
-
-}
-\references{
-\itemize{
-  \item ALDEx2: Fernandes et al. (2014) Unifying the analysis of high-throughput sequencing datasets:
-        characterizing RNA-seq, 16S rRNA gene sequencing and selective growth experiments by
-        compositional data analysis. Microbiome.
-  \item DESeq2: Love et al. (2014) Moderated estimation of fold change and dispersion for
-        RNA-seq data with DESeq2. Genome Biology.
-  \item edgeR: Robinson et al. (2010) edgeR: a Bioconductor package for differential expression
-        analysis of digital gene expression data. Bioinformatics.
-  \item limma-voom: Law et al. (2014) voom: precision weights unlock linear model analysis tools
-        for RNA-seq read counts. Genome Biology.
-  \item metagenomeSeq: Paulson et al. (2013) Differential abundance analysis for microbial
-        marker-gene surveys. Nature Methods.
-  \item Maaslin2: Mallick et al. (2021) Multivariable Association Discovery in Population-scale
-        Meta-omics Studies.
 }
 }

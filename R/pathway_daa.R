@@ -3,7 +3,6 @@ NULL
 
 #' Differential Abundance Analysis for Predicted Functional Pathways
 #'
-#' @description
 #' Performs differential abundance analysis on predicted functional pathway data using various statistical methods.
 #' This function supports multiple methods for analyzing differences in pathway abundance between groups,
 #' including popular approaches like ALDEx2, DESeq2, edgeR, and others.
@@ -66,8 +65,21 @@ NULL
 #'   \item \code{p_adjust}: Adjusted p-values
 #'   \item \code{adj_method}: Method used for p-value adjustment
 #' }
-#' 
-#' Some methods may provide additional columns, such as \code{log2FoldChange} for effect size information.
+#'
+#' When \code{include_abundance_stats = TRUE}, the following additional columns
+#' are included:
+#' \itemize{
+#'   \item \code{mean_rel_abundance_group1}: Mean relative abundance for group1
+#'   \item \code{sd_rel_abundance_group1}: Standard deviation of relative
+#'         abundance for group1
+#'   \item \code{mean_rel_abundance_group2}: Mean relative abundance for group2
+#'   \item \code{sd_rel_abundance_group2}: Standard deviation of relative
+#'         abundance for group2
+#'   \item \code{log2_fold_change}: Log2 fold change (group2/group1)
+#' }
+#'
+#' Some methods may provide additional columns, such as \code{log2FoldChange}
+#' for effect size information.
 #'
 #' @examples
 #' \donttest{
@@ -139,9 +151,141 @@ NULL
 #'         Meta-omics Studies.
 #' }
 #'
+#' Helper function to calculate abundance statistics for differential analysis
+#'
+#' This function calculates mean relative abundance, standard deviation, and log2 fold change
+#' for each feature between two groups.
+#'
+#' @param abundance A matrix or data frame with features as rows and samples as columns
+#' @param metadata A data frame containing sample information
+#' @param group Character string specifying the group column name in metadata
+#' @param features Character vector of feature names to calculate statistics for
+#' @param group1 Character string specifying the first group name
+#' @param group2 Character string specifying the second group name
+#'
+#' @return A data frame with columns:
+#'   \item{feature}{Feature identifier}
+#'   \item{mean_rel_abundance_group1}{Mean relative abundance for group1}
+#'   \item{sd_rel_abundance_group1}{Standard deviation of relative abundance for group1}
+#'   \item{mean_rel_abundance_group2}{Mean relative abundance for group2}
+#'   \item{sd_rel_abundance_group2}{Standard deviation of relative abundance for group2}
+#'   \item{log2_fold_change}{Log2 fold change (group2/group1)}
+#'
+#' @keywords internal
+calculate_abundance_stats <- function(abundance, metadata, group, features, group1, group2) {
+  # Validate inputs
+  if (!is.matrix(abundance) && !is.data.frame(abundance)) {
+    stop("'abundance' must be a matrix or data frame")
+  }
+
+  if (!is.data.frame(metadata)) {
+    stop("'metadata' must be a data frame")
+  }
+
+  if (!group %in% colnames(metadata)) {
+    stop("Group column '", group, "' not found in metadata")
+  }
+
+  # Convert abundance to matrix if needed
+  abundance_mat <- as.matrix(abundance)
+
+  # Get sample names that match between abundance and metadata
+  sample_col <- intersect(c("sample", "Sample", "sample_name", "Sample_Name", colnames(metadata)), colnames(metadata))[1]
+  if (is.na(sample_col)) {
+    # Try to match by rownames if no sample column found
+    if (all(colnames(abundance_mat) %in% rownames(metadata))) {
+      metadata$sample <- rownames(metadata)
+      sample_col <- "sample"
+    } else {
+      stop("Cannot find matching sample identifiers between abundance and metadata")
+    }
+  }
+
+  # Filter metadata to match abundance samples
+  metadata_filtered <- metadata[metadata[[sample_col]] %in% colnames(abundance_mat), ]
+
+  # Filter abundance to match metadata samples
+  abundance_filtered <- abundance_mat[, colnames(abundance_mat) %in% metadata_filtered[[sample_col]], drop = FALSE]
+
+  # Reorder to ensure matching
+  sample_order <- match(colnames(abundance_filtered), metadata_filtered[[sample_col]])
+  metadata_ordered <- metadata_filtered[sample_order, ]
+
+  # Get group assignments
+  group_assignments <- metadata_ordered[[group]]
+
+  # Filter for the two groups of interest
+  group1_samples <- colnames(abundance_filtered)[group_assignments == group1]
+  group2_samples <- colnames(abundance_filtered)[group_assignments == group2]
+
+  if (length(group1_samples) == 0) {
+    stop("No samples found for group1: ", group1)
+  }
+  if (length(group2_samples) == 0) {
+    stop("No samples found for group2: ", group2)
+  }
+
+  # Convert to relative abundance
+  relative_abundance <- apply(abundance_filtered, 2, function(x) x / sum(x))
+
+  # Filter for specified features
+  if (!is.null(features)) {
+    features_available <- intersect(features, rownames(relative_abundance))
+    if (length(features_available) == 0) {
+      stop("None of the specified features found in abundance data")
+    }
+    relative_abundance <- relative_abundance[features_available, , drop = FALSE]
+  }
+
+  # Calculate statistics for each feature
+  results <- data.frame(
+    feature = rownames(relative_abundance),
+    mean_rel_abundance_group1 = NA_real_,
+    sd_rel_abundance_group1 = NA_real_,
+    mean_rel_abundance_group2 = NA_real_,
+    sd_rel_abundance_group2 = NA_real_,
+    log2_fold_change = NA_real_,
+    stringsAsFactors = FALSE
+  )
+
+  for (i in seq_len(nrow(relative_abundance))) {
+    feature_name <- rownames(relative_abundance)[i]
+
+    # Get abundance values for each group
+    group1_values <- relative_abundance[i, group1_samples, drop = TRUE]
+    group2_values <- relative_abundance[i, group2_samples, drop = TRUE]
+
+    # Calculate means and standard deviations
+    mean1 <- mean(group1_values, na.rm = TRUE)
+    sd1 <- stats::sd(group1_values, na.rm = TRUE)
+    mean2 <- mean(group2_values, na.rm = TRUE)
+    sd2 <- stats::sd(group2_values, na.rm = TRUE)
+
+    # Calculate log2 fold change (group2/group1)
+    # Add small pseudocount to avoid log(0)
+    pseudocount <- 1e-10
+    log2_fc <- log2((mean2 + pseudocount) / (mean1 + pseudocount))
+
+    # Store results
+    results[i, "mean_rel_abundance_group1"] <- mean1
+    results[i, "sd_rel_abundance_group1"] <- sd1
+    results[i, "mean_rel_abundance_group2"] <- mean2
+    results[i, "sd_rel_abundance_group2"] <- sd2
+    results[i, "log2_fold_change"] <- log2_fc
+  }
+
+  return(results)
+}
+
+#' @param include_abundance_stats Logical value indicating whether to include
+#'        abundance statistics (mean relative abundance, standard deviation,
+#'        and log2 fold change) in the output. Default is FALSE for backward
+#'        compatibility.
+#'
 #' @export
 pathway_daa <- function(abundance, metadata, group, daa_method = "ALDEx2",
-                       select = NULL, p.adjust = "BH", reference = NULL, ...) {
+                       select = NULL, p.adjust = "BH", reference = NULL,
+                       include_abundance_stats = FALSE, ...) {
   # Check if the requested DAA method package is available
   method_packages <- list(
     "ALDEx2" = "ALDEx2",
@@ -275,6 +419,61 @@ pathway_daa <- function(abundance, metadata, group, daa_method = "ALDEx2",
   if (!is.null(result) && "p_values" %in% colnames(result)) {
     result$p_adjust <- p.adjust(result$p_values, method = p.adjust)
     result$adj_method <- p.adjust
+  }
+
+  # Add abundance statistics if requested
+  if (include_abundance_stats && !is.null(result) && nrow(result) > 0) {
+    # Check if we have the required columns for abundance stats
+    if (all(c("feature", "group1", "group2") %in% colnames(result))) {
+      tryCatch({
+        # Get unique group pairs for calculation
+        unique_comparisons <- unique(result[, c("group1", "group2")])
+
+        # Calculate abundance stats for each unique comparison
+        all_abundance_stats <- data.frame()
+
+        for (i in seq_len(nrow(unique_comparisons))) {
+          group1_name <- unique_comparisons$group1[i]
+          group2_name <- unique_comparisons$group2[i]
+
+          # Get features for this comparison
+          comparison_features <- result$feature[
+            result$group1 == group1_name & result$group2 == group2_name
+          ]
+
+          if (length(comparison_features) > 0) {
+            abundance_stats <- calculate_abundance_stats(
+              abundance = abundance_mat,
+              metadata = metadata,
+              group = group,
+              features = comparison_features,
+              group1 = group1_name,
+              group2 = group2_name
+            )
+
+            # Add group information for merging
+            abundance_stats$group1 <- group1_name
+            abundance_stats$group2 <- group2_name
+
+            all_abundance_stats <- rbind(all_abundance_stats, abundance_stats)
+          }
+        }
+
+        # Merge abundance stats with results
+        if (nrow(all_abundance_stats) > 0) {
+          result <- merge(
+            result,
+            all_abundance_stats,
+            by = c("feature", "group1", "group2"),
+            all.x = TRUE
+          )
+        }
+      }, error = function(e) {
+        warning("Failed to calculate abundance statistics: ", e$message)
+      })
+    } else {
+      warning("Cannot calculate abundance statistics: required columns (feature, group1, group2) not found in results")
+    }
   }
 
   return(result)
