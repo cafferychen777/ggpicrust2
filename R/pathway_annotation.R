@@ -55,8 +55,11 @@ load_reference_data <- function(pathway_type) {
   if (exists(ref_data_name, envir = asNamespace("ggpicrust2"))) {
     ref_data <- get(ref_data_name, envir = asNamespace("ggpicrust2"))
 
-    # FIX: Standardize MetaCyc column names
+    # FIX: Standardize column names for MetaCyc and EC
     if (pathway_type == "MetaCyc" && all(c("X1", "X2") %in% colnames(ref_data))) {
+      colnames(ref_data) <- c("id", "description")
+    }
+    if (pathway_type == "EC" && all(c("V1", "V2") %in% colnames(ref_data))) {
       colnames(ref_data) <- c("id", "description")
     }
 
@@ -70,8 +73,11 @@ load_reference_data <- function(pathway_type) {
     load(ref_path)
     ref_data <- get(ref_data_name)
 
-    # FIX: Standardize MetaCyc column names
+    # FIX: Standardize column names for MetaCyc and EC
     if (pathway_type == "MetaCyc" && all(c("X1", "X2") %in% colnames(ref_data))) {
+      colnames(ref_data) <- c("id", "description")
+    }
+    if (pathway_type == "EC" && all(c("V1", "V2") %in% colnames(ref_data))) {
       colnames(ref_data) <- c("id", "description")
     }
 
@@ -84,8 +90,11 @@ load_reference_data <- function(pathway_type) {
     load(ref_path)
     ref_data <- get(ref_data_name)
 
-    # FIX: Standardize MetaCyc column names
+    # FIX: Standardize column names for MetaCyc and EC
     if (pathway_type == "MetaCyc" && all(c("X1", "X2") %in% colnames(ref_data))) {
+      colnames(ref_data) <- c("id", "description")
+    }
+    if (pathway_type == "EC" && all(c("V1", "V2") %in% colnames(ref_data))) {
       colnames(ref_data) <- c("id", "description")
     }
 
@@ -456,8 +465,22 @@ annotate_pathways <- function(data, pathway_type, ref_data) {
   }
   
   # Match features with reference data
-  matches <- match(features, ref_data$id)
-  
+  # For EC pathways, try both with and without EC: prefix
+  if (pathway_type == "EC") {
+    # First try direct match
+    matches <- match(features, ref_data$id)
+
+    # For unmatched features, try adding EC: prefix
+    unmatched <- is.na(matches)
+    if (any(unmatched)) {
+      features_with_prefix <- paste0("EC:", features[unmatched])
+      matches_with_prefix <- match(features_with_prefix, ref_data$id)
+      matches[unmatched] <- matches_with_prefix
+    }
+  } else {
+    matches <- match(features, ref_data$id)
+  }
+
   # Create description column
   descriptions <- rep(NA_character_, length(features))
   valid_matches <- !is.na(matches)
