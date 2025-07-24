@@ -93,7 +93,40 @@ head(annotated_results)
 
 ## Visualizing GSEA Results
 
-The ggpicrust2 package provides several visualization options for GSEA results:
+The ggpicrust2 package provides several visualization options for GSEA results. The `visualize_gsea()` function automatically detects whether pathway names are available (from `gsea_pathway_annotation()`) and uses them for better readability, falling back to pathway IDs if names are not available.
+
+### Pathway Label Options
+
+The `visualize_gsea()` function offers flexible pathway labeling:
+
+```{r pathway-labels, eval=FALSE}
+# Option 1: Use raw GSEA results (shows pathway IDs)
+plot_with_ids <- visualize_gsea(
+  gsea_results = gsea_results,
+  plot_type = "barplot",
+  n_pathways = 10
+)
+
+# Option 2: Use annotated results (automatically shows pathway names)
+plot_with_names <- visualize_gsea(
+  gsea_results = annotated_results,
+  plot_type = "barplot",
+  n_pathways = 10
+)
+
+# Option 3: Explicitly specify which column to use for labels
+plot_custom_labels <- visualize_gsea(
+  gsea_results = annotated_results,
+  plot_type = "barplot",
+  pathway_label_column = "pathway_name",
+  n_pathways = 10
+)
+
+# Compare the plots
+plot_with_ids
+plot_with_names
+plot_custom_labels
+```
 
 ### Barplot
 

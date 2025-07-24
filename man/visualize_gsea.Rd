@@ -14,7 +14,8 @@ visualize_gsea(
   metadata = NULL,
   group = NULL,
   network_params = list(),
-  heatmap_params = list()
+  heatmap_params = list(),
+  pathway_label_column = NULL
 )
 }
 \arguments{
@@ -37,12 +38,18 @@ visualize_gsea(
 \item{network_params}{A list of parameters for network visualization}
 
 \item{heatmap_params}{A list of parameters for heatmap visualization}
+
+\item{pathway_label_column}{A character string specifying which column to use for pathway labels.
+If NULL (default), the function will automatically use 'pathway_name' if available, otherwise 'pathway_id'.
+This allows for custom labeling when using annotated GSEA results.}
 }
 \value{
 A ggplot2 object or ComplexHeatmap object
 }
 \description{
 This function creates various visualizations for Gene Set Enrichment Analysis (GSEA) results.
+It automatically detects whether pathway names are available (from gsea_pathway_annotation())
+and uses them for better readability, falling back to pathway IDs if names are not available.
 }
 \examples{
 \dontrun{
@@ -64,21 +71,29 @@ gsea_results <- pathway_gsea(
   method = "fgsea"
 )
 
-# Create enrichment plot
+# Create enrichment plot with pathway IDs (default)
 visualize_gsea(gsea_results, plot_type = "enrichment_plot", n_pathways = 10)
 
-# Create dotplot
-visualize_gsea(gsea_results, plot_type = "dotplot", n_pathways = 20)
+# Annotate results for better pathway names
+annotated_results <- gsea_pathway_annotation(
+  gsea_results = gsea_results,
+  pathway_type = "KEGG"
+)
 
-# Create barplot
-visualize_gsea(gsea_results, plot_type = "barplot", n_pathways = 15)
+# Create plots with readable pathway names
+visualize_gsea(annotated_results, plot_type = "dotplot", n_pathways = 20)
+visualize_gsea(annotated_results, plot_type = "barplot", n_pathways = 15)
 
-# Create network plot
-visualize_gsea(gsea_results, plot_type = "network", n_pathways = 15)
+# Create network plot with custom labels
+visualize_gsea(annotated_results, plot_type = "network", n_pathways = 15)
+
+# Use custom column for labels (if available)
+visualize_gsea(annotated_results, plot_type = "barplot",
+               pathway_label_column = "pathway_name", n_pathways = 10)
 
 # Create heatmap
 visualize_gsea(
-  gsea_results,
+  annotated_results,
   plot_type = "heatmap",
   n_pathways = 15,
   abundance = abundance_data,
