@@ -11,16 +11,21 @@
 #' @param daa_results_df A data frame containing differential abundance 
 #'        analysis results from pathway_daa function. Must contain columns: 
 #'        feature, group1, group2, p_adjust.
-#' @param Group A vector containing group assignments for each sample in the 
-#'        same order as the columns in abundance matrix.
+#' @param Group A vector containing group assignments for each sample in the
+#'        same order as the columns in abundance matrix. Alternatively, if
+#'        metadata is provided, this should match the order of samples in metadata.
 #' @param ko_to_kegg Logical value indicating whether to use KO to KEGG 
 #'        conversion. Default is FALSE.
 #' @param p_values_threshold Numeric value for p-value threshold to filter 
 #'        significant features. Default is 0.05.
 #' @param select Character vector of specific features to include. If NULL, 
 #'        all significant features are included.
-#' @param max_features Maximum number of features to include in the table. 
+#' @param max_features Maximum number of features to include in the table.
 #'        Default is 30.
+#' @param metadata Optional data frame containing sample metadata. If provided,
+#'        the Group vector will be reordered to match the abundance column order.
+#' @param sample_col Character string specifying the column name in metadata
+#'        that contains sample identifiers. Default is "sample_name".
 #'
 #' @return A data frame containing the following columns:
 #' \itemize{
@@ -86,15 +91,39 @@ pathway_errorbar_table <- function(abundance,
                                   ko_to_kegg = FALSE,
                                   p_values_threshold = 0.05,
                                   select = NULL,
-                                  max_features = 30) {
+                                  max_features = 30,
+                                  metadata = NULL,
+                                  sample_col = "sample_name") {
   
   # Input validation
   if (!is.matrix(abundance) && !is.data.frame(abundance)) {
     stop("'abundance' must be a matrix or data frame")
   }
-  
+
   if (!is.data.frame(daa_results_df)) {
     stop("'daa_results_df' must be a data frame")
+  }
+
+  # Handle Group vector ordering
+  if (!is.null(metadata)) {
+    # If metadata is provided, reorder Group to match abundance column order
+    if (!sample_col %in% colnames(metadata)) {
+      stop("Sample column '", sample_col, "' not found in metadata")
+    }
+
+    # Create a mapping from sample to group
+    sample_to_group <- setNames(Group, metadata[[sample_col]])
+
+    # Reorder Group to match abundance column order
+    abundance_samples <- colnames(abundance)
+    Group <- sample_to_group[abundance_samples]
+
+    # Check for missing samples
+    if (any(is.na(Group))) {
+      missing_samples <- abundance_samples[is.na(Group)]
+      stop("Some samples in abundance data not found in metadata: ",
+           paste(missing_samples, collapse = ", "))
+    }
   }
   
   required_cols <- c("feature", "group1", "group2", "p_adjust")
@@ -150,12 +179,22 @@ pathway_errorbar_table <- function(abundance,
   group2_name <- unique(daa_results_filtered_sub_df$group2)[1]
   
   # Calculate abundance statistics using the helper function
+  # Create metadata that matches the abundance column order
+  # The Group vector should be in the same order as colnames(abundance)
+  abundance_metadata <- data.frame(
+    sample = colnames(abundance),
+    group_col = Group,
+    stringsAsFactors = FALSE
+  )
+
+  # Ensure the Group vector length matches the number of samples
+  if (length(Group) != ncol(abundance)) {
+    stop("Length of Group vector (", length(Group), ") does not match number of samples in abundance data (", ncol(abundance), ")")
+  }
+
   abundance_stats <- calculate_abundance_stats(
     abundance = abundance,
-    metadata = data.frame(
-      sample = colnames(abundance),
-      group_col = Group
-    ),
+    metadata = abundance_metadata,
     group = "group_col",
     features = daa_results_filtered_sub_df$feature,
     group1 = group1_name,

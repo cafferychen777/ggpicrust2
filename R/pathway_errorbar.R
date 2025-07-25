@@ -503,8 +503,29 @@ pathway_errorbar <-
       )
 
     for (i in daa_results_filtered_sub_df$feature){
-      mean <- error_bar_pivot_longer_tibble_summarised_ordered[error_bar_pivot_longer_tibble_summarised_ordered$name %in% i,]$mean
-      daa_results_filtered_sub_df[daa_results_filtered_sub_df$feature==i,]$log_2_fold_change <- log2(mean[1]/mean[2])
+      # Get mean values for this feature
+      feature_means <- error_bar_pivot_longer_tibble_summarised_ordered[error_bar_pivot_longer_tibble_summarised_ordered$name %in% i,]
+
+      # Get group1 and group2 names for this feature from DAA results
+      feature_row <- daa_results_filtered_sub_df[daa_results_filtered_sub_df$feature == i, ]
+      group1_name <- feature_row$group1[1]
+      group2_name <- feature_row$group2[1]
+
+      # Get mean values for each group in the correct order
+      mean_group1 <- feature_means[feature_means$group == group1_name, ]$mean
+      mean_group2 <- feature_means[feature_means$group == group2_name, ]$mean
+
+      # Calculate log2 fold change as group2/group1 (consistent with calculate_abundance_stats)
+      if (length(mean_group1) > 0 && length(mean_group2) > 0) {
+        # Add small pseudocount to avoid log(0)
+        pseudocount <- 1e-10
+        log2_fc <- log2((mean_group2 + pseudocount) / (mean_group1 + pseudocount))
+        daa_results_filtered_sub_df[daa_results_filtered_sub_df$feature==i,]$log_2_fold_change <- log2_fc
+      } else {
+        # Fallback to original calculation if group matching fails
+        mean <- feature_means$mean
+        daa_results_filtered_sub_df[daa_results_filtered_sub_df$feature==i,]$log_2_fold_change <- log2(mean[1]/mean[2])
+      }
     }
     daa_results_filtered_sub_df$feature <- factor(daa_results_filtered_sub_df$feature,levels = rev(daa_results_filtered_sub_df$feature))
     p_values_bar <- daa_results_filtered_sub_df %>%
