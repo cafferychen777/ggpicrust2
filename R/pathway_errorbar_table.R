@@ -31,15 +31,18 @@
 #' \itemize{
 #'   \item \code{feature}: Feature/pathway identifier
 #'   \item \code{group1}: Reference group name
-#'   \item \code{group2}: Comparison group name  
+#'   \item \code{group2}: Comparison group name
 #'   \item \code{mean_rel_abundance_group1}: Mean relative abundance for group1
-#'   \item \code{sd_rel_abundance_group1}: Standard deviation of relative 
+#'   \item \code{sd_rel_abundance_group1}: Standard deviation of relative
 #'         abundance for group1
 #'   \item \code{mean_rel_abundance_group2}: Mean relative abundance for group2
-#'   \item \code{sd_rel_abundance_group2}: Standard deviation of relative 
+#'   \item \code{sd_rel_abundance_group2}: Standard deviation of relative
 #'         abundance for group2
 #'   \item \code{log2_fold_change}: Log2 fold change (group2/group1)
 #'   \item \code{p_adjust}: Adjusted p-value from differential analysis
+#'   \item Additional annotation columns (e.g., \code{description},
+#'         \code{pathway_name}, \code{pathway_class}) if present in the input
+#'         daa_results_df
 #' }
 #'
 #' @examples
@@ -201,29 +204,46 @@ pathway_errorbar_table <- function(abundance,
     group2 = group2_name
   )
   
+  # Identify annotation columns to include (excluding columns already in abundance_stats)
+  abundance_stats_cols <- colnames(abundance_stats)
+  annotation_cols <- setdiff(colnames(daa_results_filtered_sub_df),
+                             c(abundance_stats_cols, "method", "p_values"))
+
+  # Include p_adjust and annotation columns for merging
+  merge_cols <- c("feature", "p_adjust", annotation_cols)
+  merge_cols <- intersect(merge_cols, colnames(daa_results_filtered_sub_df))
+
   # Merge with DAA results to include p-values and other information
   result_table <- merge(
     abundance_stats,
-    daa_results_filtered_sub_df[, c("feature", "p_adjust", "group1", "group2")],
+    daa_results_filtered_sub_df[, merge_cols, drop = FALSE],
     by = "feature",
     all.x = TRUE
   )
-  
+
   # Reorder columns for better readability
-  column_order <- c(
-    "feature", "group1", "group2", 
+  base_column_order <- c(
+    "feature", "group1", "group2",
     "mean_rel_abundance_group1", "sd_rel_abundance_group1",
-    "mean_rel_abundance_group2", "sd_rel_abundance_group2", 
+    "mean_rel_abundance_group2", "sd_rel_abundance_group2",
     "log2_fold_change", "p_adjust"
   )
-  
-  result_table <- result_table[, column_order]
-  
+
+  # Add annotation columns at the end
+  # Recalculate annotation columns from the actual result table
+  result_annotation_cols <- setdiff(colnames(result_table), base_column_order)
+  column_order <- c(base_column_order, result_annotation_cols)
+
+  # Only select columns that actually exist in the result table
+  column_order <- intersect(column_order, colnames(result_table))
+
+  result_table <- result_table[, column_order, drop = FALSE]
+
   # Order by p-value (most significant first)
   result_table <- result_table[order(result_table$p_adjust), ]
-  
+
   # Reset row names
   rownames(result_table) <- NULL
-  
+
   return(result_table)
 }

@@ -189,9 +189,33 @@ calculate_abundance_stats <- function(abundance, metadata, group, features, grou
   # Convert abundance to matrix if needed
   abundance_mat <- as.matrix(abundance)
 
-  # Get sample names that match between abundance and metadata
-  sample_col <- intersect(c("sample", "Sample", "sample_name", "Sample_Name", colnames(metadata)), colnames(metadata))[1]
-  if (is.na(sample_col)) {
+  # Find the sample column that matches abundance column names
+  sample_col <- NULL
+  potential_sample_cols <- c("sample", "Sample", "sample_name", "Sample_Name", "sample_id", "Sample_ID")
+
+  # First try standard column names
+  for (col in potential_sample_cols) {
+    if (col %in% colnames(metadata)) {
+      if (all(colnames(abundance_mat) %in% metadata[[col]]) ||
+          all(metadata[[col]] %in% colnames(abundance_mat))) {
+        sample_col <- col
+        break
+      }
+    }
+  }
+
+  # If no standard column found, try all columns
+  if (is.null(sample_col)) {
+    for (col in colnames(metadata)) {
+      if (all(colnames(abundance_mat) %in% metadata[[col]]) ||
+          all(metadata[[col]] %in% colnames(abundance_mat))) {
+        sample_col <- col
+        break
+      }
+    }
+  }
+
+  if (is.null(sample_col)) {
     # Try to match by rownames if no sample column found
     if (all(colnames(abundance_mat) %in% rownames(metadata))) {
       metadata$sample <- rownames(metadata)
