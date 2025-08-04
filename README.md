@@ -19,6 +19,34 @@ If you are interested in exploring and analyzing your PICRUSt2 output data, *ggp
 
 ## News
 
+🎨 **New Feature: Enhanced Legend and Annotation System for pathway_errorbar()**
+
+We're thrilled to introduce a comprehensive **legend and annotation beautification system** for the `pathway_errorbar()` function! This major enhancement brings publication-quality visualizations to ggpicrust2 with:
+
+**Professional Visual Enhancements:**
+- **13 Color Themes**: Including journal-specific palettes (Nature, Science, Cell, NEJM, Lancet) and accessibility-friendly options
+- **Advanced Legend Control**: Flexible positioning, sizing, multi-column layouts, and custom styling
+- **Smart P-value Display**: Multiple formatting options with significance stars (`***`, `**`, `*`) and color coding
+- **Enhanced Pathway Annotations**: Customizable text styling, auto-sizing, and theme integration
+- **Accessibility Features**: Colorblind-friendly palettes and high-contrast designs
+
+**Key New Parameters:**
+```r
+pathway_errorbar(
+  # ... existing parameters ...
+  color_theme = "nature",              # Professional color schemes
+  legend_position = "top",             # Flexible legend positioning
+  legend_title = "Sample Groups",      # Custom legend titles
+  pvalue_format = "smart",             # Smart p-value formatting
+  pvalue_stars = TRUE,                 # Significance indicators
+  pvalue_colors = TRUE,                # Color-coded significance
+  pathway_class_text_color = "auto",   # Auto theme-matched colors
+  accessibility_mode = TRUE            # Enhanced accessibility
+)
+```
+
+This enhancement maintains 100% backward compatibility while providing researchers with powerful new tools to create publication-ready figures. All new features have been extensively tested and are ready for production use.
+
 🔄 **Updated Reference Databases for Improved Pathway Annotation (v2.1.4)**
 
 We've significantly enhanced the reference databases used for pathway annotation:
@@ -357,11 +385,19 @@ metacyc_daa_annotated_results_df <- pathway_annotation(pathway = "MetaCyc", daa_
 # Please change Group to metadata$your_group_column if you are not using example dataset
 pathway_errorbar(abundance = metacyc_abundance %>% column_to_rownames("pathway"), daa_results_df = metacyc_daa_annotated_results_df, Group = metadata$Environment, ko_to_kegg = FALSE, p_values_threshold = 0.05, order = "group", select = NULL, p_value_bar = TRUE, colors = NULL, x_lab = "description")
 
-# Generate pathway heatmap
+# Generate pathway heatmap with clustering
 # Please change column_to_rownames() to the feature column if you are not using example dataset
 # Please change group to "your_group_column" if you are not using example dataset
 feature_with_p_0.05 <- metacyc_daa_results_df %>% filter(p_adjust < 0.05)
-pathway_heatmap(abundance = metacyc_abundance %>% filter(pathway %in% feature_with_p_0.05$feature) %>% column_to_rownames("pathway"), metadata = metadata, group = "Environment")
+pathway_heatmap(
+  abundance = metacyc_abundance %>% 
+    filter(pathway %in% feature_with_p_0.05$feature) %>% 
+    column_to_rownames("pathway"), 
+  metadata = metadata, 
+  group = "Environment",
+  cluster_rows = TRUE,
+  clustering_method = "ward.D2"
+)
 
 # Generate pathway PCA plot
 # Please change column_to_rownames() to the feature column if you are not using example dataset
@@ -516,6 +552,9 @@ metacyc_daa_annotated_results_df <- pathway_annotation(pathway = "MetaCyc", daa_
 
 ### pathway_errorbar() {#pathway_errorbar}
 
+The `pathway_errorbar()` function creates error bar plots to visualize differential abundance analysis results. The function has been enhanced with **comprehensive legend and annotation beautification features** to produce publication-quality figures.
+
+#### Basic Usage
 
 ``` r
 data("ko_abundance")
@@ -535,30 +574,172 @@ p <- pathway_errorbar(abundance = kegg_abundance,
            p_value_bar = TRUE,
            colors = NULL,
            x_lab = "pathway_name")
+```
 
-# If you want to analysis the EC. MetaCyc. KO without conversions.
+#### Enhanced Features with Color Themes and Legend Control
+
+**🎨 Professional Color Themes**
+
+The function now supports 13 professionally designed color themes including journal-specific palettes:
+
+``` r
+# Nature journal style
+p_nature <- pathway_errorbar(
+  abundance = kegg_abundance,
+  daa_results_df = daa_annotated_results_df,
+  Group = metadata$Environment,
+  ko_to_kegg = TRUE,
+  color_theme = "nature",              # Professional color theme
+  legend_position = "top",             # Legend position control
+  legend_title = "Sample Groups",      # Custom legend title
+  pvalue_format = "smart",             # Smart p-value formatting
+  pvalue_stars = TRUE                  # Significance stars (*, **, ***)
+)
+
+# Science journal style with enhanced p-value display
+p_science <- pathway_errorbar(
+  abundance = kegg_abundance,
+  daa_results_df = daa_annotated_results_df,
+  Group = metadata$Environment,
+  ko_to_kegg = TRUE,
+  color_theme = "science",             # Science journal theme
+  legend_direction = "horizontal",     # Horizontal legend layout
+  legend_title_size = 14,              # Larger legend title
+  pvalue_format = "combined",          # Show both p-values and stars
+  pvalue_colors = TRUE,                # Color-coded significance levels
+  pathway_class_text_color = "auto"    # Auto pathway class colors
+)
+```
+
+**🎯 Advanced Legend Customization**
+
+``` r
+# Comprehensive legend customization
+p_custom <- pathway_errorbar(
+  abundance = kegg_abundance,
+  daa_results_df = daa_annotated_results_df,
+  Group = metadata$Environment,
+  ko_to_kegg = TRUE,
+  color_theme = "cell",
+  # Legend positioning and styling
+  legend_position = "bottom",          # bottom, top, left, right, none
+  legend_direction = "horizontal",     # horizontal, vertical
+  legend_title = "Treatment Groups",   # Custom title
+  legend_title_size = 16,              # Title font size
+  legend_text_size = 12,               # Legend text size
+  legend_key_size = 1.0,               # Legend key size
+  legend_ncol = 3,                     # Number of columns
+  # P-value display options
+  pvalue_format = "smart",             # numeric, scientific, smart, stars_only, combined
+  pvalue_stars = TRUE,                 # Show significance stars
+  pvalue_colors = TRUE,                # Color-coded significance
+  pvalue_size = 12,                    # P-value text size
+  pvalue_angle = 0,                    # P-value text angle
+  # Pathway class annotation styling
+  pathway_class_text_size = "auto",    # Auto-adjusted text size
+  pathway_class_text_color = "auto",   # Theme-matched colors
+  pathway_class_text_face = "bold",    # plain, bold, italic
+  pathway_class_text_angle = 0         # Text rotation angle
+)
+```
+
+**🌈 Available Color Themes**
+
+- `"default"` - Original ggpicrust2 colors
+- `"nature"` - Nature journal style (recommended for publications)
+- `"science"` - Science journal style
+- `"cell"` - Cell journal style
+- `"nejm"` - New England Journal of Medicine style
+- `"lancet"` - The Lancet journal style
+- `"colorblind_friendly"` - Accessible to colorblind users
+- `"viridis"` - Perceptually uniform colors
+- `"plasma"` - Vibrant gradient colors
+- `"high_contrast"` - Maximum visibility
+- `"minimal"` - Clean modern style
+- `"pastel"` - Soft colors
+- `"bold"` - High impact colors
+
+**♿ Accessibility Features**
+
+``` r
+# Colorblind-friendly design
+p_accessible <- pathway_errorbar(
+  abundance = kegg_abundance,
+  daa_results_df = daa_annotated_results_df,
+  Group = metadata$Environment,
+  ko_to_kegg = TRUE,
+  color_theme = "colorblind_friendly", # Colorblind-safe palette
+  accessibility_mode = TRUE,           # Enhanced accessibility
+  smart_colors = TRUE,                 # Intelligent color selection
+  pvalue_colors = TRUE,                # Color-coded significance
+  pvalue_format = "combined"           # Clear p-value display
+)
+```
+
+**📊 P-value Display Options**
+
+The enhanced p-value system provides multiple formatting options:
+
+- `"numeric"`: `0.023`
+- `"scientific"`: `2.3e-02`
+- `"smart"`: `p < 0.001` or `p = 0.023`
+- `"stars_only"`: `***`
+- `"combined"`: `0.023 ***`
+
+Significance levels: `***` (p < 0.001), `**` (p < 0.01), `*` (p < 0.05)
+
+#### Analysis Without Conversions
+
+``` r
+# For EC, MetaCyc, KO analysis without conversions
 data("metacyc_abundance")
 data("metadata")
-metacyc_daa_results_df <- pathway_daa(abundance = metacyc_abundance %>% column_to_rownames("pathway"), metadata = metadata, group = "Environment", daa_method = "LinDA")
-metacyc_daa_annotated_results_df <- pathway_annotation(pathway = "MetaCyc", daa_results_df = metacyc_daa_results_df, ko_to_kegg = FALSE)
-p <- pathway_errorbar(abundance = metacyc_abundance %>% column_to_rownames("pathway"),
-           daa_results_df = metacyc_daa_annotated_results_df,
-           Group = metadata$Environment,
-           ko_to_kegg = FALSE,
-           p_values_threshold = 0.05,
-           order = "group",
-           select = NULL,
-           p_value_bar = TRUE,
-           colors = NULL,
-           x_lab = "description")
+metacyc_daa_results_df <- pathway_daa(abundance = metacyc_abundance %>% column_to_rownames("pathway"), 
+                                     metadata = metadata, group = "Environment", daa_method = "LinDA")
+metacyc_daa_annotated_results_df <- pathway_annotation(pathway = "MetaCyc", 
+                                                      daa_results_df = metacyc_daa_results_df, ko_to_kegg = FALSE)
+
+p_metacyc <- pathway_errorbar(
+  abundance = metacyc_abundance %>% column_to_rownames("pathway"),
+  daa_results_df = metacyc_daa_annotated_results_df,
+  Group = metadata$Environment,
+  ko_to_kegg = FALSE,
+  p_values_threshold = 0.05,
+  order = "group",
+  color_theme = "nature",              # Apply professional theme
+  legend_title = "Environments",       # Descriptive legend title
+  pvalue_format = "smart",             # Smart p-value formatting
+  pvalue_stars = TRUE,                 # Include significance indicators
+  x_lab = "description"
+)
 ```
+
+#### Key Parameters Summary
+
+**Core Parameters:**
+- `abundance`: Abundance data matrix
+- `daa_results_df`: Differential abundance analysis results
+- `Group`: Sample grouping variable
+- `p_values_threshold`: Significance threshold (default: 0.05)
+- `order`: Result ordering ("p_values", "name", "group", "pathway_class")
+
+**Visual Enhancement Parameters:**
+- `color_theme`: Professional color schemes
+- `legend_*`: Comprehensive legend control
+- `pvalue_*`: Advanced p-value formatting and display
+- `pathway_class_*`: Pathway annotation styling
+- `smart_colors`: Intelligent color selection
+- `accessibility_mode`: Enhanced accessibility features
+
+The enhanced `pathway_errorbar()` function provides publication-ready visualizations with professional styling, flexible customization options, and accessibility features, making it suitable for high-quality scientific publications.
 
 ### pathway_heatmap() {#pathway_heatmap}
 
-In this section, we will demonstrate how to create a pathway heatmap using the `pathway_heatmap` function in the ggpicrust2 package. This function visualizes the relative abundance of pathways in different samples.
+In this section, we will demonstrate how to create pathway heatmaps using the enhanced `pathway_heatmap` function in the ggpicrust2 package. This function visualizes the relative abundance of pathways in different samples with advanced features including hierarchical clustering, faceted displays, and customizable aesthetics.
+
+#### Basic Usage
 
 Use the fake dataset
-
 
 ``` r
 # Create example functional pathway abundance data
@@ -568,23 +749,114 @@ rownames(abundance_example) <- c("PathwayA", "PathwayB", "PathwayC")
 
 # Create example metadata
 # Please change your sample id's column name to sample_name
-metadata_example <- data.frame(sample_name = colnames(abundance_example),
-                               group = factor(rep(c("Control", "Treatment"), each = 5)))
+metadata_example <- data.frame(
+  sample_name = colnames(abundance_example),
+  group = factor(rep(c("Control", "Treatment"), each = 5)),
+  batch = factor(rep(c("Batch1", "Batch2"), times = 5))
+)
 
-# Create a heatmap
+# Create a basic heatmap
 pathway_heatmap(abundance_example, metadata_example, "group")
 ```
 
-Use the real dataset
+#### Advanced Features
+
+##### 1. Hierarchical Clustering
+
+Add hierarchical clustering to reveal patterns in your data:
+
+``` r
+# Heatmap with row clustering (pathway clustering)
+pathway_heatmap(
+  abundance = abundance_example,
+  metadata = metadata_example,
+  group = "group",
+  cluster_rows = TRUE,
+  clustering_method = "ward.D2",
+  clustering_distance = "correlation",
+  dendro_line_size = 0.8
+)
+
+# Heatmap with column clustering (sample clustering)  
+pathway_heatmap(
+  abundance = abundance_example,
+  metadata = metadata_example,
+  group = "group",
+  cluster_cols = TRUE,
+  clustering_method = "complete",
+  clustering_distance = "euclidean"
+)
+
+# Heatmap with both row and column clustering
+pathway_heatmap(
+  abundance = abundance_example,
+  metadata = metadata_example,
+  group = "group",
+  cluster_rows = TRUE,
+  cluster_cols = TRUE,
+  clustering_method = "average",
+  clustering_distance = "manhattan"
+)
+```
+
+**Clustering Options:**
+- **Methods:** "complete", "average", "single", "ward.D", "ward.D2", "mcquitty", "median", "centroid"
+- **Distances:** "euclidean", "maximum", "manhattan", "canberra", "binary", "minkowski", "correlation", "spearman"
+
+##### 2. Faceted Heatmaps
+
+Create multi-panel heatmaps with additional grouping variables:
+
+``` r
+# Faceted heatmap by batch
+pathway_heatmap(
+  abundance = abundance_example,
+  metadata = metadata_example,
+  group = "group",
+  facet_by = "batch",
+  colors = c("lightblue", "lightcoral", "lightgreen", "lightyellow")
+)
+```
+
+##### 3. Custom Color Bars
+
+Customize the appearance and position of color bars:
+
+``` r
+# Custom colorbar settings
+pathway_heatmap(
+  abundance = abundance_example,
+  metadata = metadata_example,
+  group = "group",
+  colorbar_title = "Expression Level",
+  colorbar_position = "bottom",
+  colorbar_width = 8,
+  colorbar_height = 0.8,
+  colorbar_breaks = c(-2, -1, 0, 1, 2)
+)
+
+# Left-positioned colorbar with custom colors
+pathway_heatmap(
+  abundance = abundance_example,
+  metadata = metadata_example,
+  group = "group",
+  low_color = "#053061",     # Dark blue
+  mid_color = "#f7f7f7",     # Light gray  
+  high_color = "#67001f",    # Dark red
+  colorbar_position = "left",
+  colorbar_title = "Z-Score"
+)
+```
+
+#### Real Dataset Example
 
 ``` r
 library(tidyverse)
 library(ggh4x)
 library(ggpicrust2)
+
 # Load the data
 data("metacyc_abundance")
-
-# Load the metadata
 data("metadata")
 
 # Perform differential abundance analysis
@@ -606,7 +878,7 @@ annotated_metacyc_daa_results_df <- pathway_annotation(
 feature_with_p_0.05 <- metacyc_daa_results_df %>%
   filter(p_adjust < 0.05)
 
-# Create the heatmap
+# Create an advanced heatmap with clustering
 pathway_heatmap(
   abundance = metacyc_abundance %>%
     right_join(
@@ -617,9 +889,25 @@ pathway_heatmap(
     select(-"pathway") %>%
     column_to_rownames("description"),
   metadata = metadata,
-  group = "Environment"
+  group = "Environment",
+  cluster_rows = TRUE,
+  clustering_method = "ward.D2",
+  clustering_distance = "correlation",
+  low_color = "#2166ac",
+  mid_color = "#f7f7f7", 
+  high_color = "#b2182b",
+  colorbar_title = "Standardized Abundance"
 )
 ```
+
+#### Key Parameters Summary
+
+- **Clustering**: `cluster_rows`, `cluster_cols`, `clustering_method`, `clustering_distance`
+- **Dendrograms**: `dendro_line_size`, `dendro_labels`
+- **Faceting**: `facet_by`
+- **Color customization**: `low_color`, `mid_color`, `high_color`
+- **Colorbar**: `colorbar_title`, `colorbar_position`, `colorbar_width`, `colorbar_height`, `colorbar_breaks`
+- **Display**: `show_row_names`, `show_legend`, `font_size`
 ### pathway_pca() {#pathway_pca}
 
 In this section, we will demonstrate how to perform Principal Component Analysis (PCA) on functional pathway abundance data and create visualizations of the PCA results using the `pathway_pca` function in the ggpicrust2 package.

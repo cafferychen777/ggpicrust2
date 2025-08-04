@@ -20,13 +20,61 @@
 
 \item{p_value_bar}{A logical parameter indicating whether to display a bar showing the p-value threshold for significance. If TRUE, the bar will be displayed.}
 
-\item{colors}{A vector of colors to be used to represent the groups in the figure. Each color corresponds to a group.}
+\item{colors}{A vector of colors to be used to represent the groups in the figure. Each color corresponds to a group. If NULL, colors will be selected based on the color_theme.}
 
 \item{x_lab}{A character string to be used as the x-axis label in the figure. The default value is "description" for KOs'descriptions and "pathway_name" for KEGG pathway names.}
 
-\item{log2_fold_change_color}{A character string specifying the color for log2 fold change bars. Default is "#87ceeb" (light blue).}
+\item{log2_fold_change_color}{A character string specifying the color for log2 fold change bars. Default is "#87ceeb" (light blue). Can also be "auto" to use theme-based colors.}
 
 \item{max_features}{A numeric parameter specifying the maximum number of features to display before issuing a warning. Default is 30. Set to a higher value to display more features, or Inf to disable the limit entirely.}
+
+\item{color_theme}{A character string specifying the color theme to use. Options include: "default", "nature", "science", "cell", "nejm", "lancet", "colorblind_friendly", "viridis", "plasma", "minimal", "high_contrast", "pastel", "bold". Default is "default".}
+
+\item{pathway_class_colors}{A vector of colors for pathway class annotations. If NULL, colors will be selected from the theme.}
+
+\item{smart_colors}{A logical parameter indicating whether to use intelligent color selection based on data characteristics. Default is FALSE.}
+
+\item{accessibility_mode}{A logical parameter indicating whether to use accessibility-friendly colors. Default is FALSE.}
+
+\item{legend_position}{A character string specifying legend position. Options: "top", "bottom", "left", "right", "none". Default is "top".}
+
+\item{legend_direction}{A character string specifying legend direction. Options: "horizontal", "vertical". Default is "horizontal".}
+
+\item{legend_title}{A character string for legend title. If NULL, no title is displayed.}
+
+\item{legend_title_size}{A numeric value specifying legend title font size. Default is 12.}
+
+\item{legend_text_size}{A numeric value specifying legend text font size. Default is 10.}
+
+\item{legend_key_size}{A numeric value specifying legend key size in cm. Default is 0.8.}
+
+\item{legend_ncol}{A numeric value specifying number of columns in legend. If NULL, automatic layout is used.}
+
+\item{legend_nrow}{A numeric value specifying number of rows in legend. If NULL, automatic layout is used.}
+
+\item{pvalue_format}{A character string specifying p-value format. Options: "numeric", "scientific", "smart", "stars_only", "combined". Default is "smart".}
+
+\item{pvalue_stars}{A logical parameter indicating whether to display significance stars. Default is TRUE.}
+
+\item{pvalue_colors}{A logical parameter indicating whether to use color coding for significance levels. Default is FALSE.}
+
+\item{pvalue_size}{A numeric value or "auto" for p-value text size. Default is "auto".}
+
+\item{pvalue_angle}{A numeric value specifying p-value text angle in degrees. Default is 0.}
+
+\item{pvalue_thresholds}{A numeric vector of significance thresholds. Default is c(0.001, 0.01, 0.05).}
+
+\item{pvalue_star_symbols}{A character vector of star symbols for significance levels. Default is c("***", "**", "*").}
+
+\item{pathway_class_text_size}{A numeric value or "auto" for pathway class text size. Default is "auto".}
+
+\item{pathway_class_text_color}{A character string for pathway class text color. Use "auto" for theme-based color. Default is "black".}
+
+\item{pathway_class_text_face}{A character string for pathway class text face. Options: "plain", "bold", "italic". Default is "bold".}
+
+\item{pathway_class_text_angle}{A numeric value specifying pathway class text angle in degrees. Default is 0.}
+
+\item{pathway_class_position}{A character string specifying pathway class position. Options: "left", "right", "none". Default is "left".}
 }
 \value{
 A ggplot2 plot showing the error bar plot of the differential abundance analysis results for the functional pathways.

@@ -9,10 +9,34 @@
 #' @param order A parameter controlling the ordering of the rows in the figure. The options are: "p_values" (order by p-values), "name" (order by pathway name), "group" (order by the group with the highest mean relative abundance), or "pathway_class" (order by the pathway category).
 #' @param select A vector of pathway names to be included in the figure. This can be used to limit the number of pathways displayed. If NULL, all pathways will be displayed.
 #' @param p_value_bar A logical parameter indicating whether to display a bar showing the p-value threshold for significance. If TRUE, the bar will be displayed.
-#' @param colors A vector of colors to be used to represent the groups in the figure. Each color corresponds to a group.
+#' @param colors A vector of colors to be used to represent the groups in the figure. Each color corresponds to a group. If NULL, colors will be selected based on the color_theme.
 #' @param x_lab A character string to be used as the x-axis label in the figure. The default value is "description" for KOs'descriptions and "pathway_name" for KEGG pathway names.
-#' @param log2_fold_change_color A character string specifying the color for log2 fold change bars. Default is "#87ceeb" (light blue).
+#' @param log2_fold_change_color A character string specifying the color for log2 fold change bars. Default is "#87ceeb" (light blue). Can also be "auto" to use theme-based colors.
 #' @param max_features A numeric parameter specifying the maximum number of features to display before issuing a warning. Default is 30. Set to a higher value to display more features, or Inf to disable the limit entirely.
+#' @param color_theme A character string specifying the color theme to use. Options include: "default", "nature", "science", "cell", "nejm", "lancet", "colorblind_friendly", "viridis", "plasma", "minimal", "high_contrast", "pastel", "bold". Default is "default".
+#' @param pathway_class_colors A vector of colors for pathway class annotations. If NULL, colors will be selected from the theme.
+#' @param smart_colors A logical parameter indicating whether to use intelligent color selection based on data characteristics. Default is FALSE.
+#' @param accessibility_mode A logical parameter indicating whether to use accessibility-friendly colors. Default is FALSE.
+#' @param legend_position A character string specifying legend position. Options: "top", "bottom", "left", "right", "none". Default is "top".
+#' @param legend_direction A character string specifying legend direction. Options: "horizontal", "vertical". Default is "horizontal".
+#' @param legend_title A character string for legend title. If NULL, no title is displayed.
+#' @param legend_title_size A numeric value specifying legend title font size. Default is 12.
+#' @param legend_text_size A numeric value specifying legend text font size. Default is 10.
+#' @param legend_key_size A numeric value specifying legend key size in cm. Default is 0.8.
+#' @param legend_ncol A numeric value specifying number of columns in legend. If NULL, automatic layout is used.
+#' @param legend_nrow A numeric value specifying number of rows in legend. If NULL, automatic layout is used.
+#' @param pvalue_format A character string specifying p-value format. Options: "numeric", "scientific", "smart", "stars_only", "combined". Default is "smart".
+#' @param pvalue_stars A logical parameter indicating whether to display significance stars. Default is TRUE.
+#' @param pvalue_colors A logical parameter indicating whether to use color coding for significance levels. Default is FALSE.
+#' @param pvalue_size A numeric value or "auto" for p-value text size. Default is "auto".
+#' @param pvalue_angle A numeric value specifying p-value text angle in degrees. Default is 0.
+#' @param pvalue_thresholds A numeric vector of significance thresholds. Default is c(0.001, 0.01, 0.05).
+#' @param pvalue_star_symbols A character vector of star symbols for significance levels. Default is c("***", "**", "*").
+#' @param pathway_class_text_size A numeric value or "auto" for pathway class text size. Default is "auto".
+#' @param pathway_class_text_color A character string for pathway class text color. Use "auto" for theme-based color. Default is "black".
+#' @param pathway_class_text_face A character string for pathway class text face. Options: "plain", "bold", "italic". Default is "bold".
+#' @param pathway_class_text_angle A numeric value specifying pathway class text angle in degrees. Default is 0.
+#' @param pathway_class_position A character string specifying pathway class position. Options: "left", "right", "none". Default is "left".
 #' @importFrom stats sd
 #' @return A ggplot2 plot showing the error bar plot of the differential abundance analysis results for the functional pathways.
 #' The plot visualizes the differential abundance results of a specific differential abundance analysis method. The corresponding dataframe contains the results used to create the plot.
@@ -138,7 +162,34 @@ pathway_errorbar <-
            colors = NULL,
            x_lab = NULL,
            log2_fold_change_color = "#87ceeb",
-           max_features = 30) {
+           max_features = 30,
+           color_theme = "default",
+           pathway_class_colors = NULL,
+           smart_colors = FALSE,
+           accessibility_mode = FALSE,
+           # New legend control parameters
+           legend_position = "top",
+           legend_direction = "horizontal",
+           legend_title = NULL,
+           legend_title_size = 12,
+           legend_text_size = 10,
+           legend_key_size = 0.8,
+           legend_ncol = NULL,
+           legend_nrow = NULL,
+           # P-value display parameters
+           pvalue_format = "smart",
+           pvalue_stars = TRUE,
+           pvalue_colors = FALSE,
+           pvalue_size = "auto",
+           pvalue_angle = 0,
+           pvalue_thresholds = c(0.001, 0.01, 0.05),
+           pvalue_star_symbols = c("***", "**", "*"),
+           # Pathway class annotation parameters
+           pathway_class_text_size = "auto",
+           pathway_class_text_color = "black",
+           pathway_class_text_face = "bold",
+           pathway_class_text_angle = 0,
+           pathway_class_position = "left") {
     # Add more complete input validation at the beginning of the function
     if(!is.matrix(abundance) && !is.data.frame(abundance)) {
       stop("'abundance' must be a matrix or data frame")
@@ -187,9 +238,7 @@ pathway_errorbar <-
       )
     }
 
-    # Exclude rows with missing pathway annotation
-    daa_results_df <- daa_results_df[!is.na(daa_results_df[,x_lab]),]
-
+    # Set x_lab if not provided
     if (is.null(x_lab)){
       if (ko_to_kegg == TRUE){
         x_lab <- "pathway_name"
@@ -210,20 +259,62 @@ pathway_errorbar <-
       )
     }
 
-    if (nlevels(factor(daa_results_df$method)) != 1) {
+    # Exclude rows with missing pathway annotation (after x_lab is set)
+    daa_results_df <- daa_results_df[!is.na(daa_results_df[,x_lab]),]
+
+    if (length(unique(daa_results_df$method)) != 1) {
       stop(
         "The 'method' column in the 'daa_results_df' data frame contains more than one method. Please filter it to contain only one method."
       )
     }
 
-    if (nlevels(factor(daa_results_df$group1)) != 1 || nlevels(factor(daa_results_df$group2)) != 1) {
+    if (length(unique(daa_results_df$group1)) != 1 || length(unique(daa_results_df$group2)) != 1) {
       stop(
         "The 'group1' or 'group2' column in the 'daa_results_df' data frame contains more than one group. Please filter each to contain only one group."
       )
     }
 
+    # Enhanced color selection using the new color theme system
+    n_groups <- nlevels(as.factor(Group))
+    
+    # Source the color themes and legend utilities if functions are not available
+    if (!exists("get_color_theme")) {
+      source(file.path(dirname(parent.frame()$ofile), "color_themes.R"))
+    }
+    if (!exists("format_pvalue_smart")) {
+      source(file.path(dirname(parent.frame()$ofile), "legend_annotation_utils.R"))
+    }
+    
+    # Use smart color selection if requested
+    if (smart_colors || accessibility_mode) {
+      smart_selection <- smart_color_selection(
+        n_groups = n_groups,
+        has_pathway_class = ko_to_kegg,
+        data_type = "abundance",
+        accessibility_mode = accessibility_mode
+      )
+      color_theme <- smart_selection$theme_name
+      if (smart_colors) {
+        message("Smart color selection: ", smart_selection$reason)
+      }
+    }
+    
+    # Get the color theme
+    theme_colors <- get_color_theme(color_theme, n_groups)
+    
+    # Set group colors
     if (is.null(colors)) {
-      colors <- c("#d93c3e", "#3685bc", "#6faa3e", "#e8a825", "#c973e6", "#ee6b3d", "#2db0a7", "#f25292")[1:nlevels(as.factor(Group))]
+      colors <- theme_colors$group_colors[1:n_groups]
+    }
+    
+    # Set pathway class colors if not provided
+    if (is.null(pathway_class_colors)) {
+      pathway_class_colors <- theme_colors$pathway_class_colors
+    }
+    
+    # Set log2 fold change color
+    if (log2_fold_change_color == "auto") {
+      log2_fold_change_color <- theme_colors$fold_change_single
     }
 
     errorbar_abundance_mat <- as.matrix(abundance)
@@ -264,7 +355,7 @@ pathway_errorbar <-
       x / sum(x))
 
     # Subset to only include the features present in daa_results_filtered_sub_df$feature
-    sub_relative_abundance_mat <- relative_abundance_mat[rownames(relative_abundance_mat) %in% daa_results_filtered_sub_df$feature,]
+    sub_relative_abundance_mat <- relative_abundance_mat[rownames(relative_abundance_mat) %in% daa_results_filtered_sub_df$feature, , drop = FALSE]
 
     # Create a matrix for the error bars
     # Fix mapping error: ensure correct mapping between samples and their experimental groups
@@ -443,14 +534,29 @@ pathway_errorbar <-
           color = "black",
           hjust = 0.5
         ),
-        legend.position = "top",
-        legend.key.size = ggplot2::unit(0.1, "cm"),
-        legend.direction = "vertical",
-        legend.justification = "left",
-        legend.text = ggplot2::element_text(size = 8, face = "bold"),
-        legend.box.just = "right",
+        legend.position = legend_position,
+        legend.key.size = ggplot2::unit(legend_key_size, "cm"),
+        legend.direction = legend_direction,
+        legend.justification = "center",
+        legend.text = ggplot2::element_text(size = legend_text_size, face = "bold"),
+        legend.box.just = "center",
+        legend.title = if (!is.null(legend_title)) {
+          ggplot2::element_text(size = legend_title_size, face = "bold")
+        } else {
+          ggplot2::element_blank()
+        },
         plot.margin = ggplot2::margin(0, 0.5, 0.5, 0, unit = "cm")
       ) +
+      # Add guide specifications for multi-column/row layouts
+      {if (!is.null(legend_ncol) || !is.null(legend_nrow)) {
+        ggplot2::guides(fill = ggplot2::guide_legend(
+          ncol = legend_ncol,
+          nrow = legend_nrow,
+          byrow = TRUE
+        ))
+      } else {
+        ggplot2::guides()
+      }} +
       ggplot2::coord_cartesian(clip = "off") +
       ggplot2::theme(
         axis.text.x = ggplot2::element_text(angle = 45, hjust = 1),
@@ -470,10 +576,7 @@ pathway_errorbar <-
       ymin <- start - 1 / 2
       ymax <- end + 1 / 2
       nPoints <- length(start)
-      pCol <- c("#D51F26","#272E6A","#208A42","#89288F","#F47D2B",
-                 "#FEE500","#8A9FD1","#C06CAB","#E6C2DC","#90D5E4",
-                 "#89C75F","#F37B7D","#9983BD","#D24B27","#3BBCA8",
-                 "#6E4B9E","#0C727C", "#7E1416","#D8A767","#3D3D3D")[1:nPoints]
+      pCol <- pathway_class_colors[1:nPoints]
       pFill <- pCol
       for (i in 1:nPoints)  {
         bar_errorbar <- bar_errorbar +
@@ -494,13 +597,14 @@ pathway_errorbar <-
           )
       }
     }
-    daa_results_filtered_sub_df <-
-      cbind(
-        daa_results_filtered_sub_df,
-        negative_log10_p = -log10(daa_results_filtered_sub_df$p_adjust),
-        group_nonsense = "nonsense",
-        log_2_fold_change = NA
-      )
+    # Add necessary columns
+    daa_results_filtered_sub_df$negative_log10_p <- -log10(daa_results_filtered_sub_df$p_adjust)
+    daa_results_filtered_sub_df$group_nonsense <- "nonsense"
+    
+    # Only add log_2_fold_change if it doesn't exist
+    if (!"log_2_fold_change" %in% colnames(daa_results_filtered_sub_df)) {
+      daa_results_filtered_sub_df$log_2_fold_change <- rep(NA, nrow(daa_results_filtered_sub_df))
+    }
 
     for (i in daa_results_filtered_sub_df$feature){
       # Get mean values for this feature
@@ -545,8 +649,8 @@ pathway_errorbar <-
       ggplot2::theme(
         axis.ticks.y = ggplot2::element_blank(),
         axis.line.y = ggplot2::element_blank(),
-        axis.line.x = ggplot2::element_line(size = 0.5),
-        axis.ticks.x = ggplot2::element_line(size = 0.5),
+        axis.line.x = ggplot2::element_line(linewidth = 0.5),
+        axis.ticks.x = ggplot2::element_line(linewidth = 0.5),
         panel.grid.major.y = ggplot2::element_blank(),
         panel.grid.major.x = ggplot2::element_blank(),
         axis.text = ggplot2::element_text(size = 10, color = "black"),
@@ -582,10 +686,12 @@ pathway_errorbar <-
       pathway_class_annotation <-
         pathway_class_plot_df %>% ggplot2::ggplot(ggplot2::aes(nonsense, pathway_class_y)) + ggplot2::geom_text(
           ggplot2::aes(nonsense, pathway_class_y, label = pathway_class),
-          size = 3.5,
-          color = "black",
-          fontface = "bold",
-          family = "sans"
+          size = pathway_class_final_text_size,
+          color = pathway_class_final_text_color,
+          fontface = pathway_class_text_face,
+          family = "sans",
+          angle = pathway_class_text_angle,
+          hjust = if (pathway_class_position == "left") 1 else 0
         ) +
         ggplot2::scale_y_discrete(position = "right") +
         ggprism::theme_prism(base_size = 12) +
@@ -603,9 +709,60 @@ pathway_errorbar <-
         )
     }
 
-    # Helper function to format p-values for display
+    # Enhanced p-value formatting using the new system
     format_p_value <- function(p) {
-      ifelse(p < 0.001, sprintf("%.1e", p), sprintf("%.3f", p))
+      # Use smart formatting if available, otherwise fallback to simple formatting
+      if (exists("format_pvalue_smart")) {
+        format_pvalue_smart(p, 
+                           format = pvalue_format,
+                           stars = pvalue_stars,
+                           thresholds = pvalue_thresholds,
+                           star_symbols = pvalue_star_symbols)
+      } else {
+        # Fallback to original formatting
+        ifelse(p < 0.001, sprintf("%.1e", p), sprintf("%.3f", p))
+      }
+    }
+    
+    # Calculate smart text size for pathway class annotations
+    pathway_class_final_text_size <- if (pathway_class_text_size == "auto") {
+      if (exists("calculate_smart_text_size")) {
+        calculate_smart_text_size(nrow(daa_results_filtered_sub_df), base_size = 10, min_size = 3, max_size = 4)
+      } else {
+        3.5  # Default size
+      }
+    } else {
+      pathway_class_text_size
+    }
+    
+    # Set pathway class text color based on theme if "auto"
+    pathway_class_final_text_color <- if (pathway_class_text_color == "auto") {
+      # Get theme colors for pathway class
+      current_theme <- get_color_theme(color_theme)
+      current_theme$pathway_class_colors[1]  # Use first theme color
+    } else {
+      pathway_class_text_color
+    }
+    
+    # Calculate p-value colors if enabled
+    pvalue_text_colors <- if (pvalue_colors && exists("get_significance_colors")) {
+      get_significance_colors(daa_results_filtered_sub_df$p_adjust,
+                            thresholds = pvalue_thresholds,
+                            colors = c("#d73027", "#fc8d59", "#fee08b"),
+                            default_color = "black")
+    } else {
+      rep("black", nrow(daa_results_filtered_sub_df))
+    }
+    
+    # Calculate smart text size for p-values
+    pvalue_text_size <- if (pvalue_size == "auto") {
+      if (exists("calculate_smart_text_size")) {
+        calculate_smart_text_size(nrow(daa_results_filtered_sub_df), base_size = 10)
+      } else {
+        3.5  # Default size
+      }
+    } else {
+      pvalue_size
     }
 
     daa_results_filtered_sub_df$unique <-
@@ -613,11 +770,13 @@ pathway_errorbar <-
     p_annotation <- daa_results_filtered_sub_df %>%
       ggplot2::ggplot(ggplot2::aes(group_nonsense, p_adjust)) +
       ggplot2::geom_text(
-        ggplot2::aes(group_nonsense, unique, label = format_p_value(p_adjust)),
-        size = 3.5,
-        color = "black",
+        ggplot2::aes(group_nonsense, unique, 
+                    label = format_p_value(p_adjust),
+                    color = I(pvalue_text_colors)),
+        size = pvalue_text_size,
         fontface = "bold",
-        family = "sans"
+        family = "sans",
+        angle = pvalue_angle
       ) +
       ggplot2::labs(y = "p-value (adjusted)") +
       ggplot2::scale_y_discrete(position = "right") +

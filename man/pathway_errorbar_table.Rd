@@ -11,7 +11,9 @@ pathway_errorbar_table(
   ko_to_kegg = FALSE,
   p_values_threshold = 0.05,
   select = NULL,
-  max_features = 30
+  max_features = 30,
+  metadata = NULL,
+  sample_col = "sample_name"
 )
 }
 \arguments{
@@ -23,8 +25,9 @@ columns. The column names should match the sample names in metadata.}
 analysis results from pathway_daa function. Must contain columns: 
 feature, group1, group2, p_adjust.}
 
-\item{Group}{A vector containing group assignments for each sample in the 
-same order as the columns in abundance matrix.}
+\item{Group}{A vector containing group assignments for each sample in the
+same order as the columns in abundance matrix. Alternatively, if
+metadata is provided, this should match the order of samples in metadata.}
 
 \item{ko_to_kegg}{Logical value indicating whether to use KO to KEGG 
 conversion. Default is FALSE.}
@@ -35,23 +38,32 @@ significant features. Default is 0.05.}
 \item{select}{Character vector of specific features to include. If NULL, 
 all significant features are included.}
 
-\item{max_features}{Maximum number of features to include in the table. 
+\item{max_features}{Maximum number of features to include in the table.
 Default is 30.}
+
+\item{metadata}{Optional data frame containing sample metadata. If provided,
+the Group vector will be reordered to match the abundance column order.}
+
+\item{sample_col}{Character string specifying the column name in metadata
+that contains sample identifiers. Default is "sample_name".}
 }
 \value{
 A data frame containing the following columns:
 \itemize{
   \item \code{feature}: Feature/pathway identifier
   \item \code{group1}: Reference group name
-  \item \code{group2}: Comparison group name  
+  \item \code{group2}: Comparison group name
   \item \code{mean_rel_abundance_group1}: Mean relative abundance for group1
-  \item \code{sd_rel_abundance_group1}: Standard deviation of relative 
+  \item \code{sd_rel_abundance_group1}: Standard deviation of relative
         abundance for group1
   \item \code{mean_rel_abundance_group2}: Mean relative abundance for group2
-  \item \code{sd_rel_abundance_group2}: Standard deviation of relative 
+  \item \code{sd_rel_abundance_group2}: Standard deviation of relative
         abundance for group2
   \item \code{log2_fold_change}: Log2 fold change (group2/group1)
   \item \code{p_adjust}: Adjusted p-value from differential analysis
+  \item Additional annotation columns (e.g., \code{description},
+        \code{pathway_name}, \code{pathway_class}) if present in the input
+        daa_results_df
 }
 }
 \description{
