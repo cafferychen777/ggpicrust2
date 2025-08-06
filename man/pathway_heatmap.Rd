@@ -30,6 +30,30 @@ heatmap. If NULL or not provided, a default color set is used for the facet stri
 \item{mid_color}{A character string specifying the color for middle values in the heatmap gradient. Default is "white".}
 
 \item{high_color}{A character string specifying the color for high values in the heatmap gradient. Default is "#ca0020" (red).}
+
+\item{cluster_rows}{A logical value indicating whether to cluster rows (pathways). Default is FALSE.}
+
+\item{cluster_cols}{A logical value indicating whether to cluster columns (samples). Default is FALSE.}
+
+\item{clustering_method}{A character string specifying the clustering method. Options: "complete", "average", "single", "ward.D", "ward.D2", "mcquitty", "median", "centroid". Default is "complete".}
+
+\item{clustering_distance}{A character string specifying the distance metric. Options: "euclidean", "maximum", "manhattan", "canberra", "binary", "minkowski", "correlation", "spearman". Default is "euclidean".}
+
+\item{dendro_line_size}{A numeric value specifying the line width of dendrogram branches. Default is 0.5.}
+
+\item{dendro_labels}{A logical value indicating whether to show dendrogram labels. Default is FALSE.}
+
+\item{facet_by}{A character string specifying an additional grouping variable for creating faceted heatmaps. If NULL, no faceting is applied.}
+
+\item{colorbar_title}{A character string specifying the title for the color bar. Default is "Z Score".}
+
+\item{colorbar_position}{A character string specifying the position of the color bar. Options: "right", "left", "top", "bottom". Default is "right".}
+
+\item{colorbar_width}{A numeric value specifying the width of the color bar. Default is 0.6.}
+
+\item{colorbar_height}{A numeric value specifying the height of the color bar. Default is 9.}
+
+\item{colorbar_breaks}{An optional numeric vector specifying custom breaks for the color bar.}
 }
 \value{
 A ggplot heatmap object representing the heatmap of the predicted functional
@@ -58,14 +82,74 @@ rownames(kegg_abundance_example) <- c("PathwayA", "PathwayB", "PathwayC")
 # Create example metadata
 metadata_example <- data.frame(
   sample_name = colnames(kegg_abundance_example),
-  group = factor(rep(c("Control", "Treatment"), each = 5))
+  group = factor(rep(c("Control", "Treatment"), each = 5)),
+  batch = factor(rep(c("Batch1", "Batch2"), times = 5))
 )
 
 # Custom colors for facet strips
 custom_colors <- c("skyblue", "salmon")
 
-# Create a heatmap using custom colors for facet strips
+# Example 1: Basic heatmap
 pathway_heatmap(kegg_abundance_example, metadata_example, "group", colors = custom_colors)
+
+# Example 2: Heatmap with row clustering
+pathway_heatmap(
+  abundance = kegg_abundance_example,
+  metadata = metadata_example,
+  group = "group",
+  cluster_rows = TRUE,
+  clustering_method = "complete",
+  clustering_distance = "euclidean",
+  dendro_line_size = 0.8
+)
+
+# Example 3: Heatmap with column clustering using correlation distance
+pathway_heatmap(
+  abundance = kegg_abundance_example,
+  metadata = metadata_example,
+  group = "group",
+  cluster_cols = TRUE,
+  clustering_method = "ward.D2",
+  clustering_distance = "correlation"
+)
+
+# Example 4: Faceted heatmap with additional grouping variable
+pathway_heatmap(
+  abundance = kegg_abundance_example,
+  metadata = metadata_example,
+  group = "group",
+  facet_by = "batch",
+  colors = c("lightblue", "lightcoral", "lightgreen", "lightyellow")
+)
+
+# Example 5: Custom colorbar settings
+pathway_heatmap(
+  abundance = kegg_abundance_example,
+  metadata = metadata_example,
+  group = "group",
+  colorbar_title = "Expression Level",
+  colorbar_position = "bottom",
+  colorbar_width = 8,
+  colorbar_height = 0.8,
+  colorbar_breaks = c(-2, -1, 0, 1, 2)
+)
+
+# Example 6: Advanced heatmap with clustering and custom aesthetics
+pathway_heatmap(
+  abundance = kegg_abundance_example,
+  metadata = metadata_example,
+  group = "group",
+  cluster_rows = TRUE,
+  cluster_cols = FALSE,  # Don't cluster columns to preserve group order
+  clustering_method = "average",
+  clustering_distance = "manhattan",
+  dendro_line_size = 1.0,
+  low_color = "#053061",     # Dark blue
+  mid_color = "#f7f7f7",     # Light gray
+  high_color = "#67001f",    # Dark red
+  colorbar_title = "Z-Score",
+  colorbar_position = "left"
+)
 
 # Use real dataset
 data("metacyc_abundance")
@@ -82,6 +166,8 @@ annotated_metacyc_daa_results_df <- pathway_annotation(
   ko_to_kegg = FALSE
 )
 feature_with_p_0.05 <- metacyc_daa_results_df \%>\% filter(p_adjust < 0.05)
+
+# Example 7: Real data with hierarchical clustering
 pathway_heatmap(
   abundance = metacyc_abundance \%>\%
     right_join(
@@ -94,10 +180,14 @@ pathway_heatmap(
     column_to_rownames("description"),
   metadata = metadata,
   group = "Environment",
+  cluster_rows = TRUE,
+  clustering_method = "ward.D2",
+  clustering_distance = "correlation",
   colors = custom_colors,
   low_color = "#2166ac",  # Custom blue for low values
   mid_color = "#f7f7f7",  # Light gray for mid values
-  high_color = "#b2182b"   # Custom red for high values
+  high_color = "#b2182b", # Custom red for high values
+  colorbar_title = "Standardized Abundance"
 )
 }
 }

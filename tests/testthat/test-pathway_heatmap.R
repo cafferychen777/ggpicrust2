@@ -21,10 +21,12 @@ setup_test_data <- function() {
     dimnames = list(pathway_names, sample_names)
   )
 
-  # Create metadata
+  # Create metadata with additional grouping variables for multi-group testing
   metadata <- data.frame(
     sample_name = sample_names,
     group = factor(rep(c("Control", "Treatment"), each = n_samples/2)),
+    batch = factor(rep(c("Batch1", "Batch2"), times = n_samples/2)),
+    sex = factor(rep(c("Male", "Female"), times = n_samples/2)),
     stringsAsFactors = FALSE
   )
 
@@ -196,4 +198,163 @@ test_that("sample names match between abundance and metadata", {
     all(test_data$metadata$sample_name %in% colnames(test_data$abundance)),
     "All metadata sample names should be present in abundance"
   )
+})
+
+# NEW TESTS FOR MULTI-GROUPING FUNCTIONALITY
+
+test_that("secondary_groups parameter validation works", {
+  test_data <- setup_test_data()
+
+  # Test valid secondary_groups
+  expect_no_error(
+    pathway_heatmap(
+      abundance = test_data$abundance,
+      metadata = test_data$metadata,
+      group = "group",
+      secondary_groups = "batch"
+    )
+  )
+
+  # Test multiple secondary_groups
+  expect_no_error(
+    pathway_heatmap(
+      abundance = test_data$abundance,
+      metadata = test_data$metadata,
+      group = "group",
+      secondary_groups = c("batch", "sex")
+    )
+  )
+
+  # Test invalid secondary_groups type
+  expect_error(
+    pathway_heatmap(
+      abundance = test_data$abundance,
+      metadata = test_data$metadata,
+      group = "group",
+      secondary_groups = 123
+    ),
+    "secondary_groups must be NULL or a character vector"
+  )
+
+  # Test empty secondary_groups
+  expect_error(
+    pathway_heatmap(
+      abundance = test_data$abundance,
+      metadata = test_data$metadata,
+      group = "group",
+      secondary_groups = character(0)
+    ),
+    "secondary_groups must contain at least one variable name if not NULL"
+  )
+
+  # Test non-existent secondary_groups
+  expect_error(
+    pathway_heatmap(
+      abundance = test_data$abundance,
+      metadata = test_data$metadata,
+      group = "group",
+      secondary_groups = "nonexistent"
+    ),
+    "The following grouping variables are not found in metadata: nonexistent"
+  )
+})
+
+test_that("facet_by deprecation warning works", {
+  test_data <- setup_test_data()
+
+  # Test deprecation warning for facet_by
+  expect_warning(
+    pathway_heatmap(
+      abundance = test_data$abundance,
+      metadata = test_data$metadata,
+      group = "group",
+      facet_by = "batch"
+    ),
+    "Parameter 'facet_by' is deprecated"
+  )
+
+  # Test both facet_by and secondary_groups specified
+  expect_warning(
+    pathway_heatmap(
+      abundance = test_data$abundance,
+      metadata = test_data$metadata,
+      group = "group",
+      facet_by = "batch",
+      secondary_groups = "sex"
+    ),
+    "Both 'facet_by' and 'secondary_groups' are specified"
+  )
+})
+
+test_that("multi-level grouping produces valid plots", {
+  test_data <- setup_test_data()
+
+  # Test single secondary group
+  p1 <- pathway_heatmap(
+    abundance = test_data$abundance,
+    metadata = test_data$metadata,
+    group = "group",
+    secondary_groups = "batch"
+  )
+  expect_true(is.ggplot(p1))
+  expect_true(!is.null(p1$facet))
+
+  # Test multiple secondary groups
+  p2 <- pathway_heatmap(
+    abundance = test_data$abundance,
+    metadata = test_data$metadata,
+    group = "group",
+    secondary_groups = c("batch", "sex")
+  )
+  expect_true(is.ggplot(p2))
+  expect_true(!is.null(p2$facet))
+})
+
+test_that("color generation for multi-grouping works", {
+  test_data <- setup_test_data()
+
+  # Test automatic color generation
+  expect_no_error(
+    pathway_heatmap(
+      abundance = test_data$abundance,
+      metadata = test_data$metadata,
+      group = "group",
+      secondary_groups = "batch"
+    )
+  )
+
+  # Test custom colors with multi-grouping
+  custom_colors <- c("#FF0000", "#00FF00", "#0000FF", "#FFFF00")
+  expect_no_error(
+    pathway_heatmap(
+      abundance = test_data$abundance,
+      metadata = test_data$metadata,
+      group = "group",
+      secondary_groups = "batch",
+      colors = custom_colors
+    )
+  )
+})
+
+test_that("backward compatibility is maintained", {
+  test_data <- setup_test_data()
+
+  # Test that old single-group usage still works
+  p_old <- pathway_heatmap(
+    abundance = test_data$abundance,
+    metadata = test_data$metadata,
+    group = "group"
+  )
+  expect_true(is.ggplot(p_old))
+
+  # Test that facet_by still works (with warning)
+  expect_warning({
+    p_facet <- pathway_heatmap(
+      abundance = test_data$abundance,
+      metadata = test_data$metadata,
+      group = "group",
+      facet_by = "batch"
+    )
+  })
+  expect_true(is.ggplot(p_facet))
 })

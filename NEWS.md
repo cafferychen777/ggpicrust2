@@ -1,3 +1,40 @@
+# ggpicrust2 2.4.0
+
+## New Features
+
+### Enhanced Multi-Grouping Support for pathway_heatmap()
+
+* **Added secondary_groups parameter (#171)**:
+  - Enables multi-level grouping in pathway heatmaps
+  - Supports nested faceting with multiple grouping variables
+  - Maintains full backward compatibility with existing code
+  - Automatic color generation for complex grouping structures
+
+* **Deprecated facet_by parameter**:
+  - Replaced with more flexible secondary_groups parameter
+  - Shows deprecation warning with migration guidance
+  - Will be removed in future major version
+
+* **Enhanced Examples and Documentation**:
+  - Added comprehensive examples for multi-grouping usage
+  - Migration guide from facet_by to secondary_groups
+  - Updated function documentation with new parameter descriptions
+
+* **Comprehensive Testing**:
+  - Added unit tests for all new functionality
+  - Integration tests with real data
+  - Backward compatibility validation
+  - Error handling and edge case testing
+
+## Bug Fixes
+
+* **Improved color allocation for multi-level grouping**:
+  - Smart color generation based on grouping complexity
+  - Automatic color repetition when insufficient colors provided
+  - Better handling of color assignment in nested structures
+
+---
+
 # ggpicrust2 2.3.3
 
 ## Major Bug Fixes and Improvements
