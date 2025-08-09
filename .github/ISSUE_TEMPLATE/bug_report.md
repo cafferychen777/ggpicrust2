@@ -1,35 +1,78 @@
 ---
-name: Bug Report
-about: Create a report to help us improve
-title: ''
+name: 🐛 Bug Report
+about: Report a bug to help us improve ggpicrust2
+title: '[BUG] '
 labels: 'bug'
 assignees: ''
 
 ---
 
-**Describe the Bug**
+## 🐛 Bug Description
 A clear and concise description of what the bug is.
 
-**Reproducible Example**
-Please provide a minimal reproducible example using `reprex::reprex()`. This will help us understand and fix the issue faster. If possible, include a small sample of your data or use example data to demonstrate the error.
+## 📋 Reproducible Example
+Please provide a minimal reproducible example. This will help us understand and fix the issue faster.
+
+**Required: Please include the following:**
+- [ ] Sample data (even if small/simulated)
+- [ ] Complete R code that reproduces the error
+- [ ] Full error message
 
 ```r
-# Your reproducible example here, preferably with a small data snippet or using example datasets
+# Please paste your reproducible example here
+# Include all necessary library() calls and data preparation steps
+library(ggpicrust2)
+
+# Your code here...
 ```
 
-**Expected Behavior**
-A clear and concise description of what you expected to happen.
+**Error Output:**
+```
+# Please paste the complete error message here
+```
 
-**Actual Behavior**
-Describe what actually happened when you ran the code.
+## ✅ Expected Behavior
+What did you expect to happen?
 
-**Screenshots**
-If applicable, add screenshots to help explain your problem.
+## ❌ Actual Behavior
+What actually happened instead?
 
-**Environment Information:**
- - Operating System:
- - R Version:
- - Package Version:
+## 📊 Data Information
+- [ ] My data comes from PICRUSt2 output
+- [ ] My data is custom/processed
+- [ ] I'm using example data from the package
 
-**Additional Context**
-Add any other context about the problem here, e.g., is this issue sporadic or consistent? Did it work in previous versions?
+**Data characteristics:**
+- Number of samples: 
+- Number of features/pathways: 
+- Metadata variables: 
+
+## 🖥️ Environment Information
+- **Operating System:** [e.g., macOS 12.0, Windows 10, Ubuntu 20.04]
+- **R Version:** [Run `R.version.string`]
+- **ggpicrust2 Version:** [Run `packageVersion("ggpicrust2")`]
+- **Installation method:** [CRAN, GitHub, Bioconductor]
+
+**Dependency versions:**
+```r
+# Please run and paste output:
+sessionInfo()
+```
+
+## 🔍 Function Specific
+**Which function is causing the issue?**
+- [ ] `pathway_daa()`
+- [ ] `pathway_errorbar()`
+- [ ] `pathway_heatmap()`
+- [ ] `pathway_pca()`
+- [ ] `ggpicrust2()`
+- [ ] Other: ___________
+
+## 📝 Additional Context
+- [ ] This issue is reproducible every time
+- [ ] This issue occurs sporadically
+- [ ] This worked in a previous version (please specify which version)
+- [ ] I've searched existing issues and this appears to be new
+
+**Additional information:**
+Add any other context, screenshots, or related issues here.

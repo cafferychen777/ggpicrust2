@@ -1,0 +1,17 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 📖 Package Documentation
+    url: https://cafferychen777.github.io/ggpicrust2/
+    about: Browse the comprehensive package documentation and function references
+  - name: 🎓 Tutorial and Vignettes
+    url: https://cafferychen777.github.io/ggpicrust2/articles/
+    about: Access detailed tutorials and analysis examples
+  - name: 💬 GitHub Discussions
+    url: https://github.com/cafferychen777/ggpicrust2/discussions
+    about: Ask questions, share ideas, and discuss with the community
+  - name: 📊 Example Analyses
+    url: https://github.com/cafferychen777/ggpicrust2/tree/master/vignettes
+    about: View example analyses and code templates
+  - name: 📧 Contact Maintainer
+    url: mailto:caffery.chen7777@gmail.com
+    about: Contact the maintainer directly for urgent issues or collaborations
