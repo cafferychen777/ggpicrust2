@@ -15,4 +15,10 @@
   if (any(toset)) options(op.ggpicrust2[toset])
   
   invisible()
+}
+
+.onAttach <- function(libname, pkgname) {
+  packageStartupMessage("Loading required package: ggpicrust2")
+  packageStartupMessage("To cite ggpicrust2 in publications use:")
+  packageStartupMessage("Chen Yang, Jiahao Mai, Xuan Cao, Aaron Burberry, Fabio Cominelli, Liangliang Zhang, ggpicrust2: an R package for PICRUSt2 predicted functional profile analysis and visualization, Bioinformatics, Volume 39, Issue 8, August 2023, btad470, https://doi.org/10.1093/bioinformatics/btad470")
 } 
