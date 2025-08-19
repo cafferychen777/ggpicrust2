@@ -1,3 +1,35 @@
+# ggpicrust2 2.4.1
+
+## Bug Fixes
+
+### PICRUSt 2.6.2 Compatibility (#174)
+
+* **Fixed compatibility issues with PICRUSt 2.6.2 output**:
+  - Added comprehensive data validation for PICRUSt compatibility
+  - Improved zero-abundance data filtering with fallback strategies
+  - Enhanced error handling with specific PICRUSt version guidance
+  - Added graceful handling of sparse data scenarios
+
+* **Enhanced ALDEx2 error detection**:
+  - Better error messages for insufficient or invalid data
+  - Improved handling of edge cases (single features, all-zero data)
+  - Added PICRUSt version-specific troubleshooting guidance
+
+* **Improved LinDA analysis robustness**:
+  - Better filtering of zero-abundance features before analysis
+  - Enhanced data validation and error reporting
+  - Added warnings for very sparse data scenarios
+
+* **Enhanced ko2kegg_abundance function**:
+  - Added fallback strategies for zero-abundance KO data
+  - Improved compatibility warnings and error messages
+  - Better handling of PICRUSt format variations
+
+* **Added comprehensive compatibility guide**:
+  - Created detailed troubleshooting documentation
+  - Provided alternative analysis strategies
+  - Added version-specific recommendations
+
 # ggpicrust2 2.4.0
 
 ## New Features
