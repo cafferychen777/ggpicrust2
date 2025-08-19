@@ -75,6 +75,8 @@
 \item{pathway_class_text_angle}{A numeric value specifying pathway class text angle in degrees. Default is 0.}
 
 \item{pathway_class_position}{A character string specifying pathway class position. Options: "left", "right", "none". Default is "left".}
+
+\item{pathway_names_text_size}{A numeric value or "auto" for pathway names (y-axis labels) text size. Default is "auto".}
 }
 \value{
 A ggplot2 plot showing the error bar plot of the differential abundance analysis results for the functional pathways.

@@ -88,35 +88,111 @@ gsea_pathway_annotation <- function(gsea_results,
     
   } else if (pathway_type == "MetaCyc") {
     # Load MetaCyc pathway reference data
-    if (!exists("metacyc_reference")) {
-      data("metacyc_reference", package = "ggpicrust2", envir = environment())
+    if (!exists("MetaCyc_reference")) {
+      # Load directly from extdata file
+      metacyc_ref_path <- system.file("extdata", "MetaCyc_reference.RData", package = "ggpicrust2")
+      if (file.exists(metacyc_ref_path)) {
+        # Load the file into current environment
+        load(metacyc_ref_path)
+      } else {
+        stop("MetaCyc_reference data file not found")
+      }
     }
     
     # Convert to data frame
-    metacyc_reference <- as.data.frame(metacyc_reference)
+    MetaCyc_reference <- as.data.frame(MetaCyc_reference)
+    
+    # Rename columns for consistency
+    colnames(MetaCyc_reference) <- c("pathway", "description")
     
     # Merge with GSEA results
     annotated_results <- merge(
       gsea_results,
-      metacyc_reference,
+      MetaCyc_reference,
       by.x = "pathway_id",
       by.y = "pathway",
       all.x = TRUE
     )
     
-    # If pathway_name is missing, use pathway_id
-    if ("pathway_name" %in% colnames(annotated_results)) {
-      annotated_results$pathway_name[is.na(annotated_results$pathway_name)] <- 
-        annotated_results$pathway_id[is.na(annotated_results$pathway_name)]
+    # Update pathway names using the description from reference data
+    if ("description" %in% colnames(annotated_results)) {
+      # Use description as pathway_name, fall back to pathway_id if missing
+      annotated_results$pathway_name <- ifelse(
+        is.na(annotated_results$description) | annotated_results$description == "",
+        annotated_results$pathway_id,
+        annotated_results$description
+      )
+      # Remove the description column to avoid confusion
+      annotated_results$description <- NULL
     } else {
       annotated_results$pathway_name <- annotated_results$pathway_id
     }
     
   } else if (pathway_type == "GO") {
-    # For GO terms, we would need additional reference data
-    # For now, we'll return the original results with a warning
-    warning("GO pathway annotation not yet implemented")
-    annotated_results <- gsea_results
+    # Load GO reference data
+    tryCatch({
+      data("ko_to_go_reference", package = "ggpicrust2", envir = environment())
+    }, error = function(e) {
+      # Create basic GO mapping if reference data doesn't exist
+      message("Creating basic GO mapping for annotation")
+    })
+    
+    # Always create mapping if it doesn't exist
+    if (!exists("ko_to_go_reference", envir = environment())) {
+      # Source the pathway_gsea.R to get the create_basic_go_mapping function
+      tryCatch({
+        source_file <- system.file("R", "pathway_gsea.R", package = "ggpicrust2")
+        if (file.exists(source_file)) {
+          source(source_file, local = TRUE)
+        } else {
+          # Try relative path
+          source("R/pathway_gsea.R", local = TRUE)
+        }
+        ko_to_go_reference <- create_basic_go_mapping()
+      }, error = function(e) {
+        # Fallback: create a minimal mapping inline
+        ko_to_go_reference <- data.frame(
+          go_id = c("GO:0006096", "GO:0006099", "GO:0006631", "GO:0006520"),
+          go_name = c("Glycolytic process", "Tricarboxylic acid cycle", "Fatty acid metabolic process", "Cellular amino acid metabolic process"),
+          category = c("BP", "BP", "BP", "BP"),
+          ko_members = c("K00134;K01810", "K01902;K01903", "K00059;K00625", "K01915;K00928"),
+          stringsAsFactors = FALSE
+        )
+      })
+    }
+    
+    # Convert to data frame
+    go_reference <- as.data.frame(ko_to_go_reference)
+    
+    # Create lookup data frame for merging
+    go_lookup <- data.frame(
+      pathway_id = go_reference$go_id,
+      pathway_name = go_reference$go_name,
+      category = if("category" %in% colnames(go_reference)) go_reference$category else "BP",
+      stringsAsFactors = FALSE
+    )
+    
+    # Merge with GSEA results
+    annotated_results <- merge(
+      gsea_results,
+      go_lookup,
+      by = "pathway_id",
+      all.x = TRUE
+    )
+    
+    # If pathway_name is missing, use pathway_id
+    if ("pathway_name.y" %in% colnames(annotated_results)) {
+      annotated_results$pathway_name <- ifelse(
+        is.na(annotated_results$pathway_name.y),
+        annotated_results$pathway_id,
+        annotated_results$pathway_name.y
+      )
+      # Remove duplicate columns
+      annotated_results$pathway_name.x <- NULL
+      annotated_results$pathway_name.y <- NULL
+    } else if (!"pathway_name" %in% colnames(annotated_results)) {
+      annotated_results$pathway_name <- annotated_results$pathway_id
+    }
   }
   
   return(annotated_results)

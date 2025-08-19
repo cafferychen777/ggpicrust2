@@ -104,6 +104,14 @@ visualize_gsea <- function(gsea_results,
     stop("pathway_label_column must be NULL or a character string")
   }
 
+  # Validate n_pathways parameter
+  if (!is.numeric(n_pathways) || length(n_pathways) != 1 || is.na(n_pathways)) {
+    stop("n_pathways must be a single numeric value")
+  }
+  
+  # Convert to integer if it's not already
+  n_pathways <- as.integer(n_pathways)
+
   # Check if required packages are installed
   if (plot_type == "enrichment_plot" || plot_type == "dotplot" || plot_type == "barplot") {
     if (!requireNamespace("enrichplot", quietly = TRUE)) {
@@ -147,6 +155,10 @@ visualize_gsea <- function(gsea_results,
     } else if ("pathway_id" %in% colnames(gsea_results)) {
       pathway_label_col <- "pathway_id"
     } else {
+      # Check if we have any results first
+      if (nrow(gsea_results) == 0) {
+        return(create_empty_plot(plot_type))
+      }
       stop("GSEA results must contain either 'pathway_name' or 'pathway_id' column")
     }
   }
@@ -163,9 +175,24 @@ visualize_gsea <- function(gsea_results,
     gsea_results <- gsea_results[order(gsea_results$p.adjust), ]
   }
 
+  # Handle boundary conditions for n_pathways
+  if (n_pathways <= 0) {
+    return(create_empty_plot(plot_type))
+  }
+  
+  # Check if we have any results after filtering
+  if (nrow(gsea_results) == 0) {
+    return(create_empty_plot(plot_type))
+  }
+  
   # Limit to top n_pathways
   if (nrow(gsea_results) > n_pathways) {
     gsea_results <- gsea_results[1:n_pathways, ]
+  }
+  
+  # Double-check after limiting (should not happen, but be safe)
+  if (nrow(gsea_results) == 0) {
+    return(create_empty_plot(plot_type))
   }
 
   # Create visualization based on plot_type
@@ -304,6 +331,30 @@ visualize_gsea <- function(gsea_results,
   return(p)
 }
 
+#' Create empty plot for edge cases
+#'
+#' @param plot_type A character string specifying the visualization type
+#'
+#' @return A ggplot2 object
+#' @keywords internal
+create_empty_plot <- function(plot_type) {
+  # Create consistent empty plots for each visualization type
+  base_plot <- ggplot2::ggplot() +
+    ggplot2::theme_void() +
+    ggplot2::labs(title = paste("No pathways to display for", plot_type))
+  
+  if (plot_type %in% c("network", "heatmap")) {
+    # Special handling for complex plot types
+    base_plot + ggplot2::annotate("text", x = 0, y = 0, 
+                                  label = "No significant pathways found",
+                                  size = 4, color = "gray50")
+  } else {
+    base_plot + ggplot2::annotate("text", x = 0, y = 0, 
+                                  label = "No pathways to display",
+                                  size = 4, color = "gray50")
+  }
+}
+
 #' Create network visualization of GSEA results
 #'
 #' @param gsea_results A data frame containing GSEA results from the pathway_gsea function
@@ -330,9 +381,24 @@ create_network_plot <- function(gsea_results,
     stop("Packages 'igraph' and 'ggraph' are required for network plots. Please install them.")
   }
 
+  # Handle boundary conditions for n_pathways
+  if (n_pathways <= 0) {
+    return(create_empty_plot("network"))
+  }
+  
+  # Check if we have any results
+  if (nrow(gsea_results) == 0) {
+    return(create_empty_plot("network"))
+  }
+  
   # Limit number of pathways
   if (nrow(gsea_results) > n_pathways) {
     gsea_results <- gsea_results[order(gsea_results$p.adjust), ][1:n_pathways, ]
+  }
+  
+  # Double-check after limiting
+  if (nrow(gsea_results) == 0) {
+    return(create_empty_plot("network"))
   }
 
   # Extract leading edge genes
@@ -377,12 +443,7 @@ create_network_plot <- function(gsea_results,
 
   # Check if there are any connections after applying cutoff
   if (sum(similarity_matrix) == 0) {
-    # Create a simple plot with a message
-    p <- ggplot2::ggplot() +
-      ggplot2::annotate("text", x = 0, y = 0,
-                      label = "No significant connections found with current similarity cutoff") +
-      ggplot2::theme_void()
-    return(p)
+    return(create_empty_plot("network"))
   }
 
   # Create graph object
@@ -395,12 +456,7 @@ create_network_plot <- function(gsea_results,
 
   # Check if graph is empty
   if (igraph::vcount(graph) == 0) {
-    # Create a simple plot with a message
-    p <- ggplot2::ggplot() +
-      ggplot2::annotate("text", x = 0, y = 0,
-                      label = "No nodes found in the network") +
-      ggplot2::theme_void()
-    return(p)
+    return(create_empty_plot("network"))
   }
 
   # Add node attributes
@@ -488,14 +544,63 @@ create_heatmap_plot <- function(gsea_results,
     stop("Packages 'ComplexHeatmap' and 'circlize' are required for heatmap plots. Please install them.")
   }
 
+  # Handle boundary conditions for n_pathways
+  if (n_pathways <= 0) {
+    # For heatmap, return a special empty heatmap object
+    return(ComplexHeatmap::Heatmap(
+      matrix(0, nrow = 1, ncol = 1),
+      name = "Empty",
+      show_row_names = FALSE,
+      show_column_names = FALSE,
+      row_title = "No pathways to display",
+      column_title = "No data available"
+    ))
+  }
+  
+  # Check if we have any results
+  if (nrow(gsea_results) == 0) {
+    return(ComplexHeatmap::Heatmap(
+      matrix(0, nrow = 1, ncol = 1),
+      name = "Empty",
+      show_row_names = FALSE,
+      show_column_names = FALSE,
+      row_title = "No pathways found",
+      column_title = "No data available"
+    ))
+  }
+  
   # Limit number of pathways
   if (nrow(gsea_results) > n_pathways) {
     gsea_results <- gsea_results[order(gsea_results$p.adjust), ][1:n_pathways, ]
+  }
+  
+  # Double-check after limiting
+  if (nrow(gsea_results) == 0) {
+    return(ComplexHeatmap::Heatmap(
+      matrix(0, nrow = 1, ncol = 1),
+      name = "Empty",
+      show_row_names = FALSE,
+      show_column_names = FALSE,
+      row_title = "No pathways after filtering",
+      column_title = "No data available"
+    ))
   }
 
   # Extract leading edge genes
   leading_edges <- lapply(strsplit(gsea_results$leading_edge, ";"), function(x) x[x != ""])
   names(leading_edges) <- gsea_results$pathway_id
+  
+  # Check if any leading edges are empty
+  if (all(lengths(leading_edges) == 0)) {
+    return(ComplexHeatmap::Heatmap(
+      matrix(0, nrow = 1, ncol = 1),
+      name = "Empty",
+      show_row_names = FALSE,
+      show_column_names = FALSE,
+      row_title = "No leading edge genes found",
+      column_title = "No gene expression data"
+    ))
+  }
 
   # Create heatmap data matrix
   # For each pathway, calculate the average expression of leading edge genes

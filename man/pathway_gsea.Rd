@@ -15,7 +15,8 @@ pathway_gsea(
   min_size = 10,
   max_size = 500,
   p.adjust = "BH",
-  seed = 42
+  seed = 42,
+  go_category = "BP"
 )
 }
 \arguments{
