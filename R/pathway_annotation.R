@@ -416,9 +416,34 @@ process_kegg_annotations <- function(df, organism = NULL) {
     # Safely extract data, check if fields exist
     if (!is.null(entry) && length(entry) > 0) {
       filtered_df$pathway_name[i] <- safe_extract(entry[[1]], "NAME", 1)
-      filtered_df$pathway_description[i] <- if("DESCRIPTION" %in% names(entry[[1]])) safe_extract(entry[[1]], "DESCRIPTION", 1) else NA_character_
-      filtered_df$pathway_class[i] <- if("CLASS" %in% names(entry[[1]])) safe_extract(entry[[1]], "CLASS", 1) else NA_character_
-      filtered_df$pathway_map[i] <- if("PATHWAY_MAP" %in% names(entry[[1]])) safe_extract(entry[[1]], "PATHWAY_MAP", 1) else NA_character_
+
+      # Use PATHWAY field for pathway_description (contains pathway names)
+      if("PATHWAY" %in% names(entry[[1]]) && !is.null(entry[[1]][["PATHWAY"]]) && length(entry[[1]][["PATHWAY"]]) > 0) {
+        # Extract pathway names (values) and combine them
+        pathway_names <- as.character(entry[[1]][["PATHWAY"]])
+        filtered_df$pathway_description[i] <- paste(pathway_names, collapse = "; ")
+      } else {
+        filtered_df$pathway_description[i] <- NA_character_
+      }
+
+      # Use BRITE field for pathway_class (contains functional classification)
+      if("BRITE" %in% names(entry[[1]]) && !is.null(entry[[1]][["BRITE"]]) && length(entry[[1]][["BRITE"]]) > 0) {
+        # Extract first few BRITE classifications
+        brite_classes <- as.character(entry[[1]][["BRITE"]])
+        # Take first 3 classifications to avoid overly long strings
+        filtered_df$pathway_class[i] <- paste(head(brite_classes, 3), collapse = "; ")
+      } else {
+        filtered_df$pathway_class[i] <- NA_character_
+      }
+
+      # Use PATHWAY field for pathway_map (extract map IDs)
+      if("PATHWAY" %in% names(entry[[1]]) && !is.null(entry[[1]][["PATHWAY"]]) && length(entry[[1]][["PATHWAY"]]) > 0) {
+        # Extract pathway map IDs (names)
+        pathway_maps <- names(entry[[1]][["PATHWAY"]])
+        filtered_df$pathway_map[i] <- paste(pathway_maps, collapse = "; ")
+      } else {
+        filtered_df$pathway_map[i] <- NA_character_
+      }
     }
   }
   
