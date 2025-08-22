@@ -1,4 +1,28 @@
-# ggpicrust2 2.4.1
+# ggpicrust2 2.5.1
+
+## Bug Fixes
+
+### PICRUSt 2.6.2 Compatibility (#174) - Complete Resolution
+
+* **Added automatic KO ID format detection and conversion**:
+  - Automatically detects PICRUSt 2.6.2 format with "ko:" prefixes
+  - Transparently removes "ko:" prefixes during data loading
+  - Maintains full backward compatibility with PICRUSt 2.5.2 format
+  - Eliminates "subscript out of bounds" errors caused by format mismatches
+
+* **Enhanced core functions for seamless compatibility**:
+  - Updated `ko2kegg_abundance()` with automatic format detection
+  - Updated `ggpicrust2()` main function with compatibility layer
+  - Added clear informational messages about format conversion
+  - Zero manual preprocessing required for users
+
+* **Comprehensive testing and validation**:
+  - Tested with real PICRUSt 2.6.2 output files (5,000+ KO features)
+  - Verified compatibility with all major DAA methods
+  - Confirmed backward compatibility with existing workflows
+  - Performance optimized for large datasets
+
+# ggpicrust2 2.5.0
 
 ## Bug Fixes
 
