@@ -254,13 +254,52 @@ pathway_errorbar <-
     }
 
     if (!(x_lab %in% colnames(daa_results_df))){
-      message(
-        "The 'x_lab' you defined does not exist as a column in the 'daa_results_df' data frame."
-      )
+      stop(paste0(
+        sprintf("The 'x_lab' column '%s' does not exist in the 'daa_results_df' data frame. ", x_lab),
+        sprintf("Available columns: %s. ", paste(colnames(daa_results_df), collapse = ", ")),
+        "Please ensure you have run 'pathway_annotation' to add the required annotation columns."
+      ))
     }
 
     # Exclude rows with missing pathway annotation (after x_lab is set)
+    # Store original count for better error reporting
+    original_feature_count <- nrow(daa_results_df)
+    missing_annotation_count <- sum(is.na(daa_results_df[,x_lab]))
+    
+    if (missing_annotation_count > 0) {
+      message(sprintf(
+        "Excluding %d features with missing '%s' annotations out of %d total features.",
+        missing_annotation_count, x_lab, original_feature_count
+      ))
+      
+      # Show which features are being excluded for debugging
+      missing_features <- daa_results_df[is.na(daa_results_df[,x_lab]), "feature"]
+      if (length(missing_features) <= 10) {
+        message("Features with missing annotations: ", paste(missing_features, collapse = ", "))
+      } else {
+        message("First 10 features with missing annotations: ", 
+                paste(missing_features[1:10], collapse = ", "), " (and ", 
+                length(missing_features) - 10, " more)")
+      }
+      
+      message("If this is unexpected, please check that 'pathway_annotation' completed successfully.")
+    }
+    
     daa_results_df <- daa_results_df[!is.na(daa_results_df[,x_lab]),]
+    
+    # Check if we have any features left after annotation filtering
+    if (nrow(daa_results_df) == 0) {
+      pathway_type <- if(ko_to_kegg) "KO" else "MetaCyc"
+      stop(paste0(
+        sprintf("All features were excluded due to missing '%s' annotations. ", x_lab),
+        "This usually means 'pathway_annotation' failed or was not run properly. ",
+        "Please:\n",
+        sprintf("1. Ensure you ran pathway_annotation(pathway = '%s', daa_results_df = your_daa_results, ko_to_kegg = %s)\n", pathway_type, ko_to_kegg),
+        "2. Check that the annotation completed without errors\n",
+        "3. Verify that the reference data files are available\n",
+        "For MetaCyc pathways, the issue often occurs when reference data cannot be loaded."
+      ))
+    }
 
     if (length(unique(daa_results_df$method)) != 1) {
       stop(
@@ -278,29 +317,70 @@ pathway_errorbar <-
     n_groups <- nlevels(as.factor(Group))
     
     # Source the color themes and legend utilities if functions are not available
+    # Try multiple strategies to find the source files
     if (!exists("get_color_theme")) {
-      source(file.path(dirname(parent.frame()$ofile), "color_themes.R"))
+      tryCatch({
+        if (file.exists("R/color_themes.R")) {
+          source("R/color_themes.R")
+        } else if (file.exists("color_themes.R")) {
+          source("color_themes.R")
+        }
+      }, error = function(e) {
+        # If we can't source the file, create a simple fallback
+        get_color_theme <<- function(theme_name, n_groups = 2) {
+          list(
+            group_colors = c("#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", "#8c564b")[1:n_groups],
+            pathway_class_colors = c("#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd"),
+            fold_change_single = "#87ceeb"
+          )
+        }
+      })
     }
     if (!exists("format_pvalue_smart")) {
-      source(file.path(dirname(parent.frame()$ofile), "legend_annotation_utils.R"))
+      tryCatch({
+        if (file.exists("R/legend_annotation_utils.R")) {
+          source("R/legend_annotation_utils.R")
+        } else if (file.exists("legend_annotation_utils.R")) {
+          source("legend_annotation_utils.R")
+        }
+      }, error = function(e) {
+        # Simple fallback for p-value formatting
+        format_pvalue_smart <<- function(p, format = "smart", stars = TRUE, thresholds = c(0.001, 0.01, 0.05), star_symbols = c("***", "**", "*")) {
+          ifelse(p < 0.001, sprintf("%.1e", p), sprintf("%.3f", p))
+        }
+      })
     }
     
     # Use smart color selection if requested
     if (smart_colors || accessibility_mode) {
-      smart_selection <- smart_color_selection(
-        n_groups = n_groups,
-        has_pathway_class = ko_to_kegg,
-        data_type = "abundance",
-        accessibility_mode = accessibility_mode
-      )
-      color_theme <- smart_selection$theme_name
-      if (smart_colors) {
-        message("Smart color selection: ", smart_selection$reason)
+      if (exists("smart_color_selection")) {
+        smart_selection <- smart_color_selection(
+          n_groups = n_groups,
+          has_pathway_class = ko_to_kegg,
+          data_type = "abundance",
+          accessibility_mode = accessibility_mode
+        )
+        color_theme <- smart_selection$theme_name
+        if (smart_colors) {
+          message("Smart color selection: ", smart_selection$reason)
+        }
+      } else {
+        # Fallback when smart_color_selection is not available
+        color_theme <- "default"
       }
     }
     
     # Get the color theme
-    theme_colors <- get_color_theme(color_theme, n_groups)
+    if (exists("get_color_theme")) {
+      theme_colors <- get_color_theme(color_theme, n_groups)
+    } else {
+      # Simple fallback color scheme
+      theme_colors <- list(
+        group_colors = c("#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", "#8c564b")[1:n_groups],
+        pathway_class_colors = c("#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd"),
+        fold_change_single = "#87ceeb"
+      )
+    }
     
     # Set group colors
     if (is.null(colors)) {
@@ -345,10 +425,27 @@ pathway_errorbar <-
     }
 
     if (nrow(daa_results_filtered_sub_df) == 0){
-      stop(
-        "Visualization with 'pathway_errorbar' cannot be performed because there are no features with statistical significance. ",
-        "For possible solutions, please check the FAQ section of the tutorial."
-      )
+      # Provide detailed diagnostic information
+      total_features <- nrow(daa_results_df)
+      sig_features_before_filtering <- sum(daa_results_df$p_adjust < p_values_threshold, na.rm = TRUE)
+      
+      stop(paste0(
+        "Visualization with 'pathway_errorbar' cannot be performed because there are no features with statistical significance.\n\n",
+        "Diagnostic information:\n",
+        sprintf("- Total features after annotation filtering: %d\n", total_features),
+        sprintf("- Features with p_adjust < %g: %d\n", p_values_threshold, sig_features_before_filtering),
+        sprintf("- Features remaining after 'select' filtering: %d\n\n", nrow(daa_results_filtered_sub_df)),
+        "Possible solutions:\n",
+        "1. Use a less stringent p-value threshold (e.g., p_values_threshold = 0.1)\n",
+        "2. Check that pathway_annotation completed successfully\n",
+        "3. Verify your DAA analysis produced significant results\n",
+        "4. For MetaCyc data, ensure reference data files are accessible\n",
+        "5. Use pathway_daa() with different methods or parameters\n\n",
+        "For MetaCyc pathways specifically:\n",
+        "- Ensure you used: pathway_annotation(pathway = 'MetaCyc', ko_to_kegg = FALSE)\n",
+        "- Check if the MetaCyc reference data loaded correctly\n\n",
+        "For additional help, please check the FAQ section of the tutorial."
+      ))
     }
     # Convert to relative abundance
     relative_abundance_mat <- apply(t(errorbar_abundance_mat), 1, function(x)
@@ -738,8 +835,12 @@ pathway_errorbar <-
     # Set pathway class text color based on theme if "auto"
     pathway_class_final_text_color <- if (pathway_class_text_color == "auto") {
       # Get theme colors for pathway class
-      current_theme <- get_color_theme(color_theme)
-      current_theme$pathway_class_colors[1]  # Use first theme color
+      if (exists("get_color_theme")) {
+        current_theme <- get_color_theme(color_theme)
+        current_theme$pathway_class_colors[1]  # Use first theme color
+      } else {
+        "black"  # Fallback color
+      }
     } else {
       pathway_class_text_color
     }

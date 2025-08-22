@@ -49,13 +49,10 @@ load_reference_data <- function(pathway_type) {
   }
 
   ref_file <- sprintf("%s_reference.RData", pathway_type)
-
-  # First try to load from data/ (lazy loading)
   ref_data_name <- paste0(pathway_type, "_reference")
-  if (exists(ref_data_name, envir = asNamespace("ggpicrust2"))) {
-    ref_data <- get(ref_data_name, envir = asNamespace("ggpicrust2"))
 
-    # FIX: Standardize column names for MetaCyc, EC, and KO
+  # Helper function to standardize column names
+  standardize_columns <- function(ref_data, pathway_type) {
     if (pathway_type == "MetaCyc" && all(c("X1", "X2") %in% colnames(ref_data))) {
       colnames(ref_data) <- c("id", "description")
     }
@@ -67,60 +64,89 @@ load_reference_data <- function(pathway_type) {
       ref_data <- ref_data[, c("KO", "KoDescription")]
       colnames(ref_data) <- c("id", "description")
     }
-
     return(ref_data)
   }
 
-  # If not found in data/, try inst/extdata/
+  # Try multiple loading strategies in order of preference
+  
+  # Strategy 1: Try to load from package namespace (if package is properly installed)
+  tryCatch({
+    if (requireNamespace("ggpicrust2", quietly = TRUE)) {
+      if (exists(ref_data_name, envir = asNamespace("ggpicrust2"))) {
+        ref_data <- get(ref_data_name, envir = asNamespace("ggpicrust2"))
+        return(standardize_columns(ref_data, pathway_type))
+      }
+    }
+  }, error = function(e) {
+    # Continue to next strategy if this fails
+  })
+
+  # Strategy 2: Try inst/extdata/ (for development/source installations)
+  ref_path <- file.path("inst", "extdata", ref_file)
+  if (file.exists(ref_path)) {
+    tryCatch({
+      load(ref_path)
+      if (exists(ref_data_name)) {
+        ref_data <- get(ref_data_name)
+        return(standardize_columns(ref_data, pathway_type))
+      }
+    }, error = function(e) {
+      message("Failed to load reference data from inst/extdata/: ", e$message)
+    })
+  }
+
+  # Strategy 3: Try system.file() for installed packages
   ref_path <- system.file("extdata", ref_file, package = "ggpicrust2", mustWork = FALSE)
-
-  if (file.exists(ref_path)) {
-    load(ref_path)
-    ref_data <- get(ref_data_name)
-
-    # FIX: Standardize column names for MetaCyc, EC, and KO
-    if (pathway_type == "MetaCyc" && all(c("X1", "X2") %in% colnames(ref_data))) {
-      colnames(ref_data) <- c("id", "description")
-    }
-    if (pathway_type == "EC" && all(c("V1", "V2") %in% colnames(ref_data))) {
-      colnames(ref_data) <- c("id", "description")
-    }
-    if (pathway_type == "KO" && all(c("KO", "KoDescription") %in% colnames(ref_data))) {
-      # For KO data, map KO -> id and KoDescription -> description
-      ref_data <- ref_data[, c("KO", "KoDescription")]
-      colnames(ref_data) <- c("id", "description")
-    }
-
-    return(ref_data)
+  if (ref_path != "" && file.exists(ref_path)) {
+    tryCatch({
+      load(ref_path)
+      if (exists(ref_data_name)) {
+        ref_data <- get(ref_data_name)
+        return(standardize_columns(ref_data, pathway_type))
+      }
+    }, error = function(e) {
+      message("Failed to load reference data from installed package: ", e$message)
+    })
   }
 
-  # If still not found, try loading from the package's installed location
+  # Strategy 4: Try alternative system.file() path
   ref_path <- system.file("inst/extdata", ref_file, package = "ggpicrust2", mustWork = FALSE)
-  if (file.exists(ref_path)) {
-    load(ref_path)
-    ref_data <- get(ref_data_name)
-
-    # FIX: Standardize column names for MetaCyc, EC, and KO
-    if (pathway_type == "MetaCyc" && all(c("X1", "X2") %in% colnames(ref_data))) {
-      colnames(ref_data) <- c("id", "description")
-    }
-    if (pathway_type == "EC" && all(c("V1", "V2") %in% colnames(ref_data))) {
-      colnames(ref_data) <- c("id", "description")
-    }
-    if (pathway_type == "KO" && all(c("KO", "KoDescription") %in% colnames(ref_data))) {
-      # For KO data, map KO -> id and KoDescription -> description
-      ref_data <- ref_data[, c("KO", "KoDescription")]
-      colnames(ref_data) <- c("id", "description")
-    }
-
-    return(ref_data)
+  if (ref_path != "" && file.exists(ref_path)) {
+    tryCatch({
+      load(ref_path)
+      if (exists(ref_data_name)) {
+        ref_data <- get(ref_data_name)
+        return(standardize_columns(ref_data, pathway_type))
+      }
+    }, error = function(e) {
+      message("Failed to load reference data from alternative path: ", e$message)
+    })
   }
 
-  # If we reach here, the file was not found in any location
-  stop(sprintf("Reference data file '%s' not found in any standard location.\nPlease ensure the package was installed correctly.", ref_file))
+  # Strategy 5: Try loading from working directory (if running from package source)
+  if (file.exists(ref_file)) {
+    tryCatch({
+      load(ref_file)
+      if (exists(ref_data_name)) {
+        ref_data <- get(ref_data_name)
+        return(standardize_columns(ref_data, pathway_type))
+      }
+    }, error = function(e) {
+      message("Failed to load reference data from working directory: ", e$message)
+    })
+  }
 
-  # This code is unreachable, just for reference
-  ref_data
+  # If we reach here, all strategies failed
+  stop(sprintf(
+    "Reference data file '%s' not found in any standard location.\n",
+    ref_file,
+    "Searched locations:\n",
+    "1. Package namespace (ggpicrust2::%s)\n",
+    "2. inst/extdata/%s\n", 
+    "3. Installed package extdata directory\n",
+    "4. Working directory\n",
+    "Please ensure the package was installed correctly or that you are running from the package source directory."
+  ), ref_data_name, ref_file)
 }
 
 #' Cache manager for KEGG annotations
