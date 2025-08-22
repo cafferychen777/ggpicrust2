@@ -171,6 +171,18 @@ ko2kegg_abundance <- function (file = NULL, data = NULL) {
     abundance <- data
   }
   
+  # PICRUSt 2.6.2兼容性处理：清理KO ID格式
+  message("Checking KO ID format compatibility...")
+  ko_ids <- abundance[[1]]
+  
+  # 检测并清理"ko:"前缀
+  has_ko_prefix <- any(grepl("^ko:", ko_ids))
+  if (has_ko_prefix) {
+    message("Detected PICRUSt 2.6.2 format with 'ko:' prefix. Applying compatibility fix...")
+    abundance[[1]] <- gsub("^ko:", "", abundance[[1]])
+    message(sprintf("Cleaned %d KO IDs by removing 'ko:' prefix", sum(grepl("^ko:", ko_ids))))
+  }
+  
   # 运行输入验证
   tryCatch({
     validate_input(abundance)

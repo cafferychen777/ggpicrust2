@@ -213,6 +213,16 @@ ggpicrust2 <- function(file = NULL,
       data
     }
     abundance <- as.data.frame(abundance)
+    
+    # PICRUSt 2.6.2兼容性处理：清理KO ID格式
+    ko_ids <- abundance[, 1]
+    has_ko_prefix <- any(grepl("^ko:", ko_ids))
+    if (has_ko_prefix) {
+      message("Detected PICRUSt 2.6.2 format with 'ko:' prefix. Applying compatibility fix...")
+      abundance[, 1] <- gsub("^ko:", "", abundance[, 1])
+      message(sprintf("Cleaned %d KO IDs by removing 'ko:' prefix", sum(grepl("^ko:", ko_ids))))
+    }
+    
     rownames(abundance) <- abundance[, 1]
     abundance <- abundance[, -1]
     message("Performing pathway differential abundance analysis...\n")
