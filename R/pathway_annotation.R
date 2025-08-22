@@ -348,15 +348,27 @@ process_kegg_annotations <- function(df, organism = NULL) {
     stop("Empty data frame provided for KEGG annotation")
   }
   
+  # Filter for significant pathways
   filtered_df <- df[df$p_adjust < 0.05, ]
+  
+  # Handle case when no significant pathways are found
   if (nrow(filtered_df) == 0) {
-    stop(
+    warning(
       "No statistically significant biomarkers found (p_adjust < 0.05).\n",
-      "Consider using a less stringent threshold or reviewing your data."
+      "Returning results with empty annotation columns for visualization purposes.\n",
+      "Consider using a less stringent threshold if significant results are expected.",
+      call. = FALSE
     )
+    
+    # Return original data with empty annotation columns for compatibility
+    new_cols <- c("pathway_name", "pathway_description", "pathway_class", "pathway_map")
+    df[new_cols] <- NA_character_
+    
+    log_message("No significant pathways found. Returning data with empty annotation columns.", "WARN")
+    return(df)
   }
   
-  # Initialize new columns
+  # Initialize new columns for significant pathways
   new_cols <- c("pathway_name", "pathway_description", "pathway_class", "pathway_map")
   filtered_df[new_cols] <- NA_character_
   
