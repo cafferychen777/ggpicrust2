@@ -37,6 +37,7 @@
 #' @param pathway_class_text_face A character string for pathway class text face. Options: "plain", "bold", "italic". Default is "bold".
 #' @param pathway_class_text_angle A numeric value specifying pathway class text angle in degrees. Default is 0.
 #' @param pathway_class_position A character string specifying pathway class position. Options: "left", "right", "none". Default is "left".
+#' @param pathway_names_text_size A numeric value or "auto" for pathway names (y-axis labels) text size. Default is "auto".
 #' @importFrom stats sd
 #' @return A ggplot2 plot showing the error bar plot of the differential abundance analysis results for the functional pathways.
 #' The plot visualizes the differential abundance results of a specific differential abundance analysis method. The corresponding dataframe contains the results used to create the plot.
@@ -189,7 +190,9 @@ pathway_errorbar <-
            pathway_class_text_color = "black",
            pathway_class_text_face = "bold",
            pathway_class_text_angle = 0,
-           pathway_class_position = "left") {
+           pathway_class_position = "left",
+           # Pathway names text size parameter
+           pathway_names_text_size = "auto") {
     # Add more complete input validation at the beginning of the function
     if(!is.matrix(abundance) && !is.data.frame(abundance)) {
       stop("'abundance' must be a matrix or data frame")
@@ -495,6 +498,39 @@ pathway_errorbar <-
 
     error_bar_pivot_longer_tibble_summarised_ordered$name <- factor(error_bar_pivot_longer_tibble_summarised_ordered$name, levels = rev(daa_results_filtered_sub_df$feature))
 
+    # Calculate smart text size for pathway names (y-axis labels)
+    pathway_names_final_text_size <- if (pathway_names_text_size == "auto") {
+      if (exists("calculate_smart_text_size")) {
+        calculate_smart_text_size(nrow(daa_results_filtered_sub_df),
+                                base_size = 10, min_size = 8, max_size = 14)
+      } else {
+        10  # Default size (current hardcoded value)
+      }
+    } else {
+      pathway_names_text_size
+    }
+
+    # Calculate smart text size for pathway class annotations
+    pathway_class_final_text_size <- if (pathway_class_text_size == "auto") {
+      if (exists("calculate_smart_text_size")) {
+        calculate_smart_text_size(nrow(daa_results_filtered_sub_df),
+                                base_size = 10, min_size = 3, max_size = 4)
+      } else {
+        3.5  # Default size
+      }
+    } else {
+      pathway_class_text_size
+    }
+
+    # Set pathway class text color based on theme if "auto"
+    pathway_class_final_text_color <- if (pathway_class_text_color == "auto") {
+      # Get theme colors for pathway class
+      current_theme <- get_color_theme(color_theme)
+      current_theme$pathway_class_colors[1]  # Use first theme color
+    } else {
+      pathway_class_text_color
+    }
+
     bar_errorbar <-
       ggplot2::ggplot(error_bar_pivot_longer_tibble_summarised_ordered,
              ggplot2::aes(mean, name, fill = group)) +
@@ -525,7 +561,7 @@ pathway_errorbar <-
         axis.text = ggplot2::element_text(size = 10, color = "black"),
         axis.text.x = ggplot2::element_text(margin = ggplot2::margin(r = 0)),
         axis.text.y = ggplot2::element_text(
-          size = 10,
+          size = pathway_names_final_text_size,
           color = "black",
           margin = ggplot2::margin(b = 6)
         ),
@@ -724,26 +760,9 @@ pathway_errorbar <-
       }
     }
     
-    # Calculate smart text size for pathway class annotations
-    pathway_class_final_text_size <- if (pathway_class_text_size == "auto") {
-      if (exists("calculate_smart_text_size")) {
-        calculate_smart_text_size(nrow(daa_results_filtered_sub_df), base_size = 10, min_size = 3, max_size = 4)
-      } else {
-        3.5  # Default size
-      }
-    } else {
-      pathway_class_text_size
-    }
-    
-    # Set pathway class text color based on theme if "auto"
-    pathway_class_final_text_color <- if (pathway_class_text_color == "auto") {
-      # Get theme colors for pathway class
-      current_theme <- get_color_theme(color_theme)
-      current_theme$pathway_class_colors[1]  # Use first theme color
-    } else {
-      pathway_class_text_color
-    }
-    
+
+
+
     # Calculate p-value colors if enabled
     pvalue_text_colors <- if (pvalue_colors && exists("get_significance_colors")) {
       get_significance_colors(daa_results_filtered_sub_df$p_adjust,

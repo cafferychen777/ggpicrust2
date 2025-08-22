@@ -50,6 +50,61 @@ test_that("pathway_errorbar basic functionality works", {
   expect_s3_class(p, "patchwork")
 })
 
+test_that("pathway_errorbar pathway_names_text_size parameter works", {
+  skip_if_not_installed("ggprism")
+
+  # Setup test data
+  set.seed(123)
+  abundance <- matrix(runif(100), nrow=10, ncol=10)
+  rownames(abundance) <- paste0("pathway", 1:10)
+  colnames(abundance) <- paste0("sample", 1:10)
+
+  metadata <- data.frame(
+    sample = paste0("sample", 1:10),
+    group = rep(c("GroupA", "GroupB"), each=5)
+  )
+
+  daa_results_df <- data.frame(
+    feature = paste0("pathway", 1:10),
+    pathway_name = paste0("Pathway ", 1:10),
+    description = paste0("Description ", 1:10),
+    p_adjust = c(0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1),
+    method = rep("ALDEx2_Welch's t test", 10),
+    group1 = rep("GroupA", 10),
+    group2 = rep("GroupB", 10),
+    stringsAsFactors = FALSE
+  )
+
+  Group <- metadata$group
+  names(Group) <- metadata$sample
+
+  # Test with auto text size
+  p1 <- pathway_errorbar(
+    abundance = abundance,
+    daa_results_df = daa_results_df,
+    Group = Group,
+    p_values_threshold = 0.05,
+    select = paste0("pathway", 1:5),
+    x_lab = "pathway_name",
+    pathway_names_text_size = "auto"
+  )
+
+  expect_s3_class(p1, "patchwork")
+
+  # Test with custom text size
+  p2 <- pathway_errorbar(
+    abundance = abundance,
+    daa_results_df = daa_results_df,
+    Group = Group,
+    p_values_threshold = 0.05,
+    select = paste0("pathway", 1:5),
+    x_lab = "pathway_name",
+    pathway_names_text_size = 12
+  )
+
+  expect_s3_class(p2, "patchwork")
+})
+
 test_that("pathway_errorbar handles invalid inputs", {
   skip_if_not_installed("ggprism")
 

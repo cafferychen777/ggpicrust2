@@ -163,8 +163,15 @@ ggpicrust2 <- function(file = NULL,
     num_significant_biomarkers <- sum(as.numeric(daa_results_df$p_adjust <= 0.05))
 
     if (num_significant_biomarkers == 0) {
-      # If no biomarkers have p-values less than or equal to 0.05, issue a warning and suggest user to check FAQ
-      stop("Notice: There are no statistically significant biomarkers in the dataset. This is not an error, but it might indicate that the data do not contain any biomarkers passing the set significance threshold (p<=0.05). You may refer to the tutorial's FAQ for further help and suggestions.")
+      # If no biomarkers have p-values less than or equal to 0.05, issue a warning but continue processing
+      warning(
+        "No statistically significant biomarkers found in the dataset (p_adjust <= 0.05). ",
+        "This is not an error, but indicates that the data do not contain biomarkers passing the significance threshold. ",
+        "The analysis will continue with empty annotation columns for visualization purposes. ",
+        "You may refer to the tutorial's FAQ for further help and suggestions.",
+        call. = FALSE
+      )
+      message("Notice: Continuing analysis with non-significant results for visualization...")
     } else {
       message(paste("Success: Found", num_significant_biomarkers, "statistically significant biomarker(s) in the dataset."))
     }
