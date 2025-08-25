@@ -177,8 +177,12 @@ ggpicrust2 <- function(file = NULL,
     }
 
     message("Annotating pathways...\n")
-    daa_results_df  <-
-      pathway_annotation(daa_results_df = daa_results_df, ko_to_kegg = TRUE)
+    daa_results_df <-
+      pathway_annotation(
+        pathway = pathway,
+        ko_to_kegg = ko_to_kegg,
+        daa_results_df = daa_results_df
+      )
     j <- 1
     message("Creating pathway error bar plots...\n")
     for (i in unique(daa_results_df$method)) {
@@ -269,12 +273,20 @@ ggpicrust2 <- function(file = NULL,
           select = select,
           x_lab = x_lab
         )
-      # Create a sublist
-      sub_list <-
-        list(plot = combination_bar_plot, results = daa_sub_method_results_df)
+      
+      # Check if pathway_errorbar returned NULL (no data for plotting)
+      if (is.null(combination_bar_plot)) {
+        message(sprintf("Plot %d skipped due to insufficient annotation data for method: %s\n", j, i))
+        # Still create a sublist with results but no plot
+        sub_list <- list(plot = NULL, results = daa_sub_method_results_df)
+      } else {
+        # Create a sublist with both plot and results
+        sub_list <- list(plot = combination_bar_plot, results = daa_sub_method_results_df)
+        message(sprintf("Plot %d created.\n", j))
+      }
+      
       # Add sublists to the main list
       plot_result_list[[j]] <- sub_list
-      message(sprintf("Plot %d created.\n", j))
       j <- j + 1
     }
     message("ggpicrust2 analysis completed.\n")

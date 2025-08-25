@@ -263,7 +263,24 @@ pathway_errorbar <-
     }
 
     # Exclude rows with missing pathway annotation (after x_lab is set)
+    original_rows <- nrow(daa_results_df)
     daa_results_df <- daa_results_df[!is.na(daa_results_df[,x_lab]),]
+    filtered_rows <- nrow(daa_results_df)
+    
+    # Check if all rows were filtered out due to missing annotations
+    if (filtered_rows == 0) {
+      warning(
+        sprintf("All %d rows were excluded due to missing '%s' annotations. ", original_rows, x_lab),
+        "This typically occurs when no statistically significant pathways were found. ",
+        "Cannot create error bar plot with empty data. Returning NULL.",
+        call. = FALSE
+      )
+      return(NULL)
+    }
+    
+    if (original_rows > filtered_rows) {
+      message(sprintf("Excluded %d rows with missing '%s' annotations.", original_rows - filtered_rows, x_lab))
+    }
 
     if (length(unique(daa_results_df$method)) != 1) {
       stop(
