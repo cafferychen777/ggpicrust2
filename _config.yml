@@ -1,0 +1,24 @@
+name: ggpicrust2
+description: 'R package for functional analysis of microbiome data'
+url: https://cafferychen777.github.io/ggpicrust2
+
+plugins:
+  - jekyll-sitemap
+  - jekyll-feed
+
+markdown: kramdown
+highlighter: rouge
+
+exclude:
+  - code/
+  - manuscript/
+  - related_projects/
+  - "*.R"
+  - "*.Rmd"
+  - "*.csv"
+  - "*.RData"
+  - "*.md~"
+  - ".Rproj.user"
+  - ".Rhistory"
+  - ".RData"
+  - ".Ruserdata"
