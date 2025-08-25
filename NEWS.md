@@ -1,3 +1,29 @@
+# ggpicrust2 2.5.2
+
+## Bug Fixes
+
+### Critical Edge Case Resolution
+
+* **Fixed pathway_errorbar empty data handling**:
+  - `pathway_errorbar()` now returns NULL instead of crashing when no annotation data is available
+  - Main `ggpicrust2()` function gracefully handles NULL plot objects
+  - Users still receive complete results data even when plots cannot be generated
+  - Improved warning messages for better user experience
+
+* **Enhanced robustness for datasets with no significant pathways**:
+  - Prevents crashes when all pathways have p_adjust > 0.05
+  - Returns meaningful results with empty annotation columns for visualization
+  - Maintains data integrity throughout the analysis pipeline
+  - Works seamlessly with all PICRUSt2 versions including 2.6.2
+
+* **Function signature consistency**:
+  - Fixed `pathway_annotation()` function calls in main function
+  - Ensures proper parameter passing throughout the workflow
+  - Resolves compatibility issues between internal functions
+
+These fixes ensure the package works reliably with all types of microbiome data, 
+including edge cases where no statistically significant pathways are found.
+
 # ggpicrust2 2.5.1
 
 ## Bug Fixes
