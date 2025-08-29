@@ -1038,10 +1038,21 @@ perform_lefser_analysis <- function(abundance_mat, metadata, group, Level) {
   )
 
   # Perform Lefser analysis
-  lefser_results <- lefser::lefser(se, classCol = group)  # Using classCol instead of deprecated groupCol
+  lefser_results <- tryCatch({
+    lefser::lefser(se, classCol = group)  # Using classCol instead of deprecated groupCol
+  }, error = function(e) {
+    message("Lefser analysis failed: ", e$message)
+    NULL
+  })
 
   # Create results for all features, not just significant ones
   all_features <- rownames(abundance_mat)
+
+  # Check if we only have 2 groups (lefser requirement)
+  if (length(Level) != 2) {
+    message("Lefser requires exactly 2 groups. Found ", length(Level), " groups.")
+    return(NULL)
+  }
 
   # Initialize results with all features
   results <- data.frame(
@@ -1054,9 +1065,9 @@ perform_lefser_analysis <- function(abundance_mat, metadata, group, Level) {
   )
 
   # If significant features found, update their p-values
-  if (length(lefser_results$Names) > 0 && !is.null(lefser_results$Names)) {
+  if (!is.null(lefser_results) && nrow(lefser_results) > 0) {
     # Match significant features to all features
-    sig_indices <- match(lefser_results$Names, all_features)
+    sig_indices <- match(lefser_results$features, all_features)
 
     # Convert effect scores to p-values (higher absolute effect score = lower p-value)
     # This is a simplified conversion; in practice, Lefser uses Wilcoxon test internally
