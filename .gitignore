@@ -34,8 +34,72 @@ renv/local/
 # pkgdown site
 docs/
 
+# Development and test files
+*test*.R
+*Test*.R
+*debug*.R
+*Debug*.R
+*validation*.R
+*demo*.R
+*Demo*.R
+*example*.R
+*Example*.R
+*benchmark*.R
+*analysis*.R
+*solution*.R
+*simulation*.R
+temp_cleanup/
+test_results/
+test_output/
+
+# Data files that shouldn't be in repo
+*.csv
+*.rds
+*.RData
+!data/*.RData
+!inst/extdata/*.RData
+
+# Documentation and reports
+*REPORT*.md
+*SUMMARY*.md
+*RESPONSE*.md
+*REPLY*.md
+*ISSUE*.md
+*USER*.md
+*RECOMMENDATION*.md
+*_results.pdf
+*_results/
+
+# Development directories
+code/
+dev/
+docs_dev_notes/
+manuscript/
+related_projects/
+figure/
+ggpicrust2.Rcheck/
+
+# Temporary and backup files
+temp_*
+*_temp.*
+*_backup.*
+*_old.*
+*.bak
+
+# User-specific files
+aashi*
+whale*
+diagnose*
+verify*
+fixed*
+FIXED*
+user_*
+validated_*
+inspect_*
+
 # Other
 .vscode/
 .idea/
 *.swp
 *~
+CLAUDE.md
