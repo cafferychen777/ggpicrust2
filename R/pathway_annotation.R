@@ -438,19 +438,27 @@ process_kegg_annotations <- function(df, organism = NULL) {
         filtered_df$pathway_description[i] <- NA_character_
       }
 
-      # Use BRITE field for pathway_class (contains functional classification)
-      if("BRITE" %in% names(entry[[1]]) && !is.null(entry[[1]][["BRITE"]]) && length(entry[[1]][["BRITE"]]) > 0) {
-        # Extract first few BRITE classifications
+      # Use CLASS field for pathway_class (contains functional classification)
+      # KEGG returns CLASS, not BRITE for pathway entries
+      if("CLASS" %in% names(entry[[1]]) && !is.null(entry[[1]][["CLASS"]]) && length(entry[[1]][["CLASS"]]) > 0) {
+        # Extract CLASS field
+        pathway_class <- as.character(entry[[1]][["CLASS"]])
+        filtered_df$pathway_class[i] <- paste(pathway_class, collapse = "; ")
+      } else if("BRITE" %in% names(entry[[1]]) && !is.null(entry[[1]][["BRITE"]]) && length(entry[[1]][["BRITE"]]) > 0) {
+        # Fallback to BRITE if CLASS is not available
         brite_classes <- as.character(entry[[1]][["BRITE"]])
-        # Take first 3 classifications to avoid overly long strings
         filtered_df$pathway_class[i] <- paste(head(brite_classes, 3), collapse = "; ")
       } else {
         filtered_df$pathway_class[i] <- NA_character_
       }
 
-      # Use PATHWAY field for pathway_map (extract map IDs)
-      if("PATHWAY" %in% names(entry[[1]]) && !is.null(entry[[1]][["PATHWAY"]]) && length(entry[[1]][["PATHWAY"]]) > 0) {
-        # Extract pathway map IDs (names)
+      # Use PATHWAY_MAP field for pathway_map
+      if("PATHWAY_MAP" %in% names(entry[[1]]) && !is.null(entry[[1]][["PATHWAY_MAP"]]) && length(entry[[1]][["PATHWAY_MAP"]]) > 0) {
+        # Extract pathway map IDs (names of the PATHWAY_MAP vector)
+        pathway_maps <- names(entry[[1]][["PATHWAY_MAP"]])
+        filtered_df$pathway_map[i] <- paste(pathway_maps, collapse = "; ")
+      } else if("PATHWAY" %in% names(entry[[1]]) && !is.null(entry[[1]][["PATHWAY"]]) && length(entry[[1]][["PATHWAY"]]) > 0) {
+        # Fallback to PATHWAY field if PATHWAY_MAP is not available
         pathway_maps <- names(entry[[1]][["PATHWAY"]])
         filtered_df$pathway_map[i] <- paste(pathway_maps, collapse = "; ")
       } else {
