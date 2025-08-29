@@ -617,11 +617,16 @@ pathway_errorbar <-
       )
 
     if (ko_to_kegg == TRUE) {
-      pathway_class_group_mat <-
-        daa_results_filtered_sub_df$pathway_class %>%
-        table() %>%
-        data.frame() %>% tibble::column_to_rownames(".")
-      pathway_class_group <- data.frame(.= unique(daa_results_filtered_sub_df$pathway_class),Freq = pathway_class_group_mat[unique(daa_results_filtered_sub_df$pathway_class),])
+      # Convert table to matrix to preserve names as rownames
+      pathway_class_table <- table(daa_results_filtered_sub_df$pathway_class)
+      pathway_class_group_mat <- as.data.frame(as.matrix(pathway_class_table))
+      colnames(pathway_class_group_mat) <- "Freq"
+      
+      # Create the pathway_class_group data frame
+      pathway_class_group <- data.frame(
+        . = unique(daa_results_filtered_sub_df$pathway_class),
+        Freq = pathway_class_group_mat[unique(daa_results_filtered_sub_df$pathway_class), "Freq"]
+      )
       start <-
         c(1, rev(pathway_class_group$Freq)[1:(length(pathway_class_group$Freq) - 1)]) %>%
         cumsum()
