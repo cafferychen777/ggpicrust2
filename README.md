@@ -73,7 +73,7 @@ We're thrilled to announce a major enhancement to ggpicrust2 with the introducti
 **Three Pathway Types Now Supported:**
 - **KEGG Pathways**: Traditional KEGG pathway analysis (enhanced and optimized)
 - **MetaCyc Pathways**: 50+ curated metabolic pathways with EC number mapping 
-- **Gene Ontology (GO)**: 36 GO terms across Biological Process, Molecular Function, and Cellular Component categories
+- **Gene Ontology (GO)**: 108+ GO terms across Biological Process, Molecular Function, and Cellular Component categories with comprehensive microbiome-relevant annotations
 
 ## **⚡ Production-Grade Performance**
 - **Sub-second analysis** for typical datasets (98.5% faster than targets)

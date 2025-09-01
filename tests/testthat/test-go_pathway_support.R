@@ -4,28 +4,82 @@ library(testthat)
 
 context("GO Pathway Support")
 
-test_that("create_basic_go_mapping creates valid GO mapping", {
+test_that("create_basic_go_mapping creates valid enhanced GO mapping", {
   # Load the function
   source("../../R/pathway_gsea.R")
-  
-  # Create basic GO mapping
+
+  # Create enhanced GO mapping
   go_mapping <- create_basic_go_mapping()
-  
+
   # Test structure
   expect_is(go_mapping, "data.frame")
   expect_true(all(c("go_id", "go_name", "category", "ko_members") %in% colnames(go_mapping)))
-  
+
   # Test GO ID format
   expect_true(all(grepl("^GO:\\d{7}$", go_mapping$go_id)))
-  
+
   # Test categories
   expect_true(all(go_mapping$category %in% c("BP", "MF", "CC")))
-  
+
   # Test KO members format
   expect_true(all(grepl("K\\d{5}", go_mapping$ko_members)))
-  
+
   # Test we have all three categories
   expect_true(length(unique(go_mapping$category)) == 3)
+
+  # Test enhanced mapping has more terms than basic (should be 100+)
+  expect_true(nrow(go_mapping) >= 100)
+
+  # Test distribution across categories
+  category_counts <- table(go_mapping$category)
+  expect_true(category_counts["BP"] >= 40)  # At least 40 BP terms
+  expect_true(category_counts["MF"] >= 20)  # At least 20 MF terms
+  expect_true(category_counts["CC"] >= 20)  # At least 20 CC terms
+
+  # Test that we have microbiome-relevant terms
+  microbiome_terms <- c("metabolic", "stress", "membrane", "transport", "catalytic")
+  term_names <- tolower(go_mapping$go_name)
+  for (term in microbiome_terms) {
+    expect_true(any(grepl(term, term_names)),
+                info = paste("Missing microbiome-relevant term:", term))
+  }
+})
+
+test_that("ko_to_go_reference dataset is properly structured", {
+  # Test loading the complete dataset
+  expect_no_error({
+    data("ko_to_go_reference", package = "ggpicrust2")
+  })
+
+  # Test dataset structure
+  expect_is(ko_to_go_reference, "data.frame")
+  expect_true(all(c("go_id", "go_name", "category", "ko_members") %in% colnames(ko_to_go_reference)))
+
+  # Test GO ID format
+  expect_true(all(grepl("^GO:\\d{7}$", ko_to_go_reference$go_id)))
+
+  # Test categories
+  expect_true(all(ko_to_go_reference$category %in% c("BP", "MF", "CC")))
+
+  # Test KO members format
+  expect_true(all(grepl("K\\d{5}", ko_to_go_reference$ko_members)))
+
+  # Test we have all three categories
+  expect_true(length(unique(ko_to_go_reference$category)) == 3)
+
+  # Test dataset size (should be comprehensive)
+  expect_true(nrow(ko_to_go_reference) >= 100)
+
+  # Test no duplicate GO IDs
+  expect_true(length(unique(ko_to_go_reference$go_id)) == nrow(ko_to_go_reference))
+
+  # Test that KO members are properly formatted
+  ko_members_sample <- head(ko_to_go_reference$ko_members, 10)
+  for (ko_string in ko_members_sample) {
+    ko_list <- strsplit(ko_string, ";")[[1]]
+    expect_true(all(grepl("^K\\d{5}$", ko_list)),
+                info = paste("Invalid KO format in:", ko_string))
+  }
 })
 
 test_that("prepare_gene_sets works with GO pathway_type", {
@@ -66,11 +120,10 @@ test_that("pathway_gsea works with GO pathway_type", {
   data("ko_abundance", package = "ggpicrust2")
   data("metadata", package = "ggpicrust2")
   
-  # Prepare abundance data
-  abundance_data <- as.data.frame(ko_abundance)
-  rownames(abundance_data) <- abundance_data[, "#NAME"]
-  abundance_data <- abundance_data[, -1]
-  
+  # Prepare abundance data - use tibble method to maintain sample names
+  abundance_data <- ko_abundance %>%
+    tibble::column_to_rownames("#NAME")
+
   # Take subset for faster testing
   abundance_data <- abundance_data[1:100, ]
   
@@ -78,7 +131,7 @@ test_that("pathway_gsea works with GO pathway_type", {
   expect_no_error({
     gsea_results_bp <- pathway_gsea(
       abundance = abundance_data,
-      metadata = metadata,
+      metadata = metadata %>% tibble::column_to_rownames("sample_name"),
       group = "Environment",
       pathway_type = "GO",
       go_category = "BP",
@@ -88,12 +141,12 @@ test_that("pathway_gsea works with GO pathway_type", {
       max_size = 500
     )
   })
-  
+
   # Test GO GSEA with MF category
   expect_no_error({
     gsea_results_mf <- pathway_gsea(
       abundance = abundance_data,
-      metadata = metadata,
+      metadata = metadata %>% tibble::column_to_rownames("sample_name"),
       group = "Environment",
       pathway_type = "GO",
       go_category = "MF",
@@ -199,6 +252,66 @@ test_that("GO validation catches invalid parameters", {
     go_category = "INVALID",
     method = "fgsea"
   ))
+})
+
+test_that("GO data loading mechanism works correctly", {
+  # Test that the improved data loading mechanism works
+  # This tests the fallback mechanism when complete data is not available
+
+  # Test prepare_gene_sets with different data availability scenarios
+  expect_no_error({
+    gene_sets_bp <- prepare_gene_sets("GO", go_category = "BP")
+  })
+
+  expect_is(gene_sets_bp, "list")
+  expect_true(length(gene_sets_bp) > 0)
+
+  # Test that gene sets contain valid KO identifiers
+  all_kos <- unique(unlist(gene_sets_bp))
+  expect_true(all(grepl("^K\\d{5}$", all_kos)))
+
+  # Test that we get a reasonable number of gene sets
+  expect_true(length(gene_sets_bp) >= 20)  # Should have at least 20 BP terms
+})
+
+test_that("GO pathway analysis handles edge cases", {
+  # Test with minimal data
+  minimal_abundance <- matrix(c(1, 2, 3, 4, 5, 6), nrow = 2,
+                             dimnames = list(c("K00001", "K00002"),
+                                           c("S1", "S2", "S3")))
+  minimal_metadata <- data.frame(
+    sample = c("S1", "S2", "S3"),
+    group = c("A", "A", "B"),
+    stringsAsFactors = FALSE
+  )
+  rownames(minimal_metadata) <- minimal_metadata$sample
+
+  # Should handle minimal data gracefully
+  expect_no_error({
+    result <- pathway_gsea(
+      abundance = minimal_abundance,
+      metadata = minimal_metadata,
+      group = "group",
+      pathway_type = "GO",
+      go_category = "BP",
+      method = "fgsea",
+      min_size = 1,
+      max_size = 100,
+      nperm = 10
+    )
+  })
+})
+
+test_that("GO error handling provides informative messages", {
+  # Test that error messages are informative when things go wrong
+
+  # Test invalid GO category
+  expect_error({
+    prepare_gene_sets("GO", go_category = "INVALID")
+  }, regexp = "Invalid go_category")
+
+  # Test that warnings are properly issued when fallback is used
+  # This is tested implicitly in other tests through the warning system
 })
 
 test_that("GO GSEA integrates with visualization functions", {

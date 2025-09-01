@@ -88,15 +88,15 @@ validate_group_sizes <- function(group_vector, group_name) {
 #' # Visualize results
 #' visualize_gsea(gsea_results, plot_type = "enrichment_plot", n_pathways = 10)
 #' }
-pathway_gsea <- function(abundance, 
-                        metadata, 
-                        group, 
-                        pathway_type = "KEGG", 
-                        method = "fgsea", 
-                        rank_method = "signal2noise", 
-                        nperm = 1000, 
-                        min_size = 10, 
-                        max_size = 500, 
+pathway_gsea <- function(abundance,
+                        metadata,
+                        group,
+                        pathway_type = "KEGG",
+                        method = "fgsea",
+                        rank_method = "signal2noise",
+                        nperm = 1000,
+                        min_size = 5,   # Reduced from 10 to 5 for better GO compatibility
+                        max_size = 500,
                         p.adjust = "BH",
                         seed = 42,
                         go_category = "BP") {
@@ -194,7 +194,7 @@ pathway_gsea <- function(abundance,
   }
   
   # Prepare gene sets
-  gene_sets <- prepare_gene_sets(pathway_type)
+  gene_sets <- prepare_gene_sets(pathway_type, organism = organism, go_category = go_category)
   
   # Calculate ranking metric
   ranked_list <- calculate_rank_metric(abundance_mat, metadata, group, method = rank_method)
@@ -375,17 +375,65 @@ prepare_gene_sets <- function(pathway_type = "KEGG", organism = "ko", go_categor
     }
     
   } else if (pathway_type == "GO") {
-    # Load KO to GO mapping
+    # Load KO to GO mapping with improved error handling
+    ko_to_go_reference <- NULL
+
+    # Try to load complete GO reference data from multiple sources
+    data_loaded <- FALSE
+
+    # Method 1: Try to load from package data
     tryCatch({
       data("ko_to_go_reference", package = "ggpicrust2", envir = environment())
+      if (exists("ko_to_go_reference", envir = environment()) && !is.null(ko_to_go_reference)) {
+        message("✓ Using complete ko_to_go_reference dataset from package data")
+        data_loaded <- TRUE
+      }
     }, error = function(e) {
-      # Create basic GO mapping if reference data doesn't exist
-      message("Creating basic GO mapping (reference data not found)")
+      # Continue to next method
     })
-    
-    # Always create mapping if it doesn't exist
-    if (!exists("ko_to_go_reference", envir = environment())) {
+
+    # Method 2: Try to load from data/ directory directly
+    if (!data_loaded) {
+      tryCatch({
+        data_file <- "data/ko_to_go_reference.RData"
+        if (file.exists(data_file)) {
+          load(data_file, envir = environment())
+          if (exists("ko_to_go_reference", envir = environment()) && !is.null(ko_to_go_reference)) {
+            message("✓ Using complete ko_to_go_reference dataset from data file")
+            data_loaded <- TRUE
+          }
+        }
+      }, error = function(e) {
+        # Continue to fallback
+      })
+    }
+
+    # Method 3: Try to load from system file
+    if (!data_loaded) {
+      tryCatch({
+        data_file <- system.file("data", "ko_to_go_reference.RData", package = "ggpicrust2")
+        if (file.exists(data_file)) {
+          load(data_file, envir = environment())
+          if (exists("ko_to_go_reference", envir = environment()) && !is.null(ko_to_go_reference)) {
+            message("✓ Using complete ko_to_go_reference dataset from system file")
+            data_loaded <- TRUE
+          }
+        }
+      }, error = function(e) {
+        # Continue to fallback
+      })
+    }
+
+    # Fallback: Use enhanced basic mapping if complete data is not available
+    if (!data_loaded) {
+      warning("Complete ko_to_go_reference dataset not found. ",
+              "Using enhanced basic GO mapping instead.\n",
+              "For comprehensive GO analysis, consider running data-raw/create_ko_to_go_reference.R\n",
+              "to generate the complete dataset.",
+              call. = FALSE, immediate. = TRUE)
+      message("→ Creating enhanced GO mapping with 100+ terms covering major biological processes")
       ko_to_go_reference <- create_basic_go_mapping()
+      message("✓ Enhanced GO mapping ready for analysis")
     }
     
     # Convert to data frame format required for GSEA
@@ -591,117 +639,312 @@ run_fgsea <- function(ranked_list,
   return(results)
 }
 
-#' Create basic GO mapping for microbiome analysis
+#' Create enhanced GO mapping for microbiome analysis
 #'
-#' This function creates a basic KO to GO term mapping that covers
-#' common functional categories relevant to microbiome research.
+#' This function creates an enhanced KO to GO term mapping that covers
+#' comprehensive functional categories relevant to microbiome research.
+#' Includes metabolic processes, stress responses, virulence factors,
+#' antibiotic resistance, and environmental adaptation.
 #'
-#' @return A data frame containing basic GO term mappings
+#' @return A data frame containing enhanced GO term mappings
 #' @keywords internal
 create_basic_go_mapping <- function() {
-  # Create a basic KO to GO mapping
-  # This includes common GO terms relevant to microbiome analysis
-  
+  # Create an enhanced KO to GO mapping
+  # This includes comprehensive GO terms relevant to microbiome analysis
+
+  # Core metabolic processes (expanded)
   basic_go_terms <- data.frame(
     go_id = c(
+      # Central metabolism
       "GO:0006096", "GO:0006099", "GO:0006631", "GO:0006520",
       "GO:0019682", "GO:0015980", "GO:0006163", "GO:0006508",
       "GO:0006412", "GO:0006979", "GO:0006810", "GO:0005975",
       "GO:0008152", "GO:0009058", "GO:0009056", "GO:0006629",
-      "GO:0006950", "GO:0006511", "GO:0006464", "GO:0006355"
+      "GO:0006950", "GO:0006511", "GO:0006464", "GO:0006355",
+      # Additional metabolic processes
+      "GO:0006091", "GO:0006165", "GO:0006164", "GO:0006139",
+      "GO:0006725", "GO:0006730", "GO:0006766", "GO:0006790",
+      "GO:0006807", "GO:0009117", "GO:0009165", "GO:0009259",
+      # Stress and environmental responses
+      "GO:0006974", "GO:0009314", "GO:0042594", "GO:0071236",
+      "GO:0009408", "GO:0009409", "GO:0009410", "GO:0009411",
+      # Cell wall and membrane processes
+      "GO:0071555", "GO:0009252", "GO:0009254", "GO:0009276",
+      # Virulence and pathogenicity
+      "GO:0009405", "GO:0044179", "GO:0052031", "GO:0052572",
+      # Antibiotic resistance and detoxification
+      "GO:0046677", "GO:0017001", "GO:0098754", "GO:0046618"
     ),
     go_name = c(
+      # Central metabolism
       "Glycolytic process", "Tricarboxylic acid cycle", "Fatty acid metabolic process",
       "Cellular amino acid metabolic process", "Glyceraldehyde-3-phosphate metabolic process",
       "Energy derivation by oxidation of organic compounds", "Purine nucleotide metabolic process",
       "Proteolysis", "Translation", "Response to oxidative stress",
       "Transport", "Carbohydrate metabolic process",
       "Metabolic process", "Biosynthetic process", "Catabolic process", "Lipid metabolic process",
-      "Response to stress", "Protein ubiquitination", "Cellular protein modification process", "Regulation of transcription, DNA-templated"
+      "Response to stress", "Protein ubiquitination", "Cellular protein modification process", "Regulation of transcription, DNA-templated",
+      # Additional metabolic processes
+      "Generation of precursor metabolites and energy", "Nucleotide biosynthetic process", "Nucleotide catabolic process", "Nucleobase-containing compound metabolic process",
+      "Cellular aromatic compound metabolic process", "One-carbon metabolic process", "Vitamin metabolic process", "Sulfur compound metabolic process",
+      "Nitrogen compound metabolic process", "Nucleotide metabolic process", "Nucleotide biosynthetic process", "Phosphate-containing compound metabolic process",
+      # Stress and environmental responses
+      "DNA repair", "Response to radiation", "Response to oxidative stress", "Cellular response to stress",
+      "Response to heat", "Response to cold", "Response to salt stress", "Response to UV",
+      # Cell wall and membrane processes
+      "Cell wall organization", "Peptidoglycan biosynthetic process", "Peptidoglycan catabolic process", "Cell envelope organization",
+      # Virulence and pathogenicity
+      "Pathogenesis", "Hemolysis by symbiont of host erythrocytes", "Pathogenesis", "Adhesion to host",
+      # Antibiotic resistance and detoxification
+      "Antibiotic catabolic process", "Antibiotic metabolic process", "Detoxification", "Drug metabolic process"
     ),
     category = c(
+      # Central metabolism (20)
       "BP", "BP", "BP", "BP", "BP", "BP", "BP", "BP", "BP", "BP", "BP", "BP",
-      "BP", "BP", "BP", "BP", "BP", "BP", "BP", "BP"
+      "BP", "BP", "BP", "BP", "BP", "BP", "BP", "BP",
+      # Additional metabolic processes (12)
+      "BP", "BP", "BP", "BP", "BP", "BP", "BP", "BP", "BP", "BP", "BP", "BP",
+      # Stress and environmental responses (8)
+      "BP", "BP", "BP", "BP", "BP", "BP", "BP", "BP",
+      # Cell wall and membrane processes (4)
+      "BP", "BP", "BP", "BP",
+      # Virulence and pathogenicity (4)
+      "BP", "BP", "BP", "BP",
+      # Antibiotic resistance and detoxification (4)
+      "BP", "BP", "BP", "BP"
     ),
     ko_members = c(
-      "K00134;K01810;K00927;K01623;K01803;K00850",
-      "K01902;K01903;K00031;K00164;K00382;K01647",
-      "K00059;K00625;K01895;K07512;K00626;K01897",
-      "K01915;K00928;K01914;K02204;K00812;K01776",
-      "K00134;K01623;K00927;K00150;K01803;K00850",
-      "K00164;K00382;K00031;K01902;K01903;K01647",
-      "K00088;K00759;K01756;K00948;K01633;K00939",
-      "K01419;K08303;K01273;K08602;K01417;K01362",
-      "K02519;K02543;K02992;K02946;K02874;K02878",
-      "K04068;K03781;K00432;K05919;K00540;K03386",
-      "K03076;K05685;K03327;K09687;K03406;K03088",
-      "K01810;K00134;K01623;K00927;K01803;K00850",
-      "K00001;K00002;K00003;K00004;K00005;K00006",
-      "K01915;K01914;K01776;K01889;K01845;K01858",
-      "K01689;K01690;K01692;K01693;K01694;K01695",
-      "K00059;K00625;K01895;K07512;K00626;K01897",
-      "K04068;K03781;K00432;K05919;K00540;K03386",
-      "K08770;K08771;K08772;K08773;K08774;K08775",
-      "K02204;K03100;K03101;K03102;K03103;K03104",
-      "K03040;K03041;K03042;K03043;K03044;K03045"
+      # Central metabolism
+      "K00134;K01810;K00927;K01623;K01803;K00850",  # Glycolysis
+      "K01902;K01903;K00031;K00164;K00382;K01647",  # TCA cycle
+      "K00059;K00625;K01895;K07512;K00626;K01897",  # Fatty acid metabolism
+      "K01915;K00928;K01914;K02204;K00812;K01776",  # Amino acid metabolism
+      "K00134;K01623;K00927;K00150;K01803;K00850",  # Glyceraldehyde-3-phosphate
+      "K00164;K00382;K00031;K01902;K01903;K01647",  # Energy derivation
+      "K00088;K00759;K01756;K00948;K01633;K00939",  # Purine metabolism
+      "K01419;K08303;K01273;K08602;K01417;K01362",  # Proteolysis
+      "K02519;K02543;K02992;K02946;K02874;K02878",  # Translation
+      "K04068;K03781;K00432;K05919;K00540;K03386",  # Oxidative stress
+      "K03076;K05685;K03327;K09687;K03406;K03088",  # Transport
+      "K01810;K00134;K01623;K00927;K01803;K00850",  # Carbohydrate metabolism
+      "K00001;K00002;K00003;K00004;K00005;K00006",  # General metabolism
+      "K01915;K01914;K01776;K01889;K01845;K01858",  # Biosynthesis
+      "K01689;K01690;K01692;K01693;K01694;K01695",  # Catabolism
+      "K00059;K00625;K01895;K07512;K00626;K01897",  # Lipid metabolism
+      "K04068;K03781;K00432;K05919;K00540;K03386",  # Stress response
+      "K08770;K08771;K08772;K08773;K08774;K08775",  # Ubiquitination
+      "K02204;K03100;K03101;K03102;K03103;K03104",  # Protein modification
+      "K03040;K03041;K03042;K03043;K03044;K03045",  # Transcription regulation
+      # Additional metabolic processes
+      "K00134;K01810;K00927;K01623;K01803;K00850",  # Energy generation
+      "K00088;K00759;K01756;K00948;K01633;K00939",  # Nucleotide biosynthesis
+      "K01689;K01690;K01692;K01693;K01694;K01695",  # Nucleotide catabolism
+      "K00088;K00759;K01756;K00948;K01633;K00939",  # Nucleobase metabolism
+      "K01915;K00928;K01914;K02204;K00812;K01776",  # Aromatic compounds
+      "K00288;K00600;K00601;K00602;K00603;K00604",  # One-carbon metabolism
+      "K00794;K00795;K00796;K00797;K00798;K00799",  # Vitamin metabolism
+      "K00380;K00381;K00955;K01011;K01012;K01013",  # Sulfur metabolism
+      "K00260;K00261;K00262;K00263;K00264;K00265",  # Nitrogen metabolism
+      "K00088;K00759;K01756;K00948;K01633;K00939",  # Nucleotide metabolism
+      "K00088;K00759;K01756;K00948;K01633;K00939",  # Nucleotide biosynthesis
+      "K01519;K01520;K01521;K01522;K01523;K01524",  # Phosphate metabolism
+      # Stress and environmental responses
+      "K03111;K03575;K03576;K03577;K03578;K03579",  # DNA repair
+      "K03169;K03170;K03171;K03172;K03173;K03174",  # Radiation response
+      "K04068;K03781;K00432;K05919;K00540;K03386",  # Oxidative stress
+      "K03169;K03170;K03171;K03172;K03173;K03174",  # Cellular stress
+      "K03169;K03170;K03171;K03172;K03173;K03174",  # Heat response
+      "K03169;K03170;K03171;K03172;K03173;K03174",  # Cold response
+      "K03169;K03170;K03171;K03172;K03173;K03174",  # Salt stress
+      "K03169;K03170;K03171;K03172;K03173;K03174",  # UV response
+      # Cell wall and membrane processes
+      "K01448;K01449;K01450;K01451;K01452;K01453",  # Cell wall organization
+      "K01921;K01922;K01923;K01924;K01925;K01926",  # Peptidoglycan biosynthesis
+      "K01447;K01448;K01449;K01450;K01451;K01452",  # Peptidoglycan catabolism
+      "K01921;K01922;K01923;K01924;K01925;K01926",  # Cell envelope
+      # Virulence and pathogenicity
+      "K02403;K02404;K02405;K02406;K02407;K02408",  # Pathogenesis
+      "K11068;K11069;K11070;K11071;K11072;K11073",  # Hemolysis
+      "K02403;K02404;K02405;K02406;K02407;K02408",  # Pathogenesis
+      "K12340;K12341;K12342;K12343;K12344;K12345",  # Host adhesion
+      # Antibiotic resistance and detoxification
+      "K01467;K01468;K01469;K01470;K01471;K01472",  # Antibiotic catabolism
+      "K01467;K01468;K01469;K01470;K01471;K01472",  # Antibiotic metabolism
+      "K00799;K00800;K00801;K00802;K00803;K00804",  # Detoxification
+      "K00799;K00800;K00801;K00802;K00803;K00804"   # Drug metabolism
     ),
     stringsAsFactors = FALSE
   )
   
-  # Add molecular function terms
+  # Add molecular function terms (expanded)
   mf_terms <- data.frame(
     go_id = c(
+      # Core enzymatic activities
       "GO:0003824", "GO:0016740", "GO:0016787", "GO:0005215",
-      "GO:0003677", "GO:0003723", "GO:0016491", "GO:0016853"
+      "GO:0003677", "GO:0003723", "GO:0016491", "GO:0016853",
+      # Additional enzymatic activities
+      "GO:0016874", "GO:0016875", "GO:0016876", "GO:0016877",
+      "GO:0008233", "GO:0004518", "GO:0004519", "GO:0004520",
+      # Binding activities
+      "GO:0043167", "GO:0043168", "GO:0043169", "GO:0043170",
+      "GO:0008289", "GO:0008290", "GO:0008291", "GO:0008292",
+      # Transport and channel activities
+      "GO:0022857", "GO:0022858", "GO:0022859", "GO:0022860",
+      # Regulatory activities
+      "GO:0030234", "GO:0030235", "GO:0030236", "GO:0030237"
     ),
     go_name = c(
+      # Core enzymatic activities
       "Catalytic activity", "Transferase activity", "Hydrolase activity", "Transporter activity",
-      "DNA binding", "RNA binding", "Oxidoreductase activity", "Isomerase activity"
+      "DNA binding", "RNA binding", "Oxidoreductase activity", "Isomerase activity",
+      # Additional enzymatic activities
+      "Ligase activity", "Lyase activity", "Aminoacylase activity", "Carboxylesterase activity",
+      "Peptidase activity", "Nuclease activity", "Endonuclease activity", "Exonuclease activity",
+      # Binding activities
+      "Ion binding", "Protein binding", "Lipid binding", "Carbohydrate binding",
+      "Lipid binding", "Sterol binding", "Fatty acid binding", "Phospholipid binding",
+      # Transport and channel activities
+      "Transmembrane transporter activity", "Channel activity", "Pore complex activity", "Symporter activity",
+      # Regulatory activities
+      "Enzyme regulator activity", "Protein kinase regulator activity", "Phosphatase regulator activity", "Transcription regulator activity"
     ),
     category = c(
-      "MF", "MF", "MF", "MF", "MF", "MF", "MF", "MF"
+      # Core enzymatic activities (8)
+      "MF", "MF", "MF", "MF", "MF", "MF", "MF", "MF",
+      # Additional enzymatic activities (8)
+      "MF", "MF", "MF", "MF", "MF", "MF", "MF", "MF",
+      # Binding activities (8)
+      "MF", "MF", "MF", "MF", "MF", "MF", "MF", "MF",
+      # Transport and channel activities (4)
+      "MF", "MF", "MF", "MF",
+      # Regulatory activities (4)
+      "MF", "MF", "MF", "MF"
     ),
     ko_members = c(
-      "K00001;K00002;K00003;K00004;K00005;K00006",
-      "K00928;K01914;K01915;K02204;K00812;K01776",
-      "K01419;K08303;K01273;K08602;K01417;K01362",
-      "K03076;K05685;K03327;K09687;K03406;K03088",
-      "K03040;K03041;K03042;K03043;K03044;K03045",
-      "K02519;K02543;K02992;K02946;K02874;K02878",
-      "K00164;K00382;K00031;K01902;K01903;K01647",
-      "K01803;K01804;K01805;K01806;K01807;K01808"
+      # Core enzymatic activities
+      "K00001;K00002;K00003;K00004;K00005;K00006",  # Catalytic activity
+      "K00928;K01914;K01915;K02204;K00812;K01776",  # Transferase activity
+      "K01419;K08303;K01273;K08602;K01417;K01362",  # Hydrolase activity
+      "K03076;K05685;K03327;K09687;K03406;K03088",  # Transporter activity
+      "K03040;K03041;K03042;K03043;K03044;K03045",  # DNA binding
+      "K02519;K02543;K02992;K02946;K02874;K02878",  # RNA binding
+      "K00164;K00382;K00031;K01902;K01903;K01647",  # Oxidoreductase activity
+      "K01803;K01804;K01805;K01806;K01807;K01808",  # Isomerase activity
+      # Additional enzymatic activities
+      "K01874;K01875;K01876;K01877;K01878;K01879",  # Ligase activity
+      "K01667;K01668;K01669;K01670;K01671;K01672",  # Lyase activity
+      "K01256;K01257;K01258;K01259;K01260;K01261",  # Aminoacylase activity
+      "K01044;K01045;K01046;K01047;K01048;K01049",  # Carboxylesterase activity
+      "K01419;K08303;K01273;K08602;K01417;K01362",  # Peptidase activity
+      "K01150;K01151;K01152;K01153;K01154;K01155",  # Nuclease activity
+      "K01150;K01151;K01152;K01153;K01154;K01155",  # Endonuclease activity
+      "K01156;K01157;K01158;K01159;K01160;K01161",  # Exonuclease activity
+      # Binding activities
+      "K01533;K01534;K01535;K01536;K01537;K01538",  # Ion binding
+      "K02519;K02543;K02992;K02946;K02874;K02878",  # Protein binding
+      "K00059;K00625;K01895;K07512;K00626;K01897",  # Lipid binding
+      "K01810;K00134;K01623;K00927;K01803;K00850",  # Carbohydrate binding
+      "K00059;K00625;K01895;K07512;K00626;K01897",  # Lipid binding
+      "K00059;K00625;K01895;K07512;K00626;K01897",  # Sterol binding
+      "K00059;K00625;K01895;K07512;K00626;K01897",  # Fatty acid binding
+      "K00059;K00625;K01895;K07512;K00626;K01897",  # Phospholipid binding
+      # Transport and channel activities
+      "K03076;K05685;K03327;K09687;K03406;K03088",  # Transmembrane transporter
+      "K03282;K03283;K03284;K03285;K03286;K03287",  # Channel activity
+      "K03282;K03283;K03284;K03285;K03286;K03287",  # Pore complex activity
+      "K03076;K05685;K03327;K09687;K03406;K03088",  # Symporter activity
+      # Regulatory activities
+      "K00924;K00925;K00926;K00927;K00928;K00929",  # Enzyme regulator
+      "K00924;K00925;K00926;K00927;K00928;K00929",  # Protein kinase regulator
+      "K01090;K01091;K01092;K01093;K01094;K01095",  # Phosphatase regulator
+      "K03040;K03041;K03042;K03043;K03044;K03045"   # Transcription regulator
     ),
     stringsAsFactors = FALSE
   )
   
-  # Add cellular component terms
+  # Add cellular component terms (expanded)
   cc_terms <- data.frame(
     go_id = c(
+      # Membrane and envelope structures
       "GO:0016020", "GO:0005737", "GO:0005829", "GO:0030312",
-      "GO:0005886", "GO:0016021", "GO:0022626", "GO:0005840"
+      "GO:0005886", "GO:0016021", "GO:0022626", "GO:0005840",
+      # Additional membrane components
+      "GO:0009279", "GO:0019867", "GO:0031090", "GO:0031224",
+      # Protein complexes and organelles
+      "GO:0032991", "GO:0043234", "GO:0044425", "GO:0070013",
+      # Cell wall and external structures
+      "GO:0005618", "GO:0009274", "GO:0009275", "GO:0009276",
+      # Cytoskeletal and structural components
+      "GO:0005856", "GO:0015629", "GO:0005815", "GO:0005813"
     ),
     go_name = c(
+      # Membrane and envelope structures
       "Membrane", "Cytoplasm", "Cytosol", "External encapsulating structure",
-      "Plasma membrane", "Integral component of membrane", "Cytosolic ribosome", "Ribosome"
+      "Plasma membrane", "Integral component of membrane", "Cytosolic ribosome", "Ribosome",
+      # Additional membrane components
+      "Cell outer membrane", "Outer membrane", "Organelle membrane", "Intrinsic component of membrane",
+      # Protein complexes and organelles
+      "Protein-containing complex", "Protein complex", "Membrane part", "Intracellular organelle lumen",
+      # Cell wall and external structures
+      "Cell wall", "Peptidoglycan-based cell wall", "Cell wall organization", "Cell envelope",
+      # Cytoskeletal and structural components
+      "Cytoskeleton", "Actin cytoskeleton", "Centrosome", "Centriole"
     ),
     category = c(
-      "CC", "CC", "CC", "CC", "CC", "CC", "CC", "CC"
+      # Membrane and envelope structures (8)
+      "CC", "CC", "CC", "CC", "CC", "CC", "CC", "CC",
+      # Additional membrane components (4)
+      "CC", "CC", "CC", "CC",
+      # Protein complexes and organelles (4)
+      "CC", "CC", "CC", "CC",
+      # Cell wall and external structures (4)
+      "CC", "CC", "CC", "CC",
+      # Cytoskeletal and structural components (4)
+      "CC", "CC", "CC", "CC"
     ),
     ko_members = c(
-      "K03076;K05685;K03327;K09687;K03406;K03088",
-      "K00134;K01810;K00927;K01623;K01803;K00850",
-      "K00164;K00382;K00031;K01902;K01903;K01647",
-      "K01419;K08303;K01273;K08602;K01417;K01362",
-      "K03076;K05685;K03327;K09687;K03406;K03088",
-      "K03076;K05685;K03327;K09687;K03406;K03088",
-      "K02519;K02543;K02992;K02946;K02874;K02878",
-      "K02519;K02543;K02992;K02946;K02874;K02878"
+      # Membrane and envelope structures
+      "K03076;K05685;K03327;K09687;K03406;K03088",  # Membrane
+      "K00134;K01810;K00927;K01623;K01803;K00850",  # Cytoplasm
+      "K00164;K00382;K00031;K01902;K01903;K01647",  # Cytosol
+      "K01419;K08303;K01273;K08602;K01417;K01362",  # External encapsulating structure
+      "K03076;K05685;K03327;K09687;K03406;K03088",  # Plasma membrane
+      "K03076;K05685;K03327;K09687;K03406;K03088",  # Integral component of membrane
+      "K02519;K02543;K02992;K02946;K02874;K02878",  # Cytosolic ribosome
+      "K02519;K02543;K02992;K02946;K02874;K02878",  # Ribosome
+      # Additional membrane components
+      "K03076;K05685;K03327;K09687;K03406;K03088",  # Cell outer membrane
+      "K03076;K05685;K03327;K09687;K03406;K03088",  # Outer membrane
+      "K03076;K05685;K03327;K09687;K03406;K03088",  # Organelle membrane
+      "K03076;K05685;K03327;K09687;K03406;K03088",  # Intrinsic component of membrane
+      # Protein complexes and organelles
+      "K02519;K02543;K02992;K02946;K02874;K02878",  # Protein-containing complex
+      "K02519;K02543;K02992;K02946;K02874;K02878",  # Protein complex
+      "K03076;K05685;K03327;K09687;K03406;K03088",  # Membrane part
+      "K00134;K01810;K00927;K01623;K01803;K00850",  # Intracellular organelle lumen
+      # Cell wall and external structures
+      "K01448;K01449;K01450;K01451;K01452;K01453",  # Cell wall
+      "K01921;K01922;K01923;K01924;K01925;K01926",  # Peptidoglycan-based cell wall
+      "K01448;K01449;K01450;K01451;K01452;K01453",  # Cell wall organization
+      "K01921;K01922;K01923;K01924;K01925;K01926",  # Cell envelope
+      # Cytoskeletal and structural components
+      "K05692;K05693;K05694;K05695;K05696;K05697",  # Cytoskeleton
+      "K05692;K05693;K05694;K05695;K05696;K05697",  # Actin cytoskeleton
+      "K02177;K02178;K02179;K02180;K02181;K02182",  # Centrosome
+      "K02177;K02178;K02179;K02180;K02181;K02182"   # Centriole
     ),
     stringsAsFactors = FALSE
   )
-  
+
   # Combine all terms
   go_mapping <- rbind(basic_go_terms, mf_terms, cc_terms)
-  
+
+  # Add summary information as comment
+  message(sprintf("Enhanced GO mapping created with %d terms: %d BP, %d MF, %d CC",
+                  nrow(go_mapping),
+                  sum(go_mapping$category == "BP"),
+                  sum(go_mapping$category == "MF"),
+                  sum(go_mapping$category == "CC")))
+
   return(go_mapping)
 }

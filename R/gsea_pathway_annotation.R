@@ -129,33 +129,86 @@ gsea_pathway_annotation <- function(gsea_results,
     }
     
   } else if (pathway_type == "GO") {
-    # Load GO reference data
+    # Load GO reference data with improved error handling
+    ko_to_go_reference <- NULL
+    data_loaded <- FALSE
+
+    # Method 1: Try to load from package data
     tryCatch({
       data("ko_to_go_reference", package = "ggpicrust2", envir = environment())
+      if (exists("ko_to_go_reference", envir = environment()) && !is.null(ko_to_go_reference)) {
+        message("✓ Using complete ko_to_go_reference dataset for annotation")
+        data_loaded <- TRUE
+      }
     }, error = function(e) {
-      # Create basic GO mapping if reference data doesn't exist
-      message("Creating basic GO mapping for annotation")
+      # Continue to next method
     })
-    
-    # Always create mapping if it doesn't exist
-    if (!exists("ko_to_go_reference", envir = environment())) {
-      # Source the pathway_gsea.R to get the create_basic_go_mapping function
+
+    # Method 2: Try to load from data/ directory directly
+    if (!data_loaded) {
+      tryCatch({
+        data_file <- "data/ko_to_go_reference.RData"
+        if (file.exists(data_file)) {
+          load(data_file, envir = environment())
+          if (exists("ko_to_go_reference", envir = environment()) && !is.null(ko_to_go_reference)) {
+            message("✓ Using complete ko_to_go_reference dataset for annotation from data file")
+            data_loaded <- TRUE
+          }
+        }
+      }, error = function(e) {
+        # Continue to fallback
+      })
+    }
+
+    # Method 3: Try to load from system file
+    if (!data_loaded) {
+      tryCatch({
+        data_file <- system.file("data", "ko_to_go_reference.RData", package = "ggpicrust2")
+        if (file.exists(data_file)) {
+          load(data_file, envir = environment())
+          if (exists("ko_to_go_reference", envir = environment()) && !is.null(ko_to_go_reference)) {
+            message("✓ Using complete ko_to_go_reference dataset for annotation from system file")
+            data_loaded <- TRUE
+          }
+        }
+      }, error = function(e) {
+        # Continue to fallback
+      })
+    }
+
+    # Use enhanced basic mapping if complete data is not available
+    if (!data_loaded) {
+      warning("Complete ko_to_go_reference dataset not found for annotation. ",
+              "Using enhanced basic GO mapping instead.\n",
+              "Pathway names will be based on enhanced mapping (100+ terms).\n",
+              "For complete GO annotations, consider running data-raw/create_ko_to_go_reference.R",
+              call. = FALSE, immediate. = TRUE)
+      # Try to source the enhanced create_basic_go_mapping function
       tryCatch({
         source_file <- system.file("R", "pathway_gsea.R", package = "ggpicrust2")
         if (file.exists(source_file)) {
           source(source_file, local = TRUE)
+          message("→ Loading enhanced GO mapping for annotation")
+          ko_to_go_reference <- create_basic_go_mapping()
         } else {
           # Try relative path
           source("R/pathway_gsea.R", local = TRUE)
+          ko_to_go_reference <- create_basic_go_mapping()
         }
-        ko_to_go_reference <- create_basic_go_mapping()
       }, error = function(e) {
-        # Fallback: create a minimal mapping inline
+        # Final fallback: create a minimal but functional mapping
+        warning("Could not load enhanced GO mapping. Using minimal fallback mapping.\n",
+                "This may result in limited pathway annotations.",
+                call. = FALSE, immediate. = TRUE)
         ko_to_go_reference <- data.frame(
-          go_id = c("GO:0006096", "GO:0006099", "GO:0006631", "GO:0006520"),
-          go_name = c("Glycolytic process", "Tricarboxylic acid cycle", "Fatty acid metabolic process", "Cellular amino acid metabolic process"),
-          category = c("BP", "BP", "BP", "BP"),
-          ko_members = c("K00134;K01810", "K01902;K01903", "K00059;K00625", "K01915;K00928"),
+          go_id = c("GO:0006096", "GO:0006099", "GO:0006631", "GO:0006520",
+                   "GO:0003824", "GO:0016740", "GO:0016020", "GO:0005737"),
+          go_name = c("Glycolytic process", "Tricarboxylic acid cycle",
+                     "Fatty acid metabolic process", "Cellular amino acid metabolic process",
+                     "Catalytic activity", "Transferase activity", "Membrane", "Cytoplasm"),
+          category = c("BP", "BP", "BP", "BP", "MF", "MF", "CC", "CC"),
+          ko_members = c("K00134;K01810", "K01902;K01903", "K00059;K00625", "K01915;K00928",
+                        "K00001;K00002", "K00928;K01914", "K03076;K05685", "K00134;K01810"),
           stringsAsFactors = FALSE
         )
       })
