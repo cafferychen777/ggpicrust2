@@ -301,7 +301,7 @@ pathway_errorbar <-
     if (!exists("get_color_theme")) {
       source(file.path(dirname(parent.frame()$ofile), "color_themes.R"))
     }
-    if (!exists("format_pvalue_smart")) {
+    if (!exists("format_pvalue_smart") || !exists("calculate_smart_text_size")) {
       source(file.path(dirname(parent.frame()$ofile), "legend_annotation_utils.R"))
     }
     
@@ -536,7 +536,12 @@ pathway_errorbar <-
         3.5  # Default size
       }
     } else {
-      pathway_class_text_size
+      as.numeric(pathway_class_text_size)  # Ensure it's numeric
+    }
+
+    # Ensure pathway_class_final_text_size is always defined and numeric
+    if (!exists("pathway_class_final_text_size") || is.null(pathway_class_final_text_size) || is.na(pathway_class_final_text_size)) {
+      pathway_class_final_text_size <- 3.5  # Fallback default
     }
 
     # Set pathway class text color based on theme if "auto"
@@ -546,6 +551,11 @@ pathway_errorbar <-
       current_theme$pathway_class_colors[1]  # Use first theme color
     } else {
       pathway_class_text_color
+    }
+
+    # Ensure pathway_class_final_text_color is always defined
+    if (!exists("pathway_class_final_text_color") || is.null(pathway_class_final_text_color) || is.na(pathway_class_final_text_color)) {
+      pathway_class_final_text_color <- "black"  # Fallback default
     }
 
     bar_errorbar <-
