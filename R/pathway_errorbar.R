@@ -178,7 +178,7 @@ pathway_errorbar <-
            legend_ncol = NULL,
            legend_nrow = NULL,
            # P-value display parameters
-           pvalue_format = "smart",
+           pvalue_format = "numeric",
            pvalue_stars = TRUE,
            pvalue_colors = FALSE,
            pvalue_size = "auto",
@@ -190,7 +190,7 @@ pathway_errorbar <-
            pathway_class_text_color = "black",
            pathway_class_text_face = "bold",
            pathway_class_text_angle = 0,
-           pathway_class_position = "left",
+           pathway_class_position = "right",
            # Pathway names text size parameter
            pathway_names_text_size = "auto") {
     # Add more complete input validation at the beginning of the function
@@ -770,24 +770,31 @@ pathway_errorbar <-
           panel.grid.major.x = ggplot2::element_blank(),
           panel.background = ggplot2::element_blank(),
           axis.text = ggplot2::element_blank(),
-          plot.margin = ggplot2::unit(c(0, 0.2, 0, 0), "cm"),
+          # Dynamic margin based on position: more space on the side where text is
+          # Margin order is: top, right, bottom, left
+          plot.margin = if (pathway_class_position == "left") {
+            ggplot2::unit(c(0, 0, 0, 1.5), "cm")  # Large left margin for left position
+          } else {
+            ggplot2::unit(c(0, 1.5, 0, 0), "cm")  # Large right margin for right position
+          },
           axis.title.y =  ggplot2::element_blank(),
           axis.title.x = ggplot2::element_blank(),
           legend.position = "non"
-        )
+        ) +
+        ggplot2::coord_cartesian(clip = "off")
     }
 
     # Enhanced p-value formatting using the new system
     format_p_value <- function(p) {
       # Use smart formatting if available, otherwise fallback to simple formatting
-      if (exists("format_pvalue_smart")) {
+      if (exists("format_pvalue_smart") && pvalue_format != "numeric") {
         format_pvalue_smart(p, 
                            format = pvalue_format,
                            stars = pvalue_stars,
                            thresholds = pvalue_thresholds,
                            star_symbols = pvalue_star_symbols)
       } else {
-        # Fallback to original formatting
+        # Use simple numeric formatting without "p =" prefix
         ifelse(p < 0.001, sprintf("%.1e", p), sprintf("%.3f", p))
       }
     }
@@ -808,7 +815,8 @@ pathway_errorbar <-
     # Calculate smart text size for p-values
     pvalue_text_size <- if (pvalue_size == "auto") {
       if (exists("calculate_smart_text_size")) {
-        calculate_smart_text_size(nrow(daa_results_filtered_sub_df), base_size = 10)
+        # Use smaller base_size for p-values 
+        calculate_smart_text_size(nrow(daa_results_filtered_sub_df), base_size = 3.5, min_size = 2.5, max_size = 4)
       } else {
         3.5  # Default size
       }
@@ -852,7 +860,7 @@ pathway_errorbar <-
       if (ko_to_kegg == TRUE) {
         combination_bar_plot <-
           pathway_class_annotation + bar_errorbar + p_values_bar + p_annotation + patchwork::plot_layout(ncol = 4, widths =
-                                                                                                c(1, 1.2, 0.5, 0.1))
+                                                                                                c(2.0, 2.0, 0.7, 0.3))
       }
       else{
         combination_bar_plot <-
@@ -862,7 +870,7 @@ pathway_errorbar <-
       if (ko_to_kegg == TRUE) {
         combination_bar_plot <-
           pathway_class_annotation + bar_errorbar + p_annotation + patchwork::plot_layout(ncol = 3, widths =
-                                                                                                           c(1, 1.2, 0.1))
+                                                                                                           c(2.0, 2.0, 0.3))
       }
       else{
         combination_bar_plot <-
