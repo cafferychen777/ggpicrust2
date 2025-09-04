@@ -398,7 +398,9 @@ pathway_errorbar <-
     )
     error_bar_df <- as.data.frame(error_bar_matrix)
 
-    error_bar_df$group <- factor(correct_groups, levels = levels(as.factor(Group)))
+    # Fix for duplicate factor levels issue
+    Group_levels <- unique(as.character(Group))
+    error_bar_df$group <- factor(correct_groups, levels = Group_levels)
 
       error_bar_pivot_longer_df <- tidyr::pivot_longer(error_bar_df,-c(sample, group))
 
