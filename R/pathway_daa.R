@@ -49,6 +49,18 @@ NULL
 #' @param reference Character string specifying the reference level for the group comparison.
 #'        If NULL (default), the first level is used as reference.
 #'
+#' @param include_abundance_stats Logical value indicating whether to include
+#'        abundance statistics (mean relative abundance, standard deviation,
+#'        and log2 fold change) in the output. Default is FALSE for backward
+#'        compatibility.
+#'
+#' @param include_effect_size Logical value indicating whether to include
+#'        effect size information in the output for ALDEx2 analysis. When TRUE,
+#'        additional columns are added including effect_size, diff_btw,
+#'        log2FoldChange, rab_all, and overlap. Only applicable for two-group
+#'        comparisons with ALDEx2 method. Default is FALSE for backward
+#'        compatibility.
+#'
 #' @param ... Additional arguments passed to the specific DAA method
 #'
 #' @return A data frame containing the differential abundance analysis results. The structure of the results
@@ -80,6 +92,17 @@ NULL
 #'
 #' Some methods may provide additional columns, such as \code{log2FoldChange}
 #' for effect size information.
+#'
+#' When \code{include_effect_size = TRUE} and using ALDEx2 method with two groups,
+#' the following additional effect size columns are included:
+#' \itemize{
+#'   \item \code{effect_size}: ALDEx2 effect size (median of the ratio of between-group
+#'         difference and within-group variance)
+#'   \item \code{diff_btw}: Median difference between groups in CLR space
+#'   \item \code{log2FoldChange}: Log2 fold change (same as diff_btw for ALDEx2)
+#'   \item \code{rab_all}: Median CLR abundance across all samples
+#'   \item \code{overlap}: Proportion of effect size that is 0 or less
+#' }
 #'
 #' @examples
 #' \donttest{
@@ -132,6 +155,15 @@ NULL
 #' # Analyze specific samples only
 #' subset_results <- pathway_daa(abundance, metadata, "group",
 #'                              select = c("sample1", "sample2", "sample3", "sample4"))
+#'
+#' # Include effect size information for ALDEx2 analysis
+#' aldex2_with_effect <- pathway_daa(abundance, metadata, "group",
+#'                                  daa_method = "ALDEx2",
+#'                                  include_effect_size = TRUE)
+#'
+#' # The result will include additional columns: effect_size, diff_btw,
+#' # log2FoldChange, rab_all, and overlap
+#' head(aldex2_with_effect)
 #' }
 #'
 #' @references
@@ -309,7 +341,7 @@ calculate_abundance_stats <- function(abundance, metadata, group, features, grou
 #' @export
 pathway_daa <- function(abundance, metadata, group, daa_method = "ALDEx2",
                        select = NULL, p.adjust = "BH", reference = NULL,
-                       include_abundance_stats = FALSE, ...) {
+                       include_abundance_stats = FALSE, include_effect_size = FALSE, ...) {
   # Check if the requested DAA method package is available
   method_packages <- list(
     "ALDEx2" = "ALDEx2",
@@ -433,7 +465,7 @@ pathway_daa <- function(abundance, metadata, group, daa_method = "ALDEx2",
   # Perform differential analysis
   result <- switch(
     daa_method,
-    "ALDEx2" = perform_aldex2_analysis(abundance_mat, Group, Level, length_Level),
+    "ALDEx2" = perform_aldex2_analysis(abundance_mat, Group, Level, length_Level, include_effect_size),
     "DESeq2" = perform_deseq2_analysis(abundance_mat, metadata, group, Level),
     "LinDA" = perform_linda_analysis(abundance, metadata, group, reference, Level, length_Level),
     "limma voom" = perform_limma_voom_analysis(abundance_mat, Group, reference, Level, length_Level),
@@ -552,7 +584,7 @@ validate_abundance_data <- function(abundance_mat, daa_method) {
 }
 
 # Helper function: Perform ALDEx2 analysis
-perform_aldex2_analysis <- function(abundance_mat, Group, Level, length_Level) {
+perform_aldex2_analysis <- function(abundance_mat, Group, Level, length_Level, include_effect_size = FALSE) {
   message("Running ALDEx2 analysis...")
   
   # Check if ALDEx2 is available
@@ -649,9 +681,26 @@ perform_aldex2_analysis <- function(abundance_mat, Group, Level, length_Level) {
         stop("ALDEx2 t-test failed: ", e$message)
       }
     })
-    
+
+    # Get effect size results if requested
+    effect_results <- NULL
+    if (include_effect_size) {
+      effect_results <- tryCatch({
+        # In newer versions of ALDEx2, aldex.effect() only needs the clr object
+        # The conditions are already stored in the clr object
+        ALDEx2::aldex.effect(
+          ALDEx2_object,
+          verbose = FALSE
+        )
+      }, error = function(e) {
+        warning("Failed to calculate ALDEx2 effect sizes: ", e$message,
+                ". Proceeding without effect size information.")
+        return(NULL)
+      })
+    }
+
     # Build result dataframe using original Level names
-    return(data.frame(
+    base_df <- data.frame(
       feature = rep(rownames(results), 2),
       method = c(
         rep("ALDEx2_Welch's t test", nrow(results)),
@@ -661,11 +710,41 @@ perform_aldex2_analysis <- function(abundance_mat, Group, Level, length_Level) {
       group2 = rep(Level[2], 2 * nrow(results)),
       p_values = c(results$we.ep, results$wi.ep),
       stringsAsFactors = FALSE
-    ))
+    )
+
+    # Add effect size columns if available
+    if (!is.null(effect_results)) {
+      # Simple approach: add the most important effect size columns
+      # Replicate effect size data for both test methods (Welch and Wilcoxon)
+      n_features <- nrow(results)
+
+      # Add basic effect size columns
+      if ("effect" %in% colnames(effect_results)) {
+        base_df$effect_size <- rep(effect_results$effect, 2)
+      }
+      if ("diff.btw" %in% colnames(effect_results)) {
+        base_df$diff_btw <- rep(effect_results$diff.btw, 2)
+        base_df$log2FoldChange <- rep(effect_results$diff.btw, 2)
+      }
+      if ("rab.all" %in% colnames(effect_results)) {
+        base_df$rab_all <- rep(effect_results$rab.all, 2)
+      }
+      if ("overlap" %in% colnames(effect_results)) {
+        base_df$overlap <- rep(effect_results$overlap, 2)
+      }
+    }
+
+    return(base_df)
     
   } else {
     message("Running ALDEx2 with multiple groups. This might take some time...")
-    
+
+    # Warn if effect size was requested for multiple groups
+    if (include_effect_size) {
+      warning("Effect size calculation is only available for two-group comparisons. ",
+              "Ignoring include_effect_size parameter for multiple groups.")
+    }
+
     # Create ALDEx2 object for multiple groups with numeric Group
     ALDEx2_object <- tryCatch({
       ALDEx2::aldex.clr(
