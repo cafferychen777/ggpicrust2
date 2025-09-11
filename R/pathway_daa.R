@@ -853,6 +853,7 @@ perform_deseq2_analysis <- function(abundance_mat, metadata, group, Level) {
         group1 = Level[1],
         group2 = Level[2],
         p_values = res$pvalue,
+        log2FoldChange = res$log2FoldChange,
         stringsAsFactors = FALSE
       )
     })
@@ -902,6 +903,7 @@ perform_limma_voom_analysis <- function(abundance_mat, Group, reference, Level, 
       group1 = group_levels[1],
       group2 = group_levels[2],
       p_values = fit$p.value[,2],
+      log2FoldChange = fit$coefficients[,2],
       stringsAsFactors = FALSE
     )
   } else {
@@ -913,6 +915,7 @@ perform_limma_voom_analysis <- function(abundance_mat, Group, reference, Level, 
       group1 = reference,
       group2 = group_levels[group_levels != reference],
       p_values = as.vector(fit$p.value[,-1]),
+      log2FoldChange = as.vector(fit$coefficients[,-1]),
       stringsAsFactors = FALSE
     )
   }
@@ -937,7 +940,9 @@ perform_edger_analysis <- function(abundance_mat, Group, Level, length_Level) {
       method = "edgeR",
       group1 = Level[1],
       group2 = Level[2],
-      p_values = et$table$PValue
+      p_values = et$table$PValue,
+      log2FoldChange = et$table$logFC,
+      stringsAsFactors = FALSE
     )
   } else {
     # Multi-group comparison
@@ -951,7 +956,9 @@ perform_edger_analysis <- function(abundance_mat, Group, Level, length_Level) {
         method = "edgeR",
         group1 = Level[combinations[1,i]],
         group2 = Level[combinations[2,i]],
-        p_values = et$table$PValue
+        p_values = et$table$PValue,
+        log2FoldChange = et$table$logFC,
+        stringsAsFactors = FALSE
       )
     }
     results <- do.call(rbind, results_list)
@@ -1006,6 +1013,14 @@ perform_metagenomeseq_analysis <- function(abundance_mat, metadata, group, Level
   # Fit model
   fit <- metagenomeSeq::fitFeatureModel(obj, mod)
 
+  # Extract coefficients using MRcoefs
+  coef_table <- tryCatch({
+    metagenomeSeq::MRcoefs(fit, coef = 2)  # coef = 2 for group effect
+  }, error = function(e) {
+    warning("Failed to extract coefficients from metagenomeSeq: ", e$message)
+    return(NULL)
+  })
+
   # Extract results
   results <- data.frame(
     feature = rownames(abundance_mat),
@@ -1015,6 +1030,11 @@ perform_metagenomeseq_analysis <- function(abundance_mat, metadata, group, Level
     p_values = fit@pvalues,
     stringsAsFactors = FALSE
   )
+
+  # Add log2FoldChange if coefficients are available
+  if (!is.null(coef_table) && "logFC" %in% colnames(coef_table)) {
+    results$log2FoldChange <- coef_table$logFC
+  }
 
   return(results)
 }
@@ -1092,6 +1112,7 @@ perform_maaslin2_analysis <- function(abundance_mat, metadata, group, reference,
       group1 = if (length_Level == 2) Level[1] else reference,
       group2 = if (length_Level == 2) Level[2] else Level[Level != reference],
       p_values = maaslin2_results$pval[matches],
+      log2FoldChange = maaslin2_results$coef[matches],
       stringsAsFactors = FALSE
     )
   } else {
