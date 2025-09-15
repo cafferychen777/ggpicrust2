@@ -775,9 +775,9 @@ pathway_errorbar <-
           # Dynamic margin based on position: more space on the side where text is
           # Margin order is: top, right, bottom, left
           plot.margin = if (pathway_class_position == "left") {
-            ggplot2::unit(c(0, 0, 0, 1.5), "cm")  # Large left margin for left position
+            ggplot2::unit(c(0, 0.2, 0, 2.0), "cm")  # Increased left margin to 2.0cm
           } else {
-            ggplot2::unit(c(0, 1.5, 0, 0), "cm")  # Large right margin for right position
+            ggplot2::unit(c(0, 2.0, 0, 0.2), "cm")  # Increased right margin to 2.0cm
           },
           axis.title.y =  ggplot2::element_blank(),
           axis.title.x = ggplot2::element_blank(),
@@ -818,9 +818,9 @@ pathway_errorbar <-
     pvalue_text_size <- if (pvalue_size == "auto") {
       if (exists("calculate_smart_text_size")) {
         # Use smaller base_size for p-values 
-        calculate_smart_text_size(nrow(daa_results_filtered_sub_df), base_size = 3.5, min_size = 2.5, max_size = 4)
+        calculate_smart_text_size(nrow(daa_results_filtered_sub_df), base_size = 2.5, min_size = 1.8, max_size = 3.0)
       } else {
-        3.5  # Default size
+        2.5  # Reduced default size
       }
     } else {
       pvalue_size
@@ -862,7 +862,7 @@ pathway_errorbar <-
       if (ko_to_kegg == TRUE) {
         combination_bar_plot <-
           pathway_class_annotation + bar_errorbar + p_values_bar + p_annotation + patchwork::plot_layout(ncol = 4, widths =
-                                                                                                c(2.0, 2.0, 0.7, 0.3))
+                                                                                                c(2.5, 2.0, 0.7, 0.3))
       }
       else{
         combination_bar_plot <-
@@ -872,7 +872,7 @@ pathway_errorbar <-
       if (ko_to_kegg == TRUE) {
         combination_bar_plot <-
           pathway_class_annotation + bar_errorbar + p_annotation + patchwork::plot_layout(ncol = 3, widths =
-                                                                                                           c(2.0, 2.0, 0.3))
+                                                                                                           c(2.5, 2.0, 0.3))
       }
       else{
         combination_bar_plot <-
