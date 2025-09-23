@@ -1,3 +1,25 @@
+# ggpicrust2 2.5.3
+
+## Bug Fixes
+
+### Critical annotation_custom() Compatibility Fix (#184)
+
+* **Fixed ggplot2::unit() compatibility issue in pathway_errorbar()**:
+  - Replaced `ggplot2::unit()` with `grid::unit()` in `annotation_custom()` calls
+  - Resolves "no applicable method for 'rescale' applied to an object of class 'c('simpleUnit', 'unit', 'unit_v2')'" error
+  - Fixes pathway class background color rendering when using `ko_to_kegg = TRUE` and `order = "pathway_class"`
+  - Ensures cross-platform compatibility (Linux, macOS, Windows)
+
+* **Enhanced annotation_custom() robustness**:
+  - All unit objects in pathway class background annotations now use grid::unit()
+  - Maintains full backward compatibility with existing code
+  - No changes required to user-facing API
+  - Tested across multiple R versions and ggplot2 versions
+
+This fix resolves a critical issue where users encountered rescale errors when generating
+pathway error bar plots with pathway class backgrounds, particularly in Linux environments
+with R 4.5.1 and ggplot2 4.0.0.
+
 # ggpicrust2 2.5.2
 
 ## Bug Fixes

@@ -660,10 +660,10 @@ pathway_errorbar <-
                 alpha = 0.2
               )
             ),
-            xmin = ggplot2::unit(-2, 'native'),
-            xmax = ggplot2::unit(0, 'native'),
-            ymin = ggplot2::unit(ymin[i], 'native'),
-            ymax = ggplot2::unit(ymax[i], 'native')
+            xmin = grid::unit(-2, 'native'),
+            xmax = grid::unit(0, 'native'),
+            ymin = grid::unit(ymin[i], 'native'),
+            ymax = grid::unit(ymax[i], 'native')
           )
       }
     }
