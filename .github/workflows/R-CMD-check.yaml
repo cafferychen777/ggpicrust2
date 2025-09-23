@@ -4,12 +4,6 @@
 # NOTE: This workflow is overkill for most R packages and
 # check-standard.yaml is likely a better choice.
 # usethis::use_github_action("check-standard") will install it.
-- name: Install Bioconductor and Lefser
-  run: |
-    R -e 'if (!requireNamespace("BiocManager", quietly = TRUE)) install.packages("BiocManager")'
-    R -e 'BiocManager::install()'
-    R -e 'BiocManager::install("lefser")'
-
 
 on:
   push:
@@ -61,9 +55,53 @@ jobs:
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          extra-packages: any::rcmdcheck
+          extra-packages: >-
+            any::rcmdcheck
+            bioc::enrichplot
+            bioc::ComplexHeatmap
+            any::circlize
+            any::ggraph
+            any::tidygraph
+            any::igraph
+            any::dplyr
+            any::ggplot2
           needs: check
 
       - uses: r-lib/actions/check-r-package@v2
         with:
           upload-snapshots: true
+
+
+  testthat-linux-bioc:
+    name: testthat (Ubuntu release + Bioc deps)
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      R_KEEP_PKG_SOURCE: yes
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: 'release'
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-packages: >-
+            any::rcmdcheck
+            any::testthat
+            bioc::enrichplot
+            bioc::ComplexHeatmap
+            any::circlize
+            any::ggraph
+            any::tidygraph
+            any::igraph
+            any::dplyr
+            any::ggplot2
+          needs: check
+
+      - name: Run tests
+        run: |
+          rcmdcheck::rcmdcheck(args = c('--no-manual', '--ignore-vignettes'), error_on = 'warning')
+        shell: Rscript {0}
