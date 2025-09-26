@@ -1023,21 +1023,36 @@ head(gsea_results_kegg)
 #### **🆕 MetaCyc Pathway Analysis**
 
 ``` r
-# Load EC abundance data for MetaCyc analysis
-data("metacyc_abundance")  # EC abundance data
+# IMPORTANT: MetaCyc GSEA requires EC (enzyme) abundance data, not pathway abundance
+# The metacyc_abundance dataset contains pathway-level data, which should use pathway_daa()
+
+# For MetaCyc GSEA, you need EC abundance from PICRUSt2:
+# ec_abundance <- read_delim("EC_metagenome_out/pred_metagenome_unstrat.tsv", delim = "\t")
+
+# Example with simulated EC abundance data for demonstration:
+ec_abundance_demo <- matrix(rnorm(100 * 10), nrow = 100, ncol = 10)
+rownames(ec_abundance_demo) <- paste0("EC:", sprintf("1.1.1.%d", 1:100))
+colnames(ec_abundance_demo) <- paste0("Sample", 1:10)
 
 # MetaCyc GSEA analysis (50+ metabolic pathways)
 gsea_results_metacyc <- pathway_gsea(
-  abundance = metacyc_abundance %>% column_to_rownames("pathway"),
-  metadata = metadata,
+  abundance = ec_abundance_demo,
+  metadata = metadata[1:10,],   # Match sample count
   group = "Environment",
-  pathway_type = "MetaCyc",     # MetaCyc pathways
+  pathway_type = "MetaCyc",      # MetaCyc pathways
   method = "fgsea",
   rank_method = "log2_ratio",
   nperm = 1000
 )
 
-head(gsea_results_metacyc)
+# Note: If you have metacyc_abundance (pathway-level data), use pathway_daa instead:
+# data("metacyc_abundance")
+# daa_results <- pathway_daa(
+#   abundance = metacyc_abundance %>% column_to_rownames("pathway"),
+#   metadata = metadata,
+#   group = "Environment",
+#   daa_method = "LinDA"
+# )
 ```
 
 #### **🆕 Gene Ontology (GO) Analysis**
