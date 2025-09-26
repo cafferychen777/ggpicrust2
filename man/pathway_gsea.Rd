@@ -12,15 +12,21 @@ pathway_gsea(
   method = "fgsea",
   rank_method = "signal2noise",
   nperm = 1000,
-  min_size = 10,
+  min_size = 5,
   max_size = 500,
   p.adjust = "BH",
   seed = 42,
-  go_category = "BP"
+  go_category = "BP",
+  organism = "ko"
 )
 }
 \arguments{
-\item{abundance}{A data frame containing KO/EC/MetaCyc abundance data, with features as rows and samples as columns}
+\item{abundance}{A data frame containing gene/enzyme abundance data, with features as rows and samples as columns.
+For KEGG analysis: features should be KO IDs (e.g., K00001).
+For MetaCyc analysis: features should be EC numbers (e.g., EC:1.1.1.1 or 1.1.1.1), NOT pathway IDs.
+For GO analysis: features should be KO IDs that will be mapped to GO terms.
+NOTE: This function requires gene-level data, not pathway-level abundances.
+For pathway abundance analysis, use \code{\link{pathway_daa}} instead}
 
 \item{metadata}{A data frame containing sample metadata}
 
@@ -41,6 +47,10 @@ pathway_gsea(
 \item{p.adjust}{A character string specifying the p-value adjustment method}
 
 \item{seed}{An integer specifying the random seed for reproducibility}
+
+\item{go_category}{A character string specifying GO category: "BP" (Biological Process), "MF" (Molecular Function), "CC" (Cellular Component), or "all"}
+
+\item{organism}{A character string specifying the organism for KEGG analysis (default: "ko" for KEGG Orthology)}
 }
 \value{
 A data frame containing GSEA results

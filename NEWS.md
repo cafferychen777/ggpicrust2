@@ -2,6 +2,28 @@
 
 ## Bug Fixes
 
+### pathway_gsea() MetaCyc Support Fix (#174)
+
+* **Fixed undefined organism parameter bug**:
+  - Added `organism = "ko"` parameter with default value
+  - Prevents "object 'organism' not found" error
+  - Properly passes organism to prepare_gene_sets() function
+
+* **Added input validation for MetaCyc data**:
+  - Detects when MetaCyc pathway IDs are provided instead of EC numbers
+  - Issues clear warning directing users to use pathway_daa() for pathway-level data
+  - Helps users understand the difference between gene-level and pathway-level analysis
+  
+* **Enhanced documentation**:
+  - Clarified that GSEA requires gene-level data (EC numbers for MetaCyc)
+  - Added cross-reference to pathway_daa() for pathway abundance analysis
+  - Improved parameter descriptions to prevent data type confusion
+
+* **Scientific integrity maintained**:
+  - Ensures correct analysis method for each data type
+  - Prevents misleading results from incorrect data usage
+  - Guides users to appropriate functions based on their data
+
 ### Critical annotation_custom() Fix (#184)
 
 * **Fixed annotation_custom() parameter type issue in pathway_errorbar()**:

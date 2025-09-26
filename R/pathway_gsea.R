@@ -50,7 +50,12 @@ validate_group_sizes <- function(group_vector, group_name) {
 #' This function performs Gene Set Enrichment Analysis (GSEA) on PICRUSt2 predicted functional data
 #' to identify enriched pathways between different conditions.
 #'
-#' @param abundance A data frame containing KO/EC/MetaCyc abundance data, with features as rows and samples as columns
+#' @param abundance A data frame containing gene/enzyme abundance data, with features as rows and samples as columns.
+#'   For KEGG analysis: features should be KO IDs (e.g., K00001).
+#'   For MetaCyc analysis: features should be EC numbers (e.g., EC:1.1.1.1 or 1.1.1.1), NOT pathway IDs.
+#'   For GO analysis: features should be KO IDs that will be mapped to GO terms.
+#'   NOTE: This function requires gene-level data, not pathway-level abundances.
+#'   For pathway abundance analysis, use \code{\link{pathway_daa}} instead
 #' @param metadata A data frame containing sample metadata
 #' @param group A character string specifying the column name in metadata that contains the grouping variable
 #' @param pathway_type A character string specifying the pathway type: "KEGG", "MetaCyc", or "GO"
@@ -61,6 +66,8 @@ validate_group_sizes <- function(group_vector, group_name) {
 #' @param max_size An integer specifying the maximum gene set size
 #' @param p.adjust A character string specifying the p-value adjustment method
 #' @param seed An integer specifying the random seed for reproducibility
+#' @param go_category A character string specifying GO category: "BP" (Biological Process), "MF" (Molecular Function), "CC" (Cellular Component), or "all"
+#' @param organism A character string specifying the organism for KEGG analysis (default: "ko" for KEGG Orthology)
 #'
 #' @return A data frame containing GSEA results
 #' @export
@@ -99,7 +106,8 @@ pathway_gsea <- function(abundance,
                         max_size = 500,
                         p.adjust = "BH",
                         seed = 42,
-                        go_category = "BP") {
+                        go_category = "BP",
+                        organism = "ko") {
   
   # Input validation
   if (!is.data.frame(abundance) && !is.matrix(abundance)) {
@@ -162,6 +170,27 @@ pathway_gsea <- function(abundance,
   
   # Ensure abundance is a matrix with samples as columns
   abundance_mat <- as.matrix(abundance)
+  
+  # Input validation for MetaCyc pathway data
+  if (pathway_type == "MetaCyc") {
+    # Check if features look like MetaCyc pathway IDs instead of EC numbers
+    feature_names <- rownames(abundance_mat)
+    if (length(feature_names) > 0) {
+      # Check first 10 features for pathway patterns
+      check_features <- feature_names[1:min(10, length(feature_names))]
+      if (any(grepl("-PWY$|-PWY[0-9]+$", check_features))) {
+        warning(
+          "Input appears to contain MetaCyc pathway IDs (e.g., ending in '-PWY'). ",
+          "pathway_gsea() requires gene/enzyme level data (EC numbers). ",
+          "For pathway-level abundance analysis, use pathway_daa() instead. ",
+          "To run GSEA, use EC abundance data from PICRUSt2 output ",
+          "(EC_metagenome_out/pred_metagenome_unstrat.tsv). ",
+          "See ?pathway_gsea for details.", 
+          call. = FALSE, immediate. = TRUE
+        )
+      }
+    }
+  }
   
   # Extract group information
   Group <- factor(metadata[[group]])
