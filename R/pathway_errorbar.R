@@ -660,10 +660,10 @@ pathway_errorbar <-
                 alpha = 0.2
               )
             ),
-            xmin = grid::unit(-2, 'native'),
-            xmax = grid::unit(0, 'native'),
-            ymin = grid::unit(ymin[i], 'native'),
-            ymax = grid::unit(ymax[i], 'native')
+            xmin = -2,
+            xmax = 0,
+            ymin = ymin[i],
+            ymax = ymax[i]
           )
       }
     }

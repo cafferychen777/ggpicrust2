@@ -1,24 +1,28 @@
-# ggpicrust2 2.5.3
+# ggpicrust2 2.5.4
 
 ## Bug Fixes
 
-### Critical annotation_custom() Compatibility Fix (#184)
+### Critical annotation_custom() Fix (#184)
 
-* **Fixed ggplot2::unit() compatibility issue in pathway_errorbar()**:
-  - Replaced `ggplot2::unit()` with `grid::unit()` in `annotation_custom()` calls
+* **Fixed annotation_custom() parameter type issue in pathway_errorbar()**:
+  - Removed unit object wrappers from `annotation_custom()` position parameters
+  - Now uses numeric values directly for xmin, xmax, ymin, ymax parameters
   - Resolves "no applicable method for 'rescale' applied to an object of class 'c('simpleUnit', 'unit', 'unit_v2')'" error
-  - Fixes pathway class background color rendering when using `ko_to_kegg = TRUE` and `order = "pathway_class"`
-  - Ensures cross-platform compatibility (Linux, macOS, Windows)
+  - Fixes pathway class background color rendering failures
 
-* **Enhanced annotation_custom() robustness**:
-  - All unit objects in pathway class background annotations now use grid::unit()
-  - Maintains full backward compatibility with existing code
-  - No changes required to user-facing API
-  - Tested across multiple R versions and ggplot2 versions
+* **Root cause identified and resolved**:
+  - `annotation_custom()` expects numeric values, not unit objects for position parameters
+  - Previous fix attempt (changing ggplot2::unit to grid::unit) was incorrect
+  - Both ggplot2::unit() and grid::unit() return identical objects - the issue was using unit objects at all
+  - Theme-related unit usage (legend.key.size, plot.margin) remains unchanged and correct
 
-This fix resolves a critical issue where users encountered rescale errors when generating
-pathway error bar plots with pathway class backgrounds, particularly in Linux environments
-with R 4.5.1 and ggplot2 4.0.0.
+This fix resolves the critical rendering issue where users encountered errors when generating
+pathway error bar plots with pathway class backgrounds, particularly with R 4.4+ and ggplot2 4.0.0.
+
+# ggpicrust2 2.5.3
+
+## Previous Release
+* Initial attempt to fix issue #184 (superseded by v2.5.4)
 
 # ggpicrust2 2.5.2
 
