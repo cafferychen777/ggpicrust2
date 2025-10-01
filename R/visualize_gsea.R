@@ -442,6 +442,32 @@ create_empty_plot <- function(plot_type) {
   ggplot2::scale_fill_manual(values = values)
 }
 
+#' Internal: build a circlize colorRamp2 function for ComplexHeatmap from user scale
+#' @keywords internal
+.build_heatmap_col_fun <- function(scale = NULL) {
+  # Get color vector from scale parameter (handles NULL, vector, function, ggplot scale)
+  cols <- .as_color_vector(scale)
+
+  # If no colors provided or couldn't convert, return NULL (use defaults)
+  if (is.null(cols)) return(NULL)
+
+  # Create a diverging color function for heatmap
+  # Typical heatmap shows z-scores, so we use -2, 0, 2 as breakpoints
+  if (length(cols) >= 3) {
+    # Use low, mid, high colors from the palette
+    low_col <- cols[1]
+    mid_col <- cols[ceiling(length(cols) / 2)]
+    high_col <- cols[length(cols)]
+    return(circlize::colorRamp2(c(-2, 0, 2), c(low_col, mid_col, high_col)))
+  } else if (length(cols) == 2) {
+    # If only 2 colors, create a gradient without midpoint
+    return(circlize::colorRamp2(c(-2, 2), c(cols[1], cols[2])))
+  } else {
+    # Single color or invalid, return NULL
+    return(NULL)
+  }
+}
+
 #' Create network visualization of GSEA results
 #'
 #' @param gsea_results A data frame containing GSEA results from the pathway_gsea function
