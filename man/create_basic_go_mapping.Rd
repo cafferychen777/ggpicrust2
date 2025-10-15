@@ -2,15 +2,17 @@
 % Please edit documentation in R/pathway_gsea.R
 \name{create_basic_go_mapping}
 \alias{create_basic_go_mapping}
-\title{Create basic GO mapping for microbiome analysis}
+\title{Create enhanced GO mapping for microbiome analysis}
 \usage{
 create_basic_go_mapping()
 }
 \value{
-A data frame containing basic GO term mappings
+A data frame containing enhanced GO term mappings
 }
 \description{
-This function creates a basic KO to GO term mapping that covers
-common functional categories relevant to microbiome research.
+This function creates an enhanced KO to GO term mapping that covers
+comprehensive functional categories relevant to microbiome research.
+Includes metabolic processes, stress responses, virulence factors,
+antibiotic resistance, and environmental adaptation.
 }
 \keyword{internal}

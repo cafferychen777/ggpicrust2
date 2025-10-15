@@ -15,7 +15,8 @@ visualize_gsea(
   group = NULL,
   network_params = list(),
   heatmap_params = list(),
-  pathway_label_column = NULL
+  pathway_label_column = NULL,
+  scale = NULL
 )
 }
 \arguments{
@@ -42,6 +43,13 @@ visualize_gsea(
 \item{pathway_label_column}{A character string specifying which column to use for pathway labels.
 If NULL (default), the function will automatically use 'pathway_name' if available, otherwise 'pathway_id'.
 This allows for custom labeling when using annotated GSEA results.}
+
+\item{scale}{Optional palette/scale for customizing colors. Accepts: (1) a character vector of colors,
+(2) a function that returns colors given an integer (e.g., viridisLite::viridis), or
+(3) a ggplot2 scale object (e.g., ggplot2::scale_fill_gradientn(...)).
+When NULL, defaults keep current behavior. Applies to: enrichment_plot (fill, continuous),
+dotplot (color, continuous), barplot (fill, discrete Positive/Negative), network (color, diverging around 0),
+heatmap (main heatmap col; row annotation stays default unless overridden in heatmap_params).}
 }
 \value{
 A ggplot2 object or ComplexHeatmap object

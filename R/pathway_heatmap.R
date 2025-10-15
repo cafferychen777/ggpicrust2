@@ -232,9 +232,10 @@ generate_nested_colors <- function(metadata, all_groups, colors = NULL) {
     # Single-level grouping: one color per group level
     n_colors_needed <- length(unique(metadata[[all_groups[1]]]))
   } else {
-    # Multi-level grouping: colors for top-level groups
-    # We'll use colors for the first (primary) grouping variable
-    n_colors_needed <- length(unique(metadata[[all_groups[1]]]))
+    # Multi-level grouping: each grouping level needs distinct colors
+    # Sum up unique levels across all grouping variables
+    # e.g., Diet(2) + Time(4) = 6 colors needed for all facet strips
+    n_colors_needed <- sum(sapply(all_groups, function(g) length(unique(metadata[[g]]))))
   }
 
   # Default color palette

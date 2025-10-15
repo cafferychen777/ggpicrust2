@@ -13,7 +13,8 @@ create_heatmap_plot(
   cluster_rows = TRUE,
   cluster_columns = TRUE,
   show_rownames = TRUE,
-  annotation_colors = NULL
+  annotation_colors = NULL,
+  col_fun = NULL
 )
 }
 \arguments{
@@ -34,6 +35,8 @@ create_heatmap_plot(
 \item{show_rownames}{A logical value indicating whether to show row names}
 
 \item{annotation_colors}{A list of colors for annotations}
+
+\item{col_fun}{A color function (e.g., circlize::colorRamp2) to control the main heatmap colors (optional)}
 }
 \value{
 A ComplexHeatmap object

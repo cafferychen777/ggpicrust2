@@ -11,7 +11,8 @@ create_network_plot(
   n_pathways = 20,
   layout = "fruchterman",
   node_color_by = "NES",
-  edge_width_by = "similarity"
+  edge_width_by = "similarity",
+  scale = NULL
 )
 }
 \arguments{
@@ -28,6 +29,8 @@ create_network_plot(
 \item{node_color_by}{A character string specifying the node color mapping: "NES", "pvalue", or "p.adjust"}
 
 \item{edge_width_by}{A character string specifying the edge width mapping: "similarity" or "constant"}
+
+\item{scale}{Optional palette/scale for customizing node color mapping (same conventions as visualize_gsea)}
 }
 \value{
 A ggplot2 object

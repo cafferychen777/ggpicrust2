@@ -50,6 +50,18 @@ Choices are:
 \item{reference}{Character string specifying the reference level for the group comparison.
 If NULL (default), the first level is used as reference.}
 
+\item{include_abundance_stats}{Logical value indicating whether to include
+abundance statistics (mean relative abundance, standard deviation,
+and log2 fold change) in the output. Default is FALSE for backward
+compatibility.}
+
+\item{include_effect_size}{Logical value indicating whether to include
+effect size information in the output for ALDEx2 analysis. When TRUE,
+additional columns are added including effect_size, diff_btw,
+log2FoldChange, rab_all, and overlap. Only applicable for two-group
+comparisons with ALDEx2 method. Default is FALSE for backward
+compatibility.}
+
 \item{...}{Additional arguments passed to the specific DAA method}
 }
 \value{
@@ -82,6 +94,17 @@ are included:
 
 Some methods may provide additional columns, such as \code{log2FoldChange}
 for effect size information.
+
+When \code{include_effect_size = TRUE} and using ALDEx2 method with two groups,
+the following additional effect size columns are included:
+\itemize{
+  \item \code{effect_size}: ALDEx2 effect size (median of the ratio of between-group
+        difference and within-group variance)
+  \item \code{diff_btw}: Median difference between groups in CLR space
+  \item \code{log2FoldChange}: Log2 fold change (same as diff_btw for ALDEx2)
+  \item \code{rab_all}: Median CLR abundance across all samples
+  \item \code{overlap}: Proportion of effect size that is 0 or less
+}
 
 A data frame with columns:
   \item{feature}{Feature identifier}
@@ -147,6 +170,15 @@ limma_results <- pathway_daa(abundance, metadata, "group",
 # Analyze specific samples only
 subset_results <- pathway_daa(abundance, metadata, "group",
                              select = c("sample1", "sample2", "sample3", "sample4"))
+
+# Include effect size information for ALDEx2 analysis
+aldex2_with_effect <- pathway_daa(abundance, metadata, "group",
+                                 daa_method = "ALDEx2",
+                                 include_effect_size = TRUE)
+
+# The result will include additional columns: effect_size, diff_btw,
+# log2FoldChange, rab_all, and overlap
+head(aldex2_with_effect)
 }
 
 }
