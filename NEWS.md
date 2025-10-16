@@ -26,20 +26,26 @@
 
 ### Critical annotation_custom() Fix (#184)
 
-* **Fixed annotation_custom() parameter type issue in pathway_errorbar()**:
-  - Removed unit object wrappers from `annotation_custom()` position parameters
-  - Now uses numeric values directly for xmin, xmax, ymin, ymax parameters
+* **Fixed annotation_custom() compatibility issue with ggplot2 4.0.0+ in pathway_errorbar()**:
+  - Replaced `annotation_custom(grid::rectGrob(...))` with `annotate("rect", ...)` for pathway class background rectangles
+  - Uses ggplot2's native geometry system which is fully compatible with all coordinate systems
   - Resolves "no applicable method for 'rescale' applied to an object of class 'c('simpleUnit', 'unit', 'unit_v2')'" error
-  - Fixes pathway class background color rendering failures
+  - Fixes pathway class background color rendering failures in patchwork compositions
 
 * **Root cause identified and resolved**:
-  - `annotation_custom()` expects numeric values, not unit objects for position parameters
-  - Previous fix attempt (changing ggplot2::unit to grid::unit) was incorrect
-  - Both ggplot2::unit() and grid::unit() return identical objects - the issue was using unit objects at all
-  - Theme-related unit usage (legend.key.size, plot.margin) remains unchanged and correct
+  - The issue was with using `annotation_custom()` with custom grobs (grid::rectGrob) in ggplot2 4.0.0+
+  - When patchwork composes plots with `coord_cartesian(clip = "off")`, coordinate transformations of custom grobs fail
+  - ggplot2 4.0.0+ changed how grobs are rendered, exposing unit object issues in the rendering pipeline
+  - The solution uses `annotate("rect", ...)` which handles coordinate transformations natively and reliably
+
+* **Benefits of the new approach**:
+  - More maintainable and clearer code
+  - Better compatibility with future ggplot2 versions
+  - Seamless integration with patchwork composition
+  - Proper handling of all coordinate systems including coord_cartesian(clip = "off")
 
 This fix resolves the critical rendering issue where users encountered errors when generating
-pathway error bar plots with pathway class backgrounds, particularly with R 4.4+ and ggplot2 4.0.0.
+pathway error bar plots with pathway class backgrounds, particularly with R 4.4+ and ggplot2 4.0.0+.
 
 # ggpicrust2 2.5.3
 
