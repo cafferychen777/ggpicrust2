@@ -637,14 +637,15 @@ pathway_errorbar <-
       # Create the pathway_class_group data frame
       pathway_class_group <- data.frame(
         . = unique(daa_results_filtered_sub_df$pathway_class),
-        Freq = pathway_class_group_mat[unique(daa_results_filtered_sub_df$pathway_class), "Freq"]
+        Freq = as.numeric(pathway_class_group_mat[unique(daa_results_filtered_sub_df$pathway_class), "Freq"])
       )
       start <-
         c(1, rev(pathway_class_group$Freq)[1:(length(pathway_class_group$Freq) - 1)]) %>%
-        cumsum()
-      end <- cumsum(rev(pathway_class_group$Freq))
-      ymin <- start - 1 / 2
-      ymax <- end + 1 / 2
+        cumsum() %>%
+        as.numeric()
+      end <- cumsum(rev(pathway_class_group$Freq)) %>% as.numeric()
+      ymin <- as.numeric(start - 1 / 2)
+      ymax <- as.numeric(end + 1 / 2)
       nPoints <- length(start)
       pCol <- pathway_class_colors[1:nPoints]
       pFill <- pCol
