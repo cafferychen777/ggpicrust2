@@ -651,20 +651,16 @@ pathway_errorbar <-
       pFill <- pCol
       for (i in 1:nPoints)  {
         bar_errorbar <- bar_errorbar +
-          ggplot2::annotation_custom(
-            grob = grid::rectGrob(
-              gp = grid::gpar(
-                col = pCol[i],
-                fill = pFill[i],
-                lty = NULL,
-                lwd = NULL,
-                alpha = 0.2
-              )
-            ),
+          ggplot2::annotate(
+            "rect",
             xmin = -2,
             xmax = 0,
             ymin = ymin[i],
-            ymax = ymax[i]
+            ymax = ymax[i],
+            color = pCol[i],
+            fill = pFill[i],
+            alpha = 0.2,
+            linewidth = 0
           )
       }
     }
