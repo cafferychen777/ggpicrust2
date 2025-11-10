@@ -353,17 +353,37 @@ process_kegg_annotations <- function(df, organism = NULL) {
   
   # Handle case when no significant pathways are found
   if (nrow(filtered_df) == 0) {
+    min_p <- min(df$p_adjust, na.rm = TRUE)
+
     warning(
-      "No statistically significant biomarkers found (p_adjust < 0.05).\n",
-      "Returning results with empty annotation columns for visualization purposes.\n",
-      "Consider using a less stringent threshold if significant results are expected.",
+      "\n================================================================================\n",
+      "NO SIGNIFICANT PATHWAYS FOUND\n",
+      "================================================================================\n\n",
+      "pathway_annotation() filters results by p_adjust < 0.05 threshold.\n",
+      "Your data contains no pathways meeting this criterion.\n\n",
+      "Statistics:\n",
+      "  Total features in input:       ", nrow(df), "\n",
+      "  Significant features (p<0.05): 0\n",
+      "  Minimum p_adjust value:        ", sprintf("%.6f", min_p), "\n\n",
+      "Possible reasons:\n",
+      "  1. Insufficient statistical power (small sample size)\n",
+      "  2. Low biological effect size (small differences between groups)\n",
+      "  3. High biological variability in your samples\n",
+      "  4. DAA method may not be suitable for your data\n\n",
+      "Recommendations:\n",
+      "  1. Check input data quality and normalization\n",
+      "  2. Verify adequate sample size in each group\n",
+      "  3. Try alternative DAA methods (LinDA, DESeq2, edgeR)\n",
+      "  4. For annotation only, use ko_to_kegg = FALSE (uses local reference)\n\n",
+      "Returning data with NA annotation columns.\n",
+      "================================================================================\n",
       call. = FALSE
     )
-    
+
     # Return original data with empty annotation columns for compatibility
     new_cols <- c("pathway_name", "pathway_description", "pathway_class", "pathway_map")
     df[new_cols] <- NA_character_
-    
+
     log_message("No significant pathways found. Returning data with empty annotation columns.", "WARN")
     return(df)
   }
@@ -484,15 +504,69 @@ process_kegg_annotations <- function(df, organism = NULL) {
   
   # Only throw an error when all KO IDs fail
   if (success_count == 0) {
+    error_msg <- paste0(
+      "\n================================================================================\n",
+      "FAILED TO RETRIEVE KEGG ANNOTATIONS\n",
+      "================================================================================\n\n",
+      "Statistics:\n",
+      "  Total features queried:  ", total_features, "\n",
+      "  Successful queries:      ", success_count, "\n",
+      "  Not found (HTTP 404):    ", not_found_count, "\n",
+      "  Failed with errors:      ", error_count, "\n\n"
+    )
+
     if (not_found_count > 0 && error_count == 0) {
-      stop("All KO IDs were not found in the KEGG database (HTTP 404). ",
-           "This could be due to invalid KO IDs or KEGG database changes.")
+      ko_list <- if (length(not_found_ids) <= 10) {
+        paste("  ", paste(not_found_ids, collapse = ", "))
+      } else {
+        paste("  ", paste(not_found_ids[1:10], collapse = ", "), "...")
+      }
+
+      error_msg <- paste0(error_msg,
+        "Problem: All KO IDs were not found in KEGG database (HTTP 404).\n\n",
+        "Possible causes:\n",
+        "  1. Invalid KO IDs in your data\n",
+        "  2. KEGG database structure has changed\n",
+        "  3. KO IDs are outdated or deprecated\n\n",
+        "KO IDs not found:\n", ko_list, "\n\n",
+        "Recommendations:\n",
+        "  1. Verify your KO IDs are valid (check KEGG database)\n",
+        "  2. Use ko_to_kegg = FALSE for local annotation (no KEGG API needed)\n",
+        "  3. Update your PICRUSt2 reference database\n\n"
+      )
     } else if (error_count > 0) {
-      stop("Failed to retrieve any KEGG annotations due to errors. ",
-           "This could be due to network issues or KEGG API changes.")
+      ko_list <- if (length(error_ids) <= 10) {
+        paste("  ", paste(error_ids, collapse = ", "))
+      } else {
+        paste("  ", paste(error_ids[1:10], collapse = ", "), "...")
+      }
+
+      error_msg <- paste0(error_msg,
+        "Problem: Network or KEGG API errors.\n\n",
+        "Possible causes:\n",
+        "  1. No internet connection or firewall blocking KEGG\n",
+        "  2. KEGG API is down or rate-limiting your requests\n",
+        "  3. Network instability (especially common in China)\n\n",
+        "KO IDs with errors:\n", ko_list, "\n\n",
+        "Recommendations:\n",
+        "  1. Check your internet connection\n",
+        "  2. Try again later (KEGG API may be temporarily down)\n",
+        "  3. Use VPN if in China or behind restrictive firewall\n",
+        "  4. Use ko_to_kegg = FALSE for local annotation (recommended)\n\n"
+      )
     } else {
-      stop("Failed to retrieve any KEGG annotations for unknown reasons.")
+      error_msg <- paste0(error_msg,
+        "Problem: Unknown error occurred.\n\n",
+        "Recommendations:\n",
+        "  1. Check sessionInfo() for package versions\n",
+        "  2. Report this issue on GitHub with reproducible example\n",
+        "  3. Use ko_to_kegg = FALSE as temporary workaround\n\n"
+      )
     }
+
+    error_msg <- paste0(error_msg, "================================================================================\n")
+
+    stop(error_msg, call. = FALSE)
   }
   
   # Check if any annotations were found
@@ -573,29 +647,46 @@ annotate_pathways <- function(data, pathway_type, ref_data) {
 #' 1. Annotating pathway information from PICRUSt2 output files.
 #' 2. Annotating pathway information from the output of `pathway_daa` function, and converting KO abundance to KEGG pathway abundance when `ko_to_kegg` is set to TRUE.
 #'
+#' **Important**: When `ko_to_kegg = TRUE`, this function automatically filters pathways by
+#' p_adjust < 0.05 threshold. If no pathways meet this criterion, the function returns the
+#' original data with NA annotation columns and issues a detailed warning message with
+#' diagnostic information and recommendations.
+#'
 #' @param file A character string, the path to the PICRUSt2 output file.
 #' @param pathway A character string, the type of pathway to annotate. Options are "KO", "EC", or "MetaCyc".
-#' @param daa_results_df A data frame, the output from `pathway_daa` function.
-#' @param ko_to_kegg A logical, decide if convert KO abundance to KEGG pathway abundance. Default is FALSE. Set to TRUE when using the function for the second use case.
-#' @param organism A character string specifying the KEGG organism code (e.g., 'hsa' for human, 'eco' for E. coli). Default is NULL, which retrieves generic KO information not specific to any organism. Only used when ko_to_kegg is TRUE.
+#' @param daa_results_df A data frame, the output from `pathway_daa` function. When `ko_to_kegg = TRUE`,
+#'   must contain columns: feature, p_values, p_adjust, and method.
+#' @param ko_to_kegg A logical, decide if convert KO abundance to KEGG pathway abundance. Default is FALSE.
+#'   Set to TRUE when using the function for the second use case. When TRUE, queries KEGG database for
+#'   pathway annotations (requires internet connection) and filters for significant pathways (p_adjust < 0.05).
+#' @param organism A character string specifying the KEGG organism code (e.g., 'hsa' for human, 'eco' for E. coli).
+#'   Default is NULL, which retrieves generic KO information not specific to any organism. Only used when ko_to_kegg is TRUE.
 #'
-#' @return A data frame with annotated pathway information. 
-#' If using the function for the first use case, the output data frame will include the following columns:
+#' @return A data frame with annotated pathway information.
+#'
+#' If using the function for the first use case (file input), the output data frame will include:
 #' \itemize{
 #'   \item \code{id}: The pathway ID.
 #'   \item \code{description}: The description of the pathway.
 #'   \item \code{sample1, sample2, ...}: Abundance values for each sample.
 #' }
-#' 
-#' If \code{ko_to_kegg} is set to TRUE, the output data frame will also include the following columns:
+#'
+#' If \code{ko_to_kegg} is set to TRUE, the output data frame will also include:
 #' \itemize{
 #'   \item \code{pathway_name}: The name of the KEGG pathway.
 #'   \item \code{pathway_description}: The description of the KEGG pathway.
 #'   \item \code{pathway_class}: The class of the KEGG pathway.
 #'   \item \code{pathway_map}: The KEGG pathway map ID.
 #' }
-#' 
-#' When \code{ko_to_kegg} is TRUE, the function queries the KEGG database for pathway information. By default (organism = NULL), it retrieves generic KO information that is not specific to any organism. If you are interested in organism-specific pathway information, you can specify the KEGG organism code using the \code{organism} parameter.
+#'
+#' **Note**: When \code{ko_to_kegg = TRUE}, only pathways with p_adjust < 0.05 are processed.
+#' If no pathways meet this criterion, all annotation columns will be NA, and a detailed
+#' warning message will be issued with diagnostic information.
+#'
+#' When \code{ko_to_kegg} is TRUE, the function queries the KEGG database for pathway information.
+#' By default (organism = NULL), it retrieves generic KO information that is not specific to any organism.
+#' If you are interested in organism-specific pathway information, you can specify the KEGG organism code
+#' using the \code{organism} parameter.
 #'
 #' @examples
 #' \dontrun{

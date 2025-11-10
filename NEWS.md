@@ -1,5 +1,37 @@
 # ggpicrust2 2.5.4
 
+## Improvements
+
+### Enhanced Error Messages for pathway_annotation() (#142)
+
+* **Significantly improved diagnostic messages when no significant pathways are found**:
+  - Provides clear explanation when p_adjust < 0.05 filter removes all pathways
+  - Shows detailed statistics (total features, significant count, minimum p-value)
+  - Lists possible reasons (sample size, effect size, variability, method choice)
+  - Offers concrete recommendations (data quality checks, alternative methods)
+  - Suggests using ko_to_kegg = FALSE for local annotation without KEGG API
+
+* **Enhanced error messages for KEGG API failures**:
+  - Detailed diagnostic information when all queries fail
+  - Distinguishes between "not found (HTTP 404)" and "network errors"
+  - Lists affected KO IDs for troubleshooting
+  - Provides specific recommendations based on error type
+  - Suggests local annotation as reliable alternative
+
+* **Updated documentation**:
+  - Clarified p_adjust < 0.05 filtering behavior in function description
+  - Added note about NA columns when no significant pathways exist
+  - Improved parameter descriptions for ko_to_kegg parameter
+  - Enhanced return value documentation with filtering behavior
+
+* **User experience improvements**:
+  - All messages follow R package standards (warning(), stop() instead of cat())
+  - No emoji characters (professional text output)
+  - Clear formatting for readability
+  - Actionable information to help users resolve issues quickly
+
+This addresses Discussion #142 where users received NA annotations without understanding why.
+
 ## Bug Fixes
 
 ### pathway_gsea() MetaCyc Support Fix (#174)
