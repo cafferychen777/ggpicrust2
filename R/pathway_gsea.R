@@ -332,19 +332,12 @@ prepare_gene_sets <- function(pathway_type = "KEGG", organism = "ko", go_categor
         data("ko_to_kegg_reference", package = "ggpicrust2", envir = environment())
       }
       
-      # Convert to list format required for GSEA
+      # Convert to list format required for GSEA (now using long-format data)
       ko_to_kegg_reference <- as.data.frame(ko_to_kegg_reference)
-      
+
       # Create a list where each element is a pathway containing KO IDs
-      for (i in 1:nrow(ko_to_kegg_reference)) {
-        pathway_id <- ko_to_kegg_reference[i, 1]
-        ko_ids <- as.character(ko_to_kegg_reference[i, -1])
-        ko_ids <- ko_ids[!is.na(ko_ids) & ko_ids != ""]
-        
-        if (length(ko_ids) > 0) {
-          gene_sets[[pathway_id]] <- ko_ids
-        }
-      }
+      # Using split() for efficient conversion from long format
+      gene_sets <- split(ko_to_kegg_reference$ko_id, ko_to_kegg_reference$pathway_id)
       
     }, error = function(e) {
       # Create dummy gene sets for testing when reference data is not available

@@ -17,22 +17,27 @@ pathway_annotation(
 
 \item{pathway}{A character string, the type of pathway to annotate. Options are "KO", "EC", or "MetaCyc".}
 
-\item{daa_results_df}{A data frame, the output from `pathway_daa` function.}
+\item{daa_results_df}{A data frame, the output from `pathway_daa` function. When `ko_to_kegg = TRUE`,
+must contain columns: feature, p_values, p_adjust, and method.}
 
-\item{ko_to_kegg}{A logical, decide if convert KO abundance to KEGG pathway abundance. Default is FALSE. Set to TRUE when using the function for the second use case.}
+\item{ko_to_kegg}{A logical, decide if convert KO abundance to KEGG pathway abundance. Default is FALSE.
+Set to TRUE when using the function for the second use case. When TRUE, queries KEGG database for
+pathway annotations (requires internet connection) and filters for significant pathways (p_adjust < 0.05).}
 
-\item{organism}{A character string specifying the KEGG organism code (e.g., 'hsa' for human, 'eco' for E. coli). Default is NULL, which retrieves generic KO information not specific to any organism. Only used when ko_to_kegg is TRUE.}
+\item{organism}{A character string specifying the KEGG organism code (e.g., 'hsa' for human, 'eco' for E. coli).
+Default is NULL, which retrieves generic KO information not specific to any organism. Only used when ko_to_kegg is TRUE.}
 }
 \value{
-A data frame with annotated pathway information. 
-If using the function for the first use case, the output data frame will include the following columns:
+A data frame with annotated pathway information.
+
+If using the function for the first use case (file input), the output data frame will include:
 \itemize{
   \item \code{id}: The pathway ID.
   \item \code{description}: The description of the pathway.
   \item \code{sample1, sample2, ...}: Abundance values for each sample.
 }
 
-If \code{ko_to_kegg} is set to TRUE, the output data frame will also include the following columns:
+If \code{ko_to_kegg} is set to TRUE, the output data frame will also include:
 \itemize{
   \item \code{pathway_name}: The name of the KEGG pathway.
   \item \code{pathway_description}: The description of the KEGG pathway.
@@ -40,12 +45,24 @@ If \code{ko_to_kegg} is set to TRUE, the output data frame will also include the
   \item \code{pathway_map}: The KEGG pathway map ID.
 }
 
-When \code{ko_to_kegg} is TRUE, the function queries the KEGG database for pathway information. By default (organism = NULL), it retrieves generic KO information that is not specific to any organism. If you are interested in organism-specific pathway information, you can specify the KEGG organism code using the \code{organism} parameter.
+**Note**: When \code{ko_to_kegg = TRUE}, only pathways with p_adjust < 0.05 are processed.
+If no pathways meet this criterion, all annotation columns will be NA, and a detailed
+warning message will be issued with diagnostic information.
+
+When \code{ko_to_kegg} is TRUE, the function queries the KEGG database for pathway information.
+By default (organism = NULL), it retrieves generic KO information that is not specific to any organism.
+If you are interested in organism-specific pathway information, you can specify the KEGG organism code
+using the \code{organism} parameter.
 }
 \description{
 This function serves two main purposes:
 1. Annotating pathway information from PICRUSt2 output files.
 2. Annotating pathway information from the output of `pathway_daa` function, and converting KO abundance to KEGG pathway abundance when `ko_to_kegg` is set to TRUE.
+
+**Important**: When `ko_to_kegg = TRUE`, this function automatically filters pathways by
+p_adjust < 0.05 threshold. If no pathways meet this criterion, the function returns the
+original data with NA annotation columns and issues a detailed warning message with
+diagnostic information and recommendations.
 }
 \examples{
 \dontrun{

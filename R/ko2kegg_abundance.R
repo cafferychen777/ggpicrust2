@@ -37,16 +37,16 @@
 #' }
 #' @export
 ko2kegg_abundance <- function (file = NULL, data = NULL) {
-  # 基本参数检查
+  # Basic parameter validation
   if (is.null(file) & is.null(data)) {
     stop("Error: Please provide either a file or a data.frame.")
   }
-  
+
   if (!is.null(file) && !is.null(data)) {
     warning("Both file and data provided. Using data and ignoring file.")
   }
-  
-  # 文件格式验证函数
+
+  # File format validation function
   validate_file_format <- function(file_path) {
     # Check if file_path is actually a character string (file path)
     if (!is.character(file_path) || length(file_path) != 1) {
@@ -69,7 +69,7 @@ ko2kegg_abundance <- function (file = NULL, data = NULL) {
     return(paste0(".", ext[1]))  # Return first extension if multiple
   }
   
-  # 数据框验证函数
+  # Data frame validation function
   validate_abundance_data <- function(df) {
     if (ncol(df) < 2) {
       stop("Error: Data must contain at least one KO column and one sample column.")
@@ -82,21 +82,21 @@ ko2kegg_abundance <- function (file = NULL, data = NULL) {
     }
   }
   
-  # 添加新的输入验证函数
+  # Input validation function
   validate_input <- function(data) {
-    # 基本结构验证
+    # Basic structure validation
     if (!is.data.frame(data)) {
       stop("The provided data must be a data.frame")
     }
-    
+
     if (ncol(data) < 2) {
       stop("Data must contain at least one KO column and one sample column")
     }
-    
-    # 检查第一列（KO IDs）
+
+    # Check first column (KO IDs)
     ko_col <- data[[1]]
-    
-    # 检查 KO ID 格式
+
+    # Check KO ID format
     ko_pattern <- "^K\\d{5}$"
     invalid_kos <- ko_col[!grepl(ko_pattern, ko_col)]
     if (length(invalid_kos) > 0) {
@@ -106,11 +106,11 @@ ko2kegg_abundance <- function (file = NULL, data = NULL) {
         paste(head(invalid_kos, 3), collapse = ", ")
       ))
     }
-    
-    # 检查数值列
+
+    # Check numeric columns
     numeric_cols <- data[,-1, drop = FALSE]
-    
-    # 检查是否所有样本列都是数值型
+
+    # Check if all sample columns are numeric
     non_numeric_cols <- names(numeric_cols)[!sapply(numeric_cols, is.numeric)]
     if (length(non_numeric_cols) > 0) {
       stop(sprintf(
@@ -118,8 +118,8 @@ ko2kegg_abundance <- function (file = NULL, data = NULL) {
         paste(non_numeric_cols, collapse = ", ")
       ))
     }
-    
-    # 检查负值
+
+    # Check for negative values
     neg_values <- sapply(numeric_cols, function(x) any(x < 0, na.rm = TRUE))
     if (any(neg_values)) {
       stop(sprintf(
@@ -127,8 +127,8 @@ ko2kegg_abundance <- function (file = NULL, data = NULL) {
         paste(names(numeric_cols)[neg_values], collapse = ", ")
       ))
     }
-    
-    # 检查缺失值
+
+    # Check for missing values
     na_counts <- sapply(numeric_cols, function(x) sum(is.na(x)))
     cols_with_na <- names(na_counts[na_counts > 0])
     if (length(cols_with_na) > 0) {
@@ -138,8 +138,8 @@ ko2kegg_abundance <- function (file = NULL, data = NULL) {
         paste(paste(cols_with_na, na_counts[cols_with_na], sep = ": "), collapse = ", ")
       ))
     }
-    
-    # 检查全零行
+
+    # Check for all-zero rows
     zero_rows <- rowSums(numeric_cols == 0) == ncol(numeric_cols)
     if (any(zero_rows)) {
       warning(sprintf(
@@ -147,16 +147,16 @@ ko2kegg_abundance <- function (file = NULL, data = NULL) {
         sum(zero_rows)
       ))
     }
-    
-    # 检查列名是否唯一
+
+    # Check for duplicate column names
     if (any(duplicated(colnames(data)))) {
       stop("Duplicate column names found in the input data")
     }
-    
+
     return(TRUE)
   }
-  
-  # 文件格式验证
+
+  # File format validation
   if (!is.null(file)) {
     file_format <- validate_file_format(file)
     message("Loading data from file...")
@@ -170,20 +170,35 @@ ko2kegg_abundance <- function (file = NULL, data = NULL) {
     message("Processing provided data frame...")
     abundance <- data
   }
-  
-  # PICRUSt 2.6.2兼容性处理：清理KO ID格式
+
+  # Validate data format
+  if (ncol(abundance) < 2) {
+    stop("Error: Data must have at least 2 columns (KO IDs and at least one sample)")
+  }
+
+  if (!("function." %in% colnames(abundance))) {
+    if (colnames(abundance)[1] != "function.") {
+      stop("Error: First column must be named 'function.' containing KO IDs")
+    }
+  }
+
+  if (nrow(abundance) == 0) {
+    stop("Error: Data contains no rows")
+  }
+
+  # PICRUSt 2.6.2 compatibility: Clean KO ID format
   message("Checking KO ID format compatibility...")
   ko_ids <- abundance[[1]]
-  
-  # 检测并清理"ko:"前缀
+
+  # Detect and clean "ko:" prefix
   has_ko_prefix <- any(grepl("^ko:", ko_ids))
   if (has_ko_prefix) {
     message("Detected PICRUSt 2.6.2 format with 'ko:' prefix. Applying compatibility fix...")
     abundance[[1]] <- gsub("^ko:", "", abundance[[1]])
     message(sprintf("Cleaned %d KO IDs by removing 'ko:' prefix", sum(grepl("^ko:", ko_ids))))
   }
-  
-  # 运行输入验证
+
+  # Run input validation
   tryCatch({
     validate_input(abundance)
   }, warning = function(w) {
@@ -192,45 +207,48 @@ ko2kegg_abundance <- function (file = NULL, data = NULL) {
     stop("Data validation failed: ", e$message, call. = FALSE)
   })
   
-  message("Loading KEGG reference data. This might take a while...")
-  if (!exists("ko_to_kegg_reference")) {
-    data("ko_to_kegg_reference", package = "ggpicrust2", envir = environment())
-  }
-  
-  # 转换参考数据格式
+  message("Using KEGG reference data from package...")
+  # Use internal data from sysdata.rda (automatically loaded in package namespace)
+  # Objects in sysdata.rda are directly accessible within package functions
+  # ko_to_kegg_reference is already defined in the package namespace from sysdata.rda
+  # We just convert it to data.frame to ensure compatibility
   ko_to_kegg_reference <- as.data.frame(ko_to_kegg_reference)
-  kegg_names <- ko_to_kegg_reference[, 1]  # 第一列是KEGG pathway IDs
-  
-  message(sprintf("Processing %d KEGG pathways...", length(unique(kegg_names))))
-  
-  # 创建结果数据框
+
+  # Get all unique pathway IDs
+  all_pathways <- unique(ko_to_kegg_reference$pathway_id)
+
+  message(sprintf("Processing %d KEGG pathways...", length(all_pathways)))
+
+  # Create fast pathway → KOs lookup mapping
+  message("Building pathway-KO index...")
+  pathway_to_ko <- split(ko_to_kegg_reference$ko_id, ko_to_kegg_reference$pathway_id)
+
+  # Create result data frame
   kegg_abundance <- data.frame(
-    row.names = unique(kegg_names)  # 将 pathway 设置为行名
+    row.names = all_pathways  # Set pathways as row names
   )
-  
-  # 为每个样本添加列
+
+  # Add columns for each sample
   sample_names <- colnames(abundance)[-1]
   for (sample in sample_names) {
     kegg_abundance[[sample]] <- 0
   }
 
-  # 使用 tryCatch 进行错误处理
+  # Use tryCatch for error handling
   tryCatch({
     pb <- txtProgressBar(min = 0, max = nrow(kegg_abundance), style = 3)
     start_time <- Sys.time()
-    
+
     total_matches <- 0
-    
+
     for (i in seq_len(nrow(kegg_abundance))) {
       setTxtProgressBar(pb, i)
       current_kegg <- rownames(kegg_abundance)[i]
-      
-      # 获取当前KEGG pathway对应的所有KOs
-      pathway_row <- ko_to_kegg_reference[ko_to_kegg_reference[,1] == current_kegg, ]
-      relevant_kos <- unlist(pathway_row[,-1])  # 除第一列外的所有KO IDs
-      relevant_kos <- relevant_kos[!is.na(relevant_kos) & relevant_kos != ""]
-      
-      # 查找匹配的KOs
+
+      # Get all KOs for current pathway from index
+      relevant_kos <- pathway_to_ko[[current_kegg]]
+
+      # Find matching KOs
       matching_rows <- abundance[[1]] %in% relevant_kos
       if (any(matching_rows)) {
         total_matches <- total_matches + sum(matching_rows)
@@ -240,59 +258,31 @@ ko2kegg_abundance <- function (file = NULL, data = NULL) {
     
     end_time <- Sys.time()
     close(pb)
-    
-    # 添加调试信息
-    message(sprintf("Total KO matches found: %d", total_matches))
-    message(sprintf("Number of non-zero pathways before filtering: %d", 
-                   sum(rowSums(kegg_abundance[,-1, drop = FALSE]) > 0)))
-    
-    # 移除零丰度通路 - 改进过滤逻辑以兼容PICRUSt 2.6.2
+
+    # Remove zero-abundance pathways
     message("Removing KEGG pathways with zero abundance across all samples...")
-    zero_rows <- rowSums(kegg_abundance[,-1, drop = FALSE]) == 0
+    # Note: kegg_abundance only has sample columns, pathway IDs are in rownames
+    zero_rows <- rowSums(kegg_abundance, na.rm = TRUE) == 0
 
-    # 检查是否所有pathway都是零丰度（可能的PICRUSt 2.6.2兼容性问题）
+    # Check if all pathways have zero abundance
     if (all(zero_rows)) {
-      warning("All KEGG pathways have zero abundance. This may indicate a compatibility issue with PICRUSt 2.6.2 output format. ",
-              "Attempting to proceed with minimal filtering...")
+      # All pathways are zero - this usually means no KO IDs matched any pathway
+      # Return empty data frame
+      message("All KEGG pathways have zero abundance. No KO IDs matched known pathways.")
 
-      # 尝试更宽松的过滤：只移除完全空的行
-      completely_empty <- apply(kegg_abundance[,-1, drop = FALSE], 1, function(x) all(is.na(x) | x == 0))
-      if (!all(completely_empty)) {
-        kegg_abundance <- kegg_abundance[!completely_empty, , drop = FALSE]
-        message("Applied minimal filtering to preserve data compatibility")
-      } else {
-        # 如果仍然所有行都是空的，保留原始数据但给出警告
-        warning("Unable to filter zero-abundance pathways without losing all data. ",
-                "This suggests a data format issue. Proceeding with original data.")
-      }
+      # Create empty but correctly structured data frame
+      sample_names <- colnames(abundance)[-1]
+      kegg_abundance <- data.frame(matrix(ncol = length(sample_names), nrow = 0))
+      colnames(kegg_abundance) <- sample_names
     } else {
-      # 正常过滤逻辑
+      # Normal filtering logic: remove zero rows
       kegg_abundance <- kegg_abundance[!zero_rows, , drop = FALSE]
     }
 
     message(sprintf("Final number of KEGG pathways: %d", nrow(kegg_abundance)))
 
-    if (nrow(kegg_abundance) == 0) {
-      # For completely zero input data, return a minimal pathway set with zero values
-      # This allows downstream analysis to handle the issue gracefully
-      warning("No non-zero KEGG pathways found after processing. ",
-              "This may be due to PICRUSt version compatibility issues. ",
-              "Returning minimal pathway set with zero values.")
-
-      # Create a minimal kegg_abundance with a few common pathways
-      sample_names <- colnames(data)[-1]  # Exclude first column (KO names)
-      minimal_pathways <- c("map00010", "map00020", "map00030")  # Basic metabolic pathways
-
-      kegg_abundance <- data.frame(
-        pathway = minimal_pathways,
-        stringsAsFactors = FALSE
-      )
-
-      # Add sample columns with zero values
-      for (sample_name in sample_names) {
-        kegg_abundance[[sample_name]] <- 0
-      }
-    }
+    # Empty result is valid - it means no KO IDs matched any pathways
+    # Simply return the empty data frame with correct structure
     
     return(kegg_abundance)
     

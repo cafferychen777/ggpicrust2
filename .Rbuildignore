@@ -26,3 +26,18 @@
 ^vignettes/articles$
 ^vignettes/figures$
 # ^inst/extdata/.*\.RData$ - Commented out to include reference data files
+^ISSUE_.*\.md$
+^ISSUE_.*\.txt$
+^.*_EMAIL_REPLY\.txt$
+^CLAUDE\.md$
+^FINAL_.*\.md$
+^GITHUB_RESPONSE.*\.md$
+^demos/$
+^apply_fix.*\.R$
+^ggpicrust\.R$
+^Package version$
+^Rlang$
+^Session info$
+^\.cache_go_build/$
+^temp_cleanup/$
+^ggpicrust2.*\.tar\.gz$
