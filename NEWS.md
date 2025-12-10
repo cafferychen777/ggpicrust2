@@ -1,5 +1,13 @@
 # ggpicrust2 (development version)
 
+## New Features
+
+### pathway_pca() Enhancement
+* Added `marginal_plots` parameter to `pathway_pca()` function
+  - Allows users to optionally remove marginal density plots
+  - Default is `TRUE` to maintain backward compatibility
+  - Set to `FALSE` to display only the main PCA scatter plot
+
 ## Major Features
 
 ### Local KEGG Database Implementation (#113)
