@@ -278,3 +278,61 @@ test_that("pathway_pca handles group variable conversion", {
     "Converting group variable to factor"
   )
 })
+
+test_that("pathway_pca works without marginal plots", {
+  # Setup test data
+  test_abundance <- matrix(rnorm(30), nrow = 3, ncol = 10)
+  colnames(test_abundance) <- paste0("Sample", 1:10)
+  rownames(test_abundance) <- c("PathwayA", "PathwayB", "PathwayC")
+
+  test_metadata <- data.frame(
+    sample_name = colnames(test_abundance),
+    group = factor(rep(c("Control", "Treatment"), each = 5))
+  )
+
+  result <- pathway_pca(test_abundance, test_metadata, "group", marginal_plots = FALSE)
+  expect_s3_class(result, "ggplot")
+})
+
+test_that("pathway_pca works with marginal plots enabled", {
+  # Setup test data
+  test_abundance <- matrix(rnorm(30), nrow = 3, ncol = 10)
+  colnames(test_abundance) <- paste0("Sample", 1:10)
+  rownames(test_abundance) <- c("PathwayA", "PathwayB", "PathwayC")
+
+  test_metadata <- data.frame(
+    sample_name = colnames(test_abundance),
+    group = factor(rep(c("Control", "Treatment"), each = 5))
+  )
+
+  result <- pathway_pca(test_abundance, test_metadata, "group", marginal_plots = TRUE)
+  expect_s3_class(result, "ggplot")
+})
+
+test_that("pathway_pca validates marginal_plots parameter", {
+  # Setup test data
+  test_abundance <- matrix(rnorm(30), nrow = 3, ncol = 10)
+  colnames(test_abundance) <- paste0("Sample", 1:10)
+  rownames(test_abundance) <- c("PathwayA", "PathwayB", "PathwayC")
+
+  test_metadata <- data.frame(
+    sample_name = colnames(test_abundance),
+    group = factor(rep(c("Control", "Treatment"), each = 5))
+  )
+
+  # Test with invalid marginal_plots value
+  expect_error(
+    pathway_pca(test_abundance, test_metadata, "group", marginal_plots = "yes"),
+    "marginal_plots must be a single logical value"
+  )
+
+  expect_error(
+    pathway_pca(test_abundance, test_metadata, "group", marginal_plots = c(TRUE, FALSE)),
+    "marginal_plots must be a single logical value"
+  )
+
+  expect_error(
+    pathway_pca(test_abundance, test_metadata, "group", marginal_plots = 1),
+    "marginal_plots must be a single logical value"
+  )
+})
