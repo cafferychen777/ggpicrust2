@@ -24,11 +24,15 @@
 #'        Length must match the number of unique groups.
 #'        If NULL, default colors will be used.
 #'
+#' @param marginal_plots Logical. Whether to include marginal density plots.
+#'        If TRUE (default), density plots for PC1 and PC2 are shown.
+#'        If FALSE, only the main PCA scatter plot is returned.
+#'
 #' @return A ggplot object showing:
 #'        \itemize{
 #'          \item Center: PCA scatter plot with confidence ellipses (95%)
-#'          \item Top: Density plot for PC1
-#'          \item Right: Density plot for PC2
+#'          \item Top: Density plot for PC1 (if marginal_plots = TRUE)
+#'          \item Right: Density plot for PC2 (if marginal_plots = TRUE)
 #'        }
 #'
 #' @details
@@ -64,6 +68,14 @@
 #'   colors = c("blue", "red")  # One color per group
 #' )
 #'
+#' # PCA plot without marginal density plots
+#' pca_plot <- pathway_pca(
+#'   abundance_data,
+#'   metadata,
+#'   "group",
+#'   marginal_plots = FALSE
+#' )
+#'
 #' \donttest{
 #' # Example with real data
 #' data("metacyc_abundance")  # Load example pathway abundance data
@@ -97,7 +109,8 @@
 pathway_pca <- function(abundance,
                         metadata,
                         group,
-                        colors = NULL) {
+                        colors = NULL,
+                        marginal_plots = TRUE) {
   # Input validation
   # Check if inputs are missing
   if (missing(abundance)) {
@@ -196,6 +209,11 @@ pathway_pca <- function(abundance,
                   length(colors), levels))
     }
   }
+  
+  # Check marginal_plots parameter
+  if (!is.logical(marginal_plots) || length(marginal_plots) != 1) {
+    stop("marginal_plots must be a single logical value (TRUE or FALSE)")
+  }
 
   # due to NSE notes in R CMD check
   PC1 = PC2 = Group = NULL
@@ -257,6 +275,11 @@ pathway_pca <- function(abundance,
           legend.title = ggplot2::element_text(size = 16, face = "bold"))+
     ggplot2::geom_vline(xintercept = 0, linetype = "dashed", color = "black") +
     ggplot2::geom_hline(yintercept = 0, linetype = "dashed", color = "black")
+
+  # Return plot with or without marginal density plots
+  if (!marginal_plots) {
+    return(Fig1a.taxa.pca)
+  }
 
   # Create a ggplot object for the density plot of PC1
   # Plot the density of PC1 colored by Group
