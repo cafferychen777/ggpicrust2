@@ -24,6 +24,9 @@
 #'        Length must match the number of unique groups.
 #'        If NULL, default colors will be used.
 #'
+#' @param show_marginal Logical. Whether to show marginal density plots for PC1 and PC2.
+#'        Default is TRUE. Set to FALSE to show only the PCA scatter plot.
+#'
 #' @return A ggplot object showing:
 #'        \itemize{
 #'          \item Center: PCA scatter plot with confidence ellipses (95%)
@@ -64,6 +67,14 @@
 #'   colors = c("blue", "red")  # One color per group
 #' )
 #'
+#' # PCA plot without marginal density plots
+#' pca_plot <- pathway_pca(
+#'   abundance_data,
+#'   metadata,
+#'   "group",
+#'   show_marginal = FALSE
+#' )
+#'
 #' \donttest{
 #' # Example with real data
 #' data("metacyc_abundance")  # Load example pathway abundance data
@@ -97,7 +108,8 @@
 pathway_pca <- function(abundance,
                         metadata,
                         group,
-                        colors = NULL) {
+                        colors = NULL,
+                        show_marginal = TRUE) {
   # Input validation
   # Check if inputs are missing
   if (missing(abundance)) {
@@ -284,9 +296,13 @@ pathway_pca <- function(abundance,
           axis.ticks.y = ggplot2::element_blank()) + # Remove y axis ticks
     ggplot2::coord_flip() # Flip the plot to change it from a horizontal to a vertical orientation
 
-  # Combine the two plots into a single plot with the PC1 plot on top and the PC2 plot on the right
-  Fig1a.taxa.pca %>%
-    aplot::insert_top(Fig1a.taxa.pc1.density, height = 0.3) %>% # Insert the PC1 plot on top with a height of 0.3
-    aplot::insert_right(Fig1a.taxa.pc2.density, width=0.3) %>% # Insert the PC2 plot on the right with a width of 0.3
-    ggplotify::as.ggplot() # Convert the combined plot to a ggplot object
+  # Return plot with or without marginal density plots
+  if (show_marginal) {
+    Fig1a.taxa.pca %>%
+      aplot::insert_top(Fig1a.taxa.pc1.density, height = 0.3) %>%
+      aplot::insert_right(Fig1a.taxa.pc2.density, width=0.3) %>%
+      ggplotify::as.ggplot()
+  } else {
+    Fig1a.taxa.pca
+  }
 }

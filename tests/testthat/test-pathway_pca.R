@@ -278,3 +278,48 @@ test_that("pathway_pca handles group variable conversion", {
     "Converting group variable to factor"
   )
 })
+
+test_that("pathway_pca show_marginal parameter works correctly", {
+  set.seed(123)
+  test_abundance <- matrix(rnorm(30), nrow = 3, ncol = 10)
+  colnames(test_abundance) <- paste0("Sample", 1:10)
+  rownames(test_abundance) <- c("PathwayA", "PathwayB", "PathwayC")
+
+  test_metadata <- data.frame(
+    sample_name = colnames(test_abundance),
+    group = factor(rep(c("Control", "Treatment"), each = 5))
+  )
+
+  # Test with show_marginal = TRUE (default)
+  result_with_marginal <- pathway_pca(test_abundance, test_metadata, "group", show_marginal = TRUE)
+  expect_s3_class(result_with_marginal, "ggplot")
+
+  # Test with show_marginal = FALSE
+  result_without_marginal <- pathway_pca(test_abundance, test_metadata, "group", show_marginal = FALSE)
+  expect_s3_class(result_without_marginal, "ggplot")
+
+  # When show_marginal = FALSE, the result should be a pure ggplot (not wrapped by ggplotify)
+  # The class should include "gg" and "ggplot"
+  expect_true("gg" %in% class(result_without_marginal))
+})
+
+test_that("pathway_pca show_marginal FALSE returns simpler plot structure", {
+  set.seed(456)
+  test_abundance <- matrix(rnorm(30), nrow = 3, ncol = 10)
+  colnames(test_abundance) <- paste0("Sample", 1:10)
+  rownames(test_abundance) <- c("PathwayA", "PathwayB", "PathwayC")
+
+  test_metadata <- data.frame(
+    sample_name = colnames(test_abundance),
+    group = factor(rep(c("Control", "Treatment"), each = 5))
+  )
+
+  result_no_marginal <- pathway_pca(test_abundance, test_metadata, "group", show_marginal = FALSE)
+
+  # Check that the plot has the expected layers (points, ellipse, vline, hline)
+  expect_true(length(result_no_marginal$layers) >= 3)
+
+  # Check axis labels contain PC1 and PC2
+  expect_true(grepl("PC1", result_no_marginal$labels$x))
+  expect_true(grepl("PC2", result_no_marginal$labels$y))
+})

@@ -4,7 +4,7 @@
 \alias{pathway_pca}
 \title{Perform Principal Component Analysis (PCA) on functional pathway abundance data}
 \usage{
-pathway_pca(abundance, metadata, group, colors = NULL)
+pathway_pca(abundance, metadata, group, colors = NULL, show_marginal = TRUE)
 }
 \arguments{
 \item{abundance}{A numeric matrix or data frame containing pathway abundance data.
@@ -25,6 +25,9 @@ group information for samples (e.g., "treatment", "condition", "group").}
 \item{colors}{Optional. A character vector of colors for different groups.
 Length must match the number of unique groups.
 If NULL, default colors will be used.}
+
+\item{show_marginal}{Logical. Whether to show marginal density plots for PC1 and PC2.
+Default is TRUE. Set to FALSE to show only the PCA scatter plot.}
 }
 \value{
 A ggplot object showing:
@@ -71,6 +74,14 @@ pca_plot <- pathway_pca(
   metadata,
   "group",
   colors = c("blue", "red")  # One color per group
+)
+
+# PCA plot without marginal density plots
+pca_plot <- pathway_pca(
+  abundance_data,
+  metadata,
+  "group",
+  show_marginal = FALSE
 )
 
 \donttest{
