@@ -59,7 +59,7 @@ compare_gsea_daa <- function(gsea_results,
     stop("'daa_results' must be a data frame")
   }
 
-  if (!plot_type %in% c("venn", "upset", "scatter", "heatmap")) {
+  if (length(plot_type) != 1 || !plot_type %in% c("venn", "upset", "scatter", "heatmap")) {
     stop("plot_type must be one of 'venn', 'upset', 'scatter', or 'heatmap'")
   }
 
@@ -73,8 +73,9 @@ compare_gsea_daa <- function(gsea_results,
   }
 
   # Extract significant pathways from each analysis
-  sig_gsea <- gsea_results$pathway_id[gsea_results$p.adjust < p_threshold]
-  sig_daa <- daa_results$feature[daa_results$p_adjust < p_threshold]
+  # Convert to character to ensure consistent types for set operations and ggVennDiagram
+  sig_gsea <- as.character(gsea_results$pathway_id[gsea_results$p.adjust < p_threshold])
+  sig_daa <- as.character(daa_results$feature[daa_results$p_adjust < p_threshold])
 
   # Find overlapping and unique pathways
   overlap <- intersect(sig_gsea, sig_daa)

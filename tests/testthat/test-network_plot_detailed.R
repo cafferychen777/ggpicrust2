@@ -125,9 +125,9 @@ test_that("create_network_plot handles different layout algorithms", {
   layouts <- c("fruchterman", "kamada", "circle")
   
   for (layout in layouts) {
-    expect_no_error({
+    tryCatch({
       p <- visualize_gsea(
-        gsea_results, 
+        gsea_results,
         plot_type = "network",
         network_params = list(
           layout = layout,
@@ -135,7 +135,9 @@ test_that("create_network_plot handles different layout algorithms", {
         )
       )
       expect_s3_class(p, "ggplot")
-    }, info = paste("Layout:", layout))
+    }, error = function(e) {
+      fail(paste("Layout:", layout, "-", e$message))
+    })
   }
 })
 
@@ -150,9 +152,9 @@ test_that("create_network_plot handles different node coloring options", {
   color_options <- c("NES", "pvalue", "p.adjust")
   
   for (color_by in color_options) {
-    expect_no_error({
+    tryCatch({
       p <- visualize_gsea(
-        gsea_results, 
+        gsea_results,
         plot_type = "network",
         network_params = list(
           node_color_by = color_by,
@@ -160,7 +162,9 @@ test_that("create_network_plot handles different node coloring options", {
         )
       )
       expect_s3_class(p, "ggplot")
-    }, info = paste("Color by:", color_by))
+    }, error = function(e) {
+      fail(paste("Color by:", color_by, "-", e$message))
+    })
   }
 })
 
@@ -175,9 +179,9 @@ test_that("create_network_plot handles edge width options", {
   edge_width_options <- c("similarity", "constant")
   
   for (edge_width in edge_width_options) {
-    expect_no_error({
+    tryCatch({
       p <- visualize_gsea(
-        gsea_results, 
+        gsea_results,
         plot_type = "network",
         network_params = list(
           edge_width_by = edge_width,
@@ -185,7 +189,9 @@ test_that("create_network_plot handles edge width options", {
         )
       )
       expect_s3_class(p, "ggplot")
-    }, info = paste("Edge width by:", edge_width))
+    }, error = function(e) {
+      fail(paste("Edge width by:", edge_width, "-", e$message))
+    })
   }
 })
 

@@ -21,8 +21,8 @@ test_that("ko2kegg_abundance completes quickly with 100 KOs", {
   test_data <- create_perf_test_data(100, 4)
 
   start <- Sys.time()
-  result <- suppressMessages(ko2kegg_abundance(data = test_data)
-  elapsed <- as.numeric(difftime(Sys.time(), start, units = "secs")
+  result <- suppressMessages(ko2kegg_abundance(data = test_data))
+  elapsed <- as.numeric(difftime(Sys.time(), start, units = "secs"))
 
   expect_lt(elapsed, 0.5)
 })
@@ -31,8 +31,8 @@ test_that("ko2kegg_abundance completes quickly with 500 KOs", {
   test_data <- create_perf_test_data(500, 5)
 
   start <- Sys.time()
-  result <- suppressMessages(ko2kegg_abundance(data = test_data)
-  elapsed <- as.numeric(difftime(Sys.time(), start, units = "secs")
+  result <- suppressMessages(ko2kegg_abundance(data = test_data))
+  elapsed <- as.numeric(difftime(Sys.time(), start, units = "secs"))
 
   expect_lt(elapsed, 2)
 })
@@ -41,8 +41,8 @@ test_that("ko2kegg_abundance completes quickly with 1000 KOs", {
   test_data <- create_perf_test_data(1000, 10)
 
   start <- Sys.time()
-  result <- suppressMessages(ko2kegg_abundance(data = test_data)
-  elapsed <- as.numeric(difftime(Sys.time(), start, units = "secs")
+  result <- suppressMessages(ko2kegg_abundance(data = test_data))
+  elapsed <- as.numeric(difftime(Sys.time(), start, units = "secs"))
 
   expect_lt(elapsed, 5)
 
@@ -54,14 +54,14 @@ test_that("ko2kegg_abundance completes quickly with 1000 KOs", {
 test_that("ko2kegg_abundance scales linearly with dataset size", {
   # Test with increasing sizes
   sizes <- c(100, 200, 400)
-  times <- numeric(length(sizes)
+  times <- numeric(length(sizes))
 
   for (i in seq_along(sizes)) {
     test_data <- create_perf_test_data(sizes[i], 3)
 
     start <- Sys.time()
-    result <- suppressMessages(ko2kegg_abundance(data = test_data)
-    times[i] <- as.numeric(difftime(Sys.time(), start, units = "secs")
+    result <- suppressMessages(ko2kegg_abundance(data = test_data))
+    times[i] <- as.numeric(difftime(Sys.time(), start, units = "secs"))
   }
 
   # Check that time roughly doubles when size doubles
@@ -85,7 +85,7 @@ test_that("ko2kegg_abundance memory usage is reasonable", {
   gc()
   mem_before <- sum(gc()[, 2])
 
-  result <- suppressMessages(ko2kegg_abundance(data = test_data)
+  result <- suppressMessages(ko2kegg_abundance(data = test_data))
 
   # Get memory after
   mem_after <- sum(gc()[, 2])
@@ -100,11 +100,11 @@ test_that("ko2kegg_abundance pathway coverage is improved", {
   test_200 <- create_perf_test_data(200, 3, seed = 1)
   test_1000 <- create_perf_test_data(1000, 3, seed = 2)
 
-  result_200 <- suppressMessages(ko2kegg_abundance(data = test_200)
-  result_1000 <- suppressMessages(ko2kegg_abundance(data = test_1000)
+  result_200 <- suppressMessages(ko2kegg_abundance(data = test_200))
+  result_1000 <- suppressMessages(ko2kegg_abundance(data = test_1000))
 
   # More KOs should generally lead to more pathways
-  expect_gt(nrow(result_1000), nrow(result_200)
+  expect_gt(nrow(result_1000), nrow(result_200))
 
   # Check reasonable coverage ratio (pathways per 100 KOs)
   coverage_200 <- nrow(result_200) / 200 * 100
@@ -117,23 +117,23 @@ test_that("ko2kegg_abundance produces consistent results", {
   # Same input should always produce same output
   test_data <- create_perf_test_data(100, 3, seed = 111)
 
-  result1 <- suppressMessages(ko2kegg_abundance(data = test_data)
-  result2 <- suppressMessages(ko2kegg_abundance(data = test_data)
-  result3 <- suppressMessages(ko2kegg_abundance(data = test_data)
+  result1 <- suppressMessages(ko2kegg_abundance(data = test_data))
+  result2 <- suppressMessages(ko2kegg_abundance(data = test_data))
+  result3 <- suppressMessages(ko2kegg_abundance(data = test_data))
 
   expect_identical(result1, result2)
   expect_identical(result2, result3)
 })
 
 test_that("ko2kegg_abundance pathway-KO index improves performance", {
-  # Test that the pathway → KO index is used and improves performance
+  # Test that the pathway -> KO index is used and improves performance
 
   test_data <- create_perf_test_data(200, 3)
 
   # Time the function
   start <- Sys.time()
-  result <- suppressMessages(ko2kegg_abundance(data = test_data)
-  elapsed <- as.numeric(difftime(Sys.time(), start, units = "secs")
+  result <- suppressMessages(ko2kegg_abundance(data = test_data))
+  elapsed <- as.numeric(difftime(Sys.time(), start, units = "secs"))
 
   # With proper indexing, 200 KOs should be very fast
   expect_lt(elapsed, 1)
@@ -156,15 +156,15 @@ test_that("ko2kegg_abundance handles repeated KOs efficiently", {
   )
 
   start <- Sys.time()
-  result <- suppressMessages(ko2kegg_abundance(data = test_data)
-  elapsed <- as.numeric(difftime(Sys.time(), start, units = "secs")
+  result <- suppressMessages(ko2kegg_abundance(data = test_data))
+  elapsed <- as.numeric(difftime(Sys.time(), start, units = "secs"))
 
   expect_lt(elapsed, 0.5)
 })
 
 test_that("New data provides better KO coverage than old", {
   # Check that new data has more KO coverage
-  unique_kos_new <- length(unique(ko_to_kegg_reference$ko_id)
+  unique_kos_new <- length(unique(ko_to_kegg_reference$ko_id))
 
   # Old data had ~8000 unique KOs, new should have > 25000
   expect_gt(unique_kos_new, 25000)
@@ -172,7 +172,7 @@ test_that("New data provides better KO coverage than old", {
 
 test_that("New data provides better pathway coverage than old", {
   # Check that new data has more pathway coverage
-  unique_pathways_new <- length(unique(ko_to_kegg_reference$pathway_id)
+  unique_pathways_new <- length(unique(ko_to_kegg_reference$pathway_id))
 
   # Old data had ~306 pathways, new should have > 500
   expect_gt(unique_pathways_new, 500)
@@ -188,8 +188,8 @@ test_that("New data has more mappings than old", {
 
 test_that("New data has lower NA ratio than old", {
   # Check NA ratio in key columns
-  na_pathway <- sum(is.na(ko_to_kegg_reference$pathway_id)
-  na_ko <- sum(is.na(ko_to_kegg_reference$ko_id)
+  na_pathway <- sum(is.na(ko_to_kegg_reference$pathway_id))
+  na_ko <- sum(is.na(ko_to_kegg_reference$ko_id))
 
   total_cells <- nrow(ko_to_kegg_reference) * 2  # Two key columns
 
@@ -205,28 +205,28 @@ test_that("split() method is faster than loop method", {
   start_split <- Sys.time()
   gene_sets_split <- split(ko_to_kegg_reference$ko_id,
                            ko_to_kegg_reference$pathway_id)
-  time_split <- as.numeric(difftime(Sys.time(), start_split, units = "secs")
+  time_split <- as.numeric(difftime(Sys.time(), start_split, units = "secs"))
 
   # Split should be very fast
-  expect_lt(time_split, 0.2) should take < 0.2s, took %.3fs", time_split)
+  expect_lt(time_split, 0.2)
 
   # Check result is correct
   expect_gt(length(gene_sets_split), 500)
 
-  expect_true(all(sapply(gene_sets_split, is.character)
+  expect_true(all(sapply(gene_sets_split, is.character)))
 })
 
 test_that("ko2kegg_abundance handles varying sample counts efficiently", {
   # Test with different numbers of samples
   sample_counts <- c(2, 5, 10, 20)
-  times <- numeric(length(sample_counts)
+  times <- numeric(length(sample_counts))
 
   for (i in seq_along(sample_counts)) {
     test_data <- create_perf_test_data(100, sample_counts[i])
 
     start <- Sys.time()
-    result <- suppressMessages(ko2kegg_abundance(data = test_data)
-    times[i] <- as.numeric(difftime(Sys.time(), start, units = "secs")
+    result <- suppressMessages(ko2kegg_abundance(data = test_data))
+    times[i] <- as.numeric(difftime(Sys.time(), start, units = "secs"))
   }
 
   # Time should not increase dramatically with more samples

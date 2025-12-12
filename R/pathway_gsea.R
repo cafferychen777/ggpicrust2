@@ -321,7 +321,13 @@ pathway_gsea <- function(abundance,
 #' @return A list of pathway gene sets
 #' @export
 prepare_gene_sets <- function(pathway_type = "KEGG", organism = "ko", go_category = "BP") {
-  
+
+  # Validate pathway_type
+  valid_types <- c("KEGG", "MetaCyc", "GO")
+  if (!pathway_type %in% valid_types) {
+    stop("pathway_type must be one of: ", paste(valid_types, collapse = ", "))
+  }
+
   if (pathway_type == "KEGG") {
     # Initialize gene_sets
     gene_sets <- list()
@@ -529,7 +535,7 @@ calculate_rank_metric <- function(abundance,
   
   # Subset abundance to include only samples in metadata
   common_samples <- intersect(colnames(abundance), names(Group))
-  abundance <- abundance[, common_samples]
+  abundance <- abundance[, common_samples, drop = FALSE]
   Group <- Group[common_samples]
   
   # Group size validation already done above in main function

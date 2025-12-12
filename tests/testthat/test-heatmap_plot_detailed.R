@@ -180,7 +180,8 @@ test_that("create_heatmap_plot handles different grouping variables", {
   group_vars <- c("group", "batch", "subject", "timepoint")
   
   for (group_var in group_vars) {
-    expect_no_error({
+    # expect_no_error doesn't accept info parameter
+    result <- tryCatch({
       heatmap <- visualize_gsea(
         gsea_results,
         plot_type = "heatmap",
@@ -190,7 +191,12 @@ test_that("create_heatmap_plot handles different grouping variables", {
         n_pathways = 5
       )
       expect_s4_class(heatmap, "Heatmap")
-    }, info = paste("Group variable:", group_var))
+      TRUE
+    }, error = function(e) {
+      fail(paste("Group variable:", group_var, "Error:", e$message))
+      FALSE
+    })
+    expect_true(result)
   }
 })
 

@@ -587,8 +587,9 @@ process_kegg_annotations <- function(df, organism = NULL) {
 annotate_pathways <- function(data, pathway_type, ref_data) {
   message("Starting pathway annotation...")
   
-  # Check if data is from DAA results
-  is_daa_results <- all(c("feature", "p_values") %in% colnames(data))
+  # Check if data is from DAA results (check for feature column with any p-value column)
+  is_daa_results <- "feature" %in% colnames(data) &&
+    any(c("p_values", "p_adjust", "pvalue", "p.adjust") %in% colnames(data))
   
   # Extract features
   if (is_daa_results) {

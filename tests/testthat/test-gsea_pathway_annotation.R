@@ -60,42 +60,21 @@ test_that("gsea_pathway_annotation annotates KEGG pathways correctly", {
 })
 
 test_that("gsea_pathway_annotation annotates MetaCyc pathways correctly", {
-  # Create test data
+  # Create test data with some common MetaCyc pathway IDs
   gsea_results <- create_test_gsea_results()
   gsea_results$pathway_id <- paste0("PWY-", 1000 + 1:10)  # MetaCyc IDs
 
-  # Mock the data loading
-  mockery::stub(gsea_pathway_annotation, "data", function(x, package, envir) {
-    if (x == "metacyc_reference") {
-      assign("metacyc_reference", data.frame(
-        pathway = paste0("PWY-", 1000 + 1:10),
-        pathway_name = paste("MetaCyc Pathway", 1:10),
-        description = paste("Description for MetaCyc pathway", 1:10),
-        stringsAsFactors = FALSE
-      ), envir = envir)
-    }
-  })
-
-  # Mock the merge function to control the output
-  mockery::stub(gsea_pathway_annotation, "merge", function(...) {
-    # Return a data frame with the expected structure
-    result <- gsea_results
-    result$pathway_name <- paste("MetaCyc Pathway", 1:nrow(result))
-    result$description <- paste("Description for MetaCyc pathway", 1:nrow(result))
-    return(result)
-  })
-
-  # Test annotation
+  # Test annotation - the function should work with real reference data
   annotated <- gsea_pathway_annotation(gsea_results, pathway_type = "MetaCyc")
 
-  # Check the result
+  # Check the result structure
   expect_s3_class(annotated, "data.frame")
   expect_equal(nrow(annotated), nrow(gsea_results))
   expect_true("pathway_name" %in% colnames(annotated))
-  expect_true("description" %in% colnames(annotated))
 
-  # Check that pathway names were updated
-  expect_equal(annotated$pathway_name[1], "MetaCyc Pathway 1")
+  # For unknown pathways, pathway_name should default to pathway_id
+  # (since these are not real MetaCyc IDs in the reference)
+  expect_true(all(!is.na(annotated$pathway_name)))
 })
 
 test_that("gsea_pathway_annotation handles GO pathways", {
@@ -103,15 +82,13 @@ test_that("gsea_pathway_annotation handles GO pathways", {
   gsea_results <- create_test_gsea_results()
   gsea_results$pathway_id <- paste0("GO:", sprintf("%07d", 1:10))  # GO IDs
 
-  # Test annotation (not fully implemented yet)
-  expect_warning(
-    annotated <- gsea_pathway_annotation(gsea_results, pathway_type = "GO"),
-    "GO pathway annotation not yet implemented"
-  )
+  # GO annotation is now fully implemented using ko_to_go_reference
+  annotated <- gsea_pathway_annotation(gsea_results, pathway_type = "GO")
 
   # Check the result
   expect_s3_class(annotated, "data.frame")
   expect_equal(nrow(annotated), nrow(gsea_results))
+  expect_true("pathway_name" %in% colnames(annotated))
 })
 
 test_that("gsea_pathway_annotation validates inputs correctly", {

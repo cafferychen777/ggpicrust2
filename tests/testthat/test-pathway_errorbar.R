@@ -223,15 +223,15 @@ test_that("pathway_errorbar handles too many features", {
   testthat::expect_equal(names(Group), colnames(abundance))
   testthat::expect_equal(rownames(abundance), daa_results_df$feature)
 
-  # 直接使用 expect_error 来测试错误消息
-  expect_error(
+  # Function now warns instead of errors for too many features
+  expect_warning(
     pathway_errorbar(
       abundance = abundance,
       daa_results_df = daa_results_df,
       Group = Group,
       x_lab = "pathway_name"
     ),
-    regexp = "The number of features with statistical significance exceeds 30, leading to suboptimal visualization"
+    regexp = "The number of features with statistical significance exceeds 30"
   )
 })
 

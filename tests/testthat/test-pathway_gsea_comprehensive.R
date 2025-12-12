@@ -344,14 +344,19 @@ test_that("abundance data is correctly converted to matrix format internally", {
 # Sample Name Matching Tests
 # ==============================================================================
 
-test_that("pathway_gsea detects sample name mismatches", {
+test_that("pathway_gsea handles sample name mismatches gracefully", {
   test_data <- create_comprehensive_test_data(sample_name_mismatch = TRUE)
   abundance <- test_data$abundance
   metadata <- test_data$metadata
-  
-  expect_error(
+
+  # The function now handles partial overlap gracefully:
+  # - Gives warning if some samples don't match but enough overlap exists
+  # - Throws error only if fewer than 4 samples overlap
+  # With 20 samples and only 3 mismatched, there should be 17 overlapping samples
+  # so it should proceed with a warning
+  expect_warning(
     pathway_gsea(abundance = abundance, metadata = metadata, group = "treatment_group"),
-    "Sample names in abundance data do not match sample names in metadata"
+    "overlapping samples"
   )
 })
 
@@ -359,10 +364,10 @@ test_that("pathway_gsea handles partial sample overlap correctly", {
   test_data <- create_comprehensive_test_data(n_features = 5, n_samples = 10)
   abundance <- test_data$abundance
   metadata <- test_data$metadata
-  
-  # Remove some samples from metadata
+
+  # Remove some samples from metadata (keep 8 out of 10)
   metadata_subset <- metadata[1:8, ]
-  
+
   # Mock functions
   mockery::stub(pathway_gsea, "prepare_gene_sets", function(...) {
     list("pathway1" = c("K00001", "K00002"))
@@ -381,14 +386,14 @@ test_that("pathway_gsea handles partial sample overlap correctly", {
       stringsAsFactors = FALSE
     )
   })
-  
-  # This should work - function should subset abundance to match metadata
-  # However, the current implementation checks if ALL abundance samples are in metadata
-  # So this will actually fail, which is the current behavior we need to document
-  expect_error({
-    result <- pathway_gsea(abundance = abundance, metadata = metadata_subset, 
-                          group = "treatment_group", method = "fgsea")
-  }, "Sample names in abundance data do not match sample names in metadata")
+
+  # The function now handles partial overlap gracefully:
+  # With 8 overlapping samples (>= 4 minimum), it should proceed with a warning
+  expect_warning(
+    result <- pathway_gsea(abundance = abundance, metadata = metadata_subset,
+                          group = "treatment_group", method = "fgsea"),
+    "overlapping samples"
+  )
 })
 
 test_that("sample subsetting works correctly in calculate_rank_metric", {

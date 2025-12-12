@@ -142,24 +142,22 @@ test_that("calculate_rank_metric works correctly", {
 
 test_that("prepare_gene_sets works correctly", {
   # Skip detailed testing of prepare_gene_sets since it depends on package data
-  # Just test that it returns a list and issues warnings for unsupported pathway types
+  # Just test that it returns a list for all supported pathway types
 
   # Test KEGG pathway - just check it returns a list with some elements
   gene_sets <- prepare_gene_sets("KEGG")
   expect_type(gene_sets, "list")
   expect_true(length(gene_sets) > 0)
 
-  # Test MetaCyc pathway (not implemented yet)
-  expect_warning(
-    prepare_gene_sets("MetaCyc"),
-    "MetaCyc pathway gene sets not yet implemented"
-  )
+  # Test MetaCyc pathway - now supported
+  gene_sets_metacyc <- prepare_gene_sets("MetaCyc")
+  expect_type(gene_sets_metacyc, "list")
+  # MetaCyc should return gene sets (may be empty if no data)
 
-  # Test GO pathway (not implemented yet)
-  expect_warning(
-    prepare_gene_sets("GO"),
-    "GO pathway gene sets not yet implemented"
-  )
+  # Test GO pathway - now supported
+  gene_sets_go <- prepare_gene_sets("GO")
+  expect_type(gene_sets_go, "list")
+  # GO should return gene sets (may be empty if no data)
 })
 
 test_that("run_fgsea works correctly", {

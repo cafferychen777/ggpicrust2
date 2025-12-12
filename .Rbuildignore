@@ -41,3 +41,9 @@
 ^\.cache_go_build/$
 ^temp_cleanup/$
 ^ggpicrust2.*\.tar\.gz$
+^temp_cleanup$
+^demos$
+^ggpicrust\.R$
+^COMMIT_PLAN\.md$
+^DISCUSSION_.*\.md$
+^JESSICA_.*\.txt$

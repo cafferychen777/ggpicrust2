@@ -128,10 +128,14 @@ test_that("pathway_gsea works with GO pathway_type", {
   abundance_data <- abundance_data[1:100, ]
   
   # Test GO GSEA with BP category
+  # Metadata already has rownames, just convert to plain data.frame
+  meta_df <- as.data.frame(metadata)
+  rownames(meta_df) <- meta_df$sample_name
+
   expect_no_error({
     gsea_results_bp <- pathway_gsea(
       abundance = abundance_data,
-      metadata = metadata %>% tibble::column_to_rownames("sample_name"),
+      metadata = meta_df,
       group = "Environment",
       pathway_type = "GO",
       go_category = "BP",
@@ -146,7 +150,7 @@ test_that("pathway_gsea works with GO pathway_type", {
   expect_no_error({
     gsea_results_mf <- pathway_gsea(
       abundance = abundance_data,
-      metadata = metadata %>% tibble::column_to_rownames("sample_name"),
+      metadata = meta_df,
       group = "Environment",
       pathway_type = "GO",
       go_category = "MF",
@@ -279,6 +283,7 @@ test_that("GO pathway analysis handles edge cases", {
   minimal_abundance <- matrix(c(1, 2, 3, 4, 5, 6), nrow = 2,
                              dimnames = list(c("K00001", "K00002"),
                                            c("S1", "S2", "S3")))
+  # Need at least 4 samples for statistical analysis
   minimal_metadata <- data.frame(
     sample = c("S1", "S2", "S3"),
     group = c("A", "A", "B"),
@@ -286,8 +291,8 @@ test_that("GO pathway analysis handles edge cases", {
   )
   rownames(minimal_metadata) <- minimal_metadata$sample
 
-  # Should handle minimal data gracefully
-  expect_no_error({
+  # Should error with insufficient samples (< 4)
+  expect_error({
     result <- pathway_gsea(
       abundance = minimal_abundance,
       metadata = minimal_metadata,
@@ -299,7 +304,7 @@ test_that("GO pathway analysis handles edge cases", {
       max_size = 100,
       nperm = 10
     )
-  })
+  }, "Insufficient overlapping samples")
 })
 
 test_that("GO error handling provides informative messages", {

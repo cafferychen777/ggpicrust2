@@ -2,21 +2,43 @@
 library(testthat)
 
 # Advanced helper functions for creating controlled test scenarios
-create_controlled_gsea_results <- function(significant_pathways, non_significant_pathways, 
+create_controlled_gsea_results <- function(significant_pathways, non_significant_pathways,
                                           p_threshold = 0.05, effect_sizes = NULL) {
   all_pathways <- c(significant_pathways, non_significant_pathways)
   n_total <- length(all_pathways)
-  
+  n_sig <- length(significant_pathways)
+  n_nonsig <- length(non_significant_pathways)
+
+  # Handle empty case
+  if (n_total == 0) {
+    return(data.frame(
+      pathway_id = character(0),
+      pathway_name = character(0),
+      size = integer(0),
+      ES = numeric(0),
+      NES = numeric(0),
+      pvalue = numeric(0),
+      p.adjust = numeric(0),
+      leading_edge = character(0),
+      method = character(0),
+      stringsAsFactors = FALSE
+    ))
+  }
+
   # Set p.adjust values based on significance
   p_adjust_values <- numeric(n_total)
-  p_adjust_values[1:length(significant_pathways)] <- runif(length(significant_pathways), 0.001, p_threshold - 0.001)
-  p_adjust_values[(length(significant_pathways) + 1):n_total] <- runif(length(non_significant_pathways), p_threshold + 0.001, 0.2)
-  
+  if (n_sig > 0) {
+    p_adjust_values[seq_len(n_sig)] <- runif(n_sig, 0.001, p_threshold - 0.001)
+  }
+  if (n_nonsig > 0) {
+    p_adjust_values[(n_sig + 1):n_total] <- runif(n_nonsig, p_threshold + 0.001, 0.2)
+  }
+
   # Set effect sizes if provided
   if (is.null(effect_sizes)) {
     effect_sizes <- rnorm(n_total, 0, 1.5)
   }
-  
+
   data.frame(
     pathway_id = all_pathways,
     pathway_name = paste("Pathway", all_pathways),
@@ -34,21 +56,42 @@ create_controlled_gsea_results <- function(significant_pathways, non_significant
   )
 }
 
-create_controlled_daa_results <- function(significant_features, non_significant_features, 
+create_controlled_daa_results <- function(significant_features, non_significant_features,
                                          p_threshold = 0.05, fold_changes = NULL) {
   all_features <- c(significant_features, non_significant_features)
   n_total <- length(all_features)
-  
+  n_sig <- length(significant_features)
+  n_nonsig <- length(non_significant_features)
+
+  # Handle empty case
+  if (n_total == 0) {
+    return(data.frame(
+      feature = character(0),
+      method = character(0),
+      group1 = character(0),
+      group2 = character(0),
+      p_values = numeric(0),
+      p_adjust = numeric(0),
+      log_2_fold_change = numeric(0),
+      effect_size = numeric(0),
+      stringsAsFactors = FALSE
+    ))
+  }
+
   # Set p_adjust values based on significance
   p_adjust_values <- numeric(n_total)
-  p_adjust_values[1:length(significant_features)] <- runif(length(significant_features), 0.001, p_threshold - 0.001)
-  p_adjust_values[(length(significant_features) + 1):n_total] <- runif(length(non_significant_features), p_threshold + 0.001, 0.25)
-  
+  if (n_sig > 0) {
+    p_adjust_values[seq_len(n_sig)] <- runif(n_sig, 0.001, p_threshold - 0.001)
+  }
+  if (n_nonsig > 0) {
+    p_adjust_values[(n_sig + 1):n_total] <- runif(n_nonsig, p_threshold + 0.001, 0.25)
+  }
+
   # Set fold changes if provided
   if (is.null(fold_changes)) {
     fold_changes <- rnorm(n_total, 0, 2)
   }
-  
+
   data.frame(
     feature = all_features,
     method = rep("ALDEx2", n_total),
@@ -106,6 +149,7 @@ test_that("compare_gsea_daa overlap analysis responds correctly to p_threshold c
   pathways <- paste0("ko", sprintf("%05d", 1:20))
   
   # Create GSEA results with specific p.adjust values
+  # Note: compare_gsea_daa uses strict inequality (<), not <=
   gsea_results <- data.frame(
     pathway_id = pathways,
     pathway_name = paste("Pathway", pathways),
@@ -113,36 +157,36 @@ test_that("compare_gsea_daa overlap analysis responds correctly to p_threshold c
     ES = rnorm(20, 0, 0.5),
     NES = rnorm(20, 0, 1.2),
     pvalue = runif(20, 0.001, 0.1),
-    p.adjust = c(0.005, 0.01, 0.02, 0.03, 0.04,    # 5 very significant
-                 0.06, 0.07, 0.08, 0.09, 0.095,     # 5 moderately significant
-                 0.11, 0.12, 0.13, 0.14, 0.15,      # 5 not significant
-                 0.16, 0.17, 0.18, 0.19, 0.20),     # 5 not significant
+    p.adjust = c(0.005, 0.009, 0.02, 0.03, 0.04,   # 2 < 0.01, 5 < 0.05
+                 0.06, 0.07, 0.08, 0.09, 0.095,     # 10 < 0.1
+                 0.11, 0.12, 0.13, 0.14, 0.15,      # not significant at 0.1
+                 0.16, 0.17, 0.18, 0.19, 0.20),
     leading_edge = rep("K00001;K00002", 20),
     method = rep("fgsea", 20),
     stringsAsFactors = FALSE
   )
-  
-  # Create DAA results with specific p_adjust values  
+
+  # Create DAA results with specific p_adjust values
   daa_results <- data.frame(
     feature = pathways,
     method = rep("ALDEx2", 20),
     group1 = rep("Control", 20),
     group2 = rep("Treatment", 20),
     p_values = runif(20, 0.001, 0.1),
-    p_adjust = c(0.003, 0.008, 0.015, 0.025, 0.035,  # 5 very significant
-                 0.055, 0.065, 0.075, 0.085, 0.092,   # 5 moderately significant  
-                 0.105, 0.115, 0.125, 0.135, 0.145,   # 5 not significant
-                 0.155, 0.165, 0.175, 0.185, 0.195),  # 5 not significant
+    p_adjust = c(0.003, 0.008, 0.015, 0.025, 0.035,  # 2 < 0.01, 5 < 0.05
+                 0.055, 0.065, 0.075, 0.085, 0.092,   # 10 < 0.1
+                 0.105, 0.115, 0.125, 0.135, 0.145,   # not significant at 0.1
+                 0.155, 0.165, 0.175, 0.185, 0.195),
     log_2_fold_change = rnorm(20, 0, 1.5),
     stringsAsFactors = FALSE
   )
-  
+
   # Test with very strict threshold (p < 0.01)
   comparison_strict <- compare_gsea_daa(gsea_results, daa_results, p_threshold = 0.01)
-  # GSEA: pathways 1-2 significant (p.adjust <= 0.01)
-  # DAA: pathways 1-2 significant (p_adjust <= 0.01) 
+  # GSEA: pathways with p.adjust 0.005, 0.009 are < 0.01 (2 pathways)
+  # DAA: pathways with p_adjust 0.003, 0.008 are < 0.01 (2 pathways)
   expect_equal(comparison_strict$results$n_gsea_total, 2)
-  expect_equal(comparison_strict$results$n_daa_total, 2) 
+  expect_equal(comparison_strict$results$n_daa_total, 2)
   expect_equal(comparison_strict$results$n_overlap, 2)
   
   # Test with standard threshold (p < 0.05)

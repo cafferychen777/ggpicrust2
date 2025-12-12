@@ -43,7 +43,7 @@ gsea_pathway_annotation <- function(gsea_results,
     stop("'gsea_results' must be a data frame")
   }
   
-  if (!pathway_type %in% c("KEGG", "MetaCyc", "GO")) {
+  if (length(pathway_type) != 1 || !pathway_type %in% c("KEGG", "MetaCyc", "GO")) {
     stop("pathway_type must be one of 'KEGG', 'MetaCyc', or 'GO'")
   }
   

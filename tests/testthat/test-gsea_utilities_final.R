@@ -29,30 +29,31 @@ create_gsea_test_data <- function(n_features = 100,
   set.seed(seed)
   
   feature_names <- paste0("K", sprintf("%05d", 1:n_features))
-  sample_names <- c(paste0("Treatment_", 1:n_samples_per_group),
-                   paste0("Control_", 1:n_samples_per_group))
-  
+  # Use A_Treatment, B_Control to ensure correct alphabetical ordering
+  sample_names <- c(paste0("A_Treatment_", 1:n_samples_per_group),
+                   paste0("B_Control_", 1:n_samples_per_group))
+
   # Create baseline abundance matrix
   abundance <- matrix(
-    rnorm(n_features * n_samples_per_group * 2, mean = 50, sd = 8), 
-    nrow = n_features, 
+    rnorm(n_features * n_samples_per_group * 2, mean = 50, sd = 8),
+    nrow = n_features,
     ncol = n_samples_per_group * 2
   )
-  
+
   # Add differential signal to subset of features
   n_signal_features <- floor(n_features * signal_ratio)
   if (n_signal_features > 0) {
-    # Treatment group has higher values for signal features
-    abundance[1:n_signal_features, 1:n_samples_per_group] <- 
+    # A_Treatment group has higher values for signal features
+    abundance[1:n_signal_features, 1:n_samples_per_group] <-
       abundance[1:n_signal_features, 1:n_samples_per_group] + effect_size
   }
-  
+
   rownames(abundance) <- feature_names
   colnames(abundance) <- sample_names
-  
+
   metadata <- data.frame(
     sample_name = sample_names,
-    group = factor(rep(c("Treatment", "Control"), each = n_samples_per_group)),
+    group = factor(rep(c("A_Treatment", "B_Control"), each = n_samples_per_group)),
     stringsAsFactors = FALSE
   )
   rownames(metadata) <- sample_names
@@ -139,20 +140,16 @@ test_that("prepare_gene_sets: KEGG pathway structure validation", {
   })
 })
 
-test_that("prepare_gene_sets: unimplemented pathway types", {
-  expect_warning(
-    metacyc_sets <- prepare_gene_sets("MetaCyc"),
-    "MetaCyc pathway gene sets not yet implemented"
-  )
+test_that("prepare_gene_sets: MetaCyc and GO pathway types", {
+  # MetaCyc is now implemented - should return gene sets
+  metacyc_sets <- prepare_gene_sets("MetaCyc")
   expect_type(metacyc_sets, "list")
-  expect_length(metacyc_sets, 0)
-  
-  expect_warning(
-    go_sets <- prepare_gene_sets("GO"),
-    "GO pathway gene sets not yet implemented"
-  )
+  expect_gt(length(metacyc_sets), 0)
+
+  # GO is now implemented - should return gene sets
+  go_sets <- prepare_gene_sets("GO")
   expect_type(go_sets, "list")
-  expect_length(go_sets, 0)
+  expect_gt(length(go_sets), 0)
 })
 
 # ============================================================================
@@ -388,20 +385,20 @@ test_that("gsea_pathway_annotation: input validation", {
   )
 })
 
-test_that("gsea_pathway_annotation: GO not implemented warning", {
+test_that("gsea_pathway_annotation: GO annotation works", {
   gsea_results <- data.frame(
     pathway_id = "GO:0006096",
-    pathway_name = "GO:0006096", 
+    pathway_name = "GO:0006096",
     size = 15,
     stringsAsFactors = FALSE
   )
-  
-  expect_warning(
-    result <- gsea_pathway_annotation(gsea_results, pathway_type = "GO"),
-    "GO pathway annotation not yet implemented"
-  )
-  
-  expect_identical(result, gsea_results)
+
+  # GO annotation is now fully implemented
+  result <- gsea_pathway_annotation(gsea_results, pathway_type = "GO")
+
+  expect_s3_class(result, "data.frame")
+  expect_equal(nrow(result), 1)
+  expect_true("pathway_name" %in% colnames(result))
 })
 
 # ============================================================================

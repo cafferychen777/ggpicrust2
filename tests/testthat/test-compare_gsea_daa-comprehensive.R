@@ -182,6 +182,7 @@ test_that("compare_gsea_daa respects different p_threshold values", {
   skip_if_not_installed("ggplot2")
   
   # Create test data with known p-values
+  # Note: compare_gsea_daa uses strict inequality (<), not <=
   gsea_results <- data.frame(
     pathway_id = paste0("ko", sprintf("%05d", 1:10)),
     pathway_name = paste("Pathway", 1:10),
@@ -189,12 +190,12 @@ test_that("compare_gsea_daa respects different p_threshold values", {
     ES = rnorm(10, 0, 0.5),
     NES = rnorm(10, 0, 1.5),
     pvalue = runif(10, 0.001, 0.1),
-    p.adjust = c(0.01, 0.02, 0.03, 0.06, 0.08, 0.10, 0.12, 0.15, 0.18, 0.20),
+    p.adjust = c(0.005, 0.02, 0.03, 0.06, 0.08, 0.10, 0.12, 0.15, 0.18, 0.19),
     leading_edge = replicate(10, paste(sample(LETTERS, 5), collapse = ";")),
     method = rep("fgsea", 10),
     stringsAsFactors = FALSE
   )
-  
+
   daa_results <- data.frame(
     feature = paste0("ko", sprintf("%05d", 1:10)),
     method = rep("ALDEx2", 10),
@@ -205,23 +206,24 @@ test_that("compare_gsea_daa respects different p_threshold values", {
     log_2_fold_change = rnorm(10, 0, 2),
     stringsAsFactors = FALSE
   )
-  
+
   # Test with strict threshold
   comparison_strict <- compare_gsea_daa(gsea_results, daa_results, p_threshold = 0.01)
-  
+
   # Test with lenient threshold
   comparison_lenient <- compare_gsea_daa(gsea_results, daa_results, p_threshold = 0.2)
-  
+
   # Strict threshold should have fewer significant pathways
   expect_true(comparison_strict$results$n_gsea_total <= comparison_lenient$results$n_gsea_total)
   expect_true(comparison_strict$results$n_daa_total <= comparison_lenient$results$n_daa_total)
-  
-  # With p_threshold = 0.01: GSEA should have 1 significant (p.adjust = 0.01)
-  # DAA should have 1 significant (p_adjust = 0.005)
+
+  # With p_threshold = 0.01 (strict <):
+  # GSEA: only 0.005 < 0.01, so 1 significant
+  # DAA: only 0.005 < 0.01, so 1 significant
   expect_equal(comparison_strict$results$n_gsea_total, 1)
   expect_equal(comparison_strict$results$n_daa_total, 1)
-  
-  # With p_threshold = 0.2: all should be significant
+
+  # With p_threshold = 0.2: all values are < 0.2
   expect_equal(comparison_lenient$results$n_gsea_total, 10)
   expect_equal(comparison_lenient$results$n_daa_total, 10)
 })

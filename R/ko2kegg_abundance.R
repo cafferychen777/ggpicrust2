@@ -167,6 +167,10 @@ ko2kegg_abundance <- function (file = NULL, data = NULL) {
       ".csv" = readr::read_delim(file, delim = ",", escape_double = FALSE, trim_ws = TRUE)
     )
   } else {
+    # Validate that data is a data.frame before proceeding
+    if (!is.data.frame(data)) {
+      stop("The provided data must be a data.frame")
+    }
     message("Processing provided data frame...")
     abundance <- data
   }

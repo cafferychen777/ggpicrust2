@@ -226,7 +226,8 @@ test_that("visualize_gsea: n_pathways filtering is simple and correct", {
   
   # Test with n_pathways = 0 (edge case)
   plot_zero <- visualize_gsea(gsea_data, plot_type = "barplot", n_pathways = 0)
-  expect_equal(nrow(plot_zero$data), 0)
+  # Empty plot may have NULL data or 0 rows
+  expect_true(is.null(plot_zero$data) || nrow(plot_zero$data) == 0)
 })
 
 #=============================================================================
@@ -659,7 +660,8 @@ test_that("visualize_gsea: Empty data edge cases", {
   expect_no_error({
     plot_empty <- visualize_gsea(empty_data, plot_type = "barplot", n_pathways = 5)
     expect_s3_class(plot_empty, "ggplot")
-    expect_equal(nrow(plot_empty$data), 0)
+    # Empty plot may have NULL data or 0 rows
+    expect_true(is.null(plot_empty$data) || nrow(plot_empty$data) == 0)
   })
   
   # Test with single row
