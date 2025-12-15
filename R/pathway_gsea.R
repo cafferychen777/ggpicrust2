@@ -559,9 +559,13 @@ calculate_rank_metric <- function(abundance,
     sd1 <- apply(abundance[, group1_samples, drop = FALSE], 1, stats::sd)
     sd2 <- apply(abundance[, group2_samples, drop = FALSE], 1, stats::sd)
     
-    # Handle zero standard deviations
-    sd1[sd1 == 0] <- 0.00001
-    sd2[sd2 == 0] <- 0.00001
+    # Handle zero standard deviations using GSEA-style minimum
+    # GSEA uses: σ_min = 0.2 * |μ|, where μ=0 is adjusted to μ=1
+    # This ensures the floor is proportional to the data scale
+    adjusted_mean1 <- ifelse(mean1 == 0, 1, abs(mean1))
+    adjusted_mean2 <- ifelse(mean2 == 0, 1, abs(mean2))
+    sd1 <- pmax(sd1, 0.2 * adjusted_mean1)
+    sd2 <- pmax(sd2, 0.2 * adjusted_mean2)
     
     metric <- (mean1 - mean2) / (sd1 + sd2)
     # Ensure names are preserved - critical for fgsea
@@ -581,11 +585,18 @@ calculate_rank_metric <- function(abundance,
     # Log2 fold change
     mean1 <- rowMeans(abundance[, group1_samples, drop = FALSE])
     mean2 <- rowMeans(abundance[, group2_samples, drop = FALSE])
-    
-    # Add small constant to avoid division by zero
-    mean1[mean1 == 0] <- 0.00001
-    mean2[mean2 == 0] <- 0.00001
-    
+
+    # Add data-driven pseudocount to avoid log(0)
+    # Use small fraction of minimum non-zero mean for appropriate scaling
+    non_zero_means <- c(mean1[mean1 > 0], mean2[mean2 > 0])
+    pseudocount <- if (length(non_zero_means) > 0) {
+      min(non_zero_means) * 0.01
+    } else {
+      1e-6  # Fallback for rare all-zero case
+    }
+    mean1[mean1 == 0] <- pseudocount
+    mean2[mean2 == 0] <- pseudocount
+
     metric <- log2(mean1 / mean2)
     # Ensure names are preserved - critical for fgsea
     names(metric) <- rownames(abundance)
