@@ -1125,10 +1125,16 @@ perform_maaslin2_analysis <- function(abundance_mat, metadata, group, reference,
 # Helper function: Perform Lefser analysis
 perform_lefser_analysis <- function(abundance_mat, metadata, group, Level) {
   message("Running Lefser analysis...")
-  
+
   # Check if lefser package is available
   if (!requireNamespace("lefser", quietly = TRUE)) {
     stop("The 'lefser' package is required for Lefser analysis. Please install it using BiocManager::install('lefser')")
+  }
+
+  # Check if we only have 2 groups (lefser requirement)
+  if (length(Level) != 2) {
+    message("Lefser requires exactly 2 groups. Found ", length(Level), " groups.")
+    return(NULL)
   }
 
   # Create SummarizedExperiment object
@@ -1137,53 +1143,56 @@ perform_lefser_analysis <- function(abundance_mat, metadata, group, Level) {
     colData = metadata
   )
 
-  # Perform Lefser analysis
+  # Perform Lefser analysis to get LDA scores (effect sizes)
   lefser_results <- tryCatch({
-    lefser::lefser(se, classCol = group)  # Using classCol instead of deprecated groupCol
+    lefser::lefser(se, classCol = group)
   }, error = function(e) {
     message("Lefser analysis failed: ", e$message)
     NULL
   })
 
-  # Create results for all features, not just significant ones
+  # Get all features and group assignments
   all_features <- rownames(abundance_mat)
+  group_vector <- metadata[[group]]
 
-  # Check if we only have 2 groups (lefser requirement)
-  if (length(Level) != 2) {
-    message("Lefser requires exactly 2 groups. Found ", length(Level), " groups.")
-    return(NULL)
-  }
+  # Calculate Wilcoxon p-values for all features
+  # This is consistent with LEfSe methodology which uses Kruskal-Wallis/Wilcoxon internally
+  p_values <- sapply(seq_len(nrow(abundance_mat)), function(i) {
+    feature_values <- abundance_mat[i, ]
+    group1_values <- feature_values[group_vector == Level[1]]
+    group2_values <- feature_values[group_vector == Level[2]]
 
-  # Initialize results with all features
+    # Handle edge cases
+    if (length(unique(c(group1_values, group2_values))) <= 1) {
+      return(1.0)  # No variation, not significant
+    }
+
+    tryCatch({
+      wilcox.test(group1_values, group2_values, exact = FALSE)$p.value
+    }, error = function(e) {
+      1.0  # Return 1.0 if test fails
+    })
+  })
+
+  # Initialize results with Wilcoxon p-values
   results <- data.frame(
     feature = all_features,
     method = "Lefser",
     group1 = Level[1],
     group2 = Level[2],
-    p_values = rep(1.0, length(all_features)),  # Default p-value of 1 for non-significant
+    p_values = p_values,
+    lda_score = rep(NA_real_, length(all_features)),  # LDA effect size from lefser
     stringsAsFactors = FALSE
   )
 
-  # If significant features found, update their p-values
+  # Add LDA scores for features identified by lefser
   if (!is.null(lefser_results) && nrow(lefser_results) > 0) {
-    # Match significant features to all features
     sig_indices <- match(lefser_results$features, all_features)
-
-    # Convert effect scores to p-values (higher absolute effect score = lower p-value)
-    # This is a simplified conversion; in practice, Lefser uses Wilcoxon test internally
-    effect_scores <- abs(lefser_results$scores)
-    # Convert to p-values: higher effect scores get lower p-values
-    max_score <- max(effect_scores, na.rm = TRUE)
-    if (max_score > 0) {
-      p_vals <- 1 - (effect_scores / max_score) * 0.95  # Scale to 0.05-1.0 range
-    } else {
-      p_vals <- rep(0.5, length(effect_scores))
-    }
-
-    # Update p-values for significant features
-    results$p_values[sig_indices] <- p_vals
+    valid_indices <- !is.na(sig_indices)
+    results$lda_score[sig_indices[valid_indices]] <- lefser_results$scores[valid_indices]
+    message(sprintf("Lefser identified %d features with LDA score > threshold", sum(valid_indices)))
   } else {
-    message("No significant features found by Lefser analysis.")
+    message("No significant features found by Lefser LDA analysis.")
   }
 
   return(results)
