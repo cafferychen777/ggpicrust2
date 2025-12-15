@@ -304,6 +304,19 @@ calculate_abundance_stats <- function(abundance, metadata, group, features, grou
     stringsAsFactors = FALSE
   )
 
+  # Calculate data-driven pseudocount for log2 fold change
+
+  # Use half of the minimum non-zero relative abundance to ensure
+  # pseudocount is smaller than any real value in the data
+  all_values <- as.vector(relative_abundance)
+  non_zero_values <- all_values[all_values > 0]
+  if (length(non_zero_values) > 0) {
+    pseudocount <- min(non_zero_values) * 0.5
+  } else {
+    # Fallback for rare all-zero case (shouldn't happen with relative abundance)
+    pseudocount <- 1e-6
+  }
+
   for (i in seq_len(nrow(relative_abundance))) {
     feature_name <- rownames(relative_abundance)[i]
 
@@ -318,8 +331,7 @@ calculate_abundance_stats <- function(abundance, metadata, group, features, grou
     sd2 <- stats::sd(group2_values, na.rm = TRUE)
 
     # Calculate log2 fold change (group2/group1)
-    # Add small pseudocount to avoid log(0)
-    pseudocount <- 1e-10
+    # Pseudocount is calculated above based on data scale
     log2_fc <- log2((mean2 + pseudocount) / (mean1 + pseudocount))
 
     # Store results
