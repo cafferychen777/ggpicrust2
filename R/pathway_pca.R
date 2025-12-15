@@ -228,8 +228,9 @@ pathway_pca <- function(abundance,
   # Keep the first two principal components
   pca_axis <- pca_result$x[,1:2]
 
-  # Calculate the proportion of total variation explained by each PC
-  pca_proportion <- pca_result$sdev[1:2]/sum(pca_result$sdev)*100
+  # Calculate the proportion of total variance explained by each PC
+  # Note: variance = sdev^2, so we need to square the standard deviations
+  pca_proportion <- (pca_result$sdev[1:2]^2) / sum(pca_result$sdev^2) * 100
 
   # Combine the PCA results with the metadata information
   pca <- cbind(pca_axis, metadata %>% select(all_of(c(group))))
