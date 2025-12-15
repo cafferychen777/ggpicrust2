@@ -4,45 +4,58 @@
 \alias{ko2kegg_abundance}
 \title{Convert KO abundance in picrust2 export files to KEGG pathway abundance}
 \usage{
-ko2kegg_abundance(file = NULL, data = NULL)
+ko2kegg_abundance(file = NULL, data = NULL, method = c("abundance", "sum"))
 }
 \arguments{
 \item{file}{A character string representing the file path of the input file containing KO abundance data in picrust2 export format. The input file should have KO identifiers in the first column and sample identifiers in the first row. The remaining cells should contain the abundance values for each KO-sample pair.}
 
 \item{data}{An optional data.frame containing KO abundance data in the same format as the input file. If provided, the function will use this data instead of reading from the file. By default, this parameter is set to NULL.}
+
+\item{method}{Method for calculating pathway abundance. One of:
+\itemize{
+  \item \code{"abundance"}: (Default) PICRUSt2-style calculation using the mean of upper-half sorted KO abundances. This method is more robust and avoids inflating abundances for pathways with more KOs.
+  \item \code{"sum"}: Simple summation of all KO abundances. This is the legacy method and may double-count KOs belonging to multiple pathways.
+}}
 }
 \value{
-A data frame with KEGG pathway abundance values. Rows represent KEGG pathways, identified by their KEGG pathway IDs. Columns represent samples, identified by their sample IDs from the input file. Each cell contains the abundance of a specific KEGG pathway in a given sample, calculated by summing the abundances of the corresponding KOs in the input file.
+A data frame with KEGG pathway abundance values. Rows represent KEGG pathways, identified by their KEGG pathway IDs. Columns represent samples, identified by their sample IDs from the input file.
 }
 \description{
 This function takes a file containing KO (KEGG Orthology) abundance data in picrust2 export format and converts it to KEGG pathway abundance data.
 The input file should be in .tsv, .txt, or .csv format.
+}
+\details{
+The default \code{"abundance"} method follows PICRUSt2's approach for calculating pathway abundance:
+\enumerate{
+  \item For each pathway, collect abundances of all associated KOs present in the data
+  \item Sort the abundances in ascending order
+  \item Take the upper half of the sorted values
+  \item Calculate the mean as the pathway abundance
+}
+
+This approach has several advantages over simple summation:
+\itemize{
+  \item Does not inflate abundances for pathways containing more KOs
+  \item More robust to missing or low-abundance KOs
+  \item Provides a more accurate representation of pathway activity
+}
+
+The \code{"sum"} method is provided for backward compatibility and simply sums all KO abundances for each pathway.
 }
 \examples{
 \dontrun{
 library(ggpicrust2)
 library(readr)
 
-# Example 1: Demonstration with a hypothetical input file
-
-# Prepare an input file path
-input_file <- "path/to/your/picrust2/results/pred_metagenome_unstrat.tsv"
-
-# Run ko2kegg_abundance function
-kegg_abundance <- ko2kegg_abundance(file = input_file)
-
-# Alternatively, read the data from a file and use the data argument
-file_path <- "path/to/your/picrust2/results/pred_metagenome_unstrat.tsv"
-ko_abundance <- read_delim(file_path, delim = "\t")
-kegg_abundance <- ko2kegg_abundance(data = ko_abundance)
-
-# Example 2: Working with real data
-# In this case, we're using an existing dataset from the ggpicrust2 package.
-
-# Load the data
+# Example 1: Using the recommended method (PICRUSt2-style)
 data(ko_abundance)
+kegg_abundance <- ko2kegg_abundance(data = ko_abundance, method = "abundance")
 
-# Apply the ko2kegg_abundance function to our real dataset
-kegg_abundance <- ko2kegg_abundance(data = ko_abundance)
+# Example 2: Using the legacy sum method
+kegg_abundance_sum <- ko2kegg_abundance(data = ko_abundance, method = "sum")
+
+# Example 3: From file
+input_file <- "path/to/your/picrust2/results/pred_metagenome_unstrat.tsv"
+kegg_abundance <- ko2kegg_abundance(file = input_file)
 }
 }
