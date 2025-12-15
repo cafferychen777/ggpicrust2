@@ -854,21 +854,31 @@ perform_deseq2_analysis <- function(abundance_mat, metadata, group, Level) {
       # Create DESeqDataSet
       dds <- DESeq2::DESeqDataSet(se, design = as.formula(paste0("~", group)))
 
-      # 根据样本量选择合适的拟合方法
-      fitType <- if(ncol(abundance_mat) < 6) "mean" else "local"
-
       # Run DESeq2 pipeline with improved error handling
       dds <- DESeq2::estimateSizeFactors(dds)
 
-      # Try to estimate dispersions with different methods
+      # Estimate dispersions with fallback chain: parametric → local → mean → gene-wise
+      # Note: fitType choice should NOT be based on sample size (DESeq2 documentation)
+      # parametric is the default and recommended for most cases
+      # DESeq2 automatically falls back to local if parametric fails
       dds <- tryCatch({
-        DESeq2::estimateDispersions(dds, fitType = fitType)
-      }, error = function(e) {
-        # If standard dispersion estimation fails, use gene-wise estimates
-        message("Standard dispersion estimation failed, using gene-wise estimates...")
-        dds <- DESeq2::estimateDispersionsGeneEst(dds)
-        DESeq2::dispersions(dds) <- SummarizedExperiment::mcols(dds)$dispGeneEst
-        return(dds)
+        DESeq2::estimateDispersions(dds, fitType = "parametric")
+      }, error = function(e1) {
+        message("Parametric dispersion fit failed, trying local regression...")
+        tryCatch({
+          DESeq2::estimateDispersions(dds, fitType = "local")
+        }, error = function(e2) {
+          message("Local dispersion fit failed, trying mean...")
+          tryCatch({
+            DESeq2::estimateDispersions(dds, fitType = "mean")
+          }, error = function(e3) {
+            # Last resort: use gene-wise estimates directly
+            message("All dispersion fitting methods failed, using gene-wise estimates...")
+            dds <- DESeq2::estimateDispersionsGeneEst(dds)
+            DESeq2::dispersions(dds) <- SummarizedExperiment::mcols(dds)$dispGeneEst
+            return(dds)
+          })
+        })
       })
 
       dds <- DESeq2::nbinomWaldTest(dds)
