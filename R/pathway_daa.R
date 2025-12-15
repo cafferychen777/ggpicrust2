@@ -487,10 +487,21 @@ pathway_daa <- function(abundance, metadata, group, daa_method = "ALDEx2",
     "Lefser" = perform_lefser_analysis(abundance_mat, metadata, group, Level)
   )
 
+
   # Add multiple testing correction
+  # Note: Some methods (e.g., ALDEx2) provide pre-computed BH-corrected p-values
+
+  # which are more accurate as they account for Monte Carlo sampling uncertainty
   if (!is.null(result) && "p_values" %in% colnames(result) && nrow(result) > 0) {
-    result$p_adjust <- p.adjust(result$p_values, method = p.adjust)
-    result$adj_method <- p.adjust
+    if ("p_adjust" %in% colnames(result)) {
+      # p_adjust already computed by the method (e.g., ALDEx2)
+      # Just add the adjustment method indicator
+      result$adj_method <- "BH (method-specific)"
+    } else {
+      # Apply standard p.adjust for methods without pre-computed values
+      result$p_adjust <- p.adjust(result$p_values, method = p.adjust)
+      result$adj_method <- p.adjust
+    }
   }
 
   # Add abundance statistics if requested
@@ -712,6 +723,9 @@ perform_aldex2_analysis <- function(abundance_mat, Group, Level, length_Level, i
     }
 
     # Build result dataframe using original Level names
+    # Use ALDEx2's pre-computed BH-corrected p-values (Monte Carlo-based)
+    # These are more accurate than simple p.adjust() as they account for
+    # the uncertainty in the CLR transformation
     base_df <- data.frame(
       feature = rep(rownames(results), 2),
       method = c(
@@ -721,6 +735,7 @@ perform_aldex2_analysis <- function(abundance_mat, Group, Level, length_Level, i
       group1 = rep(Level[1], 2 * nrow(results)),
       group2 = rep(Level[2], 2 * nrow(results)),
       p_values = c(results$we.ep, results$wi.ep),
+      p_adjust = c(results$we.eBH, results$wi.eBH),
       stringsAsFactors = FALSE
     )
 
@@ -778,8 +793,9 @@ perform_aldex2_analysis <- function(abundance_mat, Group, Level, length_Level, i
     
     # Get Kruskal-Wallis and GLM test results
     results <- ALDEx2::aldex.kw(ALDEx2_object)
-    
+
     # Build initial result dataframe
+    # Use ALDEx2's pre-computed BH-corrected p-values (Monte Carlo-based)
     result_df <- data.frame(
       feature = rep(rownames(results), 2),
       method = c(
@@ -787,6 +803,7 @@ perform_aldex2_analysis <- function(abundance_mat, Group, Level, length_Level, i
         rep("ALDEx2_glm test", nrow(results))
       ),
       p_values = c(results$kw.ep, results$glm.ep),
+      p_adjust = c(results$kw.eBH, results$glm.eBH),
       stringsAsFactors = FALSE
     )
     
