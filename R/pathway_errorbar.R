@@ -423,42 +423,78 @@ pathway_errorbar <-
     error_bar_pivot_longer_tibble_summarised <-
       error_bar_pivot_longer_tibble_summarised %>% mutate(group2 = "nonsense")
 
+    # When ko_to_kegg = TRUE, validate pathway_class column exists
+    # This is required for proper alignment of pathway class annotations
+    if (ko_to_kegg == TRUE && !"pathway_class" %in% colnames(daa_results_filtered_sub_df)) {
+      stop(
+        "The 'pathway_class' column is missing but ko_to_kegg = TRUE. ",
+        "Please use pathway_annotation(..., ko_to_kegg = TRUE) to annotate the data, ",
+        "or set ko_to_kegg = FALSE if you don't need pathway class annotations."
+      )
+    }
+
     switch(
       order,
       "p_values" = {
-        order <- order(daa_results_filtered_sub_df$p_adjust)
+        if (ko_to_kegg == TRUE) {
+          # Nested sorting: first by pathway_class, then by p_adjust within each class
+          # This ensures pathway class color blocks align correctly
+          order <- order(
+            daa_results_filtered_sub_df$pathway_class,
+            daa_results_filtered_sub_df$p_adjust
+          )
+        } else {
+          order <- order(daa_results_filtered_sub_df$p_adjust)
+        }
       },
       "name" = {
-        order <- order(daa_results_filtered_sub_df$feature)
+        if (ko_to_kegg == TRUE) {
+          # Nested sorting: first by pathway_class, then by feature name within each class
+          order <- order(
+            daa_results_filtered_sub_df$pathway_class,
+            daa_results_filtered_sub_df$feature
+          )
+        } else {
+          order <- order(daa_results_filtered_sub_df$feature)
+        }
       },
       "group" = {
         # Initialize pro column with default value 1
         daa_results_filtered_sub_df$pro <- 1
-        
+
         for (i in levels(error_bar_pivot_longer_tibble_summarised$name)) {
           # Get subset for current feature
           error_bar_pivot_longer_tibble_summarised_sub <-
             error_bar_pivot_longer_tibble_summarised[error_bar_pivot_longer_tibble_summarised$name == i,]
-          
+
           # Find group with maximum mean abundance
           pro_group <-
             error_bar_pivot_longer_tibble_summarised_sub[error_bar_pivot_longer_tibble_summarised_sub$mean ==
                                                             max(error_bar_pivot_longer_tibble_summarised_sub$mean),]$group
           pro_group <- as.vector(pro_group)
-          
+
           # Find indices of rows matching the current feature, excluding NA values
           idx <- which(daa_results_filtered_sub_df$feature == i & !is.na(daa_results_filtered_sub_df$feature))
-          
+
           # Only assign values if valid indices exist
           if (length(idx) > 0) {
             daa_results_filtered_sub_df$pro[idx] <- pro_group
           }
         }
-        
-        # Order by group and p-value
-        order <-
-          order(daa_results_filtered_sub_df$pro,
-                daa_results_filtered_sub_df$p_adjust)
+
+        if (ko_to_kegg == TRUE) {
+          # Nested sorting: first by pathway_class, then by group and p_adjust within each class
+          order <- order(
+            daa_results_filtered_sub_df$pathway_class,
+            daa_results_filtered_sub_df$pro,
+            daa_results_filtered_sub_df$p_adjust
+          )
+        } else {
+          # Order by group and p-value
+          order <-
+            order(daa_results_filtered_sub_df$pro,
+                  daa_results_filtered_sub_df$p_adjust)
+        }
       },
       "pathway_class" = {
         if (!"pathway_class" %in% colnames(daa_results_filtered_sub_df)) {
