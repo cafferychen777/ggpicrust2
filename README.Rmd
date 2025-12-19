@@ -31,6 +31,13 @@ If you are interested in exploring and analyzing your PICRUSt2 output data, *ggp
 
 ## News
 
+📊 **New Visualization Functions: Volcano Plot & Ridge Plot**
+
+We've added two new visualization functions for enhanced analysis and interpretation:
+
+- **`pathway_volcano()`**: Creates publication-quality volcano plots for differential abundance analysis, with smart label placement and color-coded significance categories.
+- **`pathway_ridgeplot()`**: Creates ridge plots (joy plots) for GSEA results interpretation, showing distribution of gene abundances within enriched pathways.
+
 🔄 **Updated Reference Databases for Improved Pathway Annotation (v2.1.4)**
 
 We've significantly enhanced the reference databases used for pathway annotation:
@@ -84,6 +91,8 @@ We appreciate your support and interest in our tools and look forward to seeing 
     -   [pathway_errorbar()](#pathway_errorbar)
     -   [pathway_heatmap()](#pathway_heatmap)
     -   [pathway_pca()](#pathway_pca)
+    -   [pathway_volcano()](#pathway_volcano)
+    -   [pathway_ridgeplot()](#pathway_ridgeplot)
     -   [compare_metagenome_results()](#compare_metagenome_results)
     -   [pathway_gsea()](#pathway_gsea)
     -   [visualize_gsea()](#visualize_gsea)

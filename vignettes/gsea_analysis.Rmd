@@ -248,6 +248,35 @@ enrichment_plot <- visualize_gsea(
 enrichment_plot
 ```
 
+### Ridge Plot
+
+Ridge plots (also known as joy plots) provide a powerful way to visualize the distribution of gene abundances or fold changes within enriched pathways. This helps understand whether pathways are predominantly up- or down-regulated.
+
+```{r ridge-plot, eval=FALSE}
+# Create a ridge plot for GSEA results
+# Note: Requires ggridges package to be installed
+ridge_plot <- pathway_ridgeplot(
+  gsea_results = gsea_results,
+  abundance = abundance_data,
+  metadata = metadata,
+  group = "Environment",
+  pathway_type = "KEGG",
+  n_pathways = 10,
+  sort_by = "p.adjust",
+  show_direction = TRUE,
+  colors = c("Down" = "#3182bd", "Up" = "#de2d26")
+)
+
+# Display the plot
+ridge_plot
+```
+
+The ridge plot shows:
+- Each pathway as a density ridge
+- Color indicates enrichment direction (Up = red, Down = blue)
+- The distribution of log2 fold changes for genes within each pathway
+- A vertical dashed line at 0 for reference
+
 ## Comparing GSEA and DAA Results
 
 It can be informative to compare the results from GSEA with those from Differential Abundance Analysis (DAA):

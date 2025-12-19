@@ -37,6 +37,30 @@
   - Covariate adjustment examples
   - Updated gsea_analysis.Rmd vignette
 
+### New Visualization Functions
+
+* **Added `pathway_volcano()` function**:
+  - Creates publication-quality volcano plots for differential abundance analysis
+  - Visualizes both statistical significance (-log10 p-value) and effect size (log2 fold change)
+  - Smart label placement using ggrepel to avoid overlapping labels
+  - Color-coded significance categories (Up/Down/Not Significant)
+  - Automatic handling of NA pathway names (won't display "NA" labels)
+  - Handles infinite p-values (when p = 0) gracefully
+  - Customizable thresholds, colors, and appearance
+
+* **Added `pathway_ridgeplot()` function**:
+  - Creates ridge plots (joy plots) for GSEA results interpretation
+  - Shows distribution of gene abundances/fold changes within enriched pathways
+  - Color-coded by enrichment direction (Up/Down)
+  - Automatic pathway-KO mapping using built-in ko_to_kegg_reference data
+  - Supports KEGG and GO pathway types
+  - Helps identify whether pathways are predominantly up- or down-regulated
+  - Requires ggridges package (added to Suggests)
+
+* **New dependencies added to Suggests**:
+  - `ggridges`: Required for ridge plot visualization
+  - `ggrepel`: Used for smart label placement in volcano plots
+
 ---
 
 # ggpicrust2 2.5.5
