@@ -19,6 +19,41 @@ If you are interested in exploring and analyzing your PICRUSt2 output data, *ggp
 
 ## News
 
+📊 **New Visualization Functions: Volcano Plot & Ridge Plot**
+
+We've added two new visualization functions for enhanced analysis and interpretation:
+
+**`pathway_volcano()`**: Creates publication-quality volcano plots for differential abundance analysis
+- Visualizes both statistical significance (-log10 p-value) and effect size (log2 fold change)
+- Smart label placement using ggrepel to avoid overlapping labels
+- Color-coded significance categories (Up/Down/Not Significant)
+- Customizable thresholds, colors, and appearance
+
+**`pathway_ridgeplot()`**: Creates ridge plots (joy plots) for GSEA results interpretation
+- Shows distribution of gene abundances/fold changes within enriched pathways
+- Color-coded by enrichment direction (Up/Down)
+- Automatic pathway-KO mapping using built-in reference data
+- Helps identify whether pathways are predominantly up- or down-regulated
+
+```r
+# Volcano plot example
+volcano_plot <- pathway_volcano(
+  daa_results = daa_annotated,
+  fc_threshold = 1,
+  p_threshold = 0.05,
+  label_top_n = 10
+)
+
+# Ridge plot example
+ridge_plot <- pathway_ridgeplot(
+  gsea_results = gsea_results,
+  abundance = ko_abundance,
+  metadata = metadata,
+  group = "Environment",
+  n_pathways = 10
+)
+```
+
 🧬 **New Feature: Covariate Adjustment & Improved Statistical Methods for pathway_gsea() (Issue #193)**
 
 We've significantly enhanced the `pathway_gsea()` function with statistically superior methods and covariate support:
@@ -145,6 +180,8 @@ We appreciate your support and interest in our tools and look forward to seeing 
     -   [pathway_errorbar()](#pathway_errorbar)
     -   [pathway_heatmap()](#pathway_heatmap)
     -   [pathway_pca()](#pathway_pca)
+    -   [pathway_volcano()](#pathway_volcano)
+    -   [pathway_ridgeplot()](#pathway_ridgeplot)
     -   [compare_metagenome_results()](#compare_metagenome_results)
     -   [pathway_gsea()](#pathway_gsea)
     -   [visualize_gsea()](#visualize_gsea)
@@ -990,6 +1027,173 @@ data("metadata")
 
 pathway_pca(abundance = metacyc_abundance %>% column_to_rownames("pathway"), metadata = metadata, group = "Environment")
 ```
+
+### pathway_volcano() {#pathway_volcano}
+
+The `pathway_volcano()` function creates volcano plots to visualize differential abundance analysis results, showing both statistical significance (-log10 p-value) and effect size (log2 fold change). This is one of the most intuitive ways to identify significantly up- or down-regulated pathways.
+
+**🆕 New in v2.5.6:**
+- Smart label placement using ggrepel
+- Automatic handling of NA pathway names
+- Handles infinite p-values (when p = 0)
+- Color-coded significance categories
+- Customizable thresholds and appearance
+
+#### Basic Usage
+
+``` r
+library(ggpicrust2)
+library(tidyverse)
+
+# Load example data
+data("ko_abundance")
+data("metadata")
+
+# Create KEGG abundance and run DAA
+kegg_abundance <- ko2kegg_abundance(data = ko_abundance)
+daa_results <- pathway_daa(
+  abundance = kegg_abundance,
+  metadata = metadata,
+  group = "Environment",
+  daa_method = "DESeq2"
+)
+
+# Annotate results
+daa_annotated <- pathway_annotation(
+  pathway = "KO",
+  daa_results_df = daa_results,
+  ko_to_kegg = TRUE
+)
+
+# Create volcano plot
+volcano_plot <- pathway_volcano(
+  daa_results = daa_annotated,
+  fc_col = "log2FoldChange",
+  p_col = "p_adjust",
+  label_col = "pathway_name",
+  fc_threshold = 1,
+  p_threshold = 0.05,
+  label_top_n = 10
+)
+print(volcano_plot)
+```
+
+#### Advanced Customization
+
+``` r
+# Customized volcano plot
+volcano_custom <- pathway_volcano(
+  daa_results = daa_annotated,
+  fc_col = "log2FoldChange",
+  p_col = "p_adjust",
+  label_col = "pathway_name",
+  fc_threshold = 0.5,           # Lower fold change threshold
+  p_threshold = 0.01,           # Stricter p-value threshold
+  label_top_n = 15,             # Label more pathways
+  point_size = 2.5,             # Larger points
+  point_alpha = 0.7,            # More opaque
+  colors = c(
+    "Down" = "darkblue",
+    "Not Significant" = "lightgrey",
+    "Up" = "darkred"
+  ),
+  show_threshold_lines = TRUE,
+  title = "Pathway Differential Abundance",
+  x_lab = "log2 Fold Change",
+  y_lab = "-log10(Adjusted P-value)"
+)
+```
+
+#### Key Parameters
+
+- `daa_results`: Data frame from `pathway_daa()` with annotation
+- `fc_col`: Column name for log2 fold change (default: "log2FoldChange")
+- `p_col`: Column name for adjusted p-values (default: "p_adjust")
+- `label_col`: Column name for pathway labels (default: "pathway_name")
+- `fc_threshold`: Absolute fold change threshold for significance (default: 1)
+- `p_threshold`: P-value threshold (default: 0.05)
+- `label_top_n`: Number of top significant pathways to label (default: 10)
+- `colors`: Named vector for Down/Not Significant/Up colors
+- `show_threshold_lines`: Show dashed threshold lines (default: TRUE)
+
+### pathway_ridgeplot() {#pathway_ridgeplot}
+
+The `pathway_ridgeplot()` function creates ridge plots (joy plots) to visualize the distribution of gene abundances or fold changes for enriched pathways from GSEA analysis. This helps interpret whether pathways are predominantly up- or down-regulated.
+
+**🆕 New in v2.5.6:**
+- Automatic pathway-KO mapping using built-in reference data
+- Color-coded by enrichment direction
+- Supports KEGG and GO pathway types
+- Customizable appearance and number of pathways
+
+**Note:** Requires the `ggridges` package to be installed.
+
+#### Basic Usage
+
+``` r
+library(ggpicrust2)
+library(tidyverse)
+
+# Load example data
+data("ko_abundance")
+data("metadata")
+
+# Run GSEA analysis
+gsea_results <- pathway_gsea(
+  abundance = ko_abundance %>% column_to_rownames("#NAME"),
+  metadata = metadata,
+  group = "Environment",
+  pathway_type = "KEGG"
+)
+
+# Create ridge plot
+ridge_plot <- pathway_ridgeplot(
+  gsea_results = gsea_results,
+  abundance = ko_abundance %>% column_to_rownames("#NAME"),
+  metadata = metadata,
+  group = "Environment",
+  pathway_type = "KEGG",
+  n_pathways = 10
+)
+print(ridge_plot)
+```
+
+#### Advanced Customization
+
+``` r
+# Customized ridge plot
+ridge_custom <- pathway_ridgeplot(
+  gsea_results = gsea_results,
+  abundance = ko_abundance %>% column_to_rownames("#NAME"),
+  metadata = metadata,
+  group = "Environment",
+  pathway_type = "KEGG",
+  n_pathways = 15,              # Show more pathways
+  sort_by = "NES",              # Sort by enrichment score
+  show_direction = TRUE,        # Color by direction
+  colors = c(
+    "Down" = "#2166ac",         # Blue for down-regulated
+    "Up" = "#b2182b"            # Red for up-regulated
+  ),
+  scale_height = 0.9,           # Ridge overlap
+  alpha = 0.8,                  # Transparency
+  title = "Gene Distribution in Enriched Pathways",
+  x_lab = "log2 Fold Change"
+)
+```
+
+#### Key Parameters
+
+- `gsea_results`: Data frame from `pathway_gsea()`
+- `abundance`: Original abundance data (genes/KOs as rows)
+- `metadata`: Sample metadata with group information
+- `group`: Column name for grouping variable
+- `pathway_type`: "KEGG", "GO", or "MetaCyc" (default: "KEGG")
+- `n_pathways`: Number of top pathways to display (default: 10)
+- `sort_by`: Sort pathways by "NES", "pvalue", or "p.adjust"
+- `show_direction`: Color ridges by enrichment direction (default: TRUE)
+- `colors`: Named vector for Down/Up colors
+- `scale_height`: Ridge overlap amount (default: 0.9)
 
 ### compare_metagenome_results() {#compare_metagenome_results}
 
