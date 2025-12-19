@@ -47,3 +47,9 @@
 ^COMMIT_PLAN\.md$
 ^DISCUSSION_.*\.md$
 ^JESSICA_.*\.txt$
+^JESSICA_.*\.md$
+^COMPREHENSIVE_TEST_REPORT\.md$
+^demo_issue_.*\.R$
+^PENDING_ISSUES_PRIORITY\.md$
+^Rplots\.pdf$
+^SCIENTIFIC_AUDIT_REPORT\.md$

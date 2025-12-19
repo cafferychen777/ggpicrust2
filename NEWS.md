@@ -1,4 +1,4 @@
-# ggpicrust2 (development version)
+# ggpicrust2 2.5.5
 
 ## Major Features
 

@@ -137,7 +137,7 @@ gsea_pathway_annotation <- function(gsea_results,
     tryCatch({
       data("ko_to_go_reference", package = "ggpicrust2", envir = environment())
       if (exists("ko_to_go_reference", envir = environment()) && !is.null(ko_to_go_reference)) {
-        message("✓ Using complete ko_to_go_reference dataset for annotation")
+        message("[OK] Using complete ko_to_go_reference dataset for annotation")
         data_loaded <- TRUE
       }
     }, error = function(e) {
@@ -151,7 +151,7 @@ gsea_pathway_annotation <- function(gsea_results,
         if (file.exists(data_file)) {
           load(data_file, envir = environment())
           if (exists("ko_to_go_reference", envir = environment()) && !is.null(ko_to_go_reference)) {
-            message("✓ Using complete ko_to_go_reference dataset for annotation from data file")
+            message("[OK] Using complete ko_to_go_reference dataset for annotation from data file")
             data_loaded <- TRUE
           }
         }
@@ -167,7 +167,7 @@ gsea_pathway_annotation <- function(gsea_results,
         if (file.exists(data_file)) {
           load(data_file, envir = environment())
           if (exists("ko_to_go_reference", envir = environment()) && !is.null(ko_to_go_reference)) {
-            message("✓ Using complete ko_to_go_reference dataset for annotation from system file")
+            message("[OK] Using complete ko_to_go_reference dataset for annotation from system file")
             data_loaded <- TRUE
           }
         }
@@ -188,7 +188,7 @@ gsea_pathway_annotation <- function(gsea_results,
         source_file <- system.file("R", "pathway_gsea.R", package = "ggpicrust2")
         if (file.exists(source_file)) {
           source(source_file, local = TRUE)
-          message("→ Loading enhanced GO mapping for annotation")
+          message("-> Loading enhanced GO mapping for annotation")
           ko_to_go_reference <- create_basic_go_mapping()
         } else {
           # Try relative path

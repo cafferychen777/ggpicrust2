@@ -3,6 +3,9 @@ NULL
 
 #' Differential Abundance Analysis for Predicted Functional Pathways
 #'
+#' @name pathway_daa
+#'
+#' @description
 #' Performs differential abundance analysis on predicted functional pathway data using various statistical methods.
 #' This function supports multiple methods for analyzing differences in pathway abundance between groups,
 #' including popular approaches like ALDEx2, DESeq2, edgeR, and others.
@@ -182,7 +185,8 @@ NULL
 #'   \item Maaslin2: Mallick et al. (2021) Multivariable Association Discovery in Population-scale
 #'         Meta-omics Studies.
 #' }
-#'
+NULL
+
 #' Helper function to calculate abundance statistics for differential analysis
 #'
 #' This function calculates mean relative abundance, standard deviation, and log2 fold change
@@ -345,11 +349,7 @@ calculate_abundance_stats <- function(abundance, metadata, group, features, grou
   return(results)
 }
 
-#' @param include_abundance_stats Logical value indicating whether to include
-#'        abundance statistics (mean relative abundance, standard deviation,
-#'        and log2 fold change) in the output. Default is FALSE for backward
-#'        compatibility.
-#'
+#' @rdname pathway_daa
 #' @export
 pathway_daa <- function(abundance, metadata, group, daa_method = "ALDEx2",
                        select = NULL, p.adjust = "BH", reference = NULL,

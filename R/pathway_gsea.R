@@ -413,7 +413,7 @@ prepare_gene_sets <- function(pathway_type = "KEGG", organism = "ko", go_categor
     tryCatch({
       data("ko_to_go_reference", package = "ggpicrust2", envir = environment())
       if (exists("ko_to_go_reference", envir = environment()) && !is.null(ko_to_go_reference)) {
-        message("✓ Using complete ko_to_go_reference dataset from package data")
+        message("[OK] Using complete ko_to_go_reference dataset from package data")
         data_loaded <- TRUE
       }
     }, error = function(e) {
@@ -427,7 +427,7 @@ prepare_gene_sets <- function(pathway_type = "KEGG", organism = "ko", go_categor
         if (file.exists(data_file)) {
           load(data_file, envir = environment())
           if (exists("ko_to_go_reference", envir = environment()) && !is.null(ko_to_go_reference)) {
-            message("✓ Using complete ko_to_go_reference dataset from data file")
+            message("[OK] Using complete ko_to_go_reference dataset from data file")
             data_loaded <- TRUE
           }
         }
@@ -443,7 +443,7 @@ prepare_gene_sets <- function(pathway_type = "KEGG", organism = "ko", go_categor
         if (file.exists(data_file)) {
           load(data_file, envir = environment())
           if (exists("ko_to_go_reference", envir = environment()) && !is.null(ko_to_go_reference)) {
-            message("✓ Using complete ko_to_go_reference dataset from system file")
+            message("[OK] Using complete ko_to_go_reference dataset from system file")
             data_loaded <- TRUE
           }
         }
@@ -459,9 +459,9 @@ prepare_gene_sets <- function(pathway_type = "KEGG", organism = "ko", go_categor
               "For comprehensive GO analysis, consider running data-raw/create_ko_to_go_reference.R\n",
               "to generate the complete dataset.",
               call. = FALSE, immediate. = TRUE)
-      message("→ Creating enhanced GO mapping with 100+ terms covering major biological processes")
+      message("-> Creating enhanced GO mapping with 100+ terms covering major biological processes")
       ko_to_go_reference <- create_basic_go_mapping()
-      message("✓ Enhanced GO mapping ready for analysis")
+      message("[OK] Enhanced GO mapping ready for analysis")
     }
     
     # Convert to data frame format required for GSEA
@@ -560,7 +560,7 @@ calculate_rank_metric <- function(abundance,
     sd2 <- apply(abundance[, group2_samples, drop = FALSE], 1, stats::sd)
     
     # Handle zero standard deviations using GSEA-style minimum
-    # GSEA uses: σ_min = 0.2 * |μ|, where μ=0 is adjusted to μ=1
+    # GSEA uses: sigma_min = 0.2 * |mu|, where mu=0 is adjusted to mu=1
     # This ensures the floor is proportional to the data scale
     adjusted_mean1 <- ifelse(mean1 == 0, 1, abs(mean1))
     adjusted_mean2 <- ifelse(mean2 == 0, 1, abs(mean2))
