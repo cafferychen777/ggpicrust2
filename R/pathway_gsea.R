@@ -322,11 +322,30 @@ pathway_gsea <- function(abundance,
       }
     }
   }
-  
+
+  # Ensure metadata has proper rownames for sample matching
+  # This handles tibbles and data.frames where rownames may not be set properly
+  metadata <- as.data.frame(metadata)
+  if (length(intersect(colnames(abundance_mat), rownames(metadata))) == 0) {
+    # Try to use sample/sample_name column as rownames
+    sample_col <- NULL
+    if ("sample_name" %in% colnames(metadata)) {
+      sample_col <- "sample_name"
+    } else if ("sample" %in% colnames(metadata)) {
+      sample_col <- "sample"
+    } else if ("SampleID" %in% colnames(metadata)) {
+      sample_col <- "SampleID"
+    }
+
+    if (!is.null(sample_col)) {
+      rownames(metadata) <- metadata[[sample_col]]
+    }
+  }
+
   # Extract group information
   Group <- factor(metadata[[group]])
   names(Group) <- rownames(metadata)
-  
+
   # Find common samples (eliminate special case handling)
   common_samples <- intersect(colnames(abundance_mat), names(Group))
   
