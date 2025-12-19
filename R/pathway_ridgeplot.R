@@ -201,8 +201,15 @@ pathway_ridgeplot <- function(gsea_results,
      })
    } else if (pathway_type == "GO") {
      tryCatch({
-       data("ko_to_go_reference", package = "ggpicrust2", envir = environment())
-       pathway_reference <- ko_to_go_reference
+       go_ref <- NULL
+       if (exists("ko_to_go_reference", envir = asNamespace("ggpicrust2"))) {
+         go_ref <- get("ko_to_go_reference", envir = asNamespace("ggpicrust2"))
+       } else {
+         load_env <- new.env()
+         data("ko_to_go_reference", package = "ggpicrust2", envir = load_env)
+         go_ref <- load_env$ko_to_go_reference
+       }
+       pathway_reference <- go_ref
      }, error = function(e) {
        stop("Cannot load GO reference data. Please provide pathway_reference parameter.")
      })
