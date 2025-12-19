@@ -233,9 +233,26 @@ ko2kegg_abundance <- function (file = NULL, data = NULL, method = c("abundance",
     stop("Error: Data must have at least 2 columns (KO IDs and at least one sample)")
   }
 
-  if (!("function." %in% colnames(abundance))) {
-    if (colnames(abundance)[1] != "function.") {
-      stop("Error: First column must be named 'function.' containing KO IDs")
+  # PICRUSt2 compatibility: Accept various column name formats for KO IDs
+  # Common formats: "function.", "function", "sequence", "#NAME"
+  valid_ko_column_names <- c("function.", "function", "sequence", "#NAME")
+  first_col_name <- colnames(abundance)[1]
+
+  if (first_col_name %in% valid_ko_column_names) {
+    # Standardize to "function." for internal processing
+    if (first_col_name != "function.") {
+      message(sprintf("Detected column name '%s', renaming to 'function.' for processing...", first_col_name))
+      colnames(abundance)[1] <- "function."
+    }
+  } else {
+    # Check if first column contains KO IDs (K##### format)
+    first_col_values <- as.character(abundance[[1]])
+    ko_pattern <- "(^K\\d{5}$)|(^ko:K\\d{5}$)"
+    if (any(grepl(ko_pattern, first_col_values))) {
+      message(sprintf("Column '%s' appears to contain KO IDs, renaming to 'function.' for processing...", first_col_name))
+      colnames(abundance)[1] <- "function."
+    } else {
+      stop(sprintf("Error: First column '%s' does not appear to contain KO IDs. Expected formats: K##### or ko:K#####", first_col_name))
     }
   }
 
