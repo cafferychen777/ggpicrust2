@@ -776,7 +776,9 @@ pathway_errorbar <-
       ggplot2::coord_flip()
 
     if (ko_to_kegg == TRUE) {
-      pathway_class_y <- (ymax + ymin) / 2 - 0.5
+      # Calculate label y-position as the center of each rectangle
+      # The -0.5 offset was causing misalignment (see demos/alignment_debug_analysis.R)
+      pathway_class_y <- (ymax + ymin) / 2
       pathway_class_plot_df <-
         as.data.frame(
           cbind(
@@ -789,6 +791,9 @@ pathway_errorbar <-
         )
       pathway_class_plot_df$pathway_class_y <-
         as.numeric(pathway_class_plot_df$pathway_class_y)
+      # Number of features for y-axis limits
+      n_features <- nrow(daa_results_filtered_sub_df)
+
       pathway_class_annotation <-
         pathway_class_plot_df %>% ggplot2::ggplot(ggplot2::aes(nonsense, pathway_class_y)) + ggplot2::geom_text(
           ggplot2::aes(nonsense, pathway_class_y, label = pathway_class),
@@ -799,7 +804,10 @@ pathway_errorbar <-
           angle = pathway_class_text_angle,
           hjust = if (pathway_class_position == "left") 1 else 0
         ) +
-        ggplot2::scale_y_discrete(position = "right") +
+        # Use scale_y_continuous to properly align with the discrete bar plot y-axis
+        # The bar plot's discrete y-axis maps factor levels to positions 1, 2, ..., n
+        # We need matching limits (0.5 to n+0.5) to align the annotation labels
+        ggplot2::scale_y_continuous(limits = c(0.5, n_features + 0.5), expand = c(0, 0)) +
         ggprism::theme_prism(base_size = 12) +
         ggplot2::theme(
           axis.ticks = ggplot2::element_blank(),

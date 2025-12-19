@@ -14,6 +14,9 @@
 #' - "LinDA": Linear models for differential abundance analysis of microbiome compositional data
 #' - "Maaslin2": Multivariate Association with Linear Models (MaAsLin2) for differential abundance analysis
 #' @param ko_to_kegg A character to control the conversion of KO abundance to KEGG abundance
+#' @param filter_for_prokaryotes Logical. If TRUE (default), filters out KEGG pathways
+#'   that are specific to eukaryotes (e.g., human diseases, organismal systems) when
+#'   ko_to_kegg = TRUE. Set to FALSE to include all KEGG pathways.
 #' @param p.adjust a character specifying the method for p-value adjustment, default is "BH", choices are:
 #'- "BH": Benjamini-Hochberg correction
 #'- "holm": Holm's correction
@@ -98,6 +101,7 @@ ggpicrust2 <- function(file = NULL,
                        pathway,
                        daa_method = "ALDEx2",
                        ko_to_kegg = FALSE,
+                       filter_for_prokaryotes = TRUE,
                        p.adjust = "BH",
                        order = "group",
                        p_values_bar = TRUE,
@@ -141,9 +145,9 @@ ggpicrust2 <- function(file = NULL,
     message("Converting KO to KEGG...\n")
     plot_result_list <- list()
     abundance <- if (!is.null(file)) {
-      ko2kegg_abundance(file)
+      ko2kegg_abundance(file, filter_for_prokaryotes = filter_for_prokaryotes)
     } else {
-      ko2kegg_abundance(data = data)
+      ko2kegg_abundance(data = data, filter_for_prokaryotes = filter_for_prokaryotes)
     }
     message("Performing pathway differential abundance analysis...\n")
     daa_results_df <- pathway_daa(
