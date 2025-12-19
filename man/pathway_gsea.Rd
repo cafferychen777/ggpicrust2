@@ -9,7 +9,10 @@ pathway_gsea(
   metadata,
   group,
   pathway_type = "KEGG",
-  method = "fgsea",
+  method = "camera",
+  covariates = NULL,
+  contrast = NULL,
+  inter.gene.cor = 0.01,
   rank_method = "signal2noise",
   nperm = 1000,
   min_size = 5,
@@ -34,11 +37,32 @@ For pathway abundance analysis, use \code{\link{pathway_daa}} instead}
 
 \item{pathway_type}{A character string specifying the pathway type: "KEGG", "MetaCyc", or "GO"}
 
-\item{method}{A character string specifying the GSEA method: "fgsea", "GSEA", or "clusterProfiler"}
+\item{method}{A character string specifying the GSEA method:
+\itemize{
+  \item \code{"camera"}: Competitive gene set test using limma's camera function (recommended).
+        Accounts for inter-gene correlations and provides more reliable p-values.
+  \item \code{"fry"}: Fast approximation to rotation gene set testing using limma's fry function.
+        Self-contained test that is computationally efficient.
+  \item \code{"fgsea"}: Fast preranked GSEA implementation. Note: preranked methods may produce
+        unreliable p-values due to not accounting for inter-gene correlations (Wu et al., 2012).
+  \item \code{"GSEA"} or \code{"clusterProfiler"}: clusterProfiler's GSEA implementation.
+}}
 
-\item{rank_method}{A character string specifying the ranking statistic: "signal2noise", "t_test", "log2_ratio", or "diff_abundance"}
+\item{covariates}{A character vector specifying column names in metadata to use as covariates
+for adjustment. Only used when method is "camera" or "fry". Default is NULL (no covariates).
+Example: \code{covariates = c("age", "sex", "BMI")}}
 
-\item{nperm}{An integer specifying the number of permutations}
+\item{contrast}{For multi-group comparisons with "camera" or "fry" methods, specify the contrast
+to test. Can be a character string naming a group level, or a numeric vector of contrast weights.
+Default is NULL (automatic: compares second group to first).}
+
+\item{inter.gene.cor}{Numeric value specifying the inter-gene correlation for camera method.
+Default is 0.01. Use NA to estimate correlation from data for each gene set.}
+
+\item{rank_method}{A character string specifying the ranking statistic for preranked methods
+(fgsea, GSEA, clusterProfiler): "signal2noise", "t_test", "log2_ratio", or "diff_abundance"}
+
+\item{nperm}{An integer specifying the number of permutations (for fgsea/clusterProfiler methods)}
 
 \item{min_size}{An integer specifying the minimum gene set size}
 
@@ -53,11 +77,49 @@ For pathway abundance analysis, use \code{\link{pathway_daa}} instead}
 \item{organism}{A character string specifying the organism for KEGG analysis (default: "ko" for KEGG Orthology)}
 }
 \value{
-A data frame containing GSEA results
+A data frame containing GSEA results with columns:
+  \itemize{
+    \item \code{pathway_id}: Pathway identifier
+    \item \code{pathway_name}: Pathway name/description
+    \item \code{size}: Number of genes in the pathway
+    \item \code{direction}: Direction of enrichment ("Up" or "Down", for camera/fry)
+    \item \code{pvalue}: Raw p-value
+    \item \code{p.adjust}: Adjusted p-value (FDR)
+    \item \code{method}: The method used for analysis
+  }
+  For fgsea/clusterProfiler methods, additional columns include ES, NES, and leading_edge.
 }
 \description{
 This function performs Gene Set Enrichment Analysis (GSEA) on PICRUSt2 predicted functional data
 to identify enriched pathways between different conditions.
+}
+\details{
+\strong{Method Selection:}
+
+The \code{camera} method (default) is recommended for most analyses because:
+\itemize{
+  \item It accounts for inter-gene correlations, providing more accurate p-values
+  \item It supports covariate adjustment through the design matrix
+  \item It performs a competitive test (genes in set vs. genes not in set)
+}
+
+The \code{fry} method is a fast alternative that:
+\itemize{
+  \item Performs a self-contained test (are genes in the set differentially expressed?)
+  \item Is computationally very efficient for large numbers of gene sets
+  \item Also supports covariate adjustment
+}
+
+The preranked methods (\code{fgsea}, \code{GSEA}) are included for compatibility but
+users should be aware that Wu et al. (2012) demonstrated these can produce "spectacularly
+wrong p-values" even with low inter-gene correlations.
+
+\strong{Covariate Adjustment:}
+
+When using \code{method = "camera"} or \code{method = "fry"}, you can adjust for
+confounding variables by specifying them in the \code{covariates} parameter.
+This is particularly important in microbiome studies where factors like age, sex,
+BMI, and batch effects can influence results.
 }
 \examples{
 \dontrun{
@@ -70,8 +132,36 @@ abundance_data <- as.data.frame(ko_abundance)
 rownames(abundance_data) <- abundance_data[, "#NAME"]
 abundance_data <- abundance_data[, -1]
 
-# Run GSEA analysis
+# Method 1: Using camera (recommended) - accounts for inter-gene correlations
 gsea_results <- pathway_gsea(
+  abundance = abundance_data,
+  metadata = metadata,
+  group = "Environment",
+  pathway_type = "KEGG",
+  method = "camera"
+)
+
+# Method 2: Using camera with covariate adjustment
+gsea_results_adj <- pathway_gsea(
+  abundance = abundance_data,
+  metadata = metadata,
+  group = "Disease",
+  covariates = c("age", "sex"),
+  pathway_type = "KEGG",
+  method = "camera"
+)
+
+# Method 3: Using fry for fast self-contained testing
+gsea_results_fry <- pathway_gsea(
+  abundance = abundance_data,
+  metadata = metadata,
+  group = "Environment",
+  pathway_type = "KEGG",
+  method = "fry"
+)
+
+# Method 4: Using fgsea (preranked, less reliable p-values)
+gsea_results_fgsea <- pathway_gsea(
   abundance = abundance_data,
   metadata = metadata,
   group = "Environment",
@@ -82,4 +172,11 @@ gsea_results <- pathway_gsea(
 # Visualize results
 visualize_gsea(gsea_results, plot_type = "enrichment_plot", n_pathways = 10)
 }
+}
+\references{
+Wu, D., & Smyth, G. K. (2012). Camera: a competitive gene set test accounting for
+inter-gene correlation. Nucleic Acids Research, 40(17), e133.
+
+Wu, D., Lim, E., Vaillant, F., Asselin-Labat, M. L., Visvader, J. E., & Smyth, G. K. (2010).
+ROAST: rotation gene set tests for complex microarray experiments. Bioinformatics, 26(17), 2176-2182.
 }
