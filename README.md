@@ -19,6 +19,30 @@ If you are interested in exploring and analyzing your PICRUSt2 output data, *ggp
 
 ## News
 
+🧬 **New Feature: Covariate Adjustment & Improved Statistical Methods for pathway_gsea() (Issue #193)**
+
+We've significantly enhanced the `pathway_gsea()` function with statistically superior methods and covariate support:
+
+**New Methods:**
+- `method = "camera"` (now default): Competitive gene set test using limma's camera function. Accounts for inter-gene correlations, providing more reliable p-values than preranked GSEA.
+- `method = "fry"`: Fast rotation gene set test for efficient self-contained testing.
+
+**Covariate Adjustment:**
+```r
+# Adjust for confounding factors like age, sex, BMI
+gsea_results <- pathway_gsea(
+  abundance = ko_data,
+  metadata = meta,
+  group = "Disease",
+  covariates = c("age", "sex", "BMI"),
+  method = "camera"
+)
+```
+
+**Why this matters:** Wu et al. (2012) demonstrated that preranked GSEA methods can produce "spectacularly wrong p-values" due to not accounting for inter-gene correlations. The new `camera` and `fry` methods address this limitation while also supporting covariate adjustment - essential for microbiome studies where factors like age, sex, and BMI can confound results.
+
+---
+
 🎨 **New Feature: Enhanced Legend and Annotation System for pathway_errorbar()**
 
 We're thrilled to introduce a comprehensive **legend and annotation beautification system** for the `pathway_errorbar()` function! This major enhancement brings publication-quality visualizations to ggpicrust2 with:
@@ -219,13 +243,13 @@ for (pkg in pkgs) {
 
 ## Stay Updated {#stay-updated}
 
-Stay up to date with the latest *ggpicrust2* developments by following me on Twitter: [![](https://img.shields.io/twitter/follow/CafferyYang?style=social)](https://twitter.com/CafferyYang)
+Stay up to date with the latest *ggpicrust2* developments by following me on X: [![](https://img.shields.io/twitter/follow/CafferyYang?style=social)](https://x.com/CafferyYang)
 
 On my Twitter account, you'll find regular updates, announcements, and insights related to *ggpicrust2*. By following me, you'll ensure that you never miss any important information or new features.
 
 Feel free to join the conversation, ask questions, and engage with other users who are also interested in *ggpicrust2*. Twitter is a great platform to stay connected and be a part of the community.
 
-Click on the Twitter follow button above or visit [https://twitter.com/CafferyYang](https://twitter.com/CafferyYang) to follow me now!
+Click on the follow button above or visit [https://x.com/CafferyYang](https://x.com/CafferyYang) to follow me now!
 
 Thank you for your interest in *ggpicrust2*, and I look forward to keeping you informed about all the exciting updates!
 
@@ -483,7 +507,7 @@ kegg_abundance_all <- ko2kegg_abundance(data = ko_abundance, filter_for_prokaryo
 
 ### pathway_daa() {#pathway_daa}
 
-Differential abundance(DA) analysis plays a major role in PICRUSt2 downstream analysis. pathway_daa() integrates almost all DA methods applicable to the predicted functional profile which there excludes ANCOM and ANCOMBC. It includes [ALDEx2](https://www.bioconductor.org/packages/release/bioc/html/ALDEx2.html)(Fernandes et al., 2013), [DESeq2](https://bioconductor.org/packages/release/bioc/html/DESeq2.html)(Love et al., 2014), [Maaslin2](https://www.bioconductor.org/packages/release/bioc/html/Maaslin2.html)(Mallick et al., 2021), [LinDA](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-022-02655-5)(Zhou et al., 2022), [edgeR](https://bioconductor.org/packages/release/bioc/html/edgeR.html)(Robinson et al., 2010) , [limma voom](https://ucdavis-bioinformatics-training.github.io/2018-June-RNA-Seq-Workshop/thursday/DE.html)(Ritchie et al., 2015), [metagenomeSeq](https://www.bioconductor.org/packages/release/bioc/html/metagenomeSeq.html#:~:text=metagenomeSeq%20is%20designed%20to%20address,the%20testing%20of%20feature%20correlations.)(Paulson et al., 2013), [Lefser](https://bioconductor.org/packages/release/bioc/html/lefser.html)(Segata et al., 2011).
+Differential abundance(DA) analysis plays a major role in PICRUSt2 downstream analysis. pathway_daa() integrates almost all DA methods applicable to the predicted functional profile which there excludes ANCOM and ANCOMBC. It includes [ALDEx2](https://www.bioconductor.org/packages/release/bioc/html/ALDEx2.html)(Fernandes et al., 2013), [DESeq2](https://bioconductor.org/packages/release/bioc/html/DESeq2.html)(Love et al., 2014), [Maaslin2](https://www.bioconductor.org/packages/release/bioc/html/Maaslin2.html)(Mallick et al., 2021), [LinDA](https://link.springer.com/article/10.1186/s13059-022-02655-5)(Zhou et al., 2022), [edgeR](https://bioconductor.org/packages/release/bioc/html/edgeR.html)(Robinson et al., 2010) , [limma voom](https://ucdavis-bioinformatics-training.github.io/2018-June-RNA-Seq-Workshop/thursday/DE.html)(Ritchie et al., 2015), [metagenomeSeq](https://www.bioconductor.org/packages/release/bioc/html/metagenomeSeq.html#:~:text=metagenomeSeq%20is%20designed%20to%20address,the%20testing%20of%20feature%20correlations.)(Paulson et al., 2013), [Lefser](https://bioconductor.org/packages/release/bioc/html/lefser.html)(Segata et al., 2011).
 
 
 ``` r
@@ -997,13 +1021,23 @@ print(results$correlation$p_matrix)
 
 The `pathway_gsea()` function performs Gene Set Enrichment Analysis (GSEA) on PICRUSt2 predicted functional profiles. Our enhanced implementation supports multiple pathway databases (KEGG, MetaCyc, GO) and provides production-ready statistical analysis with comprehensive validation.
 
-**🚀 New Features in v2.5.0:**
+**🚀 New Features:**
+- **Covariate adjustment support**: Adjust for confounding factors like age, sex, BMI using limma's camera/fry methods
+- **Statistically reliable methods**: `camera` and `fry` methods account for inter-gene correlations, providing more accurate p-values than preranked GSEA
 - **Multi-database support**: KEGG, MetaCyc, and GO pathway analysis
-- **Flexible sample matching**: Automatic handling of partial sample overlaps  
+- **Flexible sample matching**: Automatic handling of partial sample overlaps
 - **Enhanced validation**: Statistical guidance and quality assurance
-- **Performance optimized**: Sub-second analysis for typical datasets
 
-#### **Basic KEGG Analysis**
+#### **Method Selection Guide**
+
+| Method | Type | Covariate Support | Description |
+|--------|------|-------------------|-------------|
+| `camera` (default) | Competitive | ✅ Yes | Recommended. Accounts for inter-gene correlations |
+| `fry` | Self-contained | ✅ Yes | Fast rotation test |
+| `fgsea` | Preranked | ❌ No | Fast but p-values may be unreliable |
+| `clusterProfiler` | Preranked | ❌ No | Traditional GSEA |
+
+#### **Basic KEGG Analysis (Recommended: camera method)**
 
 ``` r
 library(ggpicrust2)
@@ -1013,19 +1047,65 @@ library(tidyverse)
 data("ko_abundance")
 data("metadata")
 
-# Standard KEGG GSEA analysis
-gsea_results_kegg <- pathway_gsea(
+# Recommended: Use camera method (accounts for inter-gene correlations)
+gsea_results <- pathway_gsea(
   abundance = ko_abundance %>% column_to_rownames("#NAME"),
   metadata = metadata,
   group = "Environment",
-  pathway_type = "KEGG",        # KEGG pathways (default)
-  method = "fgsea",             # Fast GSEA implementation
-  rank_method = "signal2noise", # Ranking method
-  nperm = 1000                  # Permutations
+  pathway_type = "KEGG",
+  method = "camera"              # Recommended method (default)
 )
 
 # View results
-head(gsea_results_kegg)
+head(gsea_results)
+```
+
+#### **🆕 Covariate Adjustment (Issue #193)**
+
+Adjust for confounding factors in your analysis:
+
+``` r
+# GSEA with covariate adjustment for age, sex, and BMI
+gsea_results_adjusted <- pathway_gsea(
+  abundance = ko_abundance %>% column_to_rownames("#NAME"),
+  metadata = metadata,
+  group = "Disease",
+  covariates = c("age", "sex", "BMI"),  # Adjust for these variables
+  method = "camera",                     # Required for covariate support
+  pathway_type = "KEGG"
+)
+
+# The design matrix automatically incorporates covariates
+# Results reflect the group effect after adjusting for confounders
+```
+
+#### **Fast Analysis with fry**
+
+``` r
+# Use fry for faster self-contained testing
+gsea_results_fry <- pathway_gsea(
+  abundance = ko_abundance %>% column_to_rownames("#NAME"),
+  metadata = metadata,
+  group = "Environment",
+  method = "fry",                # Fast rotation test
+  pathway_type = "KEGG"
+)
+```
+
+#### **Legacy: Preranked GSEA (fgsea)**
+
+``` r
+# Note: Preranked methods don't account for inter-gene correlations
+# P-values may be less reliable (Wu et al., 2012)
+gsea_results_fgsea <- pathway_gsea(
+  abundance = ko_abundance %>% column_to_rownames("#NAME"),
+  metadata = metadata,
+  group = "Environment",
+  pathway_type = "KEGG",
+  method = "fgsea",              # Preranked GSEA
+  rank_method = "signal2noise",  # Ranking method
+  nperm = 1000                   # Permutations
+)
 ```
 
 #### **🆕 MetaCyc Pathway Analysis**
@@ -1317,7 +1397,7 @@ head(annotated_results)
 
 ## Share
 
-[![Twitter](https://img.shields.io/twitter/url?url=https%3A%2F%2Fgithub.com%2Fcafferychen777%2Fggpicrust2&style=social)](https://twitter.com/intent/tweet?url=https%3A%2F%2Fgithub.com%2Fcafferychen777%2Fggpicrust2&text=Check%20out%20this%20awesome%20package%20on%20GitHub%21)
+[![Share](https://img.shields.io/twitter/url?url=https%3A%2F%2Fgithub.com%2Fcafferychen777%2Fggpicrust2&style=social)](https://x.com/intent/tweet?url=https%3A%2F%2Fgithub.com%2Fcafferychen777%2Fggpicrust2&text=Check%20out%20this%20awesome%20package%20on%20GitHub%21)
 
 [![Facebook](https://img.shields.io/badge/Share_on-Facebook-1877F2?logo=facebook&style=social)](https://www.facebook.com/sharer/sharer.php?u=https%3A%2F%2Fgithub.com%2Fcafferychen777%2Fggpicrust2&quote=Check%20out%20this%20awesome%20package%20on%20GitHub%21)
 
