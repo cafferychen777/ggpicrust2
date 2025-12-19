@@ -35,7 +35,7 @@ if (!requireNamespace("BiocManager", quietly = TRUE)) {
   install.packages("BiocManager")
 }
 
-BiocManager::install(c("fgsea", "clusterProfiler", "enrichplot", "DOSE", "pathview"))
+BiocManager::install(c("limma", "fgsea", "clusterProfiler", "enrichplot", "DOSE", "pathview"))
 
 # Load the package
 library(ggpicrust2)
@@ -43,9 +43,22 @@ library(dplyr)
 library(ggplot2)
 ```
 
-## Basic GSEA Analysis
+## Method Selection Guide
 
-Let's start with a basic GSEA analysis using the example data provided in the ggpicrust2 package:
+The `pathway_gsea()` function supports multiple methods for gene set enrichment analysis:
+
+| Method | Type | Covariate Support | Description |
+|--------|------|-------------------|-------------|
+| `camera` (default) | Competitive | ✅ Yes | **Recommended.** Accounts for inter-gene correlations, providing more reliable p-values |
+| `fry` | Self-contained | ✅ Yes | Fast rotation test, efficient for large gene set collections |
+| `fgsea` | Preranked | ❌ No | Fast preranked GSEA, but p-values may be unreliable |
+| `clusterProfiler` | Preranked | ❌ No | Traditional GSEA implementation |
+
+**Why use camera/fry?** Wu et al. (2012) demonstrated that preranked GSEA methods can produce "spectacularly wrong p-values" due to not accounting for inter-gene correlations. The `camera` and `fry` methods from limma address this limitation.
+
+## Basic GSEA Analysis (Recommended: camera method)
+
+Let's start with a basic GSEA analysis using the recommended `camera` method:
 
 ```{r basic-gsea, eval=FALSE}
 # Load example data
@@ -57,8 +70,70 @@ abundance_data <- as.data.frame(ko_abundance)
 rownames(abundance_data) <- abundance_data[, "#NAME"]
 abundance_data <- abundance_data[, -1]
 
-# Run GSEA analysis
+# Run GSEA analysis with camera (recommended)
 gsea_results <- pathway_gsea(
+  abundance = abundance_data,
+  metadata = metadata,
+  group = "Environment",
+  pathway_type = "KEGG",
+  method = "camera",
+  min_size = 5,
+  max_size = 500,
+  p.adjust = "BH"
+)
+
+# View the top results
+head(gsea_results)
+```
+
+## Covariate Adjustment
+
+One of the most powerful features of the `camera` and `fry` methods is the ability to adjust for confounding variables. This is particularly important in microbiome studies where factors like age, sex, BMI, and batch effects can influence results.
+
+```{r covariate-gsea, eval=FALSE}
+# Example with covariate adjustment
+# Assuming metadata has columns: group, age, sex, BMI
+
+gsea_results_adjusted <- pathway_gsea(
+  abundance = abundance_data,
+  metadata = metadata,
+  group = "Disease",
+  covariates = c("age", "sex", "BMI"),  # Adjust for these confounders
+  pathway_type = "KEGG",
+  method = "camera"
+)
+
+# The results now reflect the group effect after adjusting for confounders
+head(gsea_results_adjusted)
+```
+
+## Fast Analysis with fry
+
+For large datasets or when computational efficiency is important, use the `fry` method:
+
+```{r fry-gsea, eval=FALSE}
+# Fast rotation gene set test
+gsea_results_fry <- pathway_gsea(
+  abundance = abundance_data,
+  metadata = metadata,
+  group = "Environment",
+  pathway_type = "KEGG",
+  method = "fry",
+  min_size = 5,
+  max_size = 500
+)
+
+head(gsea_results_fry)
+```
+
+## Legacy: Preranked GSEA (fgsea)
+
+For compatibility with existing workflows, preranked GSEA methods are still available:
+
+```{r fgsea, eval=FALSE}
+# Note: Preranked methods don't account for inter-gene correlations
+# P-values may be less reliable (Wu et al., 2012)
+gsea_results_fgsea <- pathway_gsea(
   abundance = abundance_data,
   metadata = metadata,
   group = "Environment",
@@ -73,7 +148,7 @@ gsea_results <- pathway_gsea(
 )
 
 # View the top results
-head(gsea_results)
+head(gsea_results_fgsea)
 ```
 
 ## Annotating GSEA Results
@@ -243,5 +318,20 @@ gsea_plot <- integrated_results$gsea_plot
 ## Conclusion
 
 Gene Set Enrichment Analysis provides a complementary approach to Differential Abundance Analysis for interpreting PICRUSt2 predicted functional data. By focusing on pathways rather than individual features, GSEA can help identify biologically meaningful patterns that might be missed by traditional methods.
+
+### Key Recommendations
+
+1. **Use `camera` method (default)** for most analyses - it provides more reliable p-values by accounting for inter-gene correlations
+
+2. **Adjust for covariates** when you have confounding factors like age, sex, or BMI in your study design
+
+3. **Use `fry` method** when you need faster computation for large gene set collections
+
+4. **Use preranked methods (`fgsea`)** only when you need compatibility with existing workflows, and interpret p-values with caution
+
+### References
+
+- Wu, D., & Smyth, G. K. (2012). Camera: a competitive gene set test accounting for inter-gene correlation. *Nucleic Acids Research*, 40(17), e133.
+- Wu, D., et al. (2010). ROAST: rotation gene set tests for complex microarray experiments. *Bioinformatics*, 26(17), 2176-2182.
 
 The ggpicrust2 package now offers a comprehensive suite of tools for both DAA and GSEA analyses, making it easier to gain insights from microbiome functional prediction data.

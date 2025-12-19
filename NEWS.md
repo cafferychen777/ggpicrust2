@@ -1,3 +1,44 @@
+# ggpicrust2 2.5.6
+
+## Major Features
+
+### Covariate Adjustment & Improved Statistical Methods for pathway_gsea() (#193)
+
+* **Added limma camera and fry methods as new GSEA options**:
+  - `method = "camera"` (now default): Competitive gene set test using limma's camera function
+  - `method = "fry"`: Fast rotation gene set test (self-contained)
+  - Both methods account for inter-gene correlations, providing more reliable p-values than preranked GSEA
+
+* **Added covariate adjustment support**:
+  - New `covariates` parameter to adjust for confounding factors (age, sex, BMI, etc.)
+  - Covariates are incorporated into the design matrix for proper statistical adjustment
+  - Essential for microbiome studies where host factors can confound results
+
+* **New parameters**:
+  - `covariates`: Character vector of covariate column names from metadata
+  - `contrast`: For multi-group comparisons, specify the contrast to test
+  - `inter.gene.cor`: Inter-gene correlation for camera method (default: 0.01)
+
+* **Scientific background**:
+  - Wu et al. (2012) demonstrated that preranked GSEA methods can produce "spectacularly wrong p-values" due to not accounting for inter-gene correlations
+  - The camera and fry methods from limma address this limitation
+  - Reference: Wu, D., & Smyth, G. K. (2012). Nucleic Acids Research, 40(17), e133.
+
+* **Backward compatibility**:
+  - Existing `fgsea` and `clusterProfiler` methods remain available
+  - Added informational message when using preranked methods about p-value reliability
+
+* **New internal functions**:
+  - `run_limma_gsea()`: Core implementation for camera/fry methods
+  - `build_design_matrix()`: Constructs design matrix with covariates
+
+* **Updated documentation and vignettes**:
+  - Method selection guide with comparison table
+  - Covariate adjustment examples
+  - Updated gsea_analysis.Rmd vignette
+
+---
+
 # ggpicrust2 2.5.5
 
 ## Major Features
