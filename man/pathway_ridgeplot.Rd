@@ -90,13 +90,13 @@ library(tibble)
 data("ko_abundance")
 data("metadata")
 
-# Run GSEA
+# Run GSEA (using camera method - recommended)
 gsea_results <- pathway_gsea(
   abundance = ko_abundance \%>\% column_to_rownames("#NAME"),
   metadata = metadata,
   group = "Environment",
   pathway_type = "KEGG",
-  method = "fgsea"
+  method = "camera"
 )
 
 # Create ridge plot

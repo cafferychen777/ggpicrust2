@@ -29,13 +29,13 @@ abundance_data <- as.data.frame(ko_abundance)
 rownames(abundance_data) <- abundance_data[, "#NAME"]
 abundance_data <- abundance_data[, -1]
 
-# Run GSEA analysis
+# Run GSEA analysis (using camera method - recommended)
 gsea_results <- pathway_gsea(
   abundance = abundance_data,
   metadata = metadata,
   group = "Environment",
   pathway_type = "KEGG",
-  method = "fgsea"
+  method = "camera"
 )
 
 # Annotate results

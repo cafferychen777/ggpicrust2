@@ -31,6 +31,17 @@ If you are interested in exploring and analyzing your PICRUSt2 output data, *ggp
 
 ## News
 
+🔬 **Enhanced GSEA with Limma Camera/Fry Methods (v2.5.6)**
+
+We've significantly enhanced the `pathway_gsea()` function with limma's competitive gene set testing methods:
+
+- **`camera` method (new default)**: Accounts for inter-gene correlations, providing more reliable p-values than preranked methods (Wu et al., 2012)
+- **`fry` method**: Fast rotation gene set test, efficient for large gene set collections
+- **Covariate adjustment**: Both camera and fry support adjustment for confounding variables (age, sex, BMI, etc.)
+- **Contrast specification**: Support for complex experimental designs with multiple contrasts
+
+This addresses concerns in the literature that preranked GSEA methods can produce "spectacularly wrong p-values" due to not accounting for inter-gene correlations.
+
 📊 **New Visualization Functions: Volcano Plot & Ridge Plot**
 
 We've added two new visualization functions for enhanced analysis and interpretation:
@@ -677,6 +688,15 @@ print(results$correlation$p_matrix)
 
 The `pathway_gsea()` function performs Gene Set Enrichment Analysis (GSEA) on PICRUSt2 predicted functional profiles. GSEA is a powerful method for identifying enriched pathways between different conditions, offering a more nuanced understanding of functional differences compared to traditional differential abundance analysis.
 
+**New in v2.5.6**: The function now supports limma's `camera` and `fry` methods, which provide more reliable p-values by accounting for inter-gene correlations (Wu et al., 2012). The `camera` method is now the default and recommended approach.
+
+| Method | Type | Covariate Support | Description |
+|--------|------|-------------------|-------------|
+| `camera` (default) | Competitive | ✅ Yes | **Recommended.** Accounts for inter-gene correlations |
+| `fry` | Self-contained | ✅ Yes | Fast rotation test, efficient for large gene set collections |
+| `fgsea` | Preranked | ❌ No | Fast preranked GSEA (legacy) |
+| `clusterProfiler` | Preranked | ❌ No | Traditional GSEA implementation (legacy) |
+
 ```{r pathway_gsea sample, echo = TRUE, eval=FALSE}
 library(ggpicrust2)
 library(tidyverse)
@@ -685,17 +705,25 @@ library(tidyverse)
 data("ko_abundance")
 data("metadata")
 
-# Perform GSEA analysis
+# Perform GSEA analysis with camera (recommended)
 gsea_results <- pathway_gsea(
   abundance = ko_abundance %>% column_to_rownames("#NAME"),
   metadata = metadata,
   group = "Environment",
-  method = "fgsea",    # Can be "fgsea" or "GSEA"
-  rank_method = "log2_ratio",  # Method to calculate ranking metric
-  organism = "ko",    # KEGG organism code
-  minSize = 10,       # Minimum gene set size
-  maxSize = 500,      # Maximum gene set size
-  nperm = 1000        # Number of permutations
+  method = "camera",   # Recommended: accounts for inter-gene correlations
+  pathway_type = "KEGG",
+  min_size = 5,
+  max_size = 500
+)
+
+# With covariate adjustment (powerful feature of camera/fry)
+gsea_results_adjusted <- pathway_gsea(
+  abundance = ko_abundance %>% column_to_rownames("#NAME"),
+  metadata = metadata,
+  group = "Disease",
+  covariates = c("age", "sex"),  # Adjust for confounders
+  method = "camera",
+  pathway_type = "KEGG"
 )
 
 # View the results

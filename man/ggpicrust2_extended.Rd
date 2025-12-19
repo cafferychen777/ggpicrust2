@@ -25,7 +25,7 @@ This function extends the ggpicrust2 functionality to include Gene Set Enrichmen
 data(ko_abundance)
 data(metadata)
 
-# Run integrated analysis
+# Run integrated analysis with camera method (recommended)
 integrated_results <- ggpicrust2_extended(
   data = ko_abundance,
   metadata = metadata,
@@ -35,9 +35,22 @@ integrated_results <- ggpicrust2_extended(
   ko_to_kegg = TRUE,
   run_gsea = TRUE,
   gsea_params = list(
-    method = "fgsea",
-    rank_method = "signal2noise",
-    nperm = 1000
+    method = "camera"
+  )
+)
+
+# Run with covariate adjustment
+integrated_results_adj <- ggpicrust2_extended(
+  data = ko_abundance,
+  metadata = metadata,
+  group = "Disease",
+  pathway = "KO",
+  daa_method = "LinDA",
+  ko_to_kegg = TRUE,
+  run_gsea = TRUE,
+  gsea_params = list(
+    method = "camera",
+    covariates = c("age", "sex")
   )
 )
 

@@ -14,8 +14,8 @@
 #' # Load example data
 #' data(ko_abundance)
 #' data(metadata)
-#' 
-#' # Run integrated analysis
+#'
+#' # Run integrated analysis with camera method (recommended)
 #' integrated_results <- ggpicrust2_extended(
 #'   data = ko_abundance,
 #'   metadata = metadata,
@@ -25,18 +25,31 @@
 #'   ko_to_kegg = TRUE,
 #'   run_gsea = TRUE,
 #'   gsea_params = list(
-#'     method = "fgsea",
-#'     rank_method = "signal2noise",
-#'     nperm = 1000
+#'     method = "camera"
 #'   )
 #' )
-#' 
+#'
+#' # Run with covariate adjustment
+#' integrated_results_adj <- ggpicrust2_extended(
+#'   data = ko_abundance,
+#'   metadata = metadata,
+#'   group = "Disease",
+#'   pathway = "KO",
+#'   daa_method = "LinDA",
+#'   ko_to_kegg = TRUE,
+#'   run_gsea = TRUE,
+#'   gsea_params = list(
+#'     method = "camera",
+#'     covariates = c("age", "sex")
+#'   )
+#' )
+#'
 #' # Access DAA results
 #' daa_results <- integrated_results$daa_results
-#' 
+#'
 #' # Access GSEA results
 #' gsea_results <- integrated_results$gsea_results
-#' 
+#'
 #' # Access plots
 #' daa_plot <- integrated_results$daa_plot
 #' gsea_plot <- integrated_results$gsea_plot
@@ -59,8 +72,9 @@ ggpicrust2_extended <- function(...,
   # Run GSEA if requested
   if (run_gsea) {
     # Check if required packages are available
-    if (!requireNamespace("fgsea", quietly = TRUE)) {
-      warning("Package 'fgsea' is required for GSEA analysis. Skipping GSEA.")
+    if (!requireNamespace("limma", quietly = TRUE)) {
+      warning("Package 'limma' is required for GSEA analysis. Skipping GSEA. ",
+              "Install with: BiocManager::install('limma')")
     } else {
       # Extract necessary data for GSEA
       if (!is.null(args$data)) {
@@ -100,13 +114,10 @@ ggpicrust2_extended <- function(...,
         metadata = metadata,
         group = group,
         pathway_type = pathway_type,
-        method = "fgsea",
-        rank_method = "signal2noise",
-        nperm = 1000,
-        min_size = 10,
+        method = "camera",
+        min_size = 5,
         max_size = 500,
-        p.adjust = "BH",
-        seed = 42
+        p.adjust = "BH"
       )
       
       # Override defaults with user-provided parameters
