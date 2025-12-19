@@ -1186,8 +1186,19 @@ run_limma_gsea <- function(abundance_mat,
   common_samples <- intersect(colnames(abundance_mat), rownames(metadata))
   if (length(common_samples) == 0) {
     # Try using a sample column if rownames don't match
+    sample_col <- NULL
     if ("sample" %in% colnames(metadata)) {
-      rownames(metadata) <- metadata$sample
+      sample_col <- "sample"
+    } else if ("sample_name" %in% colnames(metadata)) {
+      sample_col <- "sample_name"
+    } else if ("Sample" %in% colnames(metadata)) {
+      sample_col <- "Sample"
+    } else if ("SampleID" %in% colnames(metadata)) {
+      sample_col <- "SampleID"
+    }
+
+    if (!is.null(sample_col)) {
+      rownames(metadata) <- metadata[[sample_col]]
       common_samples <- intersect(colnames(abundance_mat), rownames(metadata))
     }
   }
@@ -1325,6 +1336,18 @@ run_limma_gsea <- function(abundance_mat,
       formatted_results$FDR_original <- results$FDR
     }
 
+    # Add synthetic NES for visualization compatibility
+    # Camera/fry don't produce NES, so we create a synthetic measure based on
+    # direction and -log10(pvalue) for visualization purposes
+    formatted_results$NES <- ifelse(
+      formatted_results$direction == "Up",
+      -log10(pmax(formatted_results$pvalue, 1e-300)),  # Positive for Up
+      log10(pmax(formatted_results$pvalue, 1e-300))     # Negative for Down
+    )
+
+    # Add a leading_edge placeholder for visualization compatibility
+    formatted_results$leading_edge <- ""
+
     # Sort by p-value
     formatted_results <- formatted_results[order(formatted_results$pvalue), ]
     rownames(formatted_results) <- NULL
@@ -1338,6 +1361,8 @@ run_limma_gsea <- function(abundance_mat,
       pvalue = numeric(),
       p.adjust = numeric(),
       method = character(),
+      NES = numeric(),
+      leading_edge = character(),
       stringsAsFactors = FALSE
     )
   }

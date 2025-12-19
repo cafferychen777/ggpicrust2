@@ -87,9 +87,11 @@ ggpicrust2_extended <- function(...,
       
       # Prepare abundance data
       if (is.data.frame(abundance)) {
+        # Convert tibble to data.frame and set row names
+        abundance <- as.data.frame(abundance)
         # Assuming first column contains feature IDs
         rownames(abundance) <- abundance[, 1]
-        abundance <- abundance[, -1]
+        abundance <- abundance[, -1, drop = FALSE]
       }
       
       # Extract metadata and group
