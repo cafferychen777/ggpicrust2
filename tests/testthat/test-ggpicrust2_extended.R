@@ -177,6 +177,7 @@ test_that("ggpicrust2_extended handles missing packages", {
   })
 
   # Test with GSEA but missing package
+  # Note: The function now checks for 'limma' package since camera is the default method
   expect_warning(
     result <- ggpicrust2_extended(
       data = test_data$abundance,
@@ -186,7 +187,7 @@ test_that("ggpicrust2_extended handles missing packages", {
       daa_method = "ALDEx2",
       run_gsea = TRUE
     ),
-    "Package 'fgsea' is required for GSEA analysis. Skipping GSEA."
+    "Package 'limma' is required for GSEA analysis. Skipping GSEA."
   )
 
   # Check the result

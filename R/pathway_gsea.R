@@ -713,7 +713,18 @@ calculate_rank_metric <- function(abundance,
   common_samples <- intersect(colnames(abundance), names(Group))
   abundance <- abundance[, common_samples, drop = FALSE]
   Group <- Group[common_samples]
-  
+
+  # Handle problematic values - replace with 0 (undetected features)
+  if (any(is.infinite(abundance))) {
+    abundance[is.infinite(abundance)] <- 0
+  }
+  if (any(is.na(abundance))) {
+    abundance[is.na(abundance)] <- 0
+  }
+  if (any(abundance < 0)) {
+    abundance[abundance < 0] <- 0
+  }
+
   # Group size validation already done above in main function
   
   # Get unique group levels
@@ -1292,6 +1303,40 @@ run_limma_gsea <- function(abundance_mat,
   gene_set_indices <- gene_set_indices[valid_sets]
   message(sprintf("Testing %d gene sets (filtered from %d by size constraints)",
                   length(gene_set_indices), length(gene_sets)))
+
+  # Handle problematic values before voom transformation
+  # voom/limma do not accept NA, Inf, or negative values in count data
+
+  # Handle Inf/-Inf values first
+  if (any(is.infinite(abundance_mat))) {
+    inf_count <- sum(is.infinite(abundance_mat))
+    warning(sprintf("Abundance data contains %d Inf/-Inf values. ",
+                    inf_count),
+            "Replacing with 0.",
+            call. = FALSE)
+    abundance_mat[is.infinite(abundance_mat)] <- 0
+  }
+
+  # Handle NA values
+  if (any(is.na(abundance_mat))) {
+    na_count <- sum(is.na(abundance_mat))
+    na_features <- sum(rowSums(is.na(abundance_mat)) > 0)
+    warning(sprintf("Abundance data contains %d NA values in %d features. ",
+                    na_count, na_features),
+            "Replacing NA with 0 (assuming undetected features).",
+            call. = FALSE)
+    abundance_mat[is.na(abundance_mat)] <- 0
+  }
+
+  # Handle negative values (voom expects count-like data)
+  if (any(abundance_mat < 0)) {
+    neg_count <- sum(abundance_mat < 0)
+    warning(sprintf("Abundance data contains %d negative values. ",
+                    neg_count),
+            "Replacing with 0 (voom expects non-negative count data).",
+            call. = FALSE)
+    abundance_mat[abundance_mat < 0] <- 0
+  }
 
   # Apply voom transformation for count data
   # First, add a small pseudocount to avoid log(0)

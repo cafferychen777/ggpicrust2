@@ -299,13 +299,17 @@ test_that("ko2kegg_abundance handles fractional abundances", {
 })
 
 test_that("ko2kegg_abundance validates input format", {
-  # Missing function column
-  bad_data <- data.frame(ko_id = c("K00001", "K00002"), S1 = c(100, 200))
-  expect_error(ko2kegg_abundance(data = bad_data))
+  # Note: ko2kegg_abundance now auto-detects KO ID columns (ko_id, KO, etc.)
 
-  # Empty data
-  empty_data <- data.frame(function. = character(0), S1 = numeric(0))
-  expect_error(ko2kegg_abundance(data = empty_data))
+  # and renames them to function., so this no longer throws an error
+  # Instead, test with truly invalid data
+
+  # Empty data should error
+ empty_data <- data.frame(function. = character(0), S1 = numeric(0))
+  expect_error(suppressMessages(ko2kegg_abundance(data = empty_data)))
+
+  # Data with no valid KO IDs should still work but produce empty result
+  # (this is tested in other tests)
 })
 
 test_that("ko2kegg_abundance handles special characters in sample names", {

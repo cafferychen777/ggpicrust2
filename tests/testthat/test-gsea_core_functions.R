@@ -331,14 +331,16 @@ test_that("pathway_gsea: parameter validation", {
   )
   
   # Test invalid method
+  # Note: method options now include camera, fry, fgsea, GSEA, clusterProfiler
   expect_error(
     pathway_gsea(abundance = test_data$abundance, metadata = test_data$metadata, group = "group", method = "invalid"),
-    "method must be one of 'fgsea', 'GSEA', or 'clusterProfiler'"
+    "method must be one of: camera, fry, fgsea, GSEA, clusterProfiler"
   )
   
-  # Test invalid rank_method
+  # Test invalid rank_method (only validated for preranked methods like fgsea)
   expect_error(
-    pathway_gsea(abundance = test_data$abundance, metadata = test_data$metadata, group = "group", rank_method = "invalid"),
+    pathway_gsea(abundance = test_data$abundance, metadata = test_data$metadata, group = "group",
+                 method = "fgsea", rank_method = "invalid"),
     "rank_method must be one of 'signal2noise', 't_test', 'log2_ratio', or 'diff_abundance'"
   )
 })
