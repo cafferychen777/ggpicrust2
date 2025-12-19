@@ -48,6 +48,7 @@
 #' @import ggplot2
 #' @import tidyr
 #' @importFrom ggh4x facet_nested strip_nested elem_list_rect
+#' @importFrom stats cor as.dist dist hclust
 #'
 #' @examples
 #' \donttest{
@@ -425,6 +426,24 @@ pathway_heatmap <- function(abundance,
 
   # Find the column in metadata that matches the column names of abundance
   sample_name_col <- colnames(metadata)[sapply(colnames(metadata), function(x) all(colnames(abundance) %in% metadata[[x]]))]
+
+  # Provide clear error message if no matching column is found
+  if (length(sample_name_col) == 0) {
+    abundance_cols <- colnames(abundance)
+    stop(
+      "Cannot find a column in metadata that contains all sample names from abundance data.\n",
+      "  Abundance column names (first 5): ",
+      paste(head(abundance_cols, 5), collapse = ", "),
+      if (length(abundance_cols) > 5) ", ..." else "", "\n",
+      "  Metadata columns: ", paste(colnames(metadata), collapse = ", "), "\n\n",
+      "Please ensure:\n",
+      "  1. Your abundance data has sample names as column names (not feature/pathway IDs)\n",
+      "  2. Your metadata has a column containing these exact sample names\n\n",
+      "Common fix: If using ko_abundance data, convert it first:\n",
+      "  abundance <- ko_abundance %>% tibble::column_to_rownames('#NAME')"
+    )
+  }
+
   metadata$sample_name <- metadata %>% select(all_of(c(sample_name_col))) %>% pull()
 
   if (!all(colnames(abundance) %in% metadata$sample_name)) {
