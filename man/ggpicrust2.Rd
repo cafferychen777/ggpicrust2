@@ -12,6 +12,7 @@ ggpicrust2(
   pathway,
   daa_method = "ALDEx2",
   ko_to_kegg = FALSE,
+  filter_for_prokaryotes = TRUE,
   p.adjust = "BH",
   order = "group",
   p_values_bar = TRUE,
@@ -42,6 +43,10 @@ ggpicrust2(
 - "Maaslin2": Multivariate Association with Linear Models (MaAsLin2) for differential abundance analysis}
 
 \item{ko_to_kegg}{A character to control the conversion of KO abundance to KEGG abundance}
+
+\item{filter_for_prokaryotes}{Logical. If TRUE (default), filters out KEGG pathways
+that are specific to eukaryotes (e.g., human diseases, organismal systems) when
+ko_to_kegg = TRUE. Set to FALSE to include all KEGG pathways.}
 
 \item{p.adjust}{a character specifying the method for p-value adjustment, default is "BH", choices are:
 - "BH": Benjamini-Hochberg correction

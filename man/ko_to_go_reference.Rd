@@ -62,7 +62,8 @@ str(ko_to_go_reference)
 table(ko_to_go_reference$category)
 
 # Find GO terms related to metabolism
-metabolism_terms <- ko_to_go_reference[grepl("metabolic", ko_to_go_reference$go_name, ignore.case = TRUE), ]
+metabolism_terms <- ko_to_go_reference[
+  grepl("metabolic", ko_to_go_reference$go_name, ignore.case = TRUE), ]
 head(metabolism_terms)
 
 # Get KO members for a specific GO term

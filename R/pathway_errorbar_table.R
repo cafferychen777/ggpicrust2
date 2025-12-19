@@ -82,11 +82,12 @@
 #'   ko_to_kegg = TRUE,
 #'   p_values_threshold = 0.05
 #' )
-#' 
+#'
 #' # View the results
 #' head(abundance_stats_table)
 #' }
 #'
+#' @importFrom stats setNames
 #' @export
 pathway_errorbar_table <- function(abundance,
                                   daa_results_df,

@@ -53,3 +53,4 @@
 ^PENDING_ISSUES_PRIORITY\.md$
 ^Rplots\.pdf$
 ^SCIENTIFIC_AUDIT_REPORT\.md$
+^\.playwright-mcp$

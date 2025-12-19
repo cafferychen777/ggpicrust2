@@ -5,6 +5,7 @@
 #' color selection based on data characteristics.
 #'
 #' @name color_themes
+#' @importFrom grDevices colorRampPalette
 NULL
 
 #' Get Available Color Themes

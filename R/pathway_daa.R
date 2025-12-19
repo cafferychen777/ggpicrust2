@@ -1,4 +1,5 @@
 #' @importFrom magrittr %>%
+#' @importFrom stats wilcox.test setNames
 NULL
 
 #' Differential Abundance Analysis for Predicted Functional Pathways
