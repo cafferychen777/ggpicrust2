@@ -452,6 +452,11 @@ The typical output of the ggpicrust2 is like this.
 
 KEGG Orthology(KO) is a classification system developed by the Kyoto Encyclopedia of Genes and Genomes (KEGG) data-base(Kanehisa et al., 2022). It uses a hierarchical structure to classify enzymes based on the reactions they catalyze. To better understand pathways' role in different groups and classify the pathways, the KO abundance table needs to be converted to KEGG pathway abundance. But PICRUSt2 removes the function from PICRUSt. ko2kegg_abundance() can help convert the table.
 
+**Key Parameters:**
+
+- `filter_for_prokaryotes` (default: TRUE): By default, this function filters out KEGG pathways that are biologically irrelevant to prokaryotic (bacterial/archaeal) analysis. This removes pathways like cancer, neurodegenerative diseases, addiction, and organismal systems (immune, nervous, endocrine, etc.) that would otherwise appear in bacterial analysis simply because some KOs are shared across organisms. Bacterial infection pathways and antimicrobial resistance pathways are retained. Set to FALSE for eukaryotic analysis or if you want all pathways.
+
+- `method`: Choose between "abundance" (default, PICRUSt2-style upper-half mean calculation) or "sum" (legacy simple summation).
 
 ``` r
 # Sample usage of the ko2kegg_abundance function
@@ -462,12 +467,15 @@ library(ggpicrust2)
 # Assume that the KO abundance table is stored in a file named "ko_abundance.tsv"
 ko_abundance_file <- "ko_abundance.tsv"
 
-# Convert KO abundance to KEGG pathway abundance
+# Convert KO abundance to KEGG pathway abundance (default: filtered for prokaryotes)
 kegg_abundance <- ko2kegg_abundance(file = ko_abundance_file)
 
 # Alternatively, if the KO abundance data is already loaded as a data frame named "ko_abundance"
 data("ko_abundance")
 kegg_abundance <- ko2kegg_abundance(data = ko_abundance)
+
+# For eukaryotic analysis, include all KEGG pathways (no filtering)
+kegg_abundance_all <- ko2kegg_abundance(data = ko_abundance, filter_for_prokaryotes = FALSE)
 
 # The resulting kegg_abundance data frame can now be used for further analysis and visualization.
 

@@ -2,6 +2,27 @@
 
 ## Major Features
 
+### Prokaryote-Specific Pathway Filtering (#191)
+
+* **New `filter_for_prokaryotes` parameter in `ko2kegg_abundance()`**:
+  - Defaults to TRUE, automatically filtering out eukaryote-specific pathways
+  - Removes biologically irrelevant pathways from bacterial/archaeal analysis:
+    - Cancer pathways (overview and specific types)
+    - Neurodegenerative diseases (Alzheimer's, Parkinson's, etc.)
+    - Substance dependence (addiction pathways)
+    - Cardiovascular diseases
+    - Endocrine and metabolic diseases (human-specific)
+    - Immune diseases (human-specific)
+    - Organismal systems (immune, nervous, endocrine, digestive, etc.)
+  - Retains prokaryote-relevant pathways:
+    - All Metabolism pathways
+    - Infectious disease: bacterial (Salmonella, E. coli, Tuberculosis, etc.)
+    - Drug resistance: antimicrobial (antibiotic resistance)
+    - Genetic/Environmental Information Processing
+    - Cellular Processes
+  - Set `filter_for_prokaryotes = FALSE` for eukaryotic analysis or to include all pathways
+  - Reduces pathway count from ~370 to ~290 for typical bacterial analyses
+
 ### Local KEGG Database Implementation (#113)
 
 * **Replaced KEGG API dependency with local database**:

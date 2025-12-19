@@ -10,6 +10,15 @@
 #'     \item \code{"abundance"}: (Default) PICRUSt2-style calculation using the mean of upper-half sorted KO abundances. This method is more robust and avoids inflating abundances for pathways with more KOs.
 #'     \item \code{"sum"}: Simple summation of all KO abundances. This is the legacy method and may double-count KOs belonging to multiple pathways.
 #'   }
+#' @param filter_for_prokaryotes Logical. If TRUE (default), filters out KEGG pathways
+#'   that are not relevant to prokaryotic (bacterial/archaeal) analysis. This removes
+#'   pathways in categories such as:
+#'   \itemize{
+#'     \item Human diseases (cancer, neurodegenerative diseases, addiction, etc.)
+#'     \item Organismal systems (immune system, nervous system, endocrine system, etc.)
+#'   }
+#'   Bacterial infection pathways and antimicrobial resistance pathways are retained.
+#'   Set to FALSE to include all KEGG pathways (for eukaryotic analysis or custom filtering).
 #'
 #' @return
 #' A data frame with KEGG pathway abundance values. Rows represent KEGG pathways, identified by their KEGG pathway IDs. Columns represent samples, identified by their sample IDs from the input file.
@@ -32,24 +41,54 @@
 #'
 #' The \code{"sum"} method is provided for backward compatibility and simply sums all KO abundances for each pathway.
 #'
+#' @section Pathway Filtering:
+#' When \code{filter_for_prokaryotes = TRUE}, the function excludes KEGG pathways that are
+#' biologically irrelevant to prokaryotic organisms. KEGG reference pathways include pathways
+#' from all domains of life, and many human/animal-specific pathways would appear in bacterial
+#' analysis simply because some KOs are shared across organisms.
+#'
+#' The following KEGG Level 2 categories are excluded:
+#' \itemize{
+#'   \item Cancer pathways (overview and specific types)
+#'   \item Neurodegenerative diseases (Alzheimer's, Parkinson's, etc.)
+#'   \item Substance dependence (addiction pathways)
+#'   \item Cardiovascular diseases
+#'   \item Endocrine and metabolic diseases
+#'   \item Immune diseases
+#'   \item Organismal systems (immune, nervous, endocrine, digestive, etc.)
+#' }
+#'
+#' The following are RETAINED even with filtering:
+#' \itemize{
+#'   \item Infectious disease: bacterial (Salmonella, E. coli, Tuberculosis, etc.)
+#'   \item Drug resistance: antimicrobial (antibiotic resistance)
+#'   \item All Metabolism pathways
+#'   \item Genetic/Environmental Information Processing
+#'   \item Cellular Processes
+#' }
+#'
 #' @examples
 #' \dontrun{
 #' library(ggpicrust2)
 #' library(readr)
 #'
-#' # Example 1: Using the recommended method (PICRUSt2-style)
+#' # Example 1: Default - filtered for prokaryotic analysis
 #' data(ko_abundance)
-#' kegg_abundance <- ko2kegg_abundance(data = ko_abundance, method = "abundance")
+#' kegg_abundance <- ko2kegg_abundance(data = ko_abundance)
 #'
-#' # Example 2: Using the legacy sum method
+#' # Example 2: Include all pathways (for eukaryotic analysis)
+#' kegg_abundance_all <- ko2kegg_abundance(data = ko_abundance, filter_for_prokaryotes = FALSE)
+#'
+#' # Example 3: Using legacy sum method with filtering
 #' kegg_abundance_sum <- ko2kegg_abundance(data = ko_abundance, method = "sum")
 #'
-#' # Example 3: From file
+#' # Example 4: From file
 #' input_file <- "path/to/your/picrust2/results/pred_metagenome_unstrat.tsv"
 #' kegg_abundance <- ko2kegg_abundance(file = input_file)
 #' }
 #' @export
-ko2kegg_abundance <- function (file = NULL, data = NULL, method = c("abundance", "sum")) {
+ko2kegg_abundance <- function (file = NULL, data = NULL, method = c("abundance", "sum"),
+                               filter_for_prokaryotes = TRUE) {
   method <- match.arg(method)
   # Basic parameter validation
   if (is.null(file) & is.null(data)) {
@@ -231,6 +270,47 @@ ko2kegg_abundance <- function (file = NULL, data = NULL, method = c("abundance",
   # ko_to_kegg_reference is already defined in the package namespace from sysdata.rda
   # We just convert it to data.frame to ensure compatibility
   ko_to_kegg_reference <- as.data.frame(ko_to_kegg_reference)
+
+  # Filter for prokaryotic pathways if requested
+  if (filter_for_prokaryotes) {
+    message("Filtering pathways for prokaryotic analysis...")
+
+    # Define KEGG Level 2 categories to EXCLUDE (eukaryote-specific)
+    eukaryote_specific_level2 <- c(
+      # Human Diseases - exclude non-infectious diseases
+      "9161 Cancer: overview",
+      "9162 Cancer: specific types",
+      "9163 Immune disease",
+      "9164 Neurodegenerative disease",
+      "9165 Substance dependence",
+      "9166 Cardiovascular disease",
+      "9167 Endocrine and metabolic disease",
+      # Note: We KEEP "9171 Infectious disease: bacterial" and
+      #       "9175 Drug resistance: antimicrobial" as they are prokaryote-relevant
+
+      # Organismal Systems - exclude all (eukaryote-specific)
+      "9149 Aging",
+      "9151 Immune system",
+      "9152 Endocrine system",
+      "9153 Circulatory system",
+      "9154 Digestive system",
+      "9155 Excretory system",
+      "9156 Nervous system",
+      "9157 Sensory system",
+      "9158 Development and regeneration",
+      "9159 Environmental adaptation"
+    )
+
+    # Filter out eukaryote-specific pathways
+    original_count <- length(unique(ko_to_kegg_reference$pathway_id))
+    ko_to_kegg_reference <- ko_to_kegg_reference[
+      !ko_to_kegg_reference$level2 %in% eukaryote_specific_level2,
+    ]
+    filtered_count <- length(unique(ko_to_kegg_reference$pathway_id))
+
+    message(sprintf("  Removed %d eukaryote-specific pathways (%d -> %d pathways)",
+                    original_count - filtered_count, original_count, filtered_count))
+  }
 
   # Get all unique pathway IDs
   all_pathways <- unique(ko_to_kegg_reference$pathway_id)
