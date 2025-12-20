@@ -198,6 +198,97 @@ test_that("pathway_errorbar handles too many features", {
   colnames(abundance) <- paste0("sample", 1:10)
 
   # 创建分组数据
+
+test_that("pathway_errorbar works with ko_to_kegg=TRUE and pathway_class (annotation_custom fix regression test)", {
+  skip_if_not_installed("ggprism")
+  skip_if_not_installed("patchwork")
+  skip_if_not_installed("GGally")
+  
+  # This test specifically verifies the fix for issue #184
+  # The bug occurred when ko_to_kegg=TRUE with pathway_class annotations
+  # Error: "no applicable method for 'rescale' applied to an object of class 'c('simpleUnit', 'unit', 'unit_v2')'"
+  
+  set.seed(123)
+  abundance <- matrix(runif(60), nrow=6, ncol=10)
+  rownames(abundance) <- paste0("pathway", 1:6)
+  colnames(abundance) <- paste0("sample", 1:10)
+  
+  metadata <- data.frame(
+    sample = paste0("sample", 1:10),
+    group = rep(c("GroupA", "GroupB"), each=5)
+  )
+  
+  # Create DAA results with pathway_class column (required for ko_to_kegg=TRUE scenario)
+  daa_results_df <- data.frame(
+    feature = paste0("pathway", 1:6),
+    pathway_name = paste0("Pathway ", 1:6),
+    pathway_class = rep(c("Metabolism", "Genetic Information", "Environmental"), each=2),
+    description = paste0("Description ", 1:6),
+    p_adjust = c(0.001, 0.01, 0.02, 0.03, 0.04, 0.049),
+    method = rep("ALDEx2_Welch's t test", 6),
+    group1 = rep("GroupA", 6),
+    group2 = rep("GroupB", 6),
+    stringsAsFactors = FALSE
+  )
+  
+  Group <- factor(metadata$group)
+  names(Group) <- metadata$sample
+  
+  # Test with ko_to_kegg=TRUE which triggers pathway class background annotations
+  # This would fail in ggplot2 4.0.0+ before the fix
+  p <- pathway_errorbar(
+    abundance = abundance,
+    daa_results_df = daa_results_df,
+    Group = Group,
+    ko_to_kegg = TRUE,  # Triggers pathway class annotation code
+    p_values_threshold = 0.05,
+    order = "pathway_class",
+    p_value_bar = TRUE,  # Creates 4-panel patchwork
+    x_lab = "pathway_name"
+  )
+  
+  # Should return a patchwork object with 4 panels
+  expect_s3_class(p, "patchwork")
+  
+  # Test that plot can be rendered without the unit rescale error
+  expect_no_error({
+    # Render to null device to avoid display
+    pdf(NULL)
+    print(p)
+    dev.off()
+  })
+  
+  # Test with p_value_bar=FALSE (3-panel patchwork)
+  p2 <- pathway_errorbar(
+    abundance = abundance,
+    daa_results_df = daa_results_df,
+    Group = Group,
+    ko_to_kegg = TRUE,
+    p_values_threshold = 0.05,
+    order = "pathway_class",
+    p_value_bar = FALSE,  # Creates 3-panel patchwork
+    x_lab = "pathway_name"
+  )
+  
+  expect_s3_class(p2, "patchwork")
+  
+  # Verify rendering works
+  expect_no_error({
+    pdf(NULL)
+    print(p2)
+    dev.off()
+  })
+})
+
+test_that("pathway_errorbar handles too many features", {
+  skip_if_not_installed("ggprism")
+
+  n_features <- 31  # 超过30个特征
+  abundance <- matrix(runif(n_features * 10), nrow=n_features, ncol=10)
+  rownames(abundance) <- paste0("pathway", 1:n_features)
+  colnames(abundance) <- paste0("sample", 1:10)
+
+  # 创建分组数据
   group_data <- data.frame(
     sample = paste0("sample", 1:10),
     group = rep(c("GroupA", "GroupB"), each=5),
