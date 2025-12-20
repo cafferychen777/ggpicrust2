@@ -31,9 +31,21 @@
 #' @param reference A character, a reference group level for several DA methods
 #' @param colors A vector consisting of colors number
 #'
-#' @return daa.results.df, a dataframe of DA results
-#' A list of sub-lists, each containing a ggplot2 plot (`plot`) and a dataframe of differential abundance results (`results`) for a specific DA method.
-#' Each plot visualizes the differential abundance results of a specific DA method, and the corresponding dataframe contains the results used to create the plot.
+#' @return A list containing:
+#' \itemize{
+#'   \item Numbered elements (1, 2, ...): Sub-lists for each DA method, each containing:
+#'     \itemize{
+#'       \item \code{plot}: A ggplot2 error bar plot visualizing the differential abundance results
+#'       \item \code{results}: A data frame of differential abundance results for that method
+#'     }
+#'   \item \code{abundance}: The processed abundance data (KEGG pathway or original) for downstream analysis
+#'   \item \code{metadata}: The metadata data frame
+#'   \item \code{group}: The group variable name used in the analysis
+#'   \item \code{daa_results_df}: The complete annotated DAA results data frame
+#'   \item \code{ko_to_kegg}: Logical indicating whether KO to KEGG conversion was performed
+#' }
+#' These additional fields allow seamless integration with \code{\link{pathway_pca}} and
+#' \code{\link{pathway_heatmap}} for further visualization without re-preparing data.
 #' @export
 #' @examples
 #' \dontrun{
@@ -93,6 +105,25 @@
 #'                                  order = "group",
 #'                                  p_values_bar = TRUE,
 #'                                  x_lab = "description")
+#'
+#' # Use the returned data for PCA analysis (no need to re-prepare data)
+#' pca_plot <- pathway_pca(
+#'   abundance = results_file_input$abundance,
+#'   metadata = results_file_input$metadata,
+#'   group = results_file_input$group
+#' )
+#'
+#' # Use the returned data for heatmap (filter significant pathways first)
+#' sig_features <- results_file_input$daa_results_df %>%
+#'   dplyr::filter(p_adjust < 0.05) %>%
+#'   dplyr::pull(feature)
+#' if (length(sig_features) > 0) {
+#'   heatmap_plot <- pathway_heatmap(
+#'     abundance = results_file_input$abundance[sig_features, , drop = FALSE],
+#'     metadata = results_file_input$metadata,
+#'     group = results_file_input$group
+#'   )
+#' }
 #'}
 ggpicrust2 <- function(file = NULL,
                        data = NULL,
@@ -213,6 +244,14 @@ ggpicrust2 <- function(file = NULL,
       j <- j + 1
     }
     message("ggpicrust2 analysis completed.\n")
+
+    # Add data for downstream analysis (PCA, heatmap, etc.)
+    plot_result_list$abundance <- abundance
+    plot_result_list$metadata <- metadata
+    plot_result_list$group <- group
+    plot_result_list$daa_results_df <- daa_results_df
+    plot_result_list$ko_to_kegg <- ko_to_kegg
+
     return(plot_result_list)
   } else {
     message("Reading input file or using provided data...\n")
@@ -294,8 +333,14 @@ ggpicrust2 <- function(file = NULL,
       j <- j + 1
     }
     message("ggpicrust2 analysis completed.\n")
+
+    # Add data for downstream analysis (PCA, heatmap, etc.)
+    plot_result_list$abundance <- abundance
+    plot_result_list$metadata <- metadata
+    plot_result_list$group <- group
+    plot_result_list$daa_results_df <- daa_results_df
+    plot_result_list$ko_to_kegg <- ko_to_kegg
+
     return(plot_result_list)
   }
-
-
 }
