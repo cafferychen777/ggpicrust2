@@ -2,7 +2,7 @@
 
 library(testthat)
 
-context("GO Pathway Support")
+# Note: context() is deprecated in testthat 3.x, removed
 
 test_that("create_basic_go_mapping creates valid enhanced GO mapping", {
   # Load the function

@@ -554,18 +554,22 @@ test_that("calculate_rank_metric: mathematical properties verification", {
 
 test_that("calculate_rank_metric: consistency across methods", {
   test_data <- create_test_data_with_signal(n_features = 20, n_samples_per_group = 10, effect_size = 1)
-  
+
   # Calculate metrics with different methods
   metrics <- list(
     s2n = calculate_rank_metric(test_data$abundance, test_data$metadata, "group", "signal2noise"),
     ttest = calculate_rank_metric(test_data$abundance, test_data$metadata, "group", "t_test"),
     diff = calculate_rank_metric(test_data$abundance, test_data$metadata, "group", "diff_abundance")
   )
-  
+
+  # Ensure all metrics were calculated (base assertion to avoid empty test)
+  expect_equal(length(metrics), 3)
+  expect_true(all(sapply(metrics, is.numeric)))
+
   # All methods should identify the same features as having signal
   # (features with signal should rank higher)
   signal_indices <- which(rownames(test_data$abundance) %in% test_data$signal_features)
-  
+
   for (method in names(metrics)) {
     metric <- metrics[[method]]
 

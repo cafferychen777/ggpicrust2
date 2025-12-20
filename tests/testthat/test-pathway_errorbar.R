@@ -1,12 +1,12 @@
-library(ggprism)
 library(ggplot2)
 library(patchwork)
 library(dplyr)
 
-skip_if_not_installed("ggprism")
+# Note: ggprism is checked inside each test_that block
 
 test_that("pathway_errorbar basic functionality works", {
   skip_if_not_installed("ggprism")
+  library(ggprism)
 
   # Setup test data
   set.seed(123)
