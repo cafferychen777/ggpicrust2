@@ -30,6 +30,9 @@
 #' @param select A vector consisting of pathway names to be selected
 #' @param reference A character, a reference group level for several DA methods
 #' @param colors A vector consisting of colors number
+#' @param p_values_threshold A numeric value specifying the threshold for statistical
+#'   significance of differential abundance. Pathways with adjusted p-values below this
+#'   threshold will be displayed in the plot. Default is 0.05.
 #'
 #' @return A list containing:
 #' \itemize{
@@ -139,7 +142,8 @@ ggpicrust2 <- function(file = NULL,
                        x_lab = NULL,
                        select = NULL,
                        reference = NULL,
-                       colors = NULL) {
+                       colors = NULL,
+                       p_values_threshold = 0.05) {
   # Input validation
   if (is.null(file) && is.null(data)) {
     stop("Error: Please provide either a 'file' path (character string) or a 'data' data frame.")
@@ -233,7 +237,8 @@ ggpicrust2 <- function(file = NULL,
           order = order,
           colors = colors,
           select = select,
-          x_lab = x_lab
+          x_lab = x_lab,
+          p_values_threshold = p_values_threshold
         )
       # Create a sublist containing a combination_bar_plot and the corresponding subset of daa_results_df
       sub_list <-
@@ -314,9 +319,10 @@ ggpicrust2 <- function(file = NULL,
           order = order,
           colors = colors,
           select = select,
-          x_lab = x_lab
+          x_lab = x_lab,
+          p_values_threshold = p_values_threshold
         )
-      
+
       # Check if pathway_errorbar returned NULL (no data for plotting)
       if (is.null(combination_bar_plot)) {
         message(sprintf("Plot %d skipped due to insufficient annotation data for method: %s\n", j, i))

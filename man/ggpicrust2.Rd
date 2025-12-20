@@ -19,7 +19,8 @@ ggpicrust2(
   x_lab = NULL,
   select = NULL,
   reference = NULL,
-  colors = NULL
+  colors = NULL,
+  p_values_threshold = 0.05
 )
 }
 \arguments{
@@ -67,6 +68,10 @@ ko_to_kegg = TRUE. Set to FALSE to include all KEGG pathways.}
 \item{reference}{A character, a reference group level for several DA methods}
 
 \item{colors}{A vector consisting of colors number}
+
+\item{p_values_threshold}{A numeric value specifying the threshold for statistical
+significance of differential abundance. Pathways with adjusted p-values below this
+threshold will be displayed in the plot. Default is 0.05.}
 }
 \value{
 A list containing:
