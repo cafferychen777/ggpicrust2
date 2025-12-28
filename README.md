@@ -19,6 +19,16 @@ If you are interested in exploring and analyzing your PICRUSt2 output data, *ggp
 
 ## News
 
+🧬 **FlashDeconv: Ultra-Fast Spatial Transcriptomics Deconvolution**
+
+Check out our new tool [FlashDeconv](https://github.com/cafferychen777/FlashDeconv) for spatial transcriptomics cell type deconvolution:
+- ⚡ Processes 1M spots in ~3 minutes on CPU (no GPU required)
+- 📈 O(N) time complexity using random sketching
+- 🔗 Seamless integration with scanpy workflows
+- 📦 Install: `pip install flashdeconv`
+
+---
+
 📊 **New Visualization Functions: Volcano Plot & Ridge Plot**
 
 We've added two new visualization functions for enhanced analysis and interpretation:
