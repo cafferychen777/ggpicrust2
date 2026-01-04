@@ -312,38 +312,6 @@ comparison$plot
 comparison$results
 ```
 
-## Integrated Analysis with ggpicrust2_extended
-
-For a more streamlined workflow, you can use the `ggpicrust2_extended` function, which integrates both DAA and GSEA analyses:
-
-```{r integrated-analysis, eval=FALSE}
-# Run integrated analysis
-integrated_results <- ggpicrust2_extended(
-  data = ko_abundance,
-  metadata = metadata,
-  group = "Environment",
-  pathway = "KO",
-  daa_method = "LinDA",
-  ko_to_kegg = TRUE,
-  run_gsea = TRUE,
-  gsea_params = list(
-    method = "fgsea",
-    rank_method = "signal2noise",
-    nperm = 1000
-  )
-)
-
-# Access DAA results
-daa_results <- integrated_results$daa_results
-
-# Access GSEA results
-gsea_results <- integrated_results$gsea_results
-
-# Access plots
-daa_plot <- integrated_results$daa_plot
-gsea_plot <- integrated_results$gsea_plot
-```
-
 ## Conclusion
 
 Gene Set Enrichment Analysis provides a complementary approach to Differential Abundance Analysis for interpreting PICRUSt2 predicted functional data. By focusing on pathways rather than individual features, GSEA can help identify biologically meaningful patterns that might be missed by traditional methods.

@@ -1,5 +1,12 @@
 # ggpicrust2 2.5.6
 
+## Breaking Changes
+
+* **Removed `ggpicrust2_extended()` function**:
+  - This wrapper function provided minimal value over calling `ggpicrust2()` and `pathway_gsea()` separately
+  - Users can achieve the same functionality by calling the individual functions directly
+  - This change reduces maintenance burden and improves code clarity
+
 ## Major Features
 
 ### Covariate Adjustment & Improved Statistical Methods for pathway_gsea() (#193)
@@ -470,7 +477,6 @@ including edge cases where no statistically significant pathways are found.
   - `visualize_gsea()`: Creates visualizations of GSEA results, including enrichment plots, dotplots, barplots, network plots, and heatmaps
   - `compare_gsea_daa()`: Compares GSEA and Differential Abundance Analysis (DAA) results
   - `gsea_pathway_annotation()`: Adds pathway annotations to GSEA results
-  - `ggpicrust2_extended()`: Provides integrated analysis combining ggpicrust2 and GSEA functionality
 
 * Improved network and heatmap visualization capabilities with richer parameter options and better error handling
 
