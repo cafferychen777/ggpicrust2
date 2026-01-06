@@ -254,3 +254,96 @@ test_that("pathway_daa handles p-value adjustment correctly", {
   expect_true(all(!is.na(result$p_adjust)))
   expect_true(all(result$p_adjust >= 0 & result$p_adjust <= 1))
 })
+
+# ==============================================================================
+# ABUNDANCE STATISTICS TESTS
+# ==============================================================================
+
+test_that("pathway_daa include_abundance_stats parameter works correctly", {
+  abundance <- data.frame(
+    sample1 = c(10, 20, 30),
+    sample2 = c(15, 25, 35),
+    sample3 = c(30, 40, 50),
+    sample4 = c(35, 45, 55),
+    row.names = c("pathway1", "pathway2", "pathway3")
+  )
+
+  metadata <- data.frame(
+    sample = paste0("sample", 1:4),
+    group = factor(c("control", "control", "treatment", "treatment"))
+  )
+
+  # Test with include_abundance_stats = FALSE (default)
+  result_basic <- pathway_daa(
+    abundance = abundance,
+    metadata = metadata,
+    group = "group",
+    daa_method = "ALDEx2",
+    include_abundance_stats = FALSE
+  )
+
+  abundance_cols <- c("mean_rel_abundance_group1", "sd_rel_abundance_group1",
+                     "mean_rel_abundance_group2", "sd_rel_abundance_group2",
+                     "log2_fold_change")
+
+  expect_false(any(abundance_cols %in% colnames(result_basic)))
+
+  # Test with include_abundance_stats = TRUE
+  result_enhanced <- pathway_daa(
+    abundance = abundance,
+    metadata = metadata,
+    group = "group",
+    daa_method = "ALDEx2",
+    include_abundance_stats = TRUE
+  )
+
+  expect_true(all(abundance_cols %in% colnames(result_enhanced)))
+
+  # Check values are reasonable
+  for (col in abundance_cols) {
+    expect_true(is.numeric(result_enhanced[[col]]))
+  }
+  expect_true(all(is.finite(result_enhanced$log2_fold_change)))
+  expect_true(all(result_enhanced$sd_rel_abundance_group1 >= 0, na.rm = TRUE))
+  expect_true(all(result_enhanced$sd_rel_abundance_group2 >= 0, na.rm = TRUE))
+})
+
+test_that("pathway_errorbar_table function works correctly", {
+  abundance <- data.frame(
+    sample1 = c(10, 20, 30),
+    sample2 = c(15, 25, 35),
+    sample3 = c(30, 40, 50),
+    sample4 = c(35, 45, 55),
+    row.names = c("pathway1", "pathway2", "pathway3")
+  )
+
+  metadata <- data.frame(
+    sample = paste0("sample", 1:4),
+    group = factor(c("control", "control", "treatment", "treatment"))
+  )
+
+  daa_results <- pathway_daa(
+    abundance = abundance,
+    metadata = metadata,
+    group = "group",
+    daa_method = "ALDEx2"
+  )
+
+  daa_single_method <- daa_results[daa_results$method == "ALDEx2_Welch's t test", ]
+
+  result <- pathway_errorbar_table(
+    abundance = abundance,
+    daa_results_df = daa_single_method,
+    Group = metadata$group,
+    p_values_threshold = 1.0
+  )
+
+  expect_s3_class(result, "data.frame")
+  expect_true(nrow(result) > 0)
+
+  expected_cols <- c("feature", "group1", "group2",
+                    "mean_rel_abundance_group1", "sd_rel_abundance_group1",
+                    "mean_rel_abundance_group2", "sd_rel_abundance_group2",
+                    "log2_fold_change", "p_adjust")
+  expect_true(all(expected_cols %in% colnames(result)))
+})
