@@ -434,6 +434,184 @@ validate_group <- function(metadata, group, min_groups = 2, min_per_group = 1) {
 }
 
 # =============================================================================
+# Extended Validation Utilities
+# =============================================================================
+
+#' Validate Numeric Matrix Quality
+#'
+#' Deep validation of numeric matrix including negative values, NA, and duplicates.
+#'
+#' @param mat Numeric matrix to validate
+#' @param check_negative Check for negative values (default: TRUE)
+#' @param check_na Check for NA values (default: TRUE, issues warning)
+#' @param check_duplicates Check for duplicate column names (default: TRUE)
+#' @return TRUE if valid, otherwise stops with error
+#' @noRd
+validate_numeric_matrix <- function(mat, check_negative = TRUE,
+                                    check_na = TRUE, check_duplicates = TRUE) {
+  if (check_negative) {
+    neg_cols <- apply(mat, 2, function(x) any(x < 0, na.rm = TRUE))
+    if (any(neg_cols)) {
+      stop(sprintf("Negative values found in columns: %s",
+                   paste(colnames(mat)[neg_cols], collapse = ", ")))
+    }
+  }
+
+  if (check_na) {
+    na_count <- sum(is.na(mat))
+    if (na_count > 0) {
+      warning(sprintf("Found %d NA values in data", na_count))
+    }
+  }
+
+  if (check_duplicates && !is.null(colnames(mat))) {
+    if (anyDuplicated(colnames(mat))) {
+      stop("Duplicate column names found in data")
+    }
+  }
+
+  TRUE
+}
+
+#' Validate Zero Abundance Issues
+#'
+#' Checks for empty data, all-zero data, and excessive zero rows.
+#' Returns information about zero rows for downstream filtering.
+#'
+#' @param mat Numeric matrix (features x samples)
+#' @param warn_threshold Proportion of zero rows to trigger warning (default: 0.9)
+#' @return List with: valid (logical), zero_rows (logical vector), n_nonzero (integer)
+#' @noRd
+validate_zero_abundance <- function(mat, warn_threshold = 0.9) {
+  # Check dimensions
+
+  if (nrow(mat) == 0) {
+    stop("No features in abundance data")
+  }
+  if (ncol(mat) == 0) {
+    stop("No samples in abundance data")
+  }
+
+  # Check all-zero
+  total <- sum(mat, na.rm = TRUE)
+  if (total == 0) {
+    stop("All abundance values are zero")
+  }
+
+  # Identify zero rows
+
+  zero_rows <- rowSums(mat, na.rm = TRUE) == 0
+  n_nonzero <- sum(!zero_rows)
+  zero_prop <- mean(zero_rows)
+
+  if (zero_prop > warn_threshold) {
+    warning(sprintf("%.0f%% of features have zero abundance across all samples",
+                    zero_prop * 100))
+  }
+
+  list(valid = TRUE, zero_rows = zero_rows, n_nonzero = n_nonzero)
+}
+
+#' Validate Feature ID Format
+#'
+#' Checks if feature IDs match expected format patterns.
+#'
+#' @param ids Character vector of feature IDs
+#' @param type Expected ID type: "KO", "EC", "pathway", or "auto" (default: "auto")
+#' @return TRUE (issues warning if format doesn't match)
+#' @noRd
+validate_feature_ids <- function(ids, type = "auto") {
+  patterns <- list(
+    KO = "^K\\d{5}$",
+    EC = "^(EC:)?\\d+\\.\\d+\\.\\d+\\.(\\d+|-)$",
+    pathway = "^(ko|map|ec)?\\d{5}$"
+  )
+
+  # Auto-detect type
+  if (type == "auto") {
+    for (t in names(patterns)) {
+      if (mean(grepl(patterns[[t]], ids)) > 0.5) {
+        type <- t
+        break
+      }
+    }
+    if (type == "auto") return(TRUE)  # Unknown format, skip validation
+  }
+
+  if (type %in% names(patterns)) {
+    invalid <- ids[!grepl(patterns[[type]], ids)]
+    if (length(invalid) > 0 && length(invalid) < length(ids)) {
+      warning(sprintf("%d %s IDs don't match expected format (e.g., %s)",
+                      length(invalid), type, paste(head(invalid, 2), collapse = ", ")))
+    }
+  }
+
+  TRUE
+}
+
+#' Validate Input for DAA Analysis
+#'
+#' Comprehensive validation for differential abundance analysis input.
+#' Combines zero-abundance checks with method-specific requirements.
+#'
+#' @param mat Numeric matrix (features x samples)
+#' @param method DAA method name (optional, for method-specific checks)
+#' @param min_features Minimum required non-zero features (default: 2)
+#' @param filter_zero Whether to return filtered matrix (default: FALSE)
+#' @return If filter_zero=FALSE: TRUE. If filter_zero=TRUE: filtered matrix.
+#' @noRd
+validate_daa_input <- function(mat, method = NULL, min_features = 2, filter_zero = FALSE) {
+  # Basic zero checks
+  result <- validate_zero_abundance(mat)
+
+  # Method-specific requirements
+  if (!is.null(method)) {
+    if (method == "ALDEx2" && result$n_nonzero < 2) {
+      stop(sprintf("ALDEx2 requires at least 2 non-zero features (found %d)", result$n_nonzero))
+    }
+    if (method == "LinDA" && result$n_nonzero < 10) {
+      warning(sprintf("Only %d non-zero features for LinDA; results may be unreliable", result$n_nonzero))
+    }
+  }
+
+  # General minimum check
+  if (result$n_nonzero < min_features) {
+    stop(sprintf("At least %d non-zero features required (found %d)", min_features, result$n_nonzero))
+  }
+
+  if (filter_zero) {
+    return(mat[!result$zero_rows, , drop = FALSE])
+  }
+
+  TRUE
+}
+
+#' Require Package with Consistent Error Message
+#'
+#' Checks if a package is available and provides consistent installation instructions.
+#'
+#' @param pkg Package name
+#' @param purpose Optional description of why the package is needed
+#' @param bioc Whether it's a Bioconductor package (default: TRUE)
+#' @return TRUE if available, otherwise stops with error
+#' @noRd
+require_package <- function(pkg, purpose = NULL, bioc = TRUE) {
+  if (!requireNamespace(pkg, quietly = TRUE)) {
+    install_cmd <- if (bioc) {
+      sprintf("BiocManager::install('%s')", pkg)
+    } else {
+      sprintf("install.packages('%s')", pkg)
+    }
+    msg <- sprintf("Package '%s' is required", pkg)
+    if (!is.null(purpose)) {
+      msg <- sprintf("%s for %s", msg, purpose)
+    }
+    stop(sprintf("%s. Install with: %s", msg, install_cmd))
+  }
+  TRUE
+}
+
+# =============================================================================
 # Empty Result Frame Factories
 # =============================================================================
 

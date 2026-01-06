@@ -61,7 +61,6 @@ Suggests:
     clusterProfiler,
     enrichplot,
     DOSE,
-    pathview,
     ggVennDiagram,
     UpSetR,
     igraph,

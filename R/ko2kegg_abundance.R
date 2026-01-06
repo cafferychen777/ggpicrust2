@@ -99,227 +99,83 @@ ko2kegg_abundance <- function (file = NULL, data = NULL, method = c("abundance",
     warning("Both file and data provided. Using data and ignoring file.")
   }
 
-  # File format validation function
-  validate_file_format <- function(file_path) {
-    # Check if file_path is actually a character string (file path)
-    if (!is.character(file_path) || length(file_path) != 1) {
-      stop("Error: 'file' parameter must be a character string representing a file path, not a data frame. If you have already loaded your data, please use the 'data' parameter instead.")
-    }
-
-    valid_extensions <- c(".txt", ".tsv", ".csv")
-    ext <- tolower(tools::file_ext(file_path))
-
-    # Handle case where file_ext returns empty string or multiple values
-    if (length(ext) == 0 || any(ext == "")) {
-      stop("Error: Unable to determine file extension. Please ensure the file has a valid extension (.txt, .tsv, or .csv).")
-    }
-
-    # Use any() to ensure we get a single logical value
-    if (!any(paste0(".", ext) %in% valid_extensions)) {
-      stop(sprintf("Error: Input file should be in %s format.",
-                  paste(valid_extensions, collapse = ", ")))
-    }
-    return(paste0(".", ext[1]))  # Return first extension if multiple
-  }
-  
-  # Data frame validation function
-  validate_abundance_data <- function(df) {
-    if (ncol(df) < 2) {
-      stop("Error: Data must contain at least one KO column and one sample column.")
-    }
-    if (!is.character(df[[1]]) && !is.factor(df[[1]])) {
-      stop("Error: First column must contain KO identifiers.")
-    }
-    if (!all(sapply(df[-1], is.numeric))) {
-      stop("Error: All sample columns must contain numeric values.")
-    }
-  }
-  
-  # Input validation function
-  validate_input <- function(data) {
-    # Basic structure validation
-    if (!is.data.frame(data)) {
-      stop("The provided data must be a data.frame")
-    }
-
-    if (ncol(data) < 2) {
-      stop("Data must contain at least one KO column and one sample column")
-    }
-
-    # Check first column (KO IDs)
-    ko_col <- data[[1]]
-
-    # Check KO ID format
-    ko_pattern <- "^K\\d{5}$"
-    invalid_kos <- ko_col[!grepl(ko_pattern, ko_col)]
-    if (length(invalid_kos) > 0) {
-      warning(sprintf(
-        "Found %d KO IDs that don't match the expected format (K#####).\nFirst few invalid IDs: %s",
-        length(invalid_kos),
-        paste(head(invalid_kos, 3), collapse = ", ")
-      ))
-    }
-
-    # Check numeric columns
-    numeric_cols <- data[,-1, drop = FALSE]
-
-    # Check if all sample columns are numeric
-    non_numeric_cols <- names(numeric_cols)[!sapply(numeric_cols, is.numeric)]
-    if (length(non_numeric_cols) > 0) {
-      stop(sprintf(
-        "The following columns contain non-numeric values: %s",
-        paste(non_numeric_cols, collapse = ", ")
-      ))
-    }
-
-    # Check for negative values
-    neg_values <- sapply(numeric_cols, function(x) any(x < 0, na.rm = TRUE))
-    if (any(neg_values)) {
-      stop(sprintf(
-        "Negative abundance values found in columns: %s",
-        paste(names(numeric_cols)[neg_values], collapse = ", ")
-      ))
-    }
-
-    # Check for missing values
-    na_counts <- sapply(numeric_cols, function(x) sum(is.na(x)))
-    cols_with_na <- names(na_counts[na_counts > 0])
-    if (length(cols_with_na) > 0) {
-      warning(sprintf(
-        "Missing values found in columns: %s\nTotal NA count per column: %s",
-        paste(cols_with_na, collapse = ", "),
-        paste(paste(cols_with_na, na_counts[cols_with_na], sep = ": "), collapse = ", ")
-      ))
-    }
-
-    # Check for all-zero rows
-    zero_rows <- rowSums(numeric_cols == 0) == ncol(numeric_cols)
-    if (any(zero_rows)) {
-      warning(sprintf(
-        "%d KOs have zero abundance across all samples",
-        sum(zero_rows)
-      ))
-    }
-
-    # Check for duplicate column names
-    if (any(duplicated(colnames(data)))) {
-      stop("Duplicate column names found in the input data")
-    }
-
-    return(TRUE)
-  }
-
-  # File format validation
+  # Load data from file or use provided data
   if (!is.null(file)) {
-    file_format <- validate_file_format(file)
-    message("Loading data from file...")
-    abundance <- switch(
-      file_format,
-      ".txt" = readr::read_delim(file, delim = "\t", escape_double = FALSE, trim_ws = TRUE),
-      ".tsv" = readr::read_delim(file, delim = "\t", escape_double = FALSE, trim_ws = TRUE),
-      ".csv" = readr::read_delim(file, delim = ",", escape_double = FALSE, trim_ws = TRUE)
-    )
-  } else {
-    # Validate that data is a data.frame before proceeding
-    if (!is.data.frame(data)) {
-      stop("The provided data must be a data.frame")
+    # Validate file path
+    if (!is.character(file) || length(file) != 1) {
+      stop("'file' must be a file path string. Use 'data' parameter for data frames.")
     }
-    message("Processing provided data frame...")
+    ext <- tolower(tools::file_ext(file))
+    if (!ext %in% c("txt", "tsv", "csv")) {
+      stop("Input file must be .txt, .tsv, or .csv format")
+    }
+    delim <- if (ext == "csv") "," else "\t"
+    abundance <- readr::read_delim(file, delim = delim, show_col_types = FALSE)
+  } else {
+    if (!is.data.frame(data)) {
+      stop("'data' must be a data.frame")
+    }
     abundance <- data
   }
 
-  # Validate data format
+  # Basic structure validation
   if (ncol(abundance) < 2) {
-    stop("Error: Data must have at least 2 columns (KO IDs and at least one sample)")
+    stop("Data must have at least 2 columns (KO IDs and samples)")
   }
 
-  # PICRUSt2 compatibility: Accept various column name formats for KO IDs
-  # Common formats: "function.", "function", "sequence", "#NAME"
+  # Standardize first column name (PICRUSt2 uses various formats)
   valid_ko_column_names <- c("function.", "function", "sequence", "#NAME")
   first_col_name <- colnames(abundance)[1]
 
   if (first_col_name %in% valid_ko_column_names) {
-    # Standardize to "function." for internal processing
-    if (first_col_name != "function.") {
-      message(sprintf("Detected column name '%s', renaming to 'function.' for processing...", first_col_name))
-      colnames(abundance)[1] <- "function."
-    }
+    colnames(abundance)[1] <- "function."
   } else {
-    # Check if first column contains KO IDs (K##### format)
+    # Check if first column contains KO IDs
     first_col_values <- as.character(abundance[[1]])
     ko_pattern <- "(^K\\d{5}$)|(^ko:K\\d{5}$)"
     if (any(grepl(ko_pattern, first_col_values))) {
-      message(sprintf("Column '%s' appears to contain KO IDs, renaming to 'function.' for processing...", first_col_name))
       colnames(abundance)[1] <- "function."
     } else {
-      stop(sprintf("Error: First column '%s' does not appear to contain KO IDs. Expected formats: K##### or ko:K#####", first_col_name))
+      stop(sprintf("First column '%s' does not contain KO IDs (expected: K##### or ko:K#####)", first_col_name))
     }
   }
 
   if (nrow(abundance) == 0) {
-    stop("Error: Data contains no rows")
+    stop("Data contains no rows")
   }
 
-  # Standardize KO ID format (handles PICRUSt 2.6.2 "ko:" prefix)
-  abundance <- clean_ko_abundance(abundance)
+  # Standardize KO ID format and validate
+ abundance <- clean_ko_abundance(abundance, verbose = FALSE)
 
-  # Run input validation
-  tryCatch({
-    validate_input(abundance)
-  }, warning = function(w) {
-    warning("Warning during data validation: ", w$message, call. = FALSE)
-  }, error = function(e) {
-    stop("Data validation failed: ", e$message, call. = FALSE)
-  })
+  # Validate numeric matrix (negative values, NA, duplicates)
+  numeric_mat <- as.matrix(abundance[, -1, drop = FALSE])
+  validate_numeric_matrix(numeric_mat)
+  validate_feature_ids(abundance[[1]], type = "KO")
   
   # Load KEGG reference data using unified loader
   ko_to_kegg_reference <- load_reference_data("ko_to_kegg")
 
   # Filter for prokaryotic pathways if requested
   if (filter_for_prokaryotes) {
-    message("Filtering pathways for prokaryotic analysis...")
-
-    # Define KEGG Level 2 categories to EXCLUDE (eukaryote-specific)
+    # Exclude eukaryote-specific KEGG Level 2 categories
     eukaryote_specific_level2 <- c(
-      # Human Diseases - exclude non-infectious diseases
-      "9161 Cancer: overview",
-      "9162 Cancer: specific types",
-      "9163 Immune disease",
-      "9164 Neurodegenerative disease",
-      "9165 Substance dependence",
-      "9166 Cardiovascular disease",
+      "9161 Cancer: overview", "9162 Cancer: specific types",
+      "9163 Immune disease", "9164 Neurodegenerative disease",
+      "9165 Substance dependence", "9166 Cardiovascular disease",
       "9167 Endocrine and metabolic disease",
-      # Note: We KEEP "9171 Infectious disease: bacterial" and
-      #       "9175 Drug resistance: antimicrobial" as they are prokaryote-relevant
-
-      # Organismal Systems - exclude all (eukaryote-specific)
-      "9149 Aging",
-      "9151 Immune system",
-      "9152 Endocrine system",
-      "9153 Circulatory system",
-      "9154 Digestive system",
-      "9155 Excretory system",
-      "9156 Nervous system",
-      "9157 Sensory system",
-      "9158 Development and regeneration",
+      "9149 Aging", "9151 Immune system", "9152 Endocrine system",
+      "9153 Circulatory system", "9154 Digestive system",
+      "9155 Excretory system", "9156 Nervous system",
+      "9157 Sensory system", "9158 Development and regeneration",
       "9159 Environmental adaptation"
     )
-
-    # Filter out eukaryote-specific pathways
-    original_count <- length(unique(ko_to_kegg_reference$pathway_id))
     ko_to_kegg_reference <- ko_to_kegg_reference[
       !ko_to_kegg_reference$level2 %in% eukaryote_specific_level2,
     ]
-    filtered_count <- length(unique(ko_to_kegg_reference$pathway_id))
-
-    message(sprintf("  Removed %d eukaryote-specific pathways (%d -> %d pathways)",
-                    original_count - filtered_count, original_count, filtered_count))
   }
 
   # Get all unique pathway IDs
   all_pathways <- unique(ko_to_kegg_reference$pathway_id)
-
-  message(sprintf("Processing %d KEGG pathways using '%s' method...", length(all_pathways), method))
 
   # Create fast pathway → KOs lookup mapping
   pathway_to_ko <- split(ko_to_kegg_reference$ko_id, ko_to_kegg_reference$pathway_id)
@@ -335,80 +191,40 @@ ko2kegg_abundance <- function (file = NULL, data = NULL, method = c("abundance",
     kegg_abundance[[sample]] <- 0
   }
 
-  # Use tryCatch for error handling
-  tryCatch({
-    pb <- txtProgressBar(min = 0, max = nrow(kegg_abundance), style = 3)
-    start_time <- Sys.time()
+  # Calculate pathway abundances with progress bar
+  pb <- txtProgressBar(min = 0, max = nrow(kegg_abundance), style = 3)
+  on.exit(close(pb), add = TRUE)
 
-    total_matches <- 0
+  for (i in seq_len(nrow(kegg_abundance))) {
+    setTxtProgressBar(pb, i)
+    current_kegg <- rownames(kegg_abundance)[i]
+    relevant_kos <- pathway_to_ko[[current_kegg]]
+    matching_rows <- abundance[[1]] %in% relevant_kos
 
-    for (i in seq_len(nrow(kegg_abundance))) {
-      setTxtProgressBar(pb, i)
-      current_kegg <- rownames(kegg_abundance)[i]
-
-      # Get all KOs for current pathway from index
-      relevant_kos <- pathway_to_ko[[current_kegg]]
-
-      # Find matching KOs
-      matching_rows <- abundance[[1]] %in% relevant_kos
-      if (any(matching_rows)) {
-        total_matches <- total_matches + sum(matching_rows)
-
-        if (method == "sum") {
-          # Legacy method: simple summation
-          kegg_abundance[i, ] <- colSums(abundance[matching_rows, -1, drop = FALSE])
-        } else {
-          # PICRUSt2-style method: upper-half mean
-          # For each sample, calculate the mean of the upper half of sorted KO abundances
-          ko_abundances <- as.matrix(abundance[matching_rows, -1, drop = FALSE])
-
-          for (j in seq_along(sample_names)) {
-            sample_abun <- ko_abundances[, j]
-            # Sort abundances in ascending order
-            sorted_abun <- sort(sample_abun)
-            # Calculate the starting index for upper half (ceiling handles odd numbers)
-            half_i <- ceiling(length(sorted_abun) / 2)
-            # Take upper half and calculate mean
-            upper_half <- sorted_abun[half_i:length(sorted_abun)]
-            kegg_abundance[i, j] <- mean(upper_half)
-          }
+    if (any(matching_rows)) {
+      if (method == "sum") {
+        kegg_abundance[i, ] <- colSums(abundance[matching_rows, -1, drop = FALSE])
+      } else {
+        # PICRUSt2-style: upper-half mean
+        ko_abundances <- as.matrix(abundance[matching_rows, -1, drop = FALSE])
+        for (j in seq_along(sample_names)) {
+          sorted_abun <- sort(ko_abundances[, j])
+          half_i <- ceiling(length(sorted_abun) / 2)
+          kegg_abundance[i, j] <- mean(sorted_abun[half_i:length(sorted_abun)])
         }
       }
     }
-    
-    end_time <- Sys.time()
-    close(pb)
+  }
+  close(pb)
 
-    # Remove zero-abundance pathways
-    message("Removing KEGG pathways with zero abundance across all samples...")
-    # Note: kegg_abundance only has sample columns, pathway IDs are in rownames
-    zero_rows <- rowSums(kegg_abundance, na.rm = TRUE) == 0
+  # Remove zero-abundance pathways
+  zero_rows <- rowSums(kegg_abundance, na.rm = TRUE) == 0
+  if (all(zero_rows)) {
+    warning("No KO IDs matched known pathways")
+    kegg_abundance <- kegg_abundance[0, , drop = FALSE]
+  } else {
+    kegg_abundance <- kegg_abundance[!zero_rows, , drop = FALSE]
+  }
 
-    # Check if all pathways have zero abundance
-    if (all(zero_rows)) {
-      # All pathways are zero - this usually means no KO IDs matched any pathway
-      # Return empty data frame
-      message("All KEGG pathways have zero abundance. No KO IDs matched known pathways.")
-
-      # Create empty but correctly structured data frame
-      sample_names <- colnames(abundance)[-1]
-      kegg_abundance <- data.frame(matrix(ncol = length(sample_names), nrow = 0))
-      colnames(kegg_abundance) <- sample_names
-    } else {
-      # Normal filtering logic: remove zero rows
-      kegg_abundance <- kegg_abundance[!zero_rows, , drop = FALSE]
-    }
-
-    message(sprintf("Final number of KEGG pathways: %d", nrow(kegg_abundance)))
-
-    # Empty result is valid - it means no KO IDs matched any pathways
-    # Simply return the empty data frame with correct structure
-    
-    return(kegg_abundance)
-    
-  }, error = function(e) {
-    if (exists("pb")) close(pb)
-    message("Error occurred during processing: ", e$message)
-    stop(e)
-  })
+  kegg_abundance
 }
