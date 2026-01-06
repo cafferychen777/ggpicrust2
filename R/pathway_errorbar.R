@@ -624,33 +624,30 @@ pathway_errorbar <-
       # Create the pathway_class_group data frame
       pathway_class_group <- data.frame(
         . = unique(daa_results_filtered_sub_df$pathway_class),
-        Freq = pathway_class_group_mat[unique(daa_results_filtered_sub_df$pathway_class), "Freq"]
+        Freq = as.numeric(pathway_class_group_mat[unique(daa_results_filtered_sub_df$pathway_class), "Freq"])
       )
       start <-
         c(1, rev(pathway_class_group$Freq)[1:(length(pathway_class_group$Freq) - 1)]) %>%
-        cumsum()
-      end <- cumsum(rev(pathway_class_group$Freq))
-      ymin <- start - 1 / 2
-      ymax <- end + 1 / 2
+        cumsum() %>%
+        as.numeric()
+      end <- cumsum(rev(pathway_class_group$Freq)) %>% as.numeric()
+      ymin <- as.numeric(start - 1 / 2)
+      ymax <- as.numeric(end + 1 / 2)
       nPoints <- length(start)
       pCol <- pathway_class_colors[1:nPoints]
       pFill <- pCol
       for (i in 1:nPoints)  {
         bar_errorbar <- bar_errorbar +
-          ggplot2::annotation_custom(
-            grob = grid::rectGrob(
-              gp = grid::gpar(
-                col = pCol[i],
-                fill = pFill[i],
-                lty = NULL,
-                lwd = NULL,
-                alpha = 0.2
-              )
-            ),
+          ggplot2::annotate(
+            "rect",
             xmin = -2,
             xmax = 0,
             ymin = ymin[i],
-            ymax = ymax[i]
+            ymax = ymax[i],
+            color = pCol[i],
+            fill = pFill[i],
+            alpha = 0.2,
+            linewidth = 0
           )
       }
     }
