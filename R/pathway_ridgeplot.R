@@ -217,24 +217,27 @@ pathway_ridgeplot <- function(gsea_results,
  names(log2fc) <- rownames(abundance)
 
  # Determine gene member column in pathway_reference
- gene_col <- if ("ko_members" %in% colnames(pathway_reference)) {
-   "ko_members"
- } else if ("KO" %in% colnames(pathway_reference)) {
-   "KO"
- } else if ("genes" %in% colnames(pathway_reference)) {
-   "genes"
- } else {
-   # Try to find any column with semicolon-separated values
+ # Support both wide format (semicolon-separated) and long format (one gene per row)
+ gene_col_candidates <- c("ko_members", "KO", "ko_id", "genes", "gene", "ec_numbers")
+ gene_col <- NULL
+ for (col in gene_col_candidates) {
+   if (col %in% colnames(pathway_reference)) {
+     gene_col <- col
+     break
+   }
+ }
+ if (is.null(gene_col)) {
+   # Fallback: try to find any column with semicolon-separated values
    for (col in colnames(pathway_reference)) {
      if (any(grepl(";", pathway_reference[[col]], fixed = TRUE))) {
        gene_col <- col
        break
      }
    }
-   if (!exists("gene_col")) {
-     stop("Cannot find gene member column in pathway_reference.")
-   }
-   gene_col
+ }
+ if (is.null(gene_col)) {
+   stop("Cannot find gene member column in pathway_reference. ",
+        "Expected columns: ", paste(gene_col_candidates, collapse = ", "))
  }
 
  # Build data for ridge plot
@@ -268,11 +271,18 @@ pathway_ridgeplot <- function(gsea_results,
      "Unknown"
    }
 
-   ref_row <- pathway_reference[pathway_reference[[ref_id_col]] == pid, ]
+   ref_rows <- pathway_reference[pathway_reference[[ref_id_col]] == pid, ]
 
-   if (nrow(ref_row) > 0) {
-     genes_str <- ref_row[[gene_col]][1]
-     genes <- unlist(strsplit(as.character(genes_str), ";"))
+   if (nrow(ref_rows) > 0) {
+     # Handle both long format (multiple rows) and wide format (semicolon-separated)
+     if (nrow(ref_rows) > 1) {
+       # Long format: each row is one gene
+       genes <- unique(as.character(ref_rows[[gene_col]]))
+     } else {
+       # Wide format: genes are semicolon-separated in one row
+       genes_str <- ref_rows[[gene_col]][1]
+       genes <- unlist(strsplit(as.character(genes_str), ";"))
+     }
      genes <- trimws(genes)
 
      # Get fold changes for these genes
@@ -291,9 +301,14 @@ pathway_ridgeplot <- function(gsea_results,
  }
 
  # Combine all data frames at once (O(n) instead of O(n²))
- ridge_data <- do.call(rbind, ridge_data_list[!sapply(ridge_data_list, is.null)])
+ non_null_list <- ridge_data_list[!sapply(ridge_data_list, is.null)]
+ if (length(non_null_list) == 0) {
+   stop("No gene data found for the selected pathways. ",
+        "Check that pathway_reference matches your abundance data.")
+ }
+ ridge_data <- do.call(rbind, non_null_list)
 
- if (nrow(ridge_data) == 0) {
+ if (is.null(ridge_data) || nrow(ridge_data) == 0) {
    stop("No gene data found for the selected pathways. ",
         "Check that pathway_reference matches your abundance data.")
  }
