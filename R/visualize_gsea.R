@@ -91,28 +91,17 @@ visualize_gsea <- function(gsea_results,
                           pathway_label_column = NULL,
                           scale = NULL) {
 
-  # Input validation
-  if (!is.data.frame(gsea_results)) {
-    stop("'gsea_results' must be a data frame")
-  }
-
-  if (!plot_type %in% c("enrichment_plot", "dotplot", "barplot", "network", "heatmap")) {
-    stop("plot_type must be one of 'enrichment_plot', 'dotplot', 'barplot', 'network', or 'heatmap'")
-  }
-
-  if (!sort_by %in% c("NES", "pvalue", "p.adjust")) {
-    stop("sort_by must be one of 'NES', 'pvalue', or 'p.adjust'")
-  }
+  # Input validation using unified functions
+  validate_dataframe(gsea_results, param_name = "gsea_results")
+  validate_choice(plot_type, c("enrichment_plot", "dotplot", "barplot", "network", "heatmap"), "plot_type")
+  validate_choice(sort_by, c("NES", "pvalue", "p.adjust"), "sort_by")
 
   if (!is.null(colors) && !is.character(colors)) {
     stop("colors must be NULL or a character vector")
   }
-
   if (!is.null(pathway_label_column) && !is.character(pathway_label_column)) {
     stop("pathway_label_column must be NULL or a character string")
   }
-
-  # Validate n_pathways parameter
   if (!is.numeric(n_pathways) || length(n_pathways) != 1 || is.na(n_pathways)) {
     stop("n_pathways must be a single numeric value")
   }

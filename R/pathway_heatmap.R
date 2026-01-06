@@ -328,70 +328,26 @@ pathway_heatmap <- function(abundance,
   validate_abundance(abundance, min_samples = 2)
   validate_metadata(metadata)
 
-  # Ensure abundance is a matrix
+  # Ensure abundance is a matrix with names
   abundance <- as.matrix(abundance)
+  if (nrow(abundance) < 1) stop("At least one pathway is required")
+  if (is.null(colnames(abundance))) colnames(abundance) <- paste0("Sample", seq_len(ncol(abundance)))
+  if (is.null(rownames(abundance))) rownames(abundance) <- paste0("Pathway", seq_len(nrow(abundance)))
 
-  # Check pathway count
-  if (nrow(abundance) < 1) {
-    stop("At least one pathway is required")
+  # Handle deprecated facet_by parameter
+ if (!is.null(facet_by)) {
+    warning("'facet_by' is deprecated. Use 'secondary_groups' instead.", call. = FALSE)
+    if (is.null(secondary_groups)) secondary_groups <- facet_by
   }
 
-  # Ensure column names exist
-  if (is.null(colnames(abundance))) {
-    colnames(abundance) <- paste0("Sample", seq_len(ncol(abundance)))
-  }
-
-  # Ensure row names exist
-  if (is.null(rownames(abundance))) {
-    rownames(abundance) <- paste0("Pathway", seq_len(nrow(abundance)))
-  }
-
-  if (!is.character(group) || length(group) != 1) {
-    stop("group must be a single character string")
-  }
-
-  # Validate secondary_groups parameter
-  if (!is.null(secondary_groups)) {
-    if (!is.character(secondary_groups)) {
-      stop("secondary_groups must be NULL or a character vector")
-    }
-    if (length(secondary_groups) == 0) {
-      stop("secondary_groups must contain at least one variable name if not NULL")
-    }
-  }
-
-  # Handle deprecated facet_by parameter with backward compatibility
-  if (!is.null(facet_by)) {
-    warning("Parameter 'facet_by' is deprecated and will be removed in future versions. Use 'secondary_groups' instead.",
-            call. = FALSE)
-    if (is.null(secondary_groups)) {
-      secondary_groups <- facet_by
-    } else {
-      warning("Both 'facet_by' and 'secondary_groups' are specified. Using 'secondary_groups' and ignoring 'facet_by'.",
-              call. = FALSE)
-    }
-  }
-
-  # Build complete grouping variables list
+  # Build and validate all grouping variables
   all_groups <- c(group, secondary_groups)
-
-  # Validate all grouping variables exist in metadata
-  missing_groups <- setdiff(all_groups, colnames(metadata))
-  if (length(missing_groups) > 0) {
-    stop("The following grouping variables are not found in metadata: ",
-         paste(missing_groups, collapse = ", "))
+  for (grp in all_groups) {
+    validate_group(metadata, grp, min_groups = 2)
   }
 
   if (!is.null(colors) && !is.character(colors)) {
-    stop("colors must be NULL or a character vector of color codes")
-  }
-  
-  # Check group count for all grouping variables
-  for (grp in all_groups) {
-    group_levels <- unique(metadata[[grp]])
-    if (length(group_levels) < 2) {
-      stop(paste("At least two groups are required for comparison in variable:", grp))
-    }
+    stop("colors must be NULL or a character vector")
   }
   
   # Heatmaps use color changes to visualize changes in values. However, if the

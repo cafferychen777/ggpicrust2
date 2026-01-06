@@ -193,24 +193,12 @@ pathway_errorbar <-
            pathway_class_position = "right",
            # Pathway names text size parameter
            pathway_names_text_size = "auto") {
-    # Add more complete input validation at the beginning of the function
-    if(!is.matrix(abundance) && !is.data.frame(abundance)) {
-      stop("'abundance' must be a matrix or data frame")
-    }
+    # Input validation using unified functions
+    validate_abundance(abundance)
+    validate_dataframe(daa_results_df,
+                       required_cols = c("feature", "method", "group1", "group2", "p_adjust"),
+                       param_name = "daa_results_df")
 
-    if(!is.data.frame(daa_results_df)) {
-      stop("'daa_results_df' must be a data frame")
-    }
-
-    # Check required columns
-    required_cols <- c("feature", "method", "group1", "group2", "p_adjust")
-    missing_cols <- setdiff(required_cols, colnames(daa_results_df))
-    if(length(missing_cols) > 0) {
-      stop("Missing required columns in daa_results_df: ",
-           paste(missing_cols, collapse = ", "))
-    }
-
-    # Add data validation at the beginning of the function
     if (length(Group) != ncol(abundance)) {
       stop("Length of Group must match number of columns in abundance matrix")
     }

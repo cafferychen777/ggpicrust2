@@ -611,6 +611,44 @@ require_package <- function(pkg, purpose = NULL, bioc = TRUE) {
   TRUE
 }
 
+#' Validate Choice Parameter
+#'
+#' Validates that a value is one of the allowed choices.
+#'
+#' @param value The value to validate
+#' @param choices Vector of allowed choices
+#' @param param_name Name of the parameter (for error message)
+#' @return TRUE if valid, otherwise stops with error
+#' @noRd
+validate_choice <- function(value, choices, param_name = "value") {
+  if (!value %in% choices) {
+    stop(sprintf("%s must be one of: %s", param_name, paste(choices, collapse = ", ")))
+  }
+  TRUE
+}
+
+#' Validate Data Frame Input
+#'
+#' Validates that input is a data frame with required columns.
+#'
+#' @param df The data frame to validate
+#' @param required_cols Character vector of required column names (optional)
+#' @param param_name Name of the parameter (for error message)
+#' @return TRUE if valid, otherwise stops with error
+#' @noRd
+validate_dataframe <- function(df, required_cols = NULL, param_name = "data") {
+  if (!is.data.frame(df)) {
+    stop(sprintf("'%s' must be a data frame", param_name))
+  }
+  if (!is.null(required_cols)) {
+    missing <- setdiff(required_cols, colnames(df))
+    if (length(missing) > 0) {
+      stop(sprintf("Missing required columns in %s: %s", param_name, paste(missing, collapse = ", ")))
+    }
+  }
+  TRUE
+}
+
 # =============================================================================
 # Empty Result Frame Factories
 # =============================================================================
