@@ -212,9 +212,8 @@ pathway_errorbar <-
 
     # Inform the user about the missing annotations
     if(length(missing_pathways) > 0) {
-      message("The following pathways are missing annotations and have been excluded: ",
-              paste(missing_pathways, collapse = ", "))
-      message("You can use the 'pathway_annotation' function to add annotations for these pathways.")
+      message(sprintf("Excluded %d pathways with missing annotations. Use 'pathway_annotation' to add them.",
+                      length(missing_pathways)))
     }
 
     # Get the names of all columns in the data frame
@@ -238,16 +237,12 @@ pathway_errorbar <-
       }
 
       if (is.null(daa_results_df$pathway_name) && is.null(daa_results_df$description)){
-        message(
-          "Please utilize the 'pathway_annotation' function to annotate the 'daa_results_df' data frame."
-        )
+        stop("No annotation columns found. Use 'pathway_annotation' to annotate daa_results_df first.")
       }
     }
 
     if (!(x_lab %in% colnames(daa_results_df))){
-      message(
-        "The 'x_lab' you defined does not exist as a column in the 'daa_results_df' data frame."
-      )
+      stop(sprintf("Column '%s' not found in daa_results_df. Use 'pathway_annotation' to add annotations.", x_lab))
     }
 
     # Exclude rows with missing pathway annotation (after x_lab is set)
@@ -270,17 +265,7 @@ pathway_errorbar <-
       message(sprintf("Excluded %d rows with missing '%s' annotations.", original_rows - filtered_rows, x_lab))
     }
 
-    if (length(unique(daa_results_df$method)) != 1) {
-      stop(
-        "The 'method' column in the 'daa_results_df' data frame contains more than one method. Please filter it to contain only one method."
-      )
-    }
-
-    if (length(unique(daa_results_df$group1)) != 1 || length(unique(daa_results_df$group2)) != 1) {
-      stop(
-        "The 'group1' or 'group2' column in the 'daa_results_df' data frame contains more than one group. Please filter each to contain only one group."
-      )
-    }
+    validate_daa_results(daa_results_df)
 
     # Enhanced color selection using the new color theme system
     n_groups <- nlevels(as.factor(Group))
@@ -330,18 +315,11 @@ pathway_errorbar <-
     }
 
     if (nrow(daa_results_filtered_sub_df) > max_features) {
-      message(
-        paste0(
-          "The number of features with statistical significance exceeds ", max_features, ", which may lead to suboptimal visualization. ",
-          "Please use 'select' to reduce the number of features or increase the 'max_features' parameter.\n",
-          "Currently, you have these features: ",
-          paste(paste0('"', daa_results_filtered_sub_df$feature, '"'), collapse = ", "), ".\n",
-          "You can find the statistically significant features with the following command:\n",
-          "daa_results_df %>% filter(p_adjust < 0.05) %>% select(c(\"feature\",\"p_adjust\"))"
-        )
+      warning(
+        sprintf("Found %d significant features (max: %d). Use 'select' to filter or set max_features=Inf.",
+                nrow(daa_results_filtered_sub_df), max_features),
+        call. = FALSE
       )
-      warning("The number of features with statistical significance exceeds ", max_features, ", which may lead to suboptimal visualization. Setting max_features=Inf will disable this warning.")
-      # Changed from stop() to warning() to allow users to proceed with visualization if desired
     }
 
     if (nrow(daa_results_filtered_sub_df) == 0){

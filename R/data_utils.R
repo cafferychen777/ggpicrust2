@@ -722,3 +722,28 @@ create_empty_gsea_result <- function(method = "unknown", full = FALSE) {
     )
   }
 }
+
+#' Validate DAA results data frame
+#'
+#' Validates that a DAA results data frame meets requirements for visualization
+#' functions (single method, single group pair).
+#'
+#' @param daa_results_df Data frame containing DAA results
+#' @param require_single_method Logical. If TRUE, requires exactly one method
+#' @param require_single_group_pair Logical. If TRUE, requires exactly one group1/group2 pair
+#' @return Invisible TRUE if validation passes
+#' @keywords internal
+validate_daa_results <- function(daa_results_df,
+                                  require_single_method = TRUE,
+                                  require_single_group_pair = TRUE) {
+  if (require_single_method && length(unique(daa_results_df$method)) != 1) {
+    stop("daa_results_df contains multiple methods. Filter to one method first.")
+  }
+  if (require_single_group_pair) {
+    if (length(unique(daa_results_df$group1)) != 1 ||
+        length(unique(daa_results_df$group2)) != 1) {
+      stop("daa_results_df contains multiple group pairs. Filter to one pair first.")
+    }
+  }
+  invisible(TRUE)
+}
