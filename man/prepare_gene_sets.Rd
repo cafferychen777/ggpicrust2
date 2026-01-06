@@ -4,7 +4,7 @@
 \alias{prepare_gene_sets}
 \title{Prepare gene sets for GSEA}
 \usage{
-prepare_gene_sets(pathway_type = "KEGG", organism = "ko", go_category = "BP")
+prepare_gene_sets(pathway_type = "KEGG", organism = "ko", go_category = "all")
 }
 \arguments{
 \item{pathway_type}{A character string specifying the pathway type: "KEGG", "MetaCyc", or "GO"}
