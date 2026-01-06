@@ -187,11 +187,6 @@ visualize_gsea <- function(gsea_results,
     gsea_results <- gsea_results[1:n_pathways, ]
   }
 
-  # Double-check after limiting (should not happen, but be safe)
-  if (nrow(gsea_results) == 0) {
-    return(create_empty_plot(plot_type))
-  }
-
   # Create visualization based on plot_type
   if (plot_type == "enrichment_plot") {
     # Create enrichment plot
@@ -478,32 +473,7 @@ create_network_plot <- function(gsea_results,
                                node_color_by = "NES",
                                edge_width_by = "similarity",
                                scale = NULL) {
-
-  # Check required packages
-  if (!requireNamespace("igraph", quietly = TRUE) ||
-      !requireNamespace("ggraph", quietly = TRUE)) {
-    stop("Packages 'igraph' and 'ggraph' are required for network plots. Please install them.")
-  }
-
-  # Handle boundary conditions for n_pathways
-  if (n_pathways <= 0) {
-    return(create_empty_plot("network"))
-  }
-
-  # Check if we have any results
-  if (nrow(gsea_results) == 0) {
-    return(create_empty_plot("network"))
-  }
-
-  # Limit number of pathways
-  if (nrow(gsea_results) > n_pathways) {
-    gsea_results <- gsea_results[order(gsea_results$p.adjust), ][1:n_pathways, ]
-  }
-
-  # Double-check after limiting
-  if (nrow(gsea_results) == 0) {
-    return(create_empty_plot("network"))
-  }
+  # Note: Input validation (packages, n_pathways, nrow) is done in visualize_gsea()
 
   # Extract leading edge genes
   leading_edges <- strsplit(gsea_results$leading_edge, ";")
@@ -644,54 +614,7 @@ create_heatmap_plot <- function(gsea_results,
                                show_rownames = TRUE,
                                annotation_colors = NULL,
                                col_fun = NULL) {
-
-  # Check required packages
-  if (!requireNamespace("ComplexHeatmap", quietly = TRUE) ||
-      !requireNamespace("circlize", quietly = TRUE)) {
-    stop("Packages 'ComplexHeatmap' and 'circlize' are required for heatmap plots. Please install them.")
-  }
-
-  # Handle boundary conditions for n_pathways
-  if (n_pathways <= 0) {
-    # For heatmap, return a special empty heatmap object
-    return(ComplexHeatmap::Heatmap(
-      matrix(0, nrow = 1, ncol = 1),
-      name = "Empty",
-      show_row_names = FALSE,
-      show_column_names = FALSE,
-      row_title = "No pathways to display",
-      column_title = "No data available"
-    ))
-  }
-
-  # Check if we have any results
-  if (nrow(gsea_results) == 0) {
-    return(ComplexHeatmap::Heatmap(
-      matrix(0, nrow = 1, ncol = 1),
-      name = "Empty",
-      show_row_names = FALSE,
-      show_column_names = FALSE,
-      row_title = "No pathways found",
-      column_title = "No data available"
-    ))
-  }
-
-  # Limit number of pathways
-  if (nrow(gsea_results) > n_pathways) {
-    gsea_results <- gsea_results[order(gsea_results$p.adjust), ][1:n_pathways, ]
-  }
-
-  # Double-check after limiting
-  if (nrow(gsea_results) == 0) {
-    return(ComplexHeatmap::Heatmap(
-      matrix(0, nrow = 1, ncol = 1),
-      name = "Empty",
-      show_row_names = FALSE,
-      show_column_names = FALSE,
-      row_title = "No pathways after filtering",
-      column_title = "No data available"
-    ))
-  }
+  # Note: Input validation (packages, n_pathways, nrow) is done in visualize_gsea()
 
   # Extract leading edge genes
   leading_edges <- lapply(strsplit(gsea_results$leading_edge, ";"), function(x) x[x != ""])
