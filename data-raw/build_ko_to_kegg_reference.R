@@ -103,17 +103,20 @@ cat(sprintf("✓ Unique KOs: %s (expected >= 25,000)\n",
 cat(sprintf("✓ Total mappings: %s (expected >= 60,000)\n",
             format(total_mappings, big.mark = ",")))
 
-# Check 4: Compare with old data
-old_sysdata <- new.env()
-load("R/sysdata.rda", envir = old_sysdata)
-old_data <- old_sysdata$ko_to_kegg_reference
-
-old_mappings <- nrow(old_data) * (ncol(old_data) - 1) - sum(is.na(old_data[, -1]))
-improvement <- (total_mappings - old_mappings) / old_mappings * 100
-
-cat(sprintf("\n✓ Old format mappings: %s\n", format(old_mappings, big.mark = ",")))
-cat(sprintf("✓ New format mappings: %s\n", format(total_mappings, big.mark = ",")))
-cat(sprintf("✓ Improvement: +%.1f%%\n", improvement))
+# Check 4: Compare with existing data (if available)
+old_data_file <- "data/ko_to_kegg_reference.rda"
+if (file.exists(old_data_file)) {
+  old_env <- new.env()
+  load(old_data_file, envir = old_env)
+  old_data <- old_env$ko_to_kegg_reference
+  old_mappings <- nrow(old_data)
+  change_pct <- (total_mappings - old_mappings) / old_mappings * 100
+  cat(sprintf("\n✓ Previous mappings: %s\n", format(old_mappings, big.mark = ",")))
+  cat(sprintf("✓ New mappings: %s\n", format(total_mappings, big.mark = ",")))
+  cat(sprintf("✓ Change: %+.1f%%\n", change_pct))
+} else {
+  cat("\n✓ No previous data to compare (new installation)\n")
+}
 
 # Check 5: Sample verification
 cat("\n=== Sample Data Verification ===\n\n")
@@ -153,51 +156,13 @@ if (requireNamespace("usethis", quietly = TRUE)) {
        compress = "xz")
 }
 
-# Also save to sysdata.rda (internal data)
-# Load existing sysdata objects
-sysdata_env <- new.env()
-if (file.exists("R/sysdata.rda")) {
-  load("R/sysdata.rda", envir = sysdata_env)
-}
-
-# Update ko_to_kegg_reference
-sysdata_env$ko_to_kegg_reference <- ko_to_kegg_reference
-
-# Create fast lookup index
-cat("Creating fast lookup index...\n")
-ko_pathway_index <- split(
-  ko_to_kegg_reference$pathway_id,
-  ko_to_kegg_reference$ko_id
-)
-sysdata_env$ko_pathway_index <- ko_pathway_index
-
-# Save all internal data
-cat("Saving to R/sysdata.rda...\n")
-save(list = ls(envir = sysdata_env),
-     file = "R/sysdata.rda",
-     envir = sysdata_env,
-     compress = "xz")
-
-# File size comparison
+# File size
 data_size <- file.size("data/ko_to_kegg_reference.rda")
-sysdata_size <- file.size("R/sysdata.rda")
-
-cat("\n=== File Sizes ===\n\n")
-cat(sprintf("data/ko_to_kegg_reference.rda: %.1f KB\n", data_size / 1024))
-cat(sprintf("R/sysdata.rda (all internal data): %.1f KB\n", sysdata_size / 1024))
 
 cat("\n=== ✓ Dataset Creation Complete ===\n\n")
 cat("Summary:\n")
 cat(sprintf("  • Total mappings: %s\n", format(total_mappings, big.mark = ",")))
 cat(sprintf("  • Unique pathways: %s\n", format(unique_pathways, big.mark = ",")))
 cat(sprintf("  • Unique KOs: %s\n", format(unique_kos, big.mark = ",")))
-cat(sprintf("  • Improvement vs old: +%.1f%%\n", improvement))
-cat(sprintf("  • Fast lookup index: %s entries\n",
-            format(length(ko_pathway_index), big.mark = ",")))
-cat("\nFiles updated:\n")
-cat("  • data/ko_to_kegg_reference.rda\n")
-cat("  • R/sysdata.rda\n")
-cat("\nNext steps:\n")
-cat("  1. Update function code (ko2kegg_abundance.R, pathway_gsea.R)\n")
-cat("  2. Run tests\n")
-cat("  3. Update documentation\n")
+cat(sprintf("  • File size: %.1f KB\n", data_size / 1024))
+cat("\nFile updated: data/ko_to_kegg_reference.rda\n")

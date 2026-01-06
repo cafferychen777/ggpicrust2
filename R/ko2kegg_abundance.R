@@ -272,12 +272,8 @@ ko2kegg_abundance <- function (file = NULL, data = NULL, method = c("abundance",
     stop("Data validation failed: ", e$message, call. = FALSE)
   })
   
-  message("Using KEGG reference data from package...")
-  # Use internal data from sysdata.rda (automatically loaded in package namespace)
-  # Objects in sysdata.rda are directly accessible within package functions
-  # ko_to_kegg_reference is already defined in the package namespace from sysdata.rda
-  # We just convert it to data.frame to ensure compatibility
-  ko_to_kegg_reference <- as.data.frame(ko_to_kegg_reference)
+  # Load KEGG reference data using unified loader
+  ko_to_kegg_reference <- load_reference_data("ko_to_kegg")
 
   # Filter for prokaryotic pathways if requested
   if (filter_for_prokaryotes) {
