@@ -260,17 +260,8 @@ ko2kegg_abundance <- function (file = NULL, data = NULL, method = c("abundance",
     stop("Error: Data contains no rows")
   }
 
-  # PICRUSt 2.6.2 compatibility: Clean KO ID format
-  message("Checking KO ID format compatibility...")
-  ko_ids <- abundance[[1]]
-
-  # Detect and clean "ko:" prefix
-  has_ko_prefix <- any(grepl("^ko:", ko_ids))
-  if (has_ko_prefix) {
-    message("Detected PICRUSt 2.6.2 format with 'ko:' prefix. Applying compatibility fix...")
-    abundance[[1]] <- gsub("^ko:", "", abundance[[1]])
-    message(sprintf("Cleaned %d KO IDs by removing 'ko:' prefix", sum(grepl("^ko:", ko_ids))))
-  }
+  # Standardize KO ID format (handles PICRUSt 2.6.2 "ko:" prefix)
+  abundance <- clean_ko_abundance(abundance)
 
   # Run input validation
   tryCatch({

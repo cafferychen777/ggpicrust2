@@ -46,7 +46,7 @@ test_that("pathway_daa validates inputs correctly", {
   # 测试样本名不匹配的情况
   expect_error(
     pathway_daa(abundance, metadata_mismatch, "group"),
-    "No column in metadata matches the sample names in abundance data"
+    "Cannot find matching sample identifiers between abundance and metadata"
   )
 
   # 创建正确的元数据但组别数量不足

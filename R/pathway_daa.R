@@ -226,51 +226,11 @@ calculate_abundance_stats <- function(abundance, metadata, group, features, grou
   # Convert abundance to matrix if needed
   abundance_mat <- as.matrix(abundance)
 
-  # Find the sample column that matches abundance column names
-  sample_col <- NULL
-  potential_sample_cols <- c("sample", "Sample", "sample_name", "Sample_Name", "sample_id", "Sample_ID")
-
-  # First try standard column names
-  for (col in potential_sample_cols) {
-    if (col %in% colnames(metadata)) {
-      if (all(colnames(abundance_mat) %in% metadata[[col]]) ||
-          all(metadata[[col]] %in% colnames(abundance_mat))) {
-        sample_col <- col
-        break
-      }
-    }
-  }
-
-  # If no standard column found, try all columns
-  if (is.null(sample_col)) {
-    for (col in colnames(metadata)) {
-      if (all(colnames(abundance_mat) %in% metadata[[col]]) ||
-          all(metadata[[col]] %in% colnames(abundance_mat))) {
-        sample_col <- col
-        break
-      }
-    }
-  }
-
-  if (is.null(sample_col)) {
-    # Try to match by rownames if no sample column found
-    if (all(colnames(abundance_mat) %in% rownames(metadata))) {
-      metadata$sample <- rownames(metadata)
-      sample_col <- "sample"
-    } else {
-      stop("Cannot find matching sample identifiers between abundance and metadata")
-    }
-  }
-
-  # Filter metadata to match abundance samples
-  metadata_filtered <- metadata[metadata[[sample_col]] %in% colnames(abundance_mat), ]
-
-  # Filter abundance to match metadata samples
-  abundance_filtered <- abundance_mat[, colnames(abundance_mat) %in% metadata_filtered[[sample_col]], drop = FALSE]
-
-  # Reorder to ensure matching
-  sample_order <- match(colnames(abundance_filtered), metadata_filtered[[sample_col]])
-  metadata_ordered <- metadata_filtered[sample_order, ]
+  # Align samples between abundance and metadata
+  aligned <- align_samples(abundance_mat, metadata, verbose = FALSE)
+  abundance_filtered <- aligned$abundance
+  metadata_ordered <- aligned$metadata
+  sample_col <- aligned$sample_col
 
   # Get group assignments
   group_assignments <- metadata_ordered[[group]]
@@ -387,64 +347,21 @@ pathway_daa <- function(abundance, metadata, group, daa_method = "ALDEx2",
     metadata <- tibble::as_tibble(metadata)
   }
 
-  # Extract sample names from abundance data
-  abundance_samples <- colnames(abundance)
-  
-  # Identify the column in metadata that matches sample names
-  sample_col <- NULL
-  for (col in colnames(metadata)) {
-    if (all(metadata[[col]] %in% abundance_samples)) {
-      sample_col <- col
-      break
-    }
-  }
-  
-  # Check if a matching column was found
-  if (is.null(sample_col)) {
-    stop("No column in metadata matches the sample names in abundance data")
-  }
-  
-  message(sprintf("Using column '%s' as sample identifier", sample_col))
-  
-  # Get sample names from metadata
-  metadata_samples <- metadata[[sample_col]]
-  
-  # Verify sample matching
-  if (!all(metadata_samples %in% abundance_samples)) {
-    stop("Some samples in metadata are not found in abundance data")
-  }
-  
-  if (!all(abundance_samples %in% metadata_samples)) {
-    stop("Some samples in abundance data are not found in metadata")
-  }
-  
-  # Now check sample size
-  if (length(abundance_samples) < 4) {
+  # Align samples between abundance and metadata
+  aligned <- align_samples(abundance, metadata)
+  abundance <- aligned$abundance
+  metadata <- aligned$metadata
+  sample_col <- aligned$sample_col
+
+  # Check minimum sample size
+  if (aligned$n_samples < 4) {
     stop("At least 4 samples are required for differential abundance analysis")
   }
-  
-  # Ensure consistent sample order between data and metadata
-  metadata <- metadata[match(abundance_samples, metadata[[sample_col]]), ]
 
-  # Verify if group column exists
+  # Verify group column exists
   if (!group %in% colnames(metadata)) {
-    stop(sprintf("group column '%s' not found in metadata", group))
+    stop(sprintf("Group column '%s' not found in metadata", group))
   }
-
-  # Extract metadata samples using identified column
-  metadata_samples <- metadata[[sample_col]]
-
-  # Verify sample matching
-  if (!all(metadata_samples %in% abundance_samples)) {
-    stop("Some samples in metadata are not found in abundance data")
-  }
-
-  if (!all(abundance_samples %in% metadata_samples)) {
-    stop("Some samples in abundance data are not found in metadata")
-  }
-
-  # Ensure consistent sample order between data and metadata
-  metadata <- metadata[match(colnames(abundance), metadata[[sample_col]]), ]
 
   # Verify group count
   group_levels <- unique(metadata[[group]])
@@ -454,11 +371,12 @@ pathway_daa <- function(abundance, metadata, group, daa_method = "ALDEx2",
 
   # Handle sample selection
   if (!is.null(select)) {
-    if (!all(select %in% abundance_samples)) {
+    current_samples <- colnames(abundance)
+    if (!all(select %in% current_samples)) {
       stop("Some selected samples are not present in the abundance data")
     }
     abundance <- abundance[, select, drop = FALSE]
-    metadata <- metadata[metadata$sample %in% select, ]
+    metadata <- metadata[metadata[[sample_col]] %in% select, ]
   }
 
   # Prepare data
