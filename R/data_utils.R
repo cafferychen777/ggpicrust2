@@ -747,3 +747,20 @@ validate_daa_results <- function(daa_results_df,
   }
   invisible(TRUE)
 }
+
+#' Require a column exists in a data frame
+#'
+#' Simple check that a single column exists. For checking multiple columns,
+#' use validate_dataframe() with required_cols parameter.
+#'
+#' @param df Data frame to check
+#' @param col Column name to require
+#' @param param_name Name of the data frame parameter (for error message)
+#' @return Invisible TRUE if column exists, otherwise stops with error
+#' @keywords internal
+require_column <- function(df, col, param_name = deparse(substitute(df))) {
+  if (!col %in% colnames(df)) {
+    stop(sprintf("Column '%s' not found in %s", col, param_name))
+  }
+  invisible(TRUE)
+}

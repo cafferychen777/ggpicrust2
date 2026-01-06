@@ -111,9 +111,7 @@ pathway_errorbar_table <- function(abundance,
   # Handle Group vector ordering
   if (!is.null(metadata)) {
     # If metadata is provided, reorder Group to match abundance column order
-    if (!sample_col %in% colnames(metadata)) {
-      stop("Sample column '", sample_col, "' not found in metadata")
-    }
+    require_column(metadata, sample_col, "metadata")
 
     # Create a mapping from sample to group
     sample_to_group <- setNames(Group, metadata[[sample_col]])

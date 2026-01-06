@@ -113,9 +113,7 @@ pathway_ridgeplot <- function(gsea_results,
    stop("'abundance' must be a data frame or matrix.")
  }
 
- if (!group %in% colnames(metadata)) {
-   stop(paste0("Column '", group, "' not found in metadata."))
- }
+ require_column(metadata, group, "metadata")
 
  # Convert abundance to matrix if needed
  if (is.data.frame(abundance)) {

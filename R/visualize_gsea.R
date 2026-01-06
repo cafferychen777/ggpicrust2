@@ -141,9 +141,7 @@ visualize_gsea <- function(gsea_results,
   # Determine which column to use for pathway labels
   if (!is.null(pathway_label_column)) {
     # User specified a custom column
-    if (!pathway_label_column %in% colnames(gsea_results)) {
-      stop(paste("Specified pathway_label_column '", pathway_label_column, "' not found in gsea_results", sep = ""))
-    }
+    require_column(gsea_results, pathway_label_column, "gsea_results")
     pathway_label_col <- pathway_label_column
   } else {
     # Auto-detect: prefer pathway_name if available, otherwise use pathway_id

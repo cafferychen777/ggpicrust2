@@ -117,14 +117,8 @@ pathway_volcano <- function(daa_results,
    stop("'daa_results' must be a data frame.")
  }
 
- if (!fc_col %in% colnames(daa_results)) {
-   stop(paste0("Column '", fc_col, "' not found in daa_results. ",
-               "Available columns: ", paste(colnames(daa_results), collapse = ", ")))
- }
-
- if (!p_col %in% colnames(daa_results)) {
-   stop(paste0("Column '", p_col, "' not found in daa_results."))
- }
+ require_column(daa_results, fc_col, "daa_results")
+ require_column(daa_results, p_col, "daa_results")
 
  if (!is.null(label_col) && !label_col %in% colnames(daa_results)) {
    warning(paste0("Column '", label_col, "' not found. Labels will not be shown."))
