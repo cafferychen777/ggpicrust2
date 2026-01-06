@@ -296,15 +296,7 @@ pathway_errorbar <-
 
     # Enhanced color selection using the new color theme system
     n_groups <- nlevels(as.factor(Group))
-    
-    # Source the color themes and legend utilities if functions are not available
-    if (!exists("get_color_theme")) {
-      source(file.path(dirname(parent.frame()$ofile), "color_themes.R"))
-    }
-    if (!exists("format_pvalue_smart") || !exists("calculate_smart_text_size")) {
-      source(file.path(dirname(parent.frame()$ofile), "legend_annotation_utils.R"))
-    }
-    
+
     # Use smart color selection if requested
     if (smart_colors || accessibility_mode) {
       smart_selection <- smart_color_selection(
@@ -516,22 +508,15 @@ pathway_errorbar <-
     daa_results_filtered_sub_df <-
       daa_results_filtered_sub_df[order,]
 
+    # Reorder data to match daa_results_filtered_sub_df$feature order
+    # Using match() instead of loop rbind() for O(n) vs O(n²) performance
+    error_bar_pivot_longer_tibble_summarised$feature_order <- match(
+      error_bar_pivot_longer_tibble_summarised$name,
+      daa_results_filtered_sub_df$feature
+    )
     error_bar_pivot_longer_tibble_summarised_ordered <-
-      data.frame(
-        name = NULL,
-        group = NULL,
-        mean = NULL,
-        sd = NULL
-      )
-
-    for (i in daa_results_filtered_sub_df$feature) {
-      error_bar_pivot_longer_tibble_summarised_ordered <-
-        rbind(
-          error_bar_pivot_longer_tibble_summarised_ordered,
-          error_bar_pivot_longer_tibble_summarised[error_bar_pivot_longer_tibble_summarised$name ==
-                                                     i,]
-        )
-    }
+      error_bar_pivot_longer_tibble_summarised[order(error_bar_pivot_longer_tibble_summarised$feature_order), ]
+    error_bar_pivot_longer_tibble_summarised_ordered$feature_order <- NULL
 
     if (ko_to_kegg == FALSE) {
       # Match by feature name using the match function
@@ -712,6 +697,10 @@ pathway_errorbar <-
       daa_results_filtered_sub_df$log_2_fold_change <- rep(NA, nrow(daa_results_filtered_sub_df))
     }
 
+    # Calculate pseudocount once using all mean values for consistency
+    all_means <- error_bar_pivot_longer_tibble_summarised_ordered$mean
+    pseudocount <- calculate_pseudocount(all_means)
+
     for (i in daa_results_filtered_sub_df$feature){
       # Get mean values for this feature
       feature_means <- error_bar_pivot_longer_tibble_summarised_ordered[error_bar_pivot_longer_tibble_summarised_ordered$name %in% i,]
@@ -725,16 +714,17 @@ pathway_errorbar <-
       mean_group1 <- feature_means[feature_means$group == group1_name, ]$mean
       mean_group2 <- feature_means[feature_means$group == group2_name, ]$mean
 
-      # Calculate log2 fold change as group2/group1 (consistent with calculate_abundance_stats)
+      # Calculate log2 fold change using unified function
       if (length(mean_group1) > 0 && length(mean_group2) > 0) {
-        # Add small pseudocount to avoid log(0)
-        pseudocount <- 1e-10
-        log2_fc <- log2((mean_group2 + pseudocount) / (mean_group1 + pseudocount))
+        log2_fc <- calculate_log2_fold_change(mean_group1, mean_group2, pseudocount = pseudocount)
         daa_results_filtered_sub_df[daa_results_filtered_sub_df$feature==i,]$log_2_fold_change <- log2_fc
       } else {
-        # Fallback to original calculation if group matching fails
-        mean <- feature_means$mean
-        daa_results_filtered_sub_df[daa_results_filtered_sub_df$feature==i,]$log_2_fold_change <- log2(mean[1]/mean[2])
+        # Fallback using unified function with auto-calculated pseudocount
+        mean_vals <- feature_means$mean
+        if (length(mean_vals) >= 2) {
+          log2_fc <- calculate_log2_fold_change(mean_vals[1], mean_vals[2])
+          daa_results_filtered_sub_df[daa_results_filtered_sub_df$feature==i,]$log_2_fold_change <- log2_fc
+        }
       }
     }
     daa_results_filtered_sub_df$feature <- factor(daa_results_filtered_sub_df$feature,levels = rev(daa_results_filtered_sub_df$feature))

@@ -58,10 +58,27 @@ compare_daa_results <- function(daa_results_list, method_names, p_values_thresho
   # method_names -- A character vector representing the names of each method.
   # p_values_threshold -- A numeric value representing the threshold for the p-values. Features with p-values less than this threshold are considered statistically significant.
 
-  # Check input parameters
-  stopifnot(is.list(daa_results_list))
-  stopifnot(is.character(method_names))
-  stopifnot(is.numeric(p_values_threshold))
+
+  # Input validation with clear error messages
+  if (!is.list(daa_results_list)) {
+    stop("'daa_results_list' must be a list of DAA result data frames")
+  }
+  if (length(daa_results_list) == 0) {
+    stop("'daa_results_list' cannot be empty")
+  }
+  if (!is.character(method_names)) {
+    stop("'method_names' must be a character vector")
+  }
+  if (length(method_names) != length(daa_results_list)) {
+    stop(sprintf("'method_names' length (%d) must match 'daa_results_list' length (%d)",
+                 length(method_names), length(daa_results_list)))
+  }
+  if (!is.numeric(p_values_threshold) || length(p_values_threshold) != 1) {
+    stop("'p_values_threshold' must be a single numeric value")
+  }
+  if (p_values_threshold <= 0 || p_values_threshold > 1) {
+    stop("'p_values_threshold' must be between 0 and 1")
+  }
 
   # Initialize a list to store the features obtained by each method
   features <- list()
@@ -82,25 +99,22 @@ compare_daa_results <- function(daa_results_list, method_names, p_values_thresho
     }
   }
 
+  # Flatten nested list structure (from group combinations) to simple vectors
+  features_flat <- lapply(features, function(x) unique(unlist(x)))
+
   # Calculate the intersection and union of the features obtained by each method
-  intersect_features <- Reduce(intersect, unlist(features, recursive = FALSE))
-  union_features <- unique(unlist(features))
+  intersect_features <- Reduce(intersect, features_flat)
+  union_features <- unique(unlist(features_flat))
 
-  # Calculate the differences in the features obtained by each method
-  diff_features <- lapply(features, function(x) setdiff(x, intersect_features))
+  # Calculate the differences in the features obtained by each method (exclude common)
+  diff_features <- lapply(features_flat, function(x) setdiff(x, intersect_features))
 
-  # Compare features across different groups using the statistical principle
-  for (i in seq_along(diff_features)) {
-    for (j in seq_along(diff_features)) {
-      if (i != j) {
-        common_features <- intersect(diff_features[[i]], diff_features[[j]])
-        if (length(common_features) > 0) {
-          diff_features[[i]] <- setdiff(diff_features[[i]], common_features)
-          diff_features[[j]] <- setdiff(diff_features[[j]], common_features)
-        }
-      }
-    }
-  }
+  # Find features unique to each method (not shared with any other method)
+  # Using duplicated() for correct handling of features appearing in 3+ methods
+  all_diff <- unlist(diff_features)
+  is_duplicated <- duplicated(all_diff) | duplicated(all_diff, fromLast = TRUE)
+  unique_only_features <- unique(all_diff[!is_duplicated])
+  diff_features <- lapply(diff_features, function(x) x[x %in% unique_only_features])
 
   # Initialize a data frame to store the comparison results
   comparison_results <- data.frame(
@@ -114,18 +128,18 @@ compare_daa_results <- function(daa_results_list, method_names, p_values_thresho
   )
 
   # Output the comparison results and store them in the data frame
-  cat("Comparing", length(daa_results_list), "methods:\n\n")
+  message("Comparing ", length(daa_results_list), " methods:\n")
   for (i in seq_along(daa_results_list)) {
-    num_features <- length(unlist(features[[i]]))
+    num_features <- length(features_flat[[i]])
     num_common_features <- length(intersect_features)
-    num_diff_features <- length(unlist(diff_features[[i]]))
+    num_diff_features <- length(diff_features[[i]])
     common_features_names <- paste(intersect_features, collapse = ", ")
-    diff_features_names <- paste(unlist(diff_features[[i]]), collapse = ", ")
+    diff_features_names <- paste(diff_features[[i]], collapse = ", ")
 
-    cat("The", method_names[i], "method obtained", num_features, "statistically significant features.\n")
-    cat("The number of features that are common to other methods is", num_common_features, "\n")
-    cat("The number of features that are different from other methods is", num_diff_features, "\n")
-    cat("The names of the features that are different from other methods are", diff_features_names, "\n\n")
+    message("The ", method_names[i], " method obtained ", num_features, " statistically significant features.")
+    message("The number of features that are common to other methods is ", num_common_features)
+    message("The number of features that are different from other methods is ", num_diff_features)
+    message("The names of the features that are different from other methods are ", diff_features_names, "\n")
 
     comparison_results <- rbind(comparison_results, data.frame(
       method = method_names[i],
@@ -138,10 +152,10 @@ compare_daa_results <- function(daa_results_list, method_names, p_values_thresho
     ))
   }
 
-  cat("The number of features that are common to all methods is", length(intersect_features), "\n")
-  cat("The names of the features that are common to all methods are", paste(intersect_features, collapse = ", "), "\n")
-  cat("The number of features that are obtained by any of the methods is", length(union_features), "\n")
-  cat("The names of the features that are obtained by any of the methods are", paste(union_features, collapse = ", "), "\n")
+  message("The number of features that are common to all methods is ", length(intersect_features))
+  message("The names of the features that are common to all methods are ", paste(intersect_features, collapse = ", "))
+  message("The number of features that are obtained by any of the methods is ", length(union_features))
+  message("The names of the features that are obtained by any of the methods are ", paste(union_features, collapse = ", "))
 
   return(comparison_results)
 }

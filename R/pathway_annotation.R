@@ -658,8 +658,7 @@ pathway_annotation <- function(file = NULL,
       } else {
         message("No organism specified. Using generic KO information across all species.")
       }
-      message("We are connecting to the KEGG database to get the latest results, please wait patiently.")
-      message("Processing pathways in chunks...")
+      message("Connecting to KEGG database...")
       return(process_kegg_annotations(daa_results_df, organism))
     }
   }

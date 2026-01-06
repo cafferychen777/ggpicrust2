@@ -324,38 +324,28 @@ pathway_heatmap <- function(abundance,
                             colorbar_width = 0.6,
                             colorbar_height = 9,
                             colorbar_breaks = NULL) {
-  # Input validation
-  if (!is.matrix(abundance) && !is.data.frame(abundance)) {
-    stop("abundance must be a data frame or matrix")
-  }
-  
+  # Input validation using unified functions
+  validate_abundance(abundance, min_samples = 2)
+  validate_metadata(metadata)
+
   # Ensure abundance is a matrix
   abundance <- as.matrix(abundance)
-  
-  # Check sample count
-  if (ncol(abundance) < 2) {
-    stop("At least two samples are required for creating a heatmap")
-  }
-  
+
   # Check pathway count
   if (nrow(abundance) < 1) {
     stop("At least one pathway is required")
   }
-  
+
   # Ensure column names exist
   if (is.null(colnames(abundance))) {
     colnames(abundance) <- paste0("Sample", seq_len(ncol(abundance)))
   }
-  
+
   # Ensure row names exist
   if (is.null(rownames(abundance))) {
     rownames(abundance) <- paste0("Pathway", seq_len(nrow(abundance)))
   }
-  
-  if (!is.data.frame(metadata)) {
-    stop("metadata must be a data frame")
-  }
-  
+
   if (!is.character(group) || length(group) != 1) {
     stop("group must be a single character string")
   }
@@ -419,36 +409,14 @@ pathway_heatmap <- function(abundance,
   # deviation of 1. At this point, the plotted heat map gives a good indication
   # of the variation in expression of all genes across samples.
 
-  # Check that 'group' is a column in 'metadata'
-  if (!group %in% colnames(metadata)) {
-    stop(paste("group:", group, "must be a column in metadata"))
-  }
+  # Align samples using unified function
+  aligned <- align_samples(abundance, metadata)
+  abundance <- as.matrix(aligned$abundance)
+  metadata <- aligned$metadata
+  metadata$sample_name <- colnames(abundance)
 
-  # Find the column in metadata that matches the column names of abundance
-  sample_name_col <- colnames(metadata)[sapply(colnames(metadata), function(x) all(colnames(abundance) %in% metadata[[x]]))]
-
-  # Provide clear error message if no matching column is found
-  if (length(sample_name_col) == 0) {
-    abundance_cols <- colnames(abundance)
-    stop(
-      "Cannot find a column in metadata that contains all sample names from abundance data.\n",
-      "  Abundance column names (first 5): ",
-      paste(head(abundance_cols, 5), collapse = ", "),
-      if (length(abundance_cols) > 5) ", ..." else "", "\n",
-      "  Metadata columns: ", paste(colnames(metadata), collapse = ", "), "\n\n",
-      "Please ensure:\n",
-      "  1. Your abundance data has sample names as column names (not feature/pathway IDs)\n",
-      "  2. Your metadata has a column containing these exact sample names\n\n",
-      "Common fix: If using ko_abundance data, convert it first:\n",
-      "  abundance <- ko_abundance %>% tibble::column_to_rownames('#NAME')"
-    )
-  }
-
-  metadata$sample_name <- metadata %>% select(all_of(c(sample_name_col))) %>% pull()
-
-  if (!all(colnames(abundance) %in% metadata$sample_name)) {
-    stop("Samples in abundance and metadata must match")
-  }
+  # Validate group column
+  validate_group(metadata, group, min_groups = 2)
 
   # Perform z-score normalization
   z_abundance <- t(apply(abundance, 1, scale))

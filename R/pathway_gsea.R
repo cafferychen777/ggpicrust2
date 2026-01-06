@@ -204,18 +204,10 @@ pathway_gsea <- function(abundance,
                         go_category = "BP",
                         organism = "ko") {
   
-  # Input validation
-  if (!is.data.frame(abundance) && !is.matrix(abundance)) {
-    stop("'abundance' must be a data frame or matrix")
-  }
-  
-  if (!is.data.frame(metadata)) {
-    stop("'metadata' must be a data frame")
-  }
-  
-  if (!group %in% colnames(metadata)) {
-    stop(paste("Group variable", group, "not found in metadata"))
-  }
+  # Input validation using unified functions
+  validate_abundance(abundance, min_samples = 4)
+  validate_metadata(metadata)
+  validate_group(metadata, group, min_groups = 2)
   
   if (!pathway_type %in% c("KEGG", "MetaCyc", "GO")) {
     stop("pathway_type must be one of 'KEGG', 'MetaCyc', or 'GO'")
@@ -323,52 +315,25 @@ pathway_gsea <- function(abundance,
     }
   }
 
-  # Ensure metadata has proper rownames for sample matching
-  # This handles tibbles and data.frames where rownames may not be set properly
-  metadata <- as.data.frame(metadata)
-  if (length(intersect(colnames(abundance_mat), rownames(metadata))) == 0) {
-    # Try to use sample/sample_name column as rownames
-    sample_col <- NULL
-    if ("sample_name" %in% colnames(metadata)) {
-      sample_col <- "sample_name"
-    } else if ("sample" %in% colnames(metadata)) {
-      sample_col <- "sample"
-    } else if ("SampleID" %in% colnames(metadata)) {
-      sample_col <- "SampleID"
-    }
+  # Align samples between abundance and metadata using unified function
+  aligned <- align_samples(abundance_mat, metadata)
+  abundance_mat <- as.matrix(aligned$abundance)
+  metadata <- aligned$metadata
 
-    if (!is.null(sample_col)) {
-      rownames(metadata) <- metadata[[sample_col]]
-    }
+  # Enforce minimum sample requirement
+  if (aligned$n_samples < 4) {
+    stop("Insufficient samples (", aligned$n_samples,
+         "). Need at least 4 samples for statistical analysis.")
   }
 
   # Extract group information
   Group <- factor(metadata[[group]])
-  names(Group) <- rownames(metadata)
+  names(Group) <- colnames(abundance_mat)
 
-  # Find common samples (eliminate special case handling)
-  common_samples <- intersect(colnames(abundance_mat), names(Group))
-  
-  # Enforce minimum requirements (clear validation)
-  if (length(common_samples) < 4) {
-    stop("Insufficient overlapping samples (", length(common_samples), 
-         "/", ncol(abundance_mat), "). Need at least 4 samples for statistical analysis.")
-  }
-  
-  # Inform user about sample subsetting (transparency)
-  if (length(common_samples) < ncol(abundance_mat)) {
-    warning(sprintf("Using %d/%d overlapping samples between abundance data and metadata", 
-                    length(common_samples), ncol(abundance_mat)))
-  }
-  
-  # Clean subset to common samples (no special cases)
-  abundance_mat <- abundance_mat[, common_samples]
-  Group <- Group[common_samples]
-  
   # Validate group balance for statistical reliability
   group_counts <- table(Group)
   if (any(group_counts < 2)) {
-    stop("Each group must have at least 2 samples. Current group sizes: ", 
+    stop("Each group must have at least 2 samples. Current group sizes: ",
          paste(names(group_counts), "=", group_counts, collapse = ", "))
   }
   
@@ -471,18 +436,7 @@ pathway_gsea <- function(abundance,
     results$method <- method
   } else {
     # Create empty result with correct structure
-    results <- data.frame(
-      pathway_id = character(),
-      pathway_name = character(),
-      size = integer(),
-      ES = numeric(),
-      NES = numeric(),
-      pvalue = numeric(),
-      p.adjust = numeric(),
-      leading_edge = character(),
-      method = character(),
-      stringsAsFactors = FALSE
-    )
+    results <- create_empty_gsea_result(method, full = TRUE)
   }
   
   return(results)
@@ -616,12 +570,15 @@ calculate_rank_metric <- function(abundance,
 
   # Handle problematic values - replace with 0 (undetected features)
   if (any(is.infinite(abundance))) {
+    warning("Abundance data contains Inf values. Replacing with 0.", call. = FALSE)
     abundance[is.infinite(abundance)] <- 0
   }
   if (any(is.na(abundance))) {
+    warning("Abundance data contains NA values. Replacing with 0.", call. = FALSE)
     abundance[is.na(abundance)] <- 0
   }
   if (any(abundance < 0)) {
+    warning("Abundance data contains negative values. Replacing with 0.", call. = FALSE)
     abundance[abundance < 0] <- 0
   }
 
@@ -673,14 +630,9 @@ calculate_rank_metric <- function(abundance,
     mean1 <- rowMeans(abundance[, group1_samples, drop = FALSE])
     mean2 <- rowMeans(abundance[, group2_samples, drop = FALSE])
 
-    # Add data-driven pseudocount to avoid log(0)
-    # Use small fraction of minimum non-zero mean for appropriate scaling
-    non_zero_means <- c(mean1[mean1 > 0], mean2[mean2 > 0])
-    pseudocount <- if (length(non_zero_means) > 0) {
-      min(non_zero_means) * 0.01
-    } else {
-      1e-6  # Fallback for rare all-zero case
-    }
+    # Calculate pseudocount using unified function
+    # Note: GSEA uses mean1/mean2 direction (group1/group2)
+    pseudocount <- calculate_pseudocount(c(mean1, mean2))
     mean1[mean1 == 0] <- pseudocount
     mean2[mean2 == 0] <- pseudocount
 
@@ -1111,35 +1063,14 @@ run_limma_gsea <- function(abundance_mat,
     stop("Package 'limma' is required. Please install it using BiocManager::install('limma').")
   }
 
-  # Ensure metadata rownames match abundance columns
-  metadata <- as.data.frame(metadata)
-  common_samples <- intersect(colnames(abundance_mat), rownames(metadata))
-  if (length(common_samples) == 0) {
-    # Try using a sample column if rownames don't match
-    sample_col <- NULL
-    if ("sample" %in% colnames(metadata)) {
-      sample_col <- "sample"
-    } else if ("sample_name" %in% colnames(metadata)) {
-      sample_col <- "sample_name"
-    } else if ("Sample" %in% colnames(metadata)) {
-      sample_col <- "Sample"
-    } else if ("SampleID" %in% colnames(metadata)) {
-      sample_col <- "SampleID"
-    }
+  # Align samples using unified function
+  aligned <- align_samples(abundance_mat, metadata, verbose = FALSE)
+  abundance_mat <- as.matrix(aligned$abundance)
+  metadata <- aligned$metadata
 
-    if (!is.null(sample_col)) {
-      rownames(metadata) <- metadata[[sample_col]]
-      common_samples <- intersect(colnames(abundance_mat), rownames(metadata))
-    }
-  }
-
-  if (length(common_samples) < 4) {
+  if (aligned$n_samples < 4) {
     stop("Insufficient matching samples between abundance data and metadata")
   }
-
-  # Subset and reorder to ensure alignment
-  abundance_mat <- abundance_mat[, common_samples, drop = FALSE]
-  metadata <- metadata[common_samples, , drop = FALSE]
 
   # Build design matrix
   design <- build_design_matrix(metadata, group, covariates)
@@ -1188,16 +1119,7 @@ run_limma_gsea <- function(abundance_mat,
   if (sum(valid_sets) == 0) {
     warning("No gene sets passed the size filter (min_size=", min_size,
             ", max_size=", max_size, "). Returning empty results.")
-    return(data.frame(
-      pathway_id = character(),
-      pathway_name = character(),
-      size = integer(),
-      direction = character(),
-      pvalue = numeric(),
-      p.adjust = numeric(),
-      method = character(),
-      stringsAsFactors = FALSE
-    ))
+    return(create_empty_gsea_result(method))
   }
 
   gene_set_indices <- gene_set_indices[valid_sets]
@@ -1369,14 +1291,6 @@ build_design_matrix <- function(metadata, group, covariates = NULL) {
 
   # Clean up column names for readability
   colnames(design) <- gsub("\\(Intercept\\)", "Intercept", colnames(design))
-
-  # Report design matrix structure
-  message(sprintf("Design matrix: %d samples x %d coefficients", nrow(design), ncol(design)))
-  message(sprintf("  Coefficients: %s", paste(colnames(design), collapse = ", ")))
-
-  if (!is.null(covariates) && length(covariates) > 0) {
-    message(sprintf("  Adjusting for covariates: %s", paste(covariates, collapse = ", ")))
-  }
 
   return(design)
 }

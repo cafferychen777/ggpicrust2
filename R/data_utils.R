@@ -276,3 +276,230 @@ load_reference_data <- function(ref_type) {
     ref_name
   ))
 }
+
+# =============================================================================
+# Statistical Calculation Utilities
+# =============================================================================
+
+#' Calculate data-driven pseudocount for log transformation
+#'
+#' Calculates a pseudocount based on the data to avoid log(0) issues.
+#' Uses half of the minimum non-zero value to ensure the pseudocount
+#' is smaller than any real value in the data.
+#'
+#' @param values Numeric vector of abundance values
+#' @return Pseudocount value (half of minimum non-zero value, or 1e-6 fallback)
+#' @keywords internal
+calculate_pseudocount <- function(values) {
+  values <- as.numeric(values)
+  non_zero <- values[values > 0 & !is.na(values) & !is.infinite(values)]
+  if (length(non_zero) > 0) {
+    min(non_zero) * 0.5
+  } else {
+    1e-6  # fallback for edge cases
+ }
+}
+
+#' Calculate log2 fold change with consistent pseudocount handling
+#'
+#' Calculates log2 fold change between two groups with proper handling
+#' of zero values using a data-driven pseudocount approach.
+#'
+#' @param mean1 Numeric. Mean abundance of group 1 (reference/control)
+#' @param mean2 Numeric. Mean abundance of group 2 (comparison/treatment)
+#' @param pseudocount Optional numeric. If NULL, calculated from reference_values
+#' @param reference_values Optional numeric vector for calculating pseudocount
+#' @return log2(mean2/mean1) with pseudocount protection
+#' @keywords internal
+#'
+#' @details
+#' The fold change direction is group2/group1, so:
+#' - Positive values indicate higher abundance in group2
+#' - Negative values indicate higher abundance in group1
+calculate_log2_fold_change <- function(mean1, mean2, pseudocount = NULL,
+                                        reference_values = NULL) {
+  # Calculate pseudocount if not provided
+  if (is.null(pseudocount)) {
+    if (!is.null(reference_values)) {
+      pseudocount <- calculate_pseudocount(reference_values)
+    } else {
+      # Use the means themselves to estimate pseudocount
+      pseudocount <- calculate_pseudocount(c(mean1, mean2))
+    }
+  }
+
+  # Calculate log2 fold change: group2 / group1
+  log2((mean2 + pseudocount) / (mean1 + pseudocount))
+}
+
+# =============================================================================
+# Input Validation Utilities
+# =============================================================================
+
+#' Validate Abundance Data
+#'
+#' Validates that abundance data is in the correct format for analysis.
+#'
+#' @param abundance Data frame or matrix to validate
+#' @param min_samples Minimum number of samples required (default: 2)
+#' @param require_numeric Whether all non-ID columns must be numeric (default: TRUE)
+#' @return TRUE if valid, otherwise stops with error
+#' @noRd
+validate_abundance <- function(abundance, min_samples = 2, require_numeric = TRUE) {
+  if (!is.data.frame(abundance) && !is.matrix(abundance)) {
+    stop("'abundance' must be a data frame or matrix")
+  }
+
+  if (ncol(abundance) < min_samples) {
+    stop(sprintf("At least %d samples are required, found %d", min_samples, ncol(abundance)))
+  }
+
+  if (require_numeric && is.data.frame(abundance)) {
+    # Check if numeric columns exist (excluding potential ID column)
+    numeric_cols <- sapply(abundance, is.numeric)
+    if (sum(numeric_cols) == 0) {
+      stop("Abundance data must contain numeric values")
+    }
+  }
+
+  TRUE
+}
+
+#' Validate Metadata
+#'
+#' Validates that metadata is in the correct format.
+#'
+#' @param metadata Data frame to validate
+#' @param required_cols Character vector of required column names (optional)
+#' @return TRUE if valid, otherwise stops with error
+#' @noRd
+validate_metadata <- function(metadata, required_cols = NULL) {
+  if (!is.data.frame(metadata)) {
+    stop("'metadata' must be a data frame")
+  }
+
+  if (nrow(metadata) == 0) {
+    stop("'metadata' cannot be empty")
+  }
+
+  if (!is.null(required_cols)) {
+    missing_cols <- setdiff(required_cols, colnames(metadata))
+    if (length(missing_cols) > 0) {
+      stop(sprintf("Required column(s) not found in metadata: %s",
+                   paste(missing_cols, collapse = ", ")))
+    }
+  }
+
+  TRUE
+}
+
+#' Validate Group Column
+#'
+#' Validates that a group column exists and has appropriate values.
+#'
+#' @param metadata Data frame containing group column
+#' @param group Column name for grouping variable
+#' @param min_groups Minimum number of groups required (default: 2)
+#' @param min_per_group Minimum samples per group (default: 1)
+#' @return TRUE if valid, otherwise stops with error
+#' @noRd
+validate_group <- function(metadata, group, min_groups = 2, min_per_group = 1) {
+  if (!group %in% colnames(metadata)) {
+    stop(sprintf("Group column '%s' not found in metadata. Available columns: %s",
+                 group, paste(colnames(metadata), collapse = ", ")))
+  }
+
+  group_values <- metadata[[group]]
+  group_levels <- unique(group_values[!is.na(group_values)])
+
+  if (length(group_levels) < min_groups) {
+    stop(sprintf("At least %d groups are required, found %d: %s",
+                 min_groups, length(group_levels),
+                 paste(group_levels, collapse = ", ")))
+  }
+
+  if (min_per_group > 1) {
+    group_counts <- table(group_values)
+    small_groups <- names(group_counts)[group_counts < min_per_group]
+    if (length(small_groups) > 0) {
+      stop(sprintf("Groups with fewer than %d samples: %s",
+                   min_per_group, paste(small_groups, collapse = ", ")))
+    }
+  }
+
+  TRUE
+}
+
+# =============================================================================
+# Empty Result Frame Factories
+# =============================================================================
+
+#' Create Empty DAA Result Data Frame
+#'
+#' Creates an empty data frame with the correct structure for DAA results.
+#'
+#' @param method Character string specifying the DAA method used
+#' @param include_log2fc Logical. If TRUE, includes log2FoldChange column
+#'   instead of p_adjust and adj_method (for LinDA-style results)
+#' @return Empty data frame with standard DAA result columns
+#' @noRd
+create_empty_daa_result <- function(method = "unknown", include_log2fc = FALSE) {
+  if (include_log2fc) {
+    data.frame(
+      feature = character(0),
+      method = character(0),
+      group1 = character(0),
+      group2 = character(0),
+      p_values = numeric(0),
+      log2FoldChange = numeric(0),
+      stringsAsFactors = FALSE
+    )
+  } else {
+    data.frame(
+      feature = character(0),
+      method = character(0),
+      group1 = character(0),
+      group2 = character(0),
+      p_values = numeric(0),
+      p_adjust = numeric(0),
+      adj_method = character(0),
+      stringsAsFactors = FALSE
+    )
+  }
+}
+
+#' Create Empty GSEA Result Data Frame
+#'
+#' Creates an empty data frame with the correct structure for GSEA results.
+#'
+#' @param method Character string specifying the GSEA method used
+#' @param full Logical. If TRUE, includes ES, NES, leading_edge columns
+#' @return Empty data frame with standard GSEA result columns
+#' @noRd
+create_empty_gsea_result <- function(method = "unknown", full = FALSE) {
+  if (full) {
+    data.frame(
+      pathway_id = character(0),
+      pathway_name = character(0),
+      size = integer(0),
+      ES = numeric(0),
+      NES = numeric(0),
+      pvalue = numeric(0),
+      p.adjust = numeric(0),
+      leading_edge = character(0),
+      method = character(0),
+      stringsAsFactors = FALSE
+    )
+  } else {
+    data.frame(
+      pathway_id = character(0),
+      pathway_name = character(0),
+      size = integer(0),
+      direction = character(0),
+      pvalue = numeric(0),
+      p.adjust = numeric(0),
+      method = character(0),
+      stringsAsFactors = FALSE
+    )
+  }
+}

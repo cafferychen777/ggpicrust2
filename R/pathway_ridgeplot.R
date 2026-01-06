@@ -211,11 +211,9 @@ pathway_ridgeplot <- function(gsea_results,
  mean_g1 <- rowMeans(abundance[, samples_g1, drop = FALSE], na.rm = TRUE)
  mean_g2 <- rowMeans(abundance[, samples_g2, drop = FALSE], na.rm = TRUE)
 
- # Calculate log2 fold change
- pseudocount <- min(abundance[abundance > 0], na.rm = TRUE) * 0.5
- if (is.infinite(pseudocount) || is.na(pseudocount)) pseudocount <- 1e-6
-
- log2fc <- log2((mean_g2 + pseudocount) / (mean_g1 + pseudocount))
+ # Calculate log2 fold change using unified function
+ pseudocount <- calculate_pseudocount(as.vector(abundance))
+ log2fc <- calculate_log2_fold_change(mean_g1, mean_g2, pseudocount = pseudocount)
  names(log2fc) <- rownames(abundance)
 
  # Determine gene member column in pathway_reference
@@ -240,7 +238,17 @@ pathway_ridgeplot <- function(gsea_results,
  }
 
  # Build data for ridge plot
- ridge_data <- data.frame()
+ # Using list + do.call(rbind, ...) for O(n) vs O(n²) performance
+ ridge_data_list <- vector("list", nrow(df))
+
+ # Determine ref_id_col once outside the loop
+ ref_id_col <- if ("pathway_id" %in% colnames(pathway_reference)) {
+   "pathway_id"
+ } else if ("go_id" %in% colnames(pathway_reference)) {
+   "go_id"
+ } else {
+   colnames(pathway_reference)[1]
+ }
 
  for (i in seq_len(nrow(df))) {
    pid <- df[[pathway_id_col]][i]
@@ -260,15 +268,6 @@ pathway_ridgeplot <- function(gsea_results,
      "Unknown"
    }
 
-   # Find genes for this pathway
-   ref_id_col <- if ("pathway_id" %in% colnames(pathway_reference)) {
-     "pathway_id"
-   } else if ("go_id" %in% colnames(pathway_reference)) {
-     "go_id"
-   } else {
-     colnames(pathway_reference)[1]
-   }
-
    ref_row <- pathway_reference[pathway_reference[[ref_id_col]] == pid, ]
 
    if (nrow(ref_row) > 0) {
@@ -280,16 +279,19 @@ pathway_ridgeplot <- function(gsea_results,
      fc_values <- log2fc[names(log2fc) %in% genes]
 
      if (length(fc_values) > 0) {
-       ridge_data <- rbind(ridge_data, data.frame(
+       ridge_data_list[[i]] <- data.frame(
          pathway = pname,
          pathway_id = pid,
          direction = direction,
          log2fc = fc_values,
          stringsAsFactors = FALSE
-       ))
+       )
      }
    }
  }
+
+ # Combine all data frames at once (O(n) instead of O(n²))
+ ridge_data <- do.call(rbind, ridge_data_list[!sapply(ridge_data_list, is.null)])
 
  if (nrow(ridge_data) == 0) {
    stop("No gene data found for the selected pathways. ",

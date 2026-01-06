@@ -326,7 +326,6 @@ ko2kegg_abundance <- function (file = NULL, data = NULL, method = c("abundance",
   message(sprintf("Processing %d KEGG pathways using '%s' method...", length(all_pathways), method))
 
   # Create fast pathway → KOs lookup mapping
-  message("Building pathway-KO index...")
   pathway_to_ko <- split(ko_to_kegg_reference$ko_id, ko_to_kegg_reference$pathway_id)
 
   # Create result data frame

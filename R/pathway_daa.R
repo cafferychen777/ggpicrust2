@@ -210,18 +210,10 @@ NULL
 #'
 #' @keywords internal
 calculate_abundance_stats <- function(abundance, metadata, group, features, group1, group2) {
-  # Validate inputs
-  if (!is.matrix(abundance) && !is.data.frame(abundance)) {
-    stop("'abundance' must be a matrix or data frame")
-  }
-
-  if (!is.data.frame(metadata)) {
-    stop("'metadata' must be a data frame")
-  }
-
-  if (!group %in% colnames(metadata)) {
-    stop("Group column '", group, "' not found in metadata")
-  }
+  # Validate inputs using unified functions
+  validate_abundance(abundance)
+  validate_metadata(metadata)
+  validate_group(metadata, group)
 
   # Convert abundance to matrix if needed
   abundance_mat <- as.matrix(abundance)
@@ -269,22 +261,10 @@ calculate_abundance_stats <- function(abundance, metadata, group, features, grou
     stringsAsFactors = FALSE
   )
 
-  # Calculate data-driven pseudocount for log2 fold change
-
-  # Use half of the minimum non-zero relative abundance to ensure
-  # pseudocount is smaller than any real value in the data
-  all_values <- as.vector(relative_abundance)
-  non_zero_values <- all_values[all_values > 0]
-  if (length(non_zero_values) > 0) {
-    pseudocount <- min(non_zero_values) * 0.5
-  } else {
-    # Fallback for rare all-zero case (shouldn't happen with relative abundance)
-    pseudocount <- 1e-6
-  }
+  # Calculate data-driven pseudocount using unified function
+  pseudocount <- calculate_pseudocount(as.vector(relative_abundance))
 
   for (i in seq_len(nrow(relative_abundance))) {
-    feature_name <- rownames(relative_abundance)[i]
-
     # Get abundance values for each group
     group1_values <- relative_abundance[i, group1_samples, drop = TRUE]
     group2_values <- relative_abundance[i, group2_samples, drop = TRUE]
@@ -295,9 +275,8 @@ calculate_abundance_stats <- function(abundance, metadata, group, features, grou
     mean2 <- mean(group2_values, na.rm = TRUE)
     sd2 <- stats::sd(group2_values, na.rm = TRUE)
 
-    # Calculate log2 fold change (group2/group1)
-    # Pseudocount is calculated above based on data scale
-    log2_fc <- log2((mean2 + pseudocount) / (mean1 + pseudocount))
+    # Calculate log2 fold change using unified function
+    log2_fc <- calculate_log2_fold_change(mean1, mean2, pseudocount = pseudocount)
 
     # Store results
     results[i, "mean_rel_abundance_group1"] <- mean1
@@ -1185,11 +1164,6 @@ perform_linda_analysis <- function(abundance, metadata, group, reference, Level,
   # Build formula
   formula <- paste0("~ ", group)
 
-  # Add more debug information
-  message(sprintf("Group variable: %s with levels: %s", group, paste(Level, collapse=", ")))
-  message(sprintf("Reference level: %s", reference))
-  message(sprintf("Number of features: %d, Number of samples: %d", nrow(feature.dat), ncol(feature.dat)))
-
   # Validate data before LinDA analysis
   if (nrow(feature.dat) == 0) {
     stop("No features available for LinDA analysis. This may be due to overly strict filtering. ",
@@ -1245,16 +1219,7 @@ perform_linda_analysis <- function(abundance, metadata, group, reference, Level,
     # Check the structure of linda_obj
     if (is.null(linda_obj) || is.null(linda_obj$output) || length(linda_obj$output) == 0) {
       message("LinDA analysis returned empty results. This might be due to insufficient variation in the data.")
-      # Return an empty data frame instead of NULL, so that the pathway_daa function can handle it properly
-      return(data.frame(
-        feature = character(0),
-        method = character(0),
-        group1 = character(0),
-        group2 = character(0),
-        p_values = numeric(0),
-        log2FoldChange = numeric(0),
-        stringsAsFactors = FALSE
-      ))
+      return(create_empty_daa_result(include_log2fc = TRUE))
     }
     
     # Create an empty list to store results for each comparison
@@ -1296,28 +1261,12 @@ perform_linda_analysis <- function(abundance, metadata, group, reference, Level,
       do.call(rbind, results_list)
     } else {
       # If there are no results, return an empty data frame
-      data.frame(
-        feature = character(0),
-        method = character(0),
-        group1 = character(0),
-        group2 = character(0),
-        p_values = numeric(0),
-        log2FoldChange = numeric(0),
-        stringsAsFactors = FALSE
-      )
+      create_empty_daa_result(include_log2fc = TRUE)
     }
   }, error = function(e) {
     # Catch and report errors, but return an empty data frame instead of NULL
     message(sprintf("Error in LinDA analysis: %s", e$message))
-    data.frame(
-      feature = character(0),
-      method = character(0),
-      group1 = character(0),
-      group2 = character(0),
-      p_values = numeric(0),
-      log2FoldChange = numeric(0),
-      stringsAsFactors = FALSE
-    )
+    create_empty_daa_result(include_log2fc = TRUE)
   })
   
   return(linda_result)
