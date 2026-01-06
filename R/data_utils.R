@@ -197,7 +197,10 @@ align_samples <- function(abundance, metadata, sample_col = NULL, verbose = TRUE
   # Align data: subset and reorder to common samples
   abundance_aligned <- abundance[, common_samples, drop = FALSE]
   row_idx <- match(common_samples, metadata_samples)
-  metadata_aligned <- metadata[row_idx, , drop = FALSE]
+  metadata_aligned <- as.data.frame(metadata[row_idx, , drop = FALSE])
+
+  # Set rownames to sample names for downstream compatibility
+  rownames(metadata_aligned) <- common_samples
 
   # Verify alignment
   if (!identical(colnames(abundance_aligned), as.character(metadata_aligned[[sample_col]]))) {
