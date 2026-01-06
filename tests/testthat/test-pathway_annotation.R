@@ -47,7 +47,7 @@ test_that("pathway_annotation handles invalid inputs correctly", {
 
   expect_error(
     pathway_annotation(file = temp_file, pathway = "INVALID"),
-    "Invalid pathway option. Please provide one of the following options: 'KO', 'EC', 'MetaCyc'"
+    "Unknown reference type: 'INVALID'"
   )
 
   unlink(temp_file)

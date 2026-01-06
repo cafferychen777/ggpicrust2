@@ -39,33 +39,8 @@ read_abundance_file <- function(file_path) {
   })
 }
 
-#' Load reference data for pathway annotation
-#' @param pathway_type One of "KO", "EC", or "MetaCyc"
-#' @return Reference data with columns: id, description
-#' @noRd
-load_reference_data <- function(pathway_type) {
-  if (!pathway_type %in% c("KO", "EC", "MetaCyc")) {
-    stop("Invalid pathway option. Please provide one of the following options: 'KO', 'EC', 'MetaCyc'.")
-  }
-
-  ref_file <- sprintf("%s_reference.RData", pathway_type)
-  ref_data_name <- paste0(pathway_type, "_reference")
-
-  # Try loading from package namespace first
-  if (exists(ref_data_name, envir = asNamespace("ggpicrust2"))) {
-    ref_data <- get(ref_data_name, envir = asNamespace("ggpicrust2"))
-    return(as.data.frame(ref_data))
-  }
-
-  # Try inst/extdata/
- ref_path <- system.file("extdata", ref_file, package = "ggpicrust2", mustWork = FALSE)
-  if (file.exists(ref_path)) {
-    load(ref_path)
-    return(as.data.frame(get(ref_data_name)))
-  }
-
-  stop(sprintf("Reference data file '%s' not found. Please ensure the package was installed correctly.", ref_file))
-}
+# Note: load_reference_data() is defined in data_utils.R
+# It provides unified access to all reference data in the package.
 
 #' Cache manager for KEGG annotations
 #' @noRd

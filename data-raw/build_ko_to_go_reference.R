@@ -655,7 +655,7 @@ main <- function(use_api = TRUE, max_kos = 100) {
   attr(ko_to_go_reference, "total_kos_processed") <- max_kos
 
   # Save the data
-  save(ko_to_go_reference, file = "data/ko_to_go_reference.RData")
+  save(ko_to_go_reference, file = "data/ko_to_go_reference.rda")
 
   # Report results
   message("\n=== Final Results ===")
@@ -664,7 +664,7 @@ main <- function(use_api = TRUE, max_kos = 100) {
   message(sprintf("  - MF: %d terms", sum(ko_to_go_reference$category == "MF")))
   message(sprintf("  - CC: %d terms", sum(ko_to_go_reference$category == "CC")))
   message(sprintf("  - Data sources: %s", paste(data_sources, collapse = " + ")))
-  message("✓ Data saved to data/ko_to_go_reference.RData")
+  message("✓ Data saved to data/ko_to_go_reference.rda")
 
   return(ko_to_go_reference)
 }

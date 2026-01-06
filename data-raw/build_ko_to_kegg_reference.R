@@ -142,14 +142,14 @@ if (all_checks_pass) {
 }
 
 # Save to package data
-cat("Saving to data/ko_to_kegg_reference.RData...\n")
+cat("Saving to data/ko_to_kegg_reference.rda...\n")
 
 # Use usethis if available, otherwise use base save
 if (requireNamespace("usethis", quietly = TRUE)) {
   usethis::use_data(ko_to_kegg_reference, overwrite = TRUE, compress = "xz")
 } else {
   save(ko_to_kegg_reference,
-       file = "data/ko_to_kegg_reference.RData",
+       file = "data/ko_to_kegg_reference.rda",
        compress = "xz")
 }
 
@@ -179,11 +179,11 @@ save(list = ls(envir = sysdata_env),
      compress = "xz")
 
 # File size comparison
-data_size <- file.size("data/ko_to_kegg_reference.RData")
+data_size <- file.size("data/ko_to_kegg_reference.rda")
 sysdata_size <- file.size("R/sysdata.rda")
 
 cat("\n=== File Sizes ===\n\n")
-cat(sprintf("data/ko_to_kegg_reference.RData: %.1f KB\n", data_size / 1024))
+cat(sprintf("data/ko_to_kegg_reference.rda: %.1f KB\n", data_size / 1024))
 cat(sprintf("R/sysdata.rda (all internal data): %.1f KB\n", sysdata_size / 1024))
 
 cat("\n=== ✓ Dataset Creation Complete ===\n\n")
@@ -195,7 +195,7 @@ cat(sprintf("  • Improvement vs old: +%.1f%%\n", improvement))
 cat(sprintf("  • Fast lookup index: %s entries\n",
             format(length(ko_pathway_index), big.mark = ",")))
 cat("\nFiles updated:\n")
-cat("  • data/ko_to_kegg_reference.RData\n")
+cat("  • data/ko_to_kegg_reference.rda\n")
 cat("  • R/sysdata.rda\n")
 cat("\nNext steps:\n")
 cat("  1. Update function code (ko2kegg_abundance.R, pathway_gsea.R)\n")

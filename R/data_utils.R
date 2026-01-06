@@ -211,3 +211,68 @@ align_samples <- function(abundance, metadata, sample_col = NULL, verbose = TRUE
     n_samples = length(common_samples)
   )
 }
+
+# =============================================================================
+# Reference Data Loading
+# =============================================================================
+
+#' Load Reference Data from Package
+#'
+#' Unified function to load reference data from the package's data/ directory.
+#' All reference data is lazy-loaded, so this function simply retrieves it
+#' from the package namespace.
+#'
+#' @param ref_type Character string specifying the reference type:
+#'   \itemize{
+#'     \item "KO": KO annotation reference (id, description, pathway info)
+#'     \item "EC": EC annotation reference (id, description)
+#'     \item "MetaCyc": MetaCyc pathway reference (id, description)
+#'     \item "KEGG": KEGG pathway reference (pathway, pathway_name)
+#'     \item "ko_to_kegg": KO to KEGG pathway mapping
+#'     \item "ko_to_go": KO to GO term mapping
+#'     \item "metacyc_to_ec": MetaCyc to EC mapping
+#'   }
+#' @return Data frame with reference data
+#' @noRd
+load_reference_data <- function(ref_type) {
+  # Mapping from user-friendly names to actual data object names
+
+  ref_map <- list(
+    "KO" = "ko_reference",
+    "EC" = "ec_reference",
+    "MetaCyc" = "metacyc_reference",
+    "KEGG" = "kegg_pathway_reference",
+    "ko_to_kegg" = "ko_to_kegg_reference",
+    "ko_to_go" = "ko_to_go_reference",
+    "metacyc_to_ec" = "metacyc_to_ec_reference"
+  )
+
+  ref_name <- ref_map[[ref_type]]
+  if (is.null(ref_name)) {
+    stop(sprintf(
+      "Unknown reference type: '%s'. Valid options: %s",
+      ref_type, paste(names(ref_map), collapse = ", ")
+    ))
+  }
+
+  # Get from package namespace (lazy-loaded data)
+  pkg_ns <- asNamespace("ggpicrust2")
+  if (exists(ref_name, envir = pkg_ns)) {
+    return(as.data.frame(get(ref_name, envir = pkg_ns)))
+  }
+
+  # Fallback: try using data() function
+
+  env <- new.env()
+ tryCatch({
+    data(list = ref_name, package = "ggpicrust2", envir = env)
+    if (exists(ref_name, envir = env)) {
+      return(as.data.frame(get(ref_name, envir = env)))
+    }
+  }, error = function(e) NULL)
+
+  stop(sprintf(
+    "Reference data '%s' not found. Please reinstall the package.",
+    ref_name
+  ))
+}

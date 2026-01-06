@@ -178,41 +178,18 @@ pathway_ridgeplot <- function(gsea_results,
 
  # Get pathway-gene mappings
  if (is.null(pathway_reference)) {
-   # Try to use built-in reference data
+   # Load reference data using unified loader
    if (pathway_type == "KEGG") {
-     # Load ko_to_kegg_reference and aggregate KOs by pathway
-     tryCatch({
-       kegg_ref <- NULL
-       if (exists("ko_to_kegg_reference", envir = asNamespace("ggpicrust2"))) {
-         kegg_ref <- get("ko_to_kegg_reference", envir = asNamespace("ggpicrust2"))
-       } else {
-         data("ko_to_kegg_reference", package = "ggpicrust2", envir = environment())
-         kegg_ref <- ko_to_kegg_reference
-       }
-       # Aggregate KO IDs by pathway_id
-       pathway_reference <- stats::aggregate(
-         ko_id ~ pathway_id + pathway_name,
-         data = kegg_ref,
-         FUN = function(x) paste(unique(x), collapse = ";")
-       )
-       colnames(pathway_reference)[colnames(pathway_reference) == "ko_id"] <- "ko_members"
-     }, error = function(e) {
-       stop("Cannot load KEGG reference data. Please provide pathway_reference parameter. Error: ", e$message)
-     })
+     kegg_ref <- load_reference_data("ko_to_kegg")
+     # Aggregate KO IDs by pathway_id
+     pathway_reference <- stats::aggregate(
+       ko_id ~ pathway_id + pathway_name,
+       data = kegg_ref,
+       FUN = function(x) paste(unique(x), collapse = ";")
+     )
+     colnames(pathway_reference)[colnames(pathway_reference) == "ko_id"] <- "ko_members"
    } else if (pathway_type == "GO") {
-     tryCatch({
-       go_ref <- NULL
-       if (exists("ko_to_go_reference", envir = asNamespace("ggpicrust2"))) {
-         go_ref <- get("ko_to_go_reference", envir = asNamespace("ggpicrust2"))
-       } else {
-         load_env <- new.env()
-         data("ko_to_go_reference", package = "ggpicrust2", envir = load_env)
-         go_ref <- load_env$ko_to_go_reference
-       }
-       pathway_reference <- go_ref
-     }, error = function(e) {
-       stop("Cannot load GO reference data. Please provide pathway_reference parameter.")
-     })
+     pathway_reference <- load_reference_data("ko_to_go")
    } else {
      stop("Please provide pathway_reference parameter for ", pathway_type, " pathways.")
    }

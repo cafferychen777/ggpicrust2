@@ -19,31 +19,13 @@ create_test_gsea_results <- function(n_pathways = 10) {
 }
 
 test_that("gsea_pathway_annotation annotates KEGG pathways correctly", {
-  # Create test data
+  # Create test data using real KEGG pathway IDs from the reference
   gsea_results <- create_test_gsea_results()
 
-  # Mock the data loading
-  mockery::stub(gsea_pathway_annotation, "data", function(x, package, envir) {
-    if (x == "kegg_reference") {
-      assign("kegg_reference", data.frame(
-        pathway = paste0("path:ko", sprintf("%05d", 1:10)),
-        pathway_name = paste("KEGG Pathway", 1:10),
-        pathway_class = rep(c("Metabolism", "Genetic Information Processing"), each = 5),
-        description = paste("Description for pathway", 1:10),
-        stringsAsFactors = FALSE
-      ), envir = envir)
-    }
-  })
-
-  # Mock the merge function to control the output
-  mockery::stub(gsea_pathway_annotation, "merge", function(...) {
-    # Return a data frame with the expected structure
-    result <- gsea_results
-    result$pathway_name <- paste("KEGG Pathway", 1:nrow(result))
-    result$pathway_class <- rep(c("Metabolism", "Genetic Information Processing"), length.out = nrow(result))
-    result$description <- paste("Description for pathway", 1:nrow(result))
-    return(result)
-  })
+  # Use real pathway IDs that exist in the reference data
+  kegg_ref <- ggpicrust2:::load_reference_data("KEGG")
+  real_pathway_ids <- head(kegg_ref$pathway, 10)
+  gsea_results$pathway_id <- real_pathway_ids
 
   # Test annotation
   annotated <- gsea_pathway_annotation(gsea_results, pathway_type = "KEGG")
@@ -52,11 +34,10 @@ test_that("gsea_pathway_annotation annotates KEGG pathways correctly", {
   expect_s3_class(annotated, "data.frame")
   expect_equal(nrow(annotated), nrow(gsea_results))
   expect_true("pathway_name" %in% colnames(annotated))
-  expect_true("pathway_class" %in% colnames(annotated))
-  expect_true("description" %in% colnames(annotated))
 
-  # Check that pathway names were updated
-  expect_equal(annotated$pathway_name[1], "KEGG Pathway 1")
+  # Check that pathway names were updated (should not just be the pathway_id)
+  # At least some pathways should have different names from their IDs
+  expect_true(any(annotated$pathway_name != annotated$pathway_id))
 })
 
 test_that("gsea_pathway_annotation annotates MetaCyc pathways correctly", {
@@ -104,7 +85,7 @@ test_that("gsea_pathway_annotation validates inputs correctly", {
   # Test invalid pathway_type
   expect_error(
     gsea_pathway_annotation(gsea_results, pathway_type = "invalid"),
-    "pathway_type must be one of 'KEGG', 'MetaCyc', or 'GO'"
+    "pathway_type must be one of: KEGG, MetaCyc, GO"
   )
 
   # Test missing required columns
@@ -116,36 +97,17 @@ test_that("gsea_pathway_annotation validates inputs correctly", {
 })
 
 test_that("gsea_pathway_annotation handles missing annotations", {
-  # Create test data
+  # Create test data with a mix of real and fake pathway IDs
   gsea_results <- create_test_gsea_results()
 
-  # Add some pathways that won't be in the reference
-  gsea_results$pathway_id[1:3] <- paste0("path:ko", sprintf("%05d", 101:103))
+  # Use some real pathway IDs and some fake ones
+  kegg_ref <- ggpicrust2:::load_reference_data("KEGG")
+  real_pathway_ids <- head(kegg_ref$pathway, 7)
 
-  # Mock the data loading with incomplete reference
-  mockery::stub(gsea_pathway_annotation, "data", function(x, package, envir) {
-    if (x == "kegg_reference") {
-      assign("kegg_reference", data.frame(
-        pathway = paste0("path:ko", sprintf("%05d", 4:10)),  # Missing first 3 pathways
-        pathway_name = paste("KEGG Pathway", 4:10),
-        pathway_class = rep("Metabolism", 7),
-        stringsAsFactors = FALSE
-      ), envir = envir)
-    }
-  })
+  # Create fake pathway IDs that don't exist in reference
+  fake_pathway_ids <- c("path:ko99991", "path:ko99992", "path:ko99993")
 
-  # Mock the merge function to control the output
-  mockery::stub(gsea_pathway_annotation, "merge", function(x, y, by.x, by.y, all.x, ...) {
-    # Simulate a merge that keeps all rows from x (gsea_results)
-    result <- x
-    # For rows 1-3, pathway_name should be the same as pathway_id (missing in reference)
-    # For rows 4-10, pathway_name should come from the reference
-    result$pathway_name <- result$pathway_id  # Default to pathway_id
-    result$pathway_name[4:10] <- paste("KEGG Pathway", 4:10)  # Update with reference names for rows 4-10
-    result$pathway_class <- NA
-    result$pathway_class[4:10] <- "Metabolism"
-    return(result)
-  })
+  gsea_results$pathway_id <- c(fake_pathway_ids, real_pathway_ids)
 
   # Test annotation
   annotated <- gsea_pathway_annotation(gsea_results, pathway_type = "KEGG")
@@ -154,11 +116,11 @@ test_that("gsea_pathway_annotation handles missing annotations", {
   expect_s3_class(annotated, "data.frame")
   expect_equal(nrow(annotated), nrow(gsea_results))
 
-  # Check that missing pathways use pathway_id as name
-  expect_equal(annotated$pathway_name[1], gsea_results$pathway_id[1])
-  expect_equal(annotated$pathway_name[2], gsea_results$pathway_id[2])
-  expect_equal(annotated$pathway_name[3], gsea_results$pathway_id[3])
+  # The missing pathways (fake IDs) should use pathway_id as name
+  missing_rows <- annotated[annotated$pathway_id %in% fake_pathway_ids, ]
+  expect_true(all(missing_rows$pathway_name == missing_rows$pathway_id))
 
-  # Check that found pathways use reference names
-  expect_equal(annotated$pathway_name[4], "KEGG Pathway 4")
+  # Found pathways should have reference names (not equal to pathway_id)
+  found_rows <- annotated[annotated$pathway_id %in% real_pathway_ids, ]
+  expect_true(any(found_rows$pathway_name != found_rows$pathway_id))
 })

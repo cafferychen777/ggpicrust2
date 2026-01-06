@@ -496,7 +496,7 @@ pathway_gsea <- function(abundance,
 #'
 #' @return A list of pathway gene sets
 #' @export
-prepare_gene_sets <- function(pathway_type = "KEGG", organism = "ko", go_category = "BP") {
+prepare_gene_sets <- function(pathway_type = "KEGG", organism = "ko", go_category = "all") {
 
   # Validate pathway_type
   valid_types <- c("KEGG", "MetaCyc", "GO")
@@ -505,143 +505,42 @@ prepare_gene_sets <- function(pathway_type = "KEGG", organism = "ko", go_categor
   }
 
   if (pathway_type == "KEGG") {
-    # Initialize gene_sets
-    gene_sets <- list()
-    
-    # Try to load KEGG pathway to KO mapping
-    tryCatch({
-      if (!exists("ko_to_kegg_reference")) {
-        data("ko_to_kegg_reference", package = "ggpicrust2", envir = environment())
-      }
-      
-      # Convert to list format required for GSEA (now using long-format data)
-      ko_to_kegg_reference <- as.data.frame(ko_to_kegg_reference)
+    # Load KEGG reference using unified loader
+    ko_to_kegg_reference <- load_reference_data("ko_to_kegg")
 
-      # Create a list where each element is a pathway containing KO IDs
-      # Using split() for efficient conversion from long format
-      gene_sets <- split(ko_to_kegg_reference$ko_id, ko_to_kegg_reference$pathway_id)
-      
-    }, error = function(e) {
-      # Create dummy gene sets for testing when reference data is not available
-      warning("KEGG reference data not found. Creating dummy gene sets for testing.", call. = FALSE)
-      
-      # Create some dummy pathways for demonstration
-      gene_sets <<- list(
-        "ko00010" = c("K00844", "K12407", "K00845", "K00886", "K08074"),
-        "ko00020" = c("K00239", "K00240", "K00241", "K00242", "K01902"),
-        "ko00030" = c("K00016", "K00018", "K00128", "K01595", "K01596"),
-        "ko00040" = c("K01623", "K01624", "K11645", "K01803", "K15633"),
-        "ko00051" = c("K00134", "K00150", "K03781", "K03782", "K14085")
-      )
-    })
-    
+    # Create gene sets: list where each element is a pathway containing KO IDs
+    gene_sets <- split(ko_to_kegg_reference$ko_id, ko_to_kegg_reference$pathway_id)
+
   } else if (pathway_type == "MetaCyc") {
-    # Load MetaCyc pathway to EC mapping
-    if (!exists("metacyc_to_ec_reference")) {
-      # Try to load from package extdata first
-      tryCatch({
-        metacyc_ref_path <- system.file("extdata", "metacyc_to_ec_reference.RData", package = "ggpicrust2")
-        if (file.exists(metacyc_ref_path)) {
-          load(metacyc_ref_path, envir = environment())
-        } else {
-          stop("metacyc_to_ec_reference data file not found")
-        }
-      }, error = function(e) {
-        stop("Failed to load MetaCyc to EC mapping: ", e$message)
-      })
-    }
-    
-    # Convert to data frame
-    metacyc_to_ec_reference <- as.data.frame(metacyc_to_ec_reference)
-    
-    # Create gene sets list
+    # Load MetaCyc to EC mapping using unified loader
+    metacyc_to_ec_reference <- load_reference_data("metacyc_to_ec")
+
+    # Create gene sets list from MetaCyc pathways
     gene_sets <- list()
-    
-    for (i in 1:nrow(metacyc_to_ec_reference)) {
+    for (i in seq_len(nrow(metacyc_to_ec_reference))) {
       pathway_id <- metacyc_to_ec_reference[i, "pathway"]
       ec_string <- as.character(metacyc_to_ec_reference[i, "ec_numbers"])
-      
+
       # Skip pathways with no EC mappings
       if (is.na(ec_string) || ec_string == "" || ec_string == "NA") {
         next
       }
-      
-      # Split EC numbers by semicolon
+
+      # Split EC numbers by semicolon and clean
       ec_numbers <- strsplit(ec_string, ";")[[1]]
-      ec_numbers <- trimws(ec_numbers)  # Remove whitespace
-      ec_numbers <- ec_numbers[ec_numbers != ""]  # Remove empty strings
-      
+      ec_numbers <- trimws(ec_numbers)
+      ec_numbers <- ec_numbers[ec_numbers != ""]
+
       if (length(ec_numbers) > 0) {
         # Add EC: prefix if not present for consistency
         ec_numbers <- ifelse(grepl("^EC:", ec_numbers), ec_numbers, paste0("EC:", ec_numbers))
         gene_sets[[pathway_id]] <- ec_numbers
       }
     }
-    
+
   } else if (pathway_type == "GO") {
-    # Load KO to GO mapping with improved error handling
-    ko_to_go_reference <- NULL
-
-    # Try to load complete GO reference data from multiple sources
-    data_loaded <- FALSE
-
-    # Method 1: Try to load from package data
-    tryCatch({
-      data("ko_to_go_reference", package = "ggpicrust2", envir = environment())
-      if (exists("ko_to_go_reference", envir = environment()) && !is.null(ko_to_go_reference)) {
-        message("[OK] Using complete ko_to_go_reference dataset from package data")
-        data_loaded <- TRUE
-      }
-    }, error = function(e) {
-      # Continue to next method
-    })
-
-    # Method 2: Try to load from data/ directory directly
-    if (!data_loaded) {
-      tryCatch({
-        data_file <- "data/ko_to_go_reference.RData"
-        if (file.exists(data_file)) {
-          load(data_file, envir = environment())
-          if (exists("ko_to_go_reference", envir = environment()) && !is.null(ko_to_go_reference)) {
-            message("[OK] Using complete ko_to_go_reference dataset from data file")
-            data_loaded <- TRUE
-          }
-        }
-      }, error = function(e) {
-        # Continue to fallback
-      })
-    }
-
-    # Method 3: Try to load from system file
-    if (!data_loaded) {
-      tryCatch({
-        data_file <- system.file("data", "ko_to_go_reference.RData", package = "ggpicrust2")
-        if (file.exists(data_file)) {
-          load(data_file, envir = environment())
-          if (exists("ko_to_go_reference", envir = environment()) && !is.null(ko_to_go_reference)) {
-            message("[OK] Using complete ko_to_go_reference dataset from system file")
-            data_loaded <- TRUE
-          }
-        }
-      }, error = function(e) {
-        # Continue to fallback
-      })
-    }
-
-    # Fallback: Use enhanced basic mapping if complete data is not available
-    if (!data_loaded) {
-      warning("Complete ko_to_go_reference dataset not found. ",
-              "Using enhanced basic GO mapping instead.\n",
-              "For comprehensive GO analysis, consider running data-raw/create_ko_to_go_reference.R\n",
-              "to generate the complete dataset.",
-              call. = FALSE, immediate. = TRUE)
-      message("-> Creating enhanced GO mapping with 100+ terms covering major biological processes")
-      ko_to_go_reference <- create_basic_go_mapping()
-      message("[OK] Enhanced GO mapping ready for analysis")
-    }
-    
-    # Convert to data frame format required for GSEA
-    go_reference <- as.data.frame(ko_to_go_reference)
+    # Load GO reference using unified loader
+    go_reference <- load_reference_data("ko_to_go")
     
     # Validate and filter by GO category if specified
     valid_go_categories <- c("BP", "MF", "CC", "all")
@@ -658,17 +557,18 @@ prepare_gene_sets <- function(pathway_type = "KEGG", organism = "ko", go_categor
     
     # Create gene sets list for each GO term
     gene_sets <- list()
-    
-    for (i in 1:nrow(go_reference)) {
+
+    # Use seq_len to handle empty data frame correctly (1:0 returns c(1,0), not empty)
+    for (i in seq_len(nrow(go_reference))) {
       go_id <- go_reference[i, 1]  # First column contains GO IDs
-      
+
       # Get KO members for this GO term
       if ("ko_members" %in% colnames(go_reference)) {
-        ko_string <- go_reference[i, "ko_members"]
-        if (!is.na(ko_string) && ko_string != "") {
+        ko_string <- as.character(go_reference[i, "ko_members"])
+        if (!is.na(ko_string) && nchar(ko_string) > 0) {
           ko_ids <- unlist(strsplit(ko_string, ";"))
           ko_ids <- ko_ids[!is.na(ko_ids) & ko_ids != ""]
-          
+
           if (length(ko_ids) > 0) {
             gene_sets[[go_id]] <- ko_ids
           }
@@ -677,7 +577,7 @@ prepare_gene_sets <- function(pathway_type = "KEGG", organism = "ko", go_categor
         # Fallback: assume other columns contain KO IDs
         ko_ids <- as.character(go_reference[i, -1])
         ko_ids <- ko_ids[!is.na(ko_ids) & ko_ids != ""]
-        
+
         if (length(ko_ids) > 0) {
           gene_sets[[go_id]] <- ko_ids
         }
