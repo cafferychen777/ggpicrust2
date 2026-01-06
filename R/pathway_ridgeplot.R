@@ -120,40 +120,15 @@ pathway_ridgeplot <- function(gsea_results,
    abundance <- as.matrix(abundance)
  }
 
- # Determine pathway ID column
- pathway_id_col <- if ("pathway_id" %in% colnames(gsea_results)) {
-   "pathway_id"
- } else if ("go_id" %in% colnames(gsea_results)) {
-   "go_id"
- } else if ("ID" %in% colnames(gsea_results)) {
-   "ID"
- } else {
-   stop("Cannot find pathway ID column in gsea_results. Expected: pathway_id, go_id, or ID")
- }
+ # Validate required columns (pathway_gsea() output format)
+ require_column(gsea_results, "pathway_id", "gsea_results")
 
- # Determine pathway name column
- pathway_name_col <- if ("pathway_name" %in% colnames(gsea_results)) {
-   "pathway_name"
- } else if ("go_name" %in% colnames(gsea_results)) {
-   "go_name"
- } else if ("Description" %in% colnames(gsea_results)) {
-   "Description"
- } else {
-   pathway_id_col  # Use ID as name if no name column
- }
+ # pathway_name is optional, fallback to pathway_id
+ pathway_name_col <- if ("pathway_name" %in% colnames(gsea_results)) "pathway_name" else "pathway_id"
 
- # Determine direction/NES column
+ # direction is optional, can be derived from NES
  has_nes <- "NES" %in% colnames(gsea_results)
- has_direction <- "direction" %in% colnames(gsea_results) ||
-                   "Direction" %in% colnames(gsea_results)
-
- direction_col <- if ("direction" %in% colnames(gsea_results)) {
-   "direction"
- } else if ("Direction" %in% colnames(gsea_results)) {
-   "Direction"
- } else {
-   NULL
- }
+ direction_col <- if ("direction" %in% colnames(gsea_results)) "direction" else NULL
 
  # Sort and select top pathways
  sort_col <- if (sort_by %in% colnames(gsea_results)) {
@@ -252,7 +227,7 @@ pathway_ridgeplot <- function(gsea_results,
  }
 
  for (i in seq_len(nrow(df))) {
-   pid <- df[[pathway_id_col]][i]
+   pid <- df[["pathway_id"]][i]
    pname <- df[[pathway_name_col]][i]
 
    # Truncate long names

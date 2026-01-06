@@ -171,176 +171,101 @@ ggpicrust2 <- function(file = NULL,
     }
   }
 
-  # Create an empty list
-  plot_result_list <- list()
+  # Validate daa_method early
 
-  message("Starting the ggpicrust2 analysis...\n")
+  if (daa_method == "Lefse") {
+    stop("The 'Lefse' method is not suitable for ggpicrust2() as it does not output p-values.")
+  }
 
-  if (ko_to_kegg == TRUE){
+
+  # Step 1: Load abundance data
+  if (ko_to_kegg) {
     message("Converting KO to KEGG...\n")
-    plot_result_list <- list()
     abundance <- if (!is.null(file)) {
       ko2kegg_abundance(file, filter_for_prokaryotes = filter_for_prokaryotes)
     } else {
       ko2kegg_abundance(data = data, filter_for_prokaryotes = filter_for_prokaryotes)
     }
-    message("Performing pathway differential abundance analysis...\n")
-    daa_results_df <- pathway_daa(
-      abundance = abundance,
-      metadata = metadata,
-      group = group,
-      daa_method = daa_method,
-      select = select,
-      p.adjust = p.adjust,
-      reference = reference
-    )
-    if(daa_method == "Lefse") {
-      stop("The 'Lefse' method is not suitable for the ggpicrust2() function as Lefse in R does not output p-values, only effect sizes.")
-    }
-
-    # Checking for statistically significant biomarkers in the dataset
-    num_significant_biomarkers <- sum(as.numeric(daa_results_df$p_adjust <= 0.05))
-
-    if (num_significant_biomarkers == 0) {
-      # If no biomarkers have p-values less than or equal to 0.05, issue a warning but continue processing
-      warning(
-        "No statistically significant biomarkers found in the dataset (p_adjust <= 0.05). ",
-        "This is not an error, but indicates that the data do not contain biomarkers passing the significance threshold. ",
-        "The analysis will continue with empty annotation columns for visualization purposes. ",
-        "You may refer to the tutorial's FAQ for further help and suggestions.",
-        call. = FALSE
-      )
-      message("Notice: Continuing analysis with non-significant results for visualization...")
-    } else {
-      message(paste("Success: Found", num_significant_biomarkers, "statistically significant biomarker(s) in the dataset."))
-    }
-
-    message("Annotating pathways...\n")
-    daa_results_df <-
-      pathway_annotation(
-        pathway = pathway,
-        ko_to_kegg = ko_to_kegg,
-        daa_results_df = daa_results_df
-      )
-    j <- 1
-    message("Creating pathway error bar plots...\n")
-    for (i in unique(daa_results_df$method)) {
-      daa_sub_method_results_df <-
-        daa_results_df[daa_results_df[, "method"] == i, ]
-      combination_bar_plot <-
-        pathway_errorbar(
-          abundance = abundance,
-          daa_results_df = daa_sub_method_results_df,
-          Group = metadata %>% select(all_of(c(group))) %>% as.data.frame() %>% pull(),
-          ko_to_kegg = ko_to_kegg,
-          p_value_bar = p_values_bar,
-          order = order,
-          colors = colors,
-          select = select,
-          x_lab = x_lab,
-          p_values_threshold = p_values_threshold
-        )
-      # Create a sublist containing a combination_bar_plot and the corresponding subset of daa_results_df
-      sub_list <-
-        list(plot = combination_bar_plot, results = daa_sub_method_results_df)
-      # Add sublists to the main list
-      plot_result_list[[j]] <- sub_list
-      message(sprintf("Plot %d created.\n", j))
-      j <- j + 1
-    }
-    message("ggpicrust2 analysis completed.\n")
-
-    # Add data for downstream analysis (PCA, heatmap, etc.)
-    plot_result_list$abundance <- abundance
-    plot_result_list$metadata <- metadata
-    plot_result_list$group <- group
-    plot_result_list$daa_results_df <- daa_results_df
-    plot_result_list$ko_to_kegg <- ko_to_kegg
-
-    return(plot_result_list)
   } else {
-    message("Reading input file or using provided data...\n")
-    plot_result_list <- list()
+    message("Reading input data...\n")
     abundance <- if (!is.null(file)) {
-      readr::read_delim(
-        file,
-        delim = "\t",
-        escape_double = FALSE,
-        trim_ws = TRUE
-      )
+      readr::read_delim(file, delim = "\t", escape_double = FALSE, trim_ws = TRUE)
     } else {
       data
     }
     abundance <- as.data.frame(abundance)
-
-    # Standardize KO ID format (handles PICRUSt 2.6.2 "ko:" prefix)
     abundance <- clean_ko_abundance(abundance)
-
     rownames(abundance) <- abundance[, 1]
     abundance <- abundance[, -1]
-    message("Performing pathway differential abundance analysis...\n")
-    daa_results_df <- pathway_daa(
-      abundance = abundance,
-      metadata = metadata,
-      group = group,
-      daa_method = daa_method,
-      select = select,
-      p.adjust = p.adjust,
-      reference = reference
-    )
-    if(daa_method == "Lefse") {
-      stop("The 'Lefse' method is not suitable for the ggpicrust2() function as Lefse in R does not output p-values, only effect sizes.")
-    }
-    message("Annotating pathways...\n")
-    daa_results_df <-
-      pathway_annotation(
-        pathway = pathway,
-        ko_to_kegg = ko_to_kegg,
-        daa_results_df = daa_results_df
-      )
-    j <- 1
-    message("Creating pathway error bar plots...\n")
-    for (i in unique(daa_results_df$method)) {
-      daa_sub_method_results_df <-
-        daa_results_df[daa_results_df[, "method"] == i, ]
-      combination_bar_plot <-
-        pathway_errorbar(
-          abundance = abundance,
-          daa_results_df = daa_sub_method_results_df,
-          Group = metadata %>% select(all_of(c(group))) %>% as.data.frame() %>% pull(),
-          ko_to_kegg = ko_to_kegg,
-          p_value_bar = p_values_bar,
-          order = order,
-          colors = colors,
-          select = select,
-          x_lab = x_lab,
-          p_values_threshold = p_values_threshold
-        )
-
-      # Check if pathway_errorbar returned NULL (no data for plotting)
-      if (is.null(combination_bar_plot)) {
-        message(sprintf("Plot %d skipped due to insufficient annotation data for method: %s\n", j, i))
-        # Still create a sublist with results but no plot
-        sub_list <- list(plot = NULL, results = daa_sub_method_results_df)
-      } else {
-        # Create a sublist with both plot and results
-        sub_list <- list(plot = combination_bar_plot, results = daa_sub_method_results_df)
-        message(sprintf("Plot %d created.\n", j))
-      }
-      
-      # Add sublists to the main list
-      plot_result_list[[j]] <- sub_list
-      j <- j + 1
-    }
-    message("ggpicrust2 analysis completed.\n")
-
-    # Add data for downstream analysis (PCA, heatmap, etc.)
-    plot_result_list$abundance <- abundance
-    plot_result_list$metadata <- metadata
-    plot_result_list$group <- group
-    plot_result_list$daa_results_df <- daa_results_df
-    plot_result_list$ko_to_kegg <- ko_to_kegg
-
-    return(plot_result_list)
   }
+
+  # Step 2: Differential abundance analysis
+  message("Performing pathway differential abundance analysis...\n")
+  daa_results_df <- pathway_daa(
+    abundance = abundance,
+    metadata = metadata,
+    group = group,
+    daa_method = daa_method,
+    select = select,
+    p.adjust = p.adjust,
+    reference = reference
+  )
+
+  # Check for significant biomarkers
+  num_significant <- sum(daa_results_df$p_adjust <= 0.05, na.rm = TRUE)
+  if (num_significant == 0) {
+    warning("No statistically significant biomarkers found (p_adjust <= 0.05). ",
+            "Analysis will continue for visualization purposes.", call. = FALSE)
+  }
+
+  # Step 3: Pathway annotation
+  message("Annotating pathways...\n")
+  daa_results_df <- pathway_annotation(
+    pathway = pathway,
+    ko_to_kegg = ko_to_kegg,
+    daa_results_df = daa_results_df
+  )
+
+  # Step 4: Create plots for each method
+  message("Creating pathway error bar plots...\n")
+  plot_result_list <- list()
+  Group_vec <- metadata[[group]]
+
+  for (i in seq_along(unique(daa_results_df$method))) {
+    method_name <- unique(daa_results_df$method)[i]
+    daa_sub_method_results_df <- daa_results_df[daa_results_df$method == method_name, ]
+
+    combination_bar_plot <- pathway_errorbar(
+      abundance = abundance,
+      daa_results_df = daa_sub_method_results_df,
+      Group = Group_vec,
+      ko_to_kegg = ko_to_kegg,
+      p_value_bar = p_values_bar,
+      order = order,
+      colors = colors,
+      select = select,
+      x_lab = x_lab,
+      p_values_threshold = p_values_threshold
+    )
+
+    if (is.null(combination_bar_plot)) {
+      message(sprintf("Plot %d skipped (no data for method: %s)\n", i, method_name))
+    } else {
+      message(sprintf("Plot %d created.\n", i))
+    }
+
+    plot_result_list[[i]] <- list(plot = combination_bar_plot, results = daa_sub_method_results_df)
+  }
+
+  message("ggpicrust2 analysis completed.\n")
+
+  # Step 5: Add data for downstream analysis
+
+  plot_result_list$abundance <- abundance
+  plot_result_list$metadata <- metadata
+  plot_result_list$group <- group
+  plot_result_list$daa_results_df <- daa_results_df
+  plot_result_list$ko_to_kegg <- ko_to_kegg
+
+  return(plot_result_list)
 }
