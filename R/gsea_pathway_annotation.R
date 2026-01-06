@@ -87,46 +87,30 @@ gsea_pathway_annotation <- function(gsea_results,
     }
     
   } else if (pathway_type == "MetaCyc") {
-    # Load MetaCyc pathway reference data
-    if (!exists("MetaCyc_reference")) {
-      # Load directly from extdata file
-      metacyc_ref_path <- system.file("extdata", "MetaCyc_reference.RData", package = "ggpicrust2")
-      if (file.exists(metacyc_ref_path)) {
-        # Load the file into current environment
-        load(metacyc_ref_path)
-      } else {
-        stop("MetaCyc_reference data file not found")
-      }
+    # Load MetaCyc pathway reference data (columns: id, description)
+    metacyc_ref_path <- system.file("extdata", "MetaCyc_reference.RData", package = "ggpicrust2")
+    if (!file.exists(metacyc_ref_path)) {
+      stop("MetaCyc_reference data file not found")
     }
-    
-    # Convert to data frame
+    load(metacyc_ref_path)
     MetaCyc_reference <- as.data.frame(MetaCyc_reference)
-    
-    # Rename columns for consistency
-    colnames(MetaCyc_reference) <- c("pathway", "description")
-    
+
     # Merge with GSEA results
     annotated_results <- merge(
       gsea_results,
       MetaCyc_reference,
       by.x = "pathway_id",
-      by.y = "pathway",
+      by.y = "id",
       all.x = TRUE
     )
-    
-    # Update pathway names using the description from reference data
-    if ("description" %in% colnames(annotated_results)) {
-      # Use description as pathway_name, fall back to pathway_id if missing
-      annotated_results$pathway_name <- ifelse(
-        is.na(annotated_results$description) | annotated_results$description == "",
-        annotated_results$pathway_id,
-        annotated_results$description
-      )
-      # Remove the description column to avoid confusion
-      annotated_results$description <- NULL
-    } else {
-      annotated_results$pathway_name <- annotated_results$pathway_id
-    }
+
+    # Use description as pathway_name
+    annotated_results$pathway_name <- ifelse(
+      is.na(annotated_results$description) | annotated_results$description == "",
+      annotated_results$pathway_id,
+      annotated_results$description
+    )
+    annotated_results$description <- NULL
     
   } else if (pathway_type == "GO") {
     # Load GO reference data with improved error handling

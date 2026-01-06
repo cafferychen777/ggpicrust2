@@ -41,7 +41,7 @@ read_abundance_file <- function(file_path) {
 
 #' Load reference data for pathway annotation
 #' @param pathway_type One of "KO", "EC", or "MetaCyc"
-#' @return Reference data list
+#' @return Reference data with columns: id, description
 #' @noRd
 load_reference_data <- function(pathway_type) {
   if (!pathway_type %in% c("KO", "EC", "MetaCyc")) {
@@ -49,78 +49,22 @@ load_reference_data <- function(pathway_type) {
   }
 
   ref_file <- sprintf("%s_reference.RData", pathway_type)
-
-  # First try to load from data/ (lazy loading)
   ref_data_name <- paste0(pathway_type, "_reference")
+
+  # Try loading from package namespace first
   if (exists(ref_data_name, envir = asNamespace("ggpicrust2"))) {
     ref_data <- get(ref_data_name, envir = asNamespace("ggpicrust2"))
-
-    # FIX: Standardize column names for MetaCyc, EC, and KO
-    if (pathway_type == "MetaCyc" && all(c("X1", "X2") %in% colnames(ref_data))) {
-      colnames(ref_data) <- c("id", "description")
-    }
-    if (pathway_type == "EC" && all(c("V1", "V2") %in% colnames(ref_data))) {
-      colnames(ref_data) <- c("id", "description")
-    }
-    if (pathway_type == "KO" && all(c("KO", "KoDescription") %in% colnames(ref_data))) {
-      # For KO data, map KO -> id and KoDescription -> description
-      ref_data <- ref_data[, c("KO", "KoDescription")]
-      colnames(ref_data) <- c("id", "description")
-    }
-
-    return(ref_data)
+    return(as.data.frame(ref_data))
   }
 
-  # If not found in data/, try inst/extdata/
-  ref_path <- system.file("extdata", ref_file, package = "ggpicrust2", mustWork = FALSE)
-
+  # Try inst/extdata/
+ ref_path <- system.file("extdata", ref_file, package = "ggpicrust2", mustWork = FALSE)
   if (file.exists(ref_path)) {
     load(ref_path)
-    ref_data <- get(ref_data_name)
-
-    # FIX: Standardize column names for MetaCyc, EC, and KO
-    if (pathway_type == "MetaCyc" && all(c("X1", "X2") %in% colnames(ref_data))) {
-      colnames(ref_data) <- c("id", "description")
-    }
-    if (pathway_type == "EC" && all(c("V1", "V2") %in% colnames(ref_data))) {
-      colnames(ref_data) <- c("id", "description")
-    }
-    if (pathway_type == "KO" && all(c("KO", "KoDescription") %in% colnames(ref_data))) {
-      # For KO data, map KO -> id and KoDescription -> description
-      ref_data <- ref_data[, c("KO", "KoDescription")]
-      colnames(ref_data) <- c("id", "description")
-    }
-
-    return(ref_data)
+    return(as.data.frame(get(ref_data_name)))
   }
 
-  # If still not found, try loading from the package's installed location
-  ref_path <- system.file("inst/extdata", ref_file, package = "ggpicrust2", mustWork = FALSE)
-  if (file.exists(ref_path)) {
-    load(ref_path)
-    ref_data <- get(ref_data_name)
-
-    # FIX: Standardize column names for MetaCyc, EC, and KO
-    if (pathway_type == "MetaCyc" && all(c("X1", "X2") %in% colnames(ref_data))) {
-      colnames(ref_data) <- c("id", "description")
-    }
-    if (pathway_type == "EC" && all(c("V1", "V2") %in% colnames(ref_data))) {
-      colnames(ref_data) <- c("id", "description")
-    }
-    if (pathway_type == "KO" && all(c("KO", "KoDescription") %in% colnames(ref_data))) {
-      # For KO data, map KO -> id and KoDescription -> description
-      ref_data <- ref_data[, c("KO", "KoDescription")]
-      colnames(ref_data) <- c("id", "description")
-    }
-
-    return(ref_data)
-  }
-
-  # If we reach here, the file was not found in any location
-  stop(sprintf("Reference data file '%s' not found in any standard location.\nPlease ensure the package was installed correctly.", ref_file))
-
-  # This code is unreachable, just for reference
-  ref_data
+  stop(sprintf("Reference data file '%s' not found. Please ensure the package was installed correctly.", ref_file))
 }
 
 #' Cache manager for KEGG annotations
