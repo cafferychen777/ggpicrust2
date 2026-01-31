@@ -17,10 +17,11 @@ pathway_gsea(
   nperm = 1000,
   min_size = 5,
   max_size = 500,
-  p.adjust = "BH",
+  p_adjust_method = "BH",
   seed = 42,
   go_category = "all",
-  organism = "ko"
+  organism = "ko",
+  p.adjust = NULL
 )
 }
 \arguments{
@@ -62,13 +63,14 @@ Default is 0.01. Use NA to estimate correlation from data for each gene set.}
 \item{rank_method}{A character string specifying the ranking statistic for preranked methods
 (fgsea, GSEA, clusterProfiler): "signal2noise", "t_test", "log2_ratio", or "diff_abundance"}
 
-\item{nperm}{An integer specifying the number of permutations (for fgsea/clusterProfiler methods)}
+\item{nperm}{An integer specifying the number of permutations (for clusterProfiler method only).
+The fgsea method uses adaptive multilevel splitting and does not require a fixed permutation count.}
 
 \item{min_size}{An integer specifying the minimum gene set size}
 
 \item{max_size}{An integer specifying the maximum gene set size}
 
-\item{p.adjust}{A character string specifying the p-value adjustment method}
+\item{p_adjust_method}{A character string specifying the p-value adjustment method}
 
 \item{seed}{An integer specifying the random seed for reproducibility}
 
@@ -78,6 +80,8 @@ Valid categories are determined by the reference data (currently MF and CC).
 See \code{table(ko_to_go_reference$category)} for available categories.}
 
 \item{organism}{A character string specifying the organism for KEGG analysis (default: "ko" for KEGG Orthology)}
+
+\item{p.adjust}{Deprecated. Use \code{p_adjust_method} instead.}
 }
 \value{
 A data frame containing GSEA results with columns:

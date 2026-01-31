@@ -39,7 +39,7 @@ NULL
 #' @param select Vector of sample names to include in the analysis.
 #'        If NULL (default), all samples are included.
 #'
-#' @param p.adjust Character string specifying the method for p-value adjustment.
+#' @param p_adjust_method Character string specifying the method for p-value adjustment.
 #'        Choices are:
 #'        \itemize{
 #'          \item \code{"BH"}: Benjamini-Hochberg procedure (default)
@@ -61,9 +61,11 @@ NULL
 #' @param include_effect_size Logical value indicating whether to include
 #'        effect size information in the output for ALDEx2 analysis. When TRUE,
 #'        additional columns are added including effect_size, diff_btw,
-#'        log2FoldChange, rab_all, and overlap. Only applicable for two-group
+#'        log2_fold_change, rab_all, and overlap. Only applicable for two-group
 #'        comparisons with ALDEx2 method. Default is FALSE for backward
 #'        compatibility.
+#'
+#' @param p.adjust Deprecated. Use \code{p_adjust_method} instead.
 #'
 #' @param ... Additional arguments passed to the specific DAA method
 #'
@@ -94,7 +96,7 @@ NULL
 #'   \item \code{log2_fold_change}: Log2 fold change (group2/group1)
 #' }
 #'
-#' Some methods may provide additional columns, such as \code{log2FoldChange}
+#' Some methods may provide additional columns, such as \code{log2_fold_change}
 #' for effect size information.
 #'
 #' When \code{include_effect_size = TRUE} and using ALDEx2 method with two groups,
@@ -103,7 +105,7 @@ NULL
 #'   \item \code{effect_size}: ALDEx2 effect size (median of the ratio of between-group
 #'         difference and within-group variance)
 #'   \item \code{diff_btw}: Median difference between groups in CLR space
-#'   \item \code{log2FoldChange}: Log2 fold change (same as diff_btw for ALDEx2)
+#'   \item \code{log2_fold_change}: Log2 fold change (same as diff_btw for ALDEx2)
 #'   \item \code{rab_all}: Median CLR abundance across all samples
 #'   \item \code{overlap}: Proportion of effect size that is 0 or less
 #' }
@@ -166,7 +168,7 @@ NULL
 #'                                  include_effect_size = TRUE)
 #'
 #' # The result will include additional columns: effect_size, diff_btw,
-#' # log2FoldChange, rab_all, and overlap
+#' # log2_fold_change, rab_all, and overlap
 #' head(aldex2_with_effect)
 #' }
 #'
@@ -292,8 +294,14 @@ calculate_abundance_stats <- function(abundance, metadata, group, features, grou
 #' @rdname pathway_daa
 #' @export
 pathway_daa <- function(abundance, metadata, group, daa_method = "ALDEx2",
-                       select = NULL, p.adjust = "BH", reference = NULL,
-                       include_abundance_stats = FALSE, include_effect_size = FALSE, ...) {
+                       select = NULL, p_adjust_method = "BH", reference = NULL,
+                       include_abundance_stats = FALSE, include_effect_size = FALSE,
+                       p.adjust = NULL, ...) {
+  # Backward compatibility for deprecated parameter
+  if (!is.null(p.adjust)) {
+    warning("'p.adjust' parameter is deprecated. Use 'p_adjust_method' instead.", call. = FALSE)
+    p_adjust_method <- p.adjust
+  }
   # Check required package for DAA method
   method_packages <- list(
     "ALDEx2" = "ALDEx2", "DESeq2" = "DESeq2", "edgeR" = "edgeR",
@@ -364,9 +372,9 @@ pathway_daa <- function(abundance, metadata, group, daa_method = "ALDEx2",
       # Just add the adjustment method indicator
       result$adj_method <- "BH (method-specific)"
     } else {
-      # Apply standard p.adjust for methods without pre-computed values
-      result$p_adjust <- p.adjust(result$p_values, method = p.adjust)
-      result$adj_method <- p.adjust
+      # Apply standard p-value adjustment for methods without pre-computed values
+      result$p_adjust <- stats::p.adjust(result$p_values, method = p_adjust_method)
+      result$adj_method <- p_adjust_method
     }
   }
 
@@ -495,7 +503,7 @@ perform_aldex2_analysis <- function(abundance_mat, Group, Level, length_Level, i
       }
       if ("diff.btw" %in% colnames(effect_results)) {
         base_df$diff_btw <- rep(effect_results$diff.btw, 2)
-        base_df$log2FoldChange <- rep(effect_results$diff.btw, 2)
+        base_df$log2_fold_change <- rep(effect_results$diff.btw, 2)
       }
       if ("rab.all" %in% colnames(effect_results)) {
         base_df$rab_all <- rep(effect_results$rab.all, 2)
@@ -532,7 +540,8 @@ perform_aldex2_analysis <- function(abundance_mat, Group, Level, length_Level, i
     # Add group columns
     group_cols <- matrix(rep(Level, each = nrow(result_df)), nrow = nrow(result_df))
     colnames(group_cols) <- paste0("group", seq_along(Level))
-    result_df <- cbind(result_df[, c("feature", "method")], group_cols, result_df[, "p_values", drop = FALSE])
+    result_df <- cbind(result_df[, c("feature", "method")], group_cols,
+                       result_df[, c("p_values", "p_adjust"), drop = FALSE])
 
     return(result_df)
   }
@@ -593,7 +602,7 @@ perform_deseq2_analysis <- function(abundance_mat, metadata, group, Level) {
         group1 = Level[1],
         group2 = Level[2],
         p_values = res$pvalue,
-        log2FoldChange = res$log2FoldChange,
+        log2_fold_change = res$log2FoldChange,
         stringsAsFactors = FALSE
       )
     })
@@ -637,7 +646,7 @@ perform_limma_voom_analysis <- function(abundance_mat, Group, reference, Level, 
       group1 = group_levels[1],
       group2 = group_levels[2],
       p_values = fit$p.value[,2],
-      log2FoldChange = fit$coefficients[,2],
+      log2_fold_change = fit$coefficients[,2],
       stringsAsFactors = FALSE
     )
   } else {
@@ -649,7 +658,7 @@ perform_limma_voom_analysis <- function(abundance_mat, Group, reference, Level, 
       group1 = reference,
       group2 = group_levels[group_levels != reference],
       p_values = as.vector(fit$p.value[,-1]),
-      log2FoldChange = as.vector(fit$coefficients[,-1]),
+      log2_fold_change = as.vector(fit$coefficients[,-1]),
       stringsAsFactors = FALSE
     )
   }
@@ -674,7 +683,7 @@ perform_edger_analysis <- function(abundance_mat, Group, Level, length_Level) {
       group1 = Level[1],
       group2 = Level[2],
       p_values = et$table$PValue,
-      log2FoldChange = et$table$logFC,
+      log2_fold_change = et$table$logFC,
       stringsAsFactors = FALSE
     )
   } else {
@@ -682,7 +691,7 @@ perform_edger_analysis <- function(abundance_mat, Group, Level, length_Level) {
     results_list <- list()
     combinations <- utils::combn(seq_along(Level), 2)
 
-    for (i in 1:ncol(combinations)) {
+    for (i in seq_len(ncol(combinations))) {
       et <- edgeR::exactTest(dge, pair = combinations[,i])
       results_list[[i]] <- data.frame(
         feature = rownames(abundance_mat),
@@ -690,7 +699,7 @@ perform_edger_analysis <- function(abundance_mat, Group, Level, length_Level) {
         group1 = Level[combinations[1,i]],
         group2 = Level[combinations[2,i]],
         p_values = et$table$PValue,
-        log2FoldChange = et$table$logFC,
+        log2_fold_change = et$table$logFC,
         stringsAsFactors = FALSE
       )
     }
@@ -714,7 +723,7 @@ perform_metagenomeseq_analysis <- function(abundance_mat, metadata, group, Level
   phenoData <- new("AnnotatedDataFrame",
                    data = metadata,
                    varMetadata = data.frame(
-                     labelDescription = c("Sample ID", "Group"),
+                     labelDescription = colnames(metadata),
                      row.names = colnames(metadata)
                    ))
 
@@ -763,9 +772,9 @@ perform_metagenomeseq_analysis <- function(abundance_mat, metadata, group, Level
     stringsAsFactors = FALSE
   )
 
-  # Add log2FoldChange if coefficients are available
+  # Add log2_fold_change if coefficients are available
   if (!is.null(coef_table) && "logFC" %in% colnames(coef_table)) {
-    results$log2FoldChange <- coef_table$logFC
+    results$log2_fold_change <- coef_table$logFC
   }
 
   return(results)
@@ -838,7 +847,7 @@ perform_maaslin2_analysis <- function(abundance_mat, metadata, group, reference,
       group1 = if (length_Level == 2) Level[1] else reference,
       group2 = if (length_Level == 2) Level[2] else Level[Level != reference],
       p_values = maaslin2_results$pval[matches],
-      log2FoldChange = maaslin2_results$coef[matches],
+      log2_fold_change = maaslin2_results$coef[matches],
       stringsAsFactors = FALSE
     )
   } else {
@@ -993,7 +1002,7 @@ perform_linda_analysis <- function(abundance, metadata, group, reference, Level,
         group1 = reference,
         group2 = comparison_group,
         p_values = comparison_df$pvalue,
-        log2FoldChange = comparison_df$log2FoldChange,
+        log2_fold_change = comparison_df$log2FoldChange,
         stringsAsFactors = FALSE
       )
     }

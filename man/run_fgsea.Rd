@@ -2,16 +2,14 @@
 % Please edit documentation in R/pathway_gsea.R
 \name{run_fgsea}
 \alias{run_fgsea}
-\title{Run fast GSEA implementation}
+\title{Run fgsea using the recommended fgseaMultilevel method}
 \usage{
-run_fgsea(ranked_list, gene_sets, nperm = 1000, min_size = 10, max_size = 500)
+run_fgsea(ranked_list, gene_sets, min_size = 10, max_size = 500)
 }
 \arguments{
 \item{ranked_list}{A named vector of ranking statistics}
 
 \item{gene_sets}{A list of pathway gene sets}
-
-\item{nperm}{An integer specifying the number of permutations}
 
 \item{min_size}{An integer specifying the minimum gene set size}
 
@@ -21,6 +19,6 @@ run_fgsea(ranked_list, gene_sets, nperm = 1000, min_size = 10, max_size = 500)
 A data frame of fgsea results
 }
 \description{
-Run fast GSEA implementation
+Run fgsea using the recommended fgseaMultilevel method
 }
 \keyword{internal}

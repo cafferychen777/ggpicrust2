@@ -5,7 +5,7 @@
 #'
 #' @param gsea_results A data frame containing GSEA results from the pathway_gsea function
 #' @param daa_results A data frame containing DAA results from the pathway_daa function
-#' @param plot_type A character string specifying the visualization type: "venn", "upset", "scatter", or "heatmap"
+#' @param plot_type A character string specifying the visualization type: "venn", "upset", or "scatter"
 #' @param p_threshold A numeric value specifying the significance threshold
 #'
 #' @return A ggplot2 object or a list containing the plot and comparison results
@@ -59,8 +59,8 @@ compare_gsea_daa <- function(gsea_results,
     stop("'daa_results' must be a data frame")
   }
 
-  if (length(plot_type) != 1 || !plot_type %in% c("venn", "upset", "scatter", "heatmap")) {
-    stop("plot_type must be one of 'venn', 'upset', 'scatter', or 'heatmap'")
+  if (length(plot_type) != 1 || !plot_type %in% c("venn", "upset", "scatter")) {
+    stop("plot_type must be one of 'venn', 'upset', or 'scatter'")
   }
 
   # Check if required columns exist
@@ -158,8 +158,7 @@ compare_gsea_daa <- function(gsea_results,
           plot.title = ggplot2::element_text(hjust = 0.5)
         )
     } else {
-      # Create a proper UpSet plot
-      # First, create a binary matrix for the UpSetR input
+      # Create UpSet plot
       all_pathways <- unique(c(sig_gsea, sig_daa))
       upset_matrix <- matrix(0, nrow = length(all_pathways), ncol = 2)
       rownames(upset_matrix) <- all_pathways
@@ -168,33 +167,8 @@ compare_gsea_daa <- function(gsea_results,
       upset_matrix[sig_gsea, "GSEA"] <- 1
       upset_matrix[sig_daa, "DAA"] <- 1
 
-      # Convert to data frame for UpSetR
       upset_df <- as.data.frame(upset_matrix)
-
-      # Create UpSet plot
-      # We can't easily convert UpSetR plots to ggplot objects
-      # So we'll create a basic ggplot representation instead
       p <- UpSetR::upset(upset_df, nsets = 2, order.by = "freq")
-
-      # Create a simple ggplot representation
-      intersect_size <- sum(upset_matrix[, "GSEA"] & upset_matrix[, "DAA"])
-      gsea_only <- sum(upset_matrix[, "GSEA"]) - intersect_size
-      daa_only <- sum(upset_matrix[, "DAA"]) - intersect_size
-
-      plot_data <- data.frame(
-        set = c("GSEA only", "Intersection", "DAA only"),
-        count = c(gsea_only, intersect_size, daa_only)
-      )
-
-      p <- ggplot2::ggplot(plot_data, ggplot2::aes(x = .data$set, y = .data$count, fill = .data$set)) +
-        ggplot2::geom_bar(stat = "identity") +
-        ggplot2::labs(
-          title = "Set Intersection",
-          x = "",
-          y = "Count",
-          fill = "Set"
-        ) +
-        ggplot2::theme_minimal()
     }
 
   } else if (plot_type == "scatter") {
@@ -203,7 +177,7 @@ compare_gsea_daa <- function(gsea_results,
     # Merge the results
     merged_results <- merge(
       gsea_results[, c("pathway_id", "NES", "p.adjust")],
-      daa_results[, c("feature", "log_2_fold_change", "p_adjust")],
+      daa_results[, c("feature", "log2_fold_change", "p_adjust")],
       by.x = "pathway_id",
       by.y = "feature",
       all = FALSE
@@ -218,7 +192,7 @@ compare_gsea_daa <- function(gsea_results,
     } else {
       # Create scatter plot
       p <- ggplot2::ggplot(merged_results,
-                         ggplot2::aes(x = .data$NES, y = .data$log_2_fold_change,
+                         ggplot2::aes(x = .data$NES, y = .data$log2_fold_change,
                                     color = -log10(.data$p.adjust))) +
         ggplot2::geom_point() +
         ggplot2::scale_color_gradient(low = "blue", high = "red") +
@@ -235,15 +209,6 @@ compare_gsea_daa <- function(gsea_results,
         ggplot2::geom_hline(yintercept = 0, linetype = "dashed", color = "gray") +
         ggplot2::geom_vline(xintercept = 0, linetype = "dashed", color = "gray")
     }
-
-  } else if (plot_type == "heatmap") {
-    # Create a heatmap
-    # This would require more complex implementation
-    # For now, we'll return a placeholder
-    warning("Heatmap plot not yet implemented")
-    p <- ggplot2::ggplot() +
-      ggplot2::annotate("text", x = 0, y = 0, label = "Heatmap plot not yet implemented") +
-      ggplot2::theme_void()
   }
 
   # Return both the plot and the comparison results

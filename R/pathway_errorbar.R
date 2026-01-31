@@ -150,7 +150,7 @@
 #'   log2_fold_change_color = "#006400" # Dark green for log2 fold change bars
 #' )
 #' }
-utils::globalVariables(c("group", "name", "value", "feature", "negative_log10_p", "group_nonsense", "nonsense", "pathway_class", "p_adjust", "log_2_fold_change", "transform_sample_counts", "column_to_rownames", "txtProgressBar", "setTxtProgressBar", "utils"))
+utils::globalVariables(c("group", "name", "value", "feature", "negative_log10_p", "group_nonsense", "nonsense", "pathway_class", "p_adjust", "log2_fold_change", "transform_sample_counts", "column_to_rownames", "txtProgressBar", "setTxtProgressBar", "utils"))
 pathway_errorbar <-
   function(abundance,
            daa_results_df,
@@ -636,9 +636,9 @@ pathway_errorbar <-
     daa_results_filtered_sub_df$negative_log10_p <- -log10(daa_results_filtered_sub_df$p_adjust)
     daa_results_filtered_sub_df$group_nonsense <- "nonsense"
     
-    # Only add log_2_fold_change if it doesn't exist
-    if (!"log_2_fold_change" %in% colnames(daa_results_filtered_sub_df)) {
-      daa_results_filtered_sub_df$log_2_fold_change <- rep(NA, nrow(daa_results_filtered_sub_df))
+    # Only add log2_fold_change if it doesn't exist
+    if (!"log2_fold_change" %in% colnames(daa_results_filtered_sub_df)) {
+      daa_results_filtered_sub_df$log2_fold_change <- rep(NA, nrow(daa_results_filtered_sub_df))
     }
 
     # Calculate pseudocount once using all mean values for consistency
@@ -661,19 +661,19 @@ pathway_errorbar <-
       # Calculate log2 fold change using unified function
       if (length(mean_group1) > 0 && length(mean_group2) > 0) {
         log2_fc <- calculate_log2_fold_change(mean_group1, mean_group2, pseudocount = pseudocount)
-        daa_results_filtered_sub_df[daa_results_filtered_sub_df$feature==i,]$log_2_fold_change <- log2_fc
+        daa_results_filtered_sub_df[daa_results_filtered_sub_df$feature==i,]$log2_fold_change <- log2_fc
       } else {
         # Fallback using unified function with auto-calculated pseudocount
         mean_vals <- feature_means$mean
         if (length(mean_vals) >= 2) {
           log2_fc <- calculate_log2_fold_change(mean_vals[1], mean_vals[2])
-          daa_results_filtered_sub_df[daa_results_filtered_sub_df$feature==i,]$log_2_fold_change <- log2_fc
+          daa_results_filtered_sub_df[daa_results_filtered_sub_df$feature==i,]$log2_fold_change <- log2_fc
         }
       }
     }
     daa_results_filtered_sub_df$feature <- factor(daa_results_filtered_sub_df$feature,levels = rev(daa_results_filtered_sub_df$feature))
     p_values_bar <- daa_results_filtered_sub_df %>%
-      ggplot2::ggplot(ggplot2::aes(feature, log_2_fold_change, fill = group_nonsense)) +
+      ggplot2::ggplot(ggplot2::aes(feature, log2_fold_change, fill = group_nonsense)) +
       ggplot2::geom_bar(stat = "identity",
                position = ggplot2::position_dodge(width = 0.8),
                width = 0.8) +

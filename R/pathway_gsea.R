@@ -79,10 +79,12 @@ validate_group_sizes <- function(group_vector, group_name) {
 #'   Default is 0.01. Use NA to estimate correlation from data for each gene set.
 #' @param rank_method A character string specifying the ranking statistic for preranked methods
 #'   (fgsea, GSEA, clusterProfiler): "signal2noise", "t_test", "log2_ratio", or "diff_abundance"
-#' @param nperm An integer specifying the number of permutations (for fgsea/clusterProfiler methods)
+#' @param nperm An integer specifying the number of permutations (for clusterProfiler method only).
+#'   The fgsea method uses adaptive multilevel splitting and does not require a fixed permutation count.
 #' @param min_size An integer specifying the minimum gene set size
 #' @param max_size An integer specifying the maximum gene set size
-#' @param p.adjust A character string specifying the p-value adjustment method
+#' @param p_adjust_method A character string specifying the p-value adjustment method
+#' @param p.adjust Deprecated. Use \code{p_adjust_method} instead.
 #' @param seed An integer specifying the random seed for reproducibility
 #' @param go_category A character string specifying GO category to use.
 #'   "all" (default) uses all categories present in the reference data.
@@ -202,10 +204,16 @@ pathway_gsea <- function(abundance,
                         nperm = 1000,
                         min_size = 5,
                         max_size = 500,
-                        p.adjust = "BH",
+                        p_adjust_method = "BH",
                         seed = 42,
                         go_category = "all",
-                        organism = "ko") {
+                        organism = "ko",
+                        p.adjust = NULL) {
+  # Backward compatibility for deprecated parameter
+  if (!is.null(p.adjust)) {
+    warning("'p.adjust' parameter is deprecated. Use 'p_adjust_method' instead.", call. = FALSE)
+    p_adjust_method <- p.adjust
+  }
   
   # Input validation using unified functions
   validate_abundance(abundance, min_samples = 4)
@@ -243,10 +251,10 @@ pathway_gsea <- function(abundance,
     }
   }
 
-  # Validate inter.gene.cor for camera
+  # Validate inter.gene.cor for camera (correlation range: -1 to 1)
   if (method == "camera" && !is.null(inter.gene.cor) && !is.na(inter.gene.cor)) {
-    if (!is.numeric(inter.gene.cor) || inter.gene.cor < 0 || inter.gene.cor > 1) {
-      stop("inter.gene.cor must be a numeric value between 0 and 1, or NA")
+    if (!is.numeric(inter.gene.cor) || inter.gene.cor < -1 || inter.gene.cor > 1) {
+      stop("inter.gene.cor must be a numeric value between -1 and 1, or NA")
     }
   }
 
@@ -348,7 +356,7 @@ pathway_gsea <- function(abundance,
       inter.gene.cor = inter.gene.cor,
       min_size = min_size,
       max_size = max_size,
-      p.adjust.method = p.adjust
+      p.adjust.method = p_adjust_method
     )
 
   } else if (method == "fgsea") {
@@ -358,7 +366,7 @@ pathway_gsea <- function(abundance,
 
     # Calculate ranking metric for preranked methods
     ranked_list <- calculate_rank_metric(abundance_mat, metadata, group, method = rank_method)
-    results <- run_fgsea(ranked_list, gene_sets, nperm, min_size, max_size)
+    results <- run_fgsea(ranked_list, gene_sets, min_size, max_size)
 
   } else if (method == "GSEA" || method == "clusterProfiler") {
     # =========================================================================
@@ -381,7 +389,7 @@ pathway_gsea <- function(abundance,
       minGSSize = min_size,
       maxGSSize = max_size,
       pvalueCutoff = 1,
-      pAdjustMethod = p.adjust,
+      pAdjustMethod = p_adjust_method,
       nPermSimple = nperm,
       seed = seed
     )
@@ -605,7 +613,7 @@ calculate_rank_metric <- function(abundance,
     metric <- numeric(nrow(abundance))
     names(metric) <- rownames(abundance)
     
-    for (i in 1:nrow(abundance)) {
+    for (i in seq_len(nrow(abundance))) {
       t_test <- stats::t.test(abundance[i, group1_samples], abundance[i, group2_samples])
       metric[i] <- t_test$statistic
     }
@@ -637,28 +645,28 @@ calculate_rank_metric <- function(abundance,
   return(metric)
 }
 
-#' Run fast GSEA implementation
+#' Run fgsea using the recommended fgseaMultilevel method
 #'
 #' @param ranked_list A named vector of ranking statistics
 #' @param gene_sets A list of pathway gene sets
-#' @param nperm An integer specifying the number of permutations
 #' @param min_size An integer specifying the minimum gene set size
 #' @param max_size An integer specifying the maximum gene set size
 #'
 #' @return A data frame of fgsea results
 #' @keywords internal
-run_fgsea <- function(ranked_list, 
-                     gene_sets, 
-                     nperm = 1000, 
-                     min_size = 10, 
+run_fgsea <- function(ranked_list,
+                     gene_sets,
+                     min_size = 10,
                      max_size = 500) {
-  # Run fgsea
+  # Use fgseaMultilevel (default when nperm is NOT passed).
+  # fgseaMultilevel uses adaptive multilevel splitting Monte Carlo,
+  # which provides accurate p-values without a fixed permutation count.
+  # Passing nperm would force the deprecated fgseaSimple method.
   fgsea_result <- fgsea::fgsea(
     pathways = gene_sets,
     stats = ranked_list,
     minSize = min_size,
-    maxSize = max_size,
-    nperm = nperm
+    maxSize = max_size
   )
   
   # Convert to data frame and handle empty results
@@ -715,14 +723,8 @@ run_limma_gsea <- function(abundance_mat,
                            min_size = 5,
                            max_size = 500,
                            p.adjust.method = "BH") {
-  # Align samples using unified function
-  aligned <- align_samples(abundance_mat, metadata, verbose = FALSE)
-  abundance_mat <- as.matrix(aligned$abundance)
-  metadata <- aligned$metadata
-
-  if (aligned$n_samples < 4) {
-    stop("Insufficient matching samples between abundance data and metadata")
-  }
+  # Samples are already aligned by the caller (pathway_gsea)
+  abundance_mat <- as.matrix(abundance_mat)
 
   # Build design matrix
   design <- build_design_matrix(metadata, group, covariates)

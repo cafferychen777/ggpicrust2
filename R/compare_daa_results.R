@@ -85,18 +85,13 @@ compare_daa_results <- function(daa_results_list, method_names, p_values_thresho
 
   # Get the features obtained by each method
   for (i in seq_along(daa_results_list)) {
-    if (all(c("group1", "group2") %in% colnames(daa_results_list[[i]]))) {
-      # This is a pairwise comparison method
-      group_combinations <- unique(daa_results_list[[i]][, c("group1", "group2")])
-      features[[i]] <- lapply(seq_len(nrow(group_combinations)), function(j) {
-        subset(daa_results_list[[i]], group1 == group_combinations[j, "group1"] & group2 == group_combinations[j, "group2"] & p_adjust < p_values_threshold)$feature
-      })
-    } else if (all(c("group1", "group2", "group3") %in% colnames(daa_results_list[[i]]))) {
-      # This is a multi-group comparison method
-      features[[i]] <- daa_results_list[[i]][which(daa_results_list[[i]]$p_adjust < p_values_threshold), "feature"]
-    } else {
-      stop("Unknown comparison type in daa_results_list[[", i, "]].")
+    if (!all(c("group1", "group2") %in% colnames(daa_results_list[[i]]))) {
+      stop("DAA results in daa_results_list[[", i, "]] must contain 'group1' and 'group2' columns")
     }
+    group_combinations <- unique(daa_results_list[[i]][, c("group1", "group2")])
+    features[[i]] <- lapply(seq_len(nrow(group_combinations)), function(j) {
+      subset(daa_results_list[[i]], group1 == group_combinations[j, "group1"] & group2 == group_combinations[j, "group2"] & p_adjust < p_values_threshold)$feature
+    })
   }
 
   # Flatten nested list structure (from group combinations) to simple vectors

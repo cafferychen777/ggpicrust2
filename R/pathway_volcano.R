@@ -7,7 +7,7 @@
 #'   typically from \code{\link{pathway_daa}}. Must contain columns for fold change,
 #'   p-values, and optionally pathway names.
 #' @param fc_col Character string specifying the column name for log2 fold change values.
-#'   Default is "log2FoldChange".
+#'   Default is "log2_fold_change". Legacy name "log2FoldChange" is also accepted.
 #' @param p_col Character string specifying the column name for adjusted p-values.
 #'   Default is "p_adjust".
 #' @param label_col Character string specifying the column name for pathway labels.
@@ -96,7 +96,7 @@
 #'
 #' @export
 pathway_volcano <- function(daa_results,
-                            fc_col = "log2FoldChange",
+                            fc_col = "log2_fold_change",
                             p_col = "p_adjust",
                             label_col = "pathway_name",
                             fc_threshold = 1,
@@ -115,6 +115,12 @@ pathway_volcano <- function(daa_results,
  # Input validation
  if (!is.data.frame(daa_results)) {
    stop("'daa_results' must be a data frame.")
+ }
+
+ # Backward compatibility: accept legacy column name
+ if (fc_col == "log2_fold_change" && !fc_col %in% colnames(daa_results) &&
+     "log2FoldChange" %in% colnames(daa_results)) {
+   fc_col <- "log2FoldChange"
  }
 
  require_column(daa_results, fc_col, "daa_results")

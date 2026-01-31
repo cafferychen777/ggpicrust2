@@ -172,10 +172,10 @@ test_that("pathway_daa handles p-value adjustment correctly", {
   td <- create_daa_test_data(n_samples = 4)
 
   # ALDEx2 uses its own pre-computed BH correction (Monte Carlo-based),
-  # which is more accurate than simple p.adjust. The user's p.adjust choice
-  # is not applied for ALDEx2. Other methods still honor the user's choice.
+  # which is more accurate than simple p.adjust. The user's p_adjust_method
+  # choice is not applied for ALDEx2. Other methods still honor the user's choice.
   result <- pathway_daa(td$abundance, td$metadata, "group",
-                       daa_method = "ALDEx2", p.adjust = "BH")
+                       daa_method = "ALDEx2", p_adjust_method = "BH")
 
   expect_true(all(result$adj_method == "BH (method-specific)"))
   expect_true(all(!is.na(result$p_adjust)))

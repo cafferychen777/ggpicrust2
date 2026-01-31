@@ -706,7 +706,7 @@ validate_dataframe <- function(df, required_cols = NULL, param_name = "data") {
 #' Creates an empty data frame with the correct structure for DAA results.
 #'
 #' @param method Character string specifying the DAA method used
-#' @param include_log2fc Logical. If TRUE, includes log2FoldChange column
+#' @param include_log2fc Logical. If TRUE, includes log2_fold_change column
 #'   instead of p_adjust and adj_method (for LinDA-style results)
 #' @return Empty data frame with standard DAA result columns
 #' @noRd
@@ -718,7 +718,7 @@ create_empty_daa_result <- function(method = "unknown", include_log2fc = FALSE) 
       group1 = character(0),
       group2 = character(0),
       p_values = numeric(0),
-      log2FoldChange = numeric(0),
+      log2_fold_change = numeric(0),
       stringsAsFactors = FALSE
     )
   } else {

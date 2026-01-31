@@ -182,7 +182,7 @@ visualize_gsea <- function(gsea_results,
 
   # Limit to top n_pathways
   if (nrow(gsea_results) > n_pathways) {
-    gsea_results <- gsea_results[1:n_pathways, ]
+    gsea_results <- head(gsea_results, n_pathways)
   }
 
   # Create visualization based on plot_type
@@ -484,8 +484,8 @@ create_network_plot <- function(gsea_results,
   rownames(similarity_matrix) <- pathway_ids
   colnames(similarity_matrix) <- pathway_ids
 
-  for (i in 1:n) {
-    for (j in 1:n) {
+  for (i in seq_len(n)) {
+    for (j in seq_len(n)) {
       if (i != j) {
         set1 <- leading_edges[[i]]
         set2 <- leading_edges[[j]]
@@ -677,10 +677,13 @@ create_heatmap_plot <- function(gsea_results,
   row_annotation <- row_annotation[rownames(heatmap_data), , drop = FALSE]
 
   # Create row annotation object
+  # Use symmetric breaks centered at 0 to ensure colorRamp2 gets
+  # strictly increasing values even when all NES are same sign
+  nes_abs_max <- max(abs(row_annotation$NES), 0.1)
   ra <- ComplexHeatmap::rowAnnotation(
     NES = row_annotation$NES,
     col = list(NES = circlize::colorRamp2(
-      c(min(row_annotation$NES), 0, max(row_annotation$NES)),
+      c(-nes_abs_max, 0, nes_abs_max),
       c("blue", "white", "red")
     )),
     show_legend = TRUE
