@@ -16,7 +16,7 @@ compare_gsea_daa(
 
 \item{daa_results}{A data frame containing DAA results from the pathway_daa function}
 
-\item{plot_type}{A character string specifying the visualization type: "venn", "upset", "scatter", or "heatmap"}
+\item{plot_type}{A character string specifying the visualization type: "venn", "upset", or "scatter"}
 
 \item{p_threshold}{A numeric value specifying the significance threshold}
 }

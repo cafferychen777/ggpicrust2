@@ -10,10 +10,11 @@ pathway_daa(
   group,
   daa_method = "ALDEx2",
   select = NULL,
-  p.adjust = "BH",
+  p_adjust_method = "BH",
   reference = NULL,
   include_abundance_stats = FALSE,
   include_effect_size = FALSE,
+  p.adjust = NULL,
   ...
 )
 }
@@ -46,7 +47,7 @@ Default is "ALDEx2".}
 \item{select}{Vector of sample names to include in the analysis.
 If NULL (default), all samples are included.}
 
-\item{p.adjust}{Character string specifying the method for p-value adjustment.
+\item{p_adjust_method}{Character string specifying the method for p-value adjustment.
 Choices are:
 \itemize{
   \item \code{"BH"}: Benjamini-Hochberg procedure (default)
@@ -68,9 +69,11 @@ compatibility.}
 \item{include_effect_size}{Logical value indicating whether to include
 effect size information in the output for ALDEx2 analysis. When TRUE,
 additional columns are added including effect_size, diff_btw,
-log2FoldChange, rab_all, and overlap. Only applicable for two-group
+log2_fold_change, rab_all, and overlap. Only applicable for two-group
 comparisons with ALDEx2 method. Default is FALSE for backward
 compatibility.}
+
+\item{p.adjust}{Deprecated. Use \code{p_adjust_method} instead.}
 
 \item{...}{Additional arguments passed to the specific DAA method}
 }
@@ -102,7 +105,7 @@ are included:
   \item \code{log2_fold_change}: Log2 fold change (group2/group1)
 }
 
-Some methods may provide additional columns, such as \code{log2FoldChange}
+Some methods may provide additional columns, such as \code{log2_fold_change}
 for effect size information.
 
 When \code{include_effect_size = TRUE} and using ALDEx2 method with two groups,
@@ -111,7 +114,7 @@ the following additional effect size columns are included:
   \item \code{effect_size}: ALDEx2 effect size (median of the ratio of between-group
         difference and within-group variance)
   \item \code{diff_btw}: Median difference between groups in CLR space
-  \item \code{log2FoldChange}: Log2 fold change (same as diff_btw for ALDEx2)
+  \item \code{log2_fold_change}: Log2 fold change (same as diff_btw for ALDEx2)
   \item \code{rab_all}: Median CLR abundance across all samples
   \item \code{overlap}: Proportion of effect size that is 0 or less
 }
@@ -179,7 +182,7 @@ aldex2_with_effect <- pathway_daa(abundance, metadata, "group",
                                  include_effect_size = TRUE)
 
 # The result will include additional columns: effect_size, diff_btw,
-# log2FoldChange, rab_all, and overlap
+# log2_fold_change, rab_all, and overlap
 head(aldex2_with_effect)
 }
 

@@ -6,7 +6,7 @@
 \usage{
 pathway_volcano(
   daa_results,
-  fc_col = "log2FoldChange",
+  fc_col = "log2_fold_change",
   p_col = "p_adjust",
   label_col = "pathway_name",
   fc_threshold = 1,
@@ -27,7 +27,7 @@ typically from \code{\link{pathway_daa}}. Must contain columns for fold change,
 p-values, and optionally pathway names.}
 
 \item{fc_col}{Character string specifying the column name for log2 fold change values.
-Default is "log2FoldChange".}
+Default is "log2_fold_change". Legacy name "log2FoldChange" is also accepted.}
 
 \item{p_col}{Character string specifying the column name for adjusted p-values.
 Default is "p_adjust".}

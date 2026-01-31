@@ -3,6 +3,16 @@
 \name{compare_metagenome_results}
 \alias{compare_metagenome_results}
 \title{Compare Metagenome Results}
+\usage{
+compare_metagenome_results(
+  metagenomes,
+  names,
+  daa_method = "ALDEx2",
+  p_adjust_method = "BH",
+  reference = NULL,
+  p.adjust = NULL
+)
+}
 \arguments{
 \item{metagenomes}{A list of metagenomes matrices with rows as KOs and columns as samples.
 Each matrix in the list should correspond to a different metagenome.}
@@ -13,22 +23,25 @@ Each matrix in the list should correspond to a different metagenome.}
 Possible choices are: "ALDEx2", "DESeq2", "edgeR", "limma voom", "metagenomeSeq", "LinDA",
 "Maaslin2", and "Lefse". The default is "ALDEx2".}
 
-\item{p.adjust}{A character specifying the method for p-value adjustment.
+\item{p_adjust_method}{A character specifying the method for p-value adjustment.
 Possible choices are: "BH" (Benjamini-Hochberg), "holm", "bonferroni", "hochberg", "fdr", and "none".
 The default is "BH".}
 
 \item{reference}{A character specifying the reference group level for DAA.
 This parameter is used when there are more than two groups. The default is NULL.}
+
+\item{p.adjust}{Deprecated. Use \code{p_adjust_method} instead.}
 }
 \value{
-A list containing two elements:
+A list containing three elements:
 \itemize{
-\item "daa": a list of results from the `pathway_daa` function. Each result is a data frame
-containing the differential abundance analysis results with columns for the feature ID,
-the test statistic, the raw p-value, and the adjusted p-value.
+\item "daa": a data frame of results from the `pathway_daa` function
+containing the differential abundance analysis results.
 \item "correlation": a list with two elements: "cor_matrix" and "p_matrix", which are
-matrices of Spearman correlation coefficients and their corresponding p-values, respectively,
-between every pair of metagenomes.
+matrices of per-feature median Spearman correlation coefficients and their
+corresponding p-values, respectively, between every pair of metagenomes.
+\item "heatmap": a ComplexHeatmap object visualizing the correlation matrix.
+Use \code{print()} or \code{draw()} to display it.
 }
 }
 \description{
@@ -56,7 +69,7 @@ names <- c("metagenome1", "metagenome2")
 results <- compare_metagenome_results(metagenomes, names, daa_method = "LinDA")
 # Print the correlation matrix
 print(results$correlation$cor_matrix)
-# Print the p-value matrix
-print(results$correlation$p_matrix)
+# Display the heatmap
+print(results$heatmap)
 }
 }
