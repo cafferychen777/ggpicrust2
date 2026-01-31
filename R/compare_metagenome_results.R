@@ -49,6 +49,7 @@
 #' # Display the heatmap
 #' print(results$heatmap)
 #' }
+#' @importFrom stats cor median wilcox.test
 #' @export
 compare_metagenome_results <- function(metagenomes, names, daa_method = "ALDEx2",
                                        p_adjust_method = "BH", reference = NULL,
