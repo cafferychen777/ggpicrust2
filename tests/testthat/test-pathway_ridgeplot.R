@@ -1,5 +1,5 @@
 # Helper: prepare GSEA data for ridgeplot integration tests
-prepare_ridgeplot_gsea_data <- function() {
+create_ridgeplot_test_data <- function() {
   data(ko_abundance, package = "ggpicrust2")
   data(metadata, package = "ggpicrust2")
 
@@ -7,6 +7,7 @@ prepare_ridgeplot_gsea_data <- function() {
   rownames(abundance_data) <- abundance_data[, "#NAME"]
   abundance_data <- abundance_data[, -1]
 
+  set.seed(42)
   gsea_results <- suppressMessages(pathway_gsea(
     abundance = abundance_data,
     metadata = metadata,
@@ -23,7 +24,7 @@ test_that("pathway_ridgeplot creates a ggplot object", {
   skip_if_not_installed("ggridges")
   skip_on_cran()
 
-  td <- prepare_ridgeplot_gsea_data()
+  td <- create_ridgeplot_test_data()
 
   p <- pathway_ridgeplot(
     gsea_results = td$gsea_results,
@@ -40,7 +41,7 @@ test_that("pathway_ridgeplot handles custom parameters", {
   skip_if_not_installed("ggridges")
   skip_on_cran()
 
-  td <- prepare_ridgeplot_gsea_data()
+  td <- create_ridgeplot_test_data()
 
   p <- pathway_ridgeplot(
     gsea_results = td$gsea_results,
@@ -63,7 +64,7 @@ test_that("pathway_ridgeplot handles show_direction = FALSE", {
   skip_if_not_installed("ggridges")
   skip_on_cran()
 
-  td <- prepare_ridgeplot_gsea_data()
+  td <- create_ridgeplot_test_data()
 
   p <- pathway_ridgeplot(
     gsea_results = td$gsea_results,
@@ -116,7 +117,8 @@ test_that("pathway_ridgeplot errors on missing group column", {
 
   metadata <- data.frame(
     sample = c("S1", "S2"),
-    other_col = c("A", "B")
+    other_col = c("A", "B"),
+    stringsAsFactors = FALSE
   )
   rownames(metadata) <- metadata$sample
 

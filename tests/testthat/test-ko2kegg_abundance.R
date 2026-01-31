@@ -11,7 +11,6 @@ test_that("ko2kegg_abundance works with valid data frame input", {
   result <- suppressMessages(ko2kegg_abundance(data = mock_ko_data))
 
   expect_s3_class(result, "data.frame")
-  expect_true(nrow(result) >= 0)
   if (nrow(result) > 0) {
     expect_true(all(result >= 0))
     expect_equal(ncol(result), 2)

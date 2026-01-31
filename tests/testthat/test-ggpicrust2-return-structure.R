@@ -27,7 +27,8 @@ test_that("ggpicrust2 returns all expected fields", {
   expect_equal(result$group, "Environment")
   expect_true(result$ko_to_kegg)
 
-  # Check backward compatibility
+  # Backward compatibility: old API returned unnamed list elements accessible
+  # by position. result[[1]] is the first DA method's plot+results.
   expect_true(!is.null(result[[1]]))
   expect_true(all(c("plot", "results") %in% names(result[[1]])))
 })

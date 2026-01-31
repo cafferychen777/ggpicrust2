@@ -84,9 +84,10 @@ validate_group_sizes <- function(group_vector, group_name) {
 #' @param max_size An integer specifying the maximum gene set size
 #' @param p.adjust A character string specifying the p-value adjustment method
 #' @param seed An integer specifying the random seed for reproducibility
-#' @param go_category A character string specifying GO category: "all" (default),
-#'   "BP" (Biological Process), "MF" (Molecular Function), or "CC" (Cellular Component).
-#'   Note: coverage varies by category depending on the reference data.
+#' @param go_category A character string specifying GO category to use.
+#'   "all" (default) uses all categories present in the reference data.
+#'   Valid categories are determined by the reference data (currently MF and CC).
+#'   See \code{table(ko_to_go_reference$category)} for available categories.
 #' @param organism A character string specifying the organism for KEGG analysis (default: "ko" for KEGG Orthology)
 #'
 #' @return A data frame containing GSEA results with columns:
@@ -249,14 +250,8 @@ pathway_gsea <- function(abundance,
     }
   }
 
-  # Validate GO category parameter when pathway_type is "GO"
-  if (pathway_type == "GO") {
-    valid_go_categories <- c("BP", "MF", "CC", "all")
-    if (!go_category %in% valid_go_categories) {
-      stop(sprintf("Invalid go_category '%s'. Must be one of: %s",
-                   go_category, paste(valid_go_categories, collapse = ", ")))
-    }
-  }
+  # GO category validation is deferred to prepare_gene_sets() where it is
+  # checked against the actual reference data (data-driven, not hardcoded)
 
   # Check if required package is installed
   method_packages <- list(
@@ -425,7 +420,9 @@ pathway_gsea <- function(abundance,
 #'
 #' @param pathway_type A character string specifying the pathway type: "KEGG", "MetaCyc", or "GO"
 #' @param organism A character string specifying the organism (only relevant for KEGG and GO)
-#' @param go_category A character string specifying the GO category: "BP" (Biological Process), "MF" (Molecular Function), "CC" (Cellular Component), or "all"
+#' @param go_category A character string specifying the GO category to use.
+#'   "all" (default) uses all categories. Valid values are determined by
+#'   the reference data; see \code{table(ko_to_go_reference$category)}.
 #'
 #' @return A list of pathway gene sets
 #' @export
@@ -474,32 +471,27 @@ prepare_gene_sets <- function(pathway_type = "KEGG", organism = "ko", go_categor
   } else if (pathway_type == "GO") {
     # Load GO reference using unified loader
     go_reference <- load_reference_data("ko_to_go")
-    
-    # Validate and filter by GO category if specified
-    valid_go_categories <- c("BP", "MF", "CC", "all")
-    if (!is.null(go_category) && !go_category %in% valid_go_categories) {
-      stop(sprintf("Invalid go_category '%s'. Must be one of: %s", 
-                   go_category, paste(valid_go_categories, collapse = ", ")))
-    }
-    
-    if (!is.null(go_category) && go_category != "all" && go_category %in% c("BP", "MF", "CC")) {
-      if ("category" %in% colnames(go_reference)) {
-        go_reference <- go_reference[go_reference$category == go_category, ]
-      }
+
+    # Derive valid categories from the actual reference data
+    available_categories <- if ("category" %in% colnames(go_reference)) {
+      unique(go_reference$category)
+    } else {
+      character(0)
     }
 
-    if (nrow(go_reference) == 0) {
-      full_ref <- load_reference_data("ko_to_go")
-      available <- if ("category" %in% colnames(full_ref)) {
-        paste(unique(full_ref$category), collapse = ", ")
-      } else {
-        "unknown"
-      }
+    # Validate go_category against what's actually in the data
+    if (!is.null(go_category) && go_category != "all" &&
+        !go_category %in% available_categories) {
       stop(sprintf(
-        "No GO terms found for category '%s'. Available categories in reference data: %s. ",
-        go_category, available),
-        "Try go_category = \"all\" or go_category = \"MF\".",
+        "go_category '%s' not found in reference data. Available: %s",
+        go_category, paste(c(available_categories, "all"), collapse = ", ")),
         call. = FALSE)
+    }
+
+    # Filter by category
+    if (!is.null(go_category) && go_category != "all" &&
+        "category" %in% colnames(go_reference)) {
+      go_reference <- go_reference[go_reference$category == go_category, ]
     }
 
     # Create gene sets list for each GO term

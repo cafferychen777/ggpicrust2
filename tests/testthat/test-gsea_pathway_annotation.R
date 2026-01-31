@@ -1,8 +1,8 @@
 # Test for gsea_pathway_annotation function
-# create_test_gsea_results() is defined in helper-gsea.R
+# create_gsea_test_results() is defined in helper-gsea.R
 
 test_that("gsea_pathway_annotation annotates KEGG pathways correctly", {
-  gsea_results <- create_test_gsea_results()
+  gsea_results <- create_gsea_test_results()
 
   kegg_ref <- ggpicrust2:::load_reference_data("KEGG")
   gsea_results$pathway_id <- head(kegg_ref$pathway, 10)
@@ -36,7 +36,7 @@ test_that("gsea_pathway_annotation annotates MetaCyc pathways correctly", {
 })
 
 test_that("gsea_pathway_annotation annotates GO pathways", {
-  gsea_results <- create_test_gsea_results()
+  gsea_results <- create_gsea_test_results()
   gsea_results$pathway_id <- paste0("GO:", sprintf("%07d", 1:10))
 
   annotated <- gsea_pathway_annotation(gsea_results, pathway_type = "GO")
@@ -47,7 +47,7 @@ test_that("gsea_pathway_annotation annotates GO pathways", {
 })
 
 test_that("gsea_pathway_annotation validates inputs correctly", {
-  gsea_results <- create_test_gsea_results()
+  gsea_results <- create_gsea_test_results()
 
   expect_error(gsea_pathway_annotation(gsea_results = "invalid"), "'gsea_results' must be a data frame")
   expect_error(gsea_pathway_annotation(gsea_results, pathway_type = "invalid"), "pathway_type must be one of")

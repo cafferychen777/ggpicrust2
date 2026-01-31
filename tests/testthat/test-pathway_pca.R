@@ -48,7 +48,7 @@ test_that("pathway_pca validates inputs", {
 
   # NA values
   data$abundance[1,1] <- NA
-  expect_error(pathway_pca(data$abundance, data$metadata, "group"))
+  expect_error(pathway_pca(data$abundance, data$metadata, "group"), "NA|missing")
 })
 
 test_that("pathway_pca throws error with wrong color count", {

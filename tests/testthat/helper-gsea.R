@@ -1,6 +1,6 @@
 # Shared helper: create mock GSEA results for testing
 # pathway_name defaults to pathway_id (unannotated); callers can override
-create_test_gsea_results <- function(n_pathways = 10) {
+create_gsea_test_results <- function(n_pathways = 10) {
   set.seed(123)
   data.frame(
     pathway_id = paste0("path:ko", sprintf("%05d", 1:n_pathways)),

@@ -13,18 +13,12 @@ A comprehensive reference dataset that maps KEGG Orthology (KO) identifiers to G
   \describe{
     \item{\code{go_id}}{Character. GO term identifier in the format "GO:XXXXXXX"}
     \item{\code{go_name}}{Character. Human-readable name of the GO term}
-    \item{\code{category}}{Character. GO category: "BP" (Biological Process), "MF" (Molecular Function), or "CC" (Cellular Component)}
+    \item{\code{category}}{Character. GO category code. Use \code{table(ko_to_go_reference$category)} to see available categories.}
     \item{\code{ko_members}}{Character. Semicolon-separated list of KO identifiers associated with this GO term}
   }
 }
 \details{
-This dataset contains mappings between KO identifiers and GO terms, enabling comprehensive GO pathway analysis in microbiome functional profiling studies. The dataset includes:
-
-\itemize{
-  \item \strong{Biological Processes (BP):} Metabolic pathways, stress responses, cell wall processes, virulence factors, and environmental adaptations
-  \item \strong{Molecular Functions (MF):} Enzymatic activities, binding functions, transport activities, and regulatory functions
-  \item \strong{Cellular Components (CC):} Membrane structures, protein complexes, cell wall components, and cytoskeletal elements
-}
+This dataset maps KEGG Orthology (KO) identifiers to Gene Ontology (GO) terms, enabling GO-level functional analysis of PICRUSt2 predictions.
 
 The dataset is built from authoritative biological databases:
 \itemize{
@@ -32,7 +26,9 @@ The dataset is built from authoritative biological databases:
   \item EBI QuickGO API for GO term metadata (names and categories)
 }
 
-Each GO term includes a list of associated KO identifiers that are known to be involved in that biological process, molecular function, or cellular component. This enables pathway-level analysis of PICRUSt2 functional predictions.
+KEGG DBLINKS primarily cross-references Molecular Function (MF) GO terms, because KO entries describe individual gene functions that naturally correspond to molecular activities (enzyme activities, binding functions, etc.). The current dataset contains predominantly MF terms with a small number of CC (Cellular Component) terms.
+
+Each GO term includes at least 3 associated KO identifiers, ensuring statistical utility for enrichment analysis.
 }
 \source{
 \itemize{

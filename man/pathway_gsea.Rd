@@ -72,9 +72,10 @@ Default is 0.01. Use NA to estimate correlation from data for each gene set.}
 
 \item{seed}{An integer specifying the random seed for reproducibility}
 
-\item{go_category}{A character string specifying GO category: "all" (default),
-"BP" (Biological Process), "MF" (Molecular Function), or "CC" (Cellular Component).
-Note: coverage varies by category depending on the reference data.}
+\item{go_category}{A character string specifying GO category to use.
+"all" (default) uses all categories present in the reference data.
+Valid categories are determined by the reference data (currently MF and CC).
+See \code{table(ko_to_go_reference$category)} for available categories.}
 
 \item{organism}{A character string specifying the organism for KEGG analysis (default: "ko" for KEGG Orthology)}
 }

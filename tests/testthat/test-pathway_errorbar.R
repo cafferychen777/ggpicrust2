@@ -26,8 +26,6 @@ create_errorbar_test_data <- function(n_features = 5, p_adjust = NULL) {
 }
 
 test_that("pathway_errorbar basic functionality works", {
-  skip_if_not_installed("ggprism")
-
   td <- create_errorbar_test_data(
     n_features = 10,
     p_adjust = c(0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1)
@@ -46,8 +44,6 @@ test_that("pathway_errorbar basic functionality works", {
 })
 
 test_that("pathway_errorbar pathway_names_text_size parameter works", {
-  skip_if_not_installed("ggprism")
-
   td <- create_errorbar_test_data(
     n_features = 10,
     p_adjust = c(0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1)
@@ -81,8 +77,6 @@ test_that("pathway_errorbar pathway_names_text_size parameter works", {
 })
 
 test_that("pathway_errorbar handles missing annotations", {
-  skip_if_not_installed("ggprism")
-
   td <- create_errorbar_test_data(n_features = 2, p_adjust = c(0.01, 0.02))
   td$daa_results_df$pathway_name <- c(NA, "Pathway 2")
 
@@ -98,8 +92,6 @@ test_that("pathway_errorbar handles missing annotations", {
 })
 
 test_that("pathway_errorbar handles too many features", {
-  skip_if_not_installed("ggprism")
-
   td <- create_errorbar_test_data(n_features = 31)
 
   expect_warning(
@@ -114,8 +106,6 @@ test_that("pathway_errorbar handles too many features", {
 })
 
 test_that("pathway_errorbar handles custom colors correctly", {
-  skip_if_not_installed("ggprism")
-
   td <- create_errorbar_test_data()
 
   p <- pathway_errorbar(
@@ -130,8 +120,6 @@ test_that("pathway_errorbar handles custom colors correctly", {
 })
 
 test_that("pathway_errorbar handles different ordering options", {
-  skip_if_not_installed("ggprism")
-
   td <- create_errorbar_test_data(p_adjust = c(0.04, 0.01, 0.03, 0.02, 0.05))
   td$daa_results_df$pathway_class <- c("Class1", "Class1", "Class2", "Class2", "Class3")
 
@@ -146,7 +134,7 @@ test_that("pathway_errorbar handles different ordering options", {
     expect_s3_class(p, "patchwork")
   }
 
-  # Invalid order type
+  # Invalid order type (function lacks upfront validation; crashes downstream)
   expect_error(
     pathway_errorbar(
       abundance = td$abundance,
@@ -159,8 +147,6 @@ test_that("pathway_errorbar handles different ordering options", {
 })
 
 test_that("pathway_errorbar handles p_value_bar parameter correctly", {
-  skip_if_not_installed("ggprism")
-
   td <- create_errorbar_test_data()
 
   p1 <- pathway_errorbar(
@@ -187,10 +173,10 @@ test_that("pathway_errorbar handles p_value_bar parameter correctly", {
 test_that("pathway_errorbar_table function works correctly", {
   td <- create_errorbar_test_data(n_features = 3, p_adjust = c(0.01, 0.02, 0.03))
 
-  # Run DAA to get properly structured results
   metadata <- data.frame(
     sample = colnames(td$abundance),
-    group = td$Group
+    group = td$Group,
+    stringsAsFactors = FALSE
   )
   daa_results <- pathway_daa(
     abundance = td$abundance,
