@@ -183,6 +183,8 @@ pathway_heatmap(
     ) \%>\%
     filter(pathway \%in\% feature_with_p_0.05$feature) \%>\%
     select(-"pathway") \%>\%
+    filter(!is.na(description)) \%>\%
+    distinct(description, .keep_all = TRUE) \%>\%
     column_to_rownames("description"),
   metadata = metadata,
   group = "Environment",
@@ -230,6 +232,8 @@ pathway_heatmap(
     ) \%>\%
     filter(pathway \%in\% feature_with_p_0.05$feature) \%>\%
     select(-"pathway") \%>\%
+    filter(!is.na(description)) \%>\%
+    distinct(description, .keep_all = TRUE) \%>\%
     column_to_rownames("description"),
   metadata = metadata,
   group = "Environment",              # Primary: Pro-survival vs others
