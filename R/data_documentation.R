@@ -1,9 +1,10 @@
 #' KO to KEGG Pathway Reference Data
 #'
 #' A comprehensive mapping between KEGG Orthology (KO) identifiers and KEGG pathways.
-#' This dataset contains 61,655 mappings covering 557 pathways and 27,127 unique KO IDs.
+#' This dataset contains mappings covering 532 pathways and 23,466 unique KO IDs,
+#' filtered to include only real KEGG pathway maps (5-digit IDs).
 #'
-#' @format A data frame with 61,655 rows and 9 variables:
+#' @format A data frame with 9 variables:
 #' \describe{
 #'   \item{pathway_id}{KEGG pathway identifier (e.g., "ko00010")}
 #'   \item{pathway_number}{KEGG pathway number}

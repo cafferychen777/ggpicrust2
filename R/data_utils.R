@@ -8,6 +8,50 @@
 NULL
 
 # =============================================================================
+# File I/O
+# =============================================================================
+
+#' Read abundance data from a delimited file
+#'
+#' Reads PICRUSt2-style abundance data from .tsv, .txt, or .csv files.
+#' Delimiter is auto-detected from the file extension (csv -> comma, others -> tab).
+#'
+#' @param file_path Path to the input file
+#' @return A data frame (tibble) with the parsed abundance data
+#' @noRd
+read_abundance_file <- function(file_path) {
+  if (!is.character(file_path) || length(file_path) != 1) {
+    stop("'file_path' must be a single file path string")
+  }
+  if (!file.exists(file_path)) {
+    stop("File does not exist: ", file_path)
+  }
+
+  file_ext <- tolower(tools::file_ext(file_path))
+  if (!file_ext %in% c("txt", "tsv", "csv")) {
+    stop(
+      "Unsupported file format '.", file_ext, "'. ",
+      "Accepted formats: .tsv, .txt, .csv"
+    )
+  }
+
+  delimiter <- if (file_ext == "csv") "," else "\t"
+
+  abundance <- readr::read_delim(
+    file_path,
+    delim = delimiter,
+    show_col_types = FALSE,
+    progress = FALSE
+  )
+
+  if (ncol(abundance) < 2) {
+    stop("Input file must contain at least 2 columns (IDs + samples)")
+  }
+
+  abundance
+}
+
+# =============================================================================
 # KO Abundance Cleaning
 # =============================================================================
 
@@ -449,6 +493,10 @@ validate_group <- function(metadata, group, min_groups = 2, min_per_group = 1) {
 #' @noRd
 validate_numeric_matrix <- function(mat, check_negative = TRUE,
                                     check_na = TRUE, check_duplicates = TRUE) {
+  if (!is.numeric(mat)) {
+    stop("Abundance data contains non-numeric values. All sample columns must be numeric.")
+  }
+
   if (check_negative) {
     neg_cols <- apply(mat, 2, function(x) any(x < 0, na.rm = TRUE))
     if (any(neg_cols)) {
@@ -718,6 +766,8 @@ create_empty_gsea_result <- function(method = "unknown", full = FALSE) {
       pvalue = numeric(0),
       p.adjust = numeric(0),
       method = character(0),
+      NES = numeric(0),
+      leading_edge = character(0),
       stringsAsFactors = FALSE
     )
   }

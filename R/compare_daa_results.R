@@ -93,7 +93,7 @@ compare_daa_results <- function(daa_results_list, method_names, p_values_thresho
       })
     } else if (all(c("group1", "group2", "group3") %in% colnames(daa_results_list[[i]]))) {
       # This is a multi-group comparison method
-      features[[i]] <- daa_results_list[[i]][daa_results_list[[i]]$p_adjust < p_values_threshold, "feature"]
+      features[[i]] <- daa_results_list[[i]][which(daa_results_list[[i]]$p_adjust < p_values_threshold), "feature"]
     } else {
       stop("Unknown comparison type in daa_results_list[[", i, "]].")
     }

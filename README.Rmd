@@ -489,6 +489,8 @@ comparison_results <- compare_daa_results(daa_results_list = daa_results_list, m
 
 **New Feature (v2.1.4)**: The `pathway_annotation()` function now supports species-specific KEGG pathway annotation through the new `organism` parameter. You can specify KEGG organism codes (e.g., "hsa" for human, "eco" for E. coli) to get species-specific pathway information. If no organism is specified (default), the function retrieves generic KO information not specific to any organism.
 
+**Note**: When `ko_to_kegg = TRUE`, only pathways with `p_adjust < p_adjust_threshold` are sent to the KEGG API for annotation. The `p_adjust_threshold` parameter defaults to 0.05 and can be customized. When called from `ggpicrust2()`, this threshold is automatically set to match the `p_values_threshold` parameter for consistency.
+
 ```{r pathway_annotation sample,echo = TRUE,eval=FALSE}
 
 # Make sure to check if the features in `daa_results_df` correspond to the selected pathway

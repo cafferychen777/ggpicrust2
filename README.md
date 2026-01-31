@@ -1360,30 +1360,27 @@ gsea_results_metacyc <- pathway_gsea(
 #### **🆕 Gene Ontology (GO) Analysis**
 
 ``` r
-# GO analysis with category selection
-gsea_results_go_bp <- pathway_gsea(
+# GO analysis — Molecular Function category
+gsea_results_go <- pathway_gsea(
   abundance = ko_abundance %>% column_to_rownames("#NAME"),
   metadata = metadata,
   group = "Environment",
   pathway_type = "GO",          # Gene Ontology
-  go_category = "BP",           # Biological Process
+  go_category = "MF",           # Molecular Function
   method = "fgsea",
   rank_method = "t_test",
   nperm = 1000
 )
 
-# Analyze different GO categories
-for(category in c("BP", "MF", "CC")) {
-  results <- pathway_gsea(
-    abundance = ko_abundance %>% column_to_rownames("#NAME"),
-    metadata = metadata,
-    group = "Environment", 
-    pathway_type = "GO",
-    go_category = category,     # BP, MF, or CC
-    method = "fgsea"
-  )
-  print(paste("GO", category, "- Significant pathways:", sum(results$p.adjust < 0.05)))
-}
+# Analyze all GO categories at once
+gsea_results_go_all <- pathway_gsea(
+  abundance = ko_abundance %>% column_to_rownames("#NAME"),
+  metadata = metadata,
+  group = "Environment",
+  pathway_type = "GO",
+  go_category = "all",          # All available categories
+  method = "fgsea"
+)
 ```
 
 #### **🔬 Advanced Statistical Options**
@@ -1439,7 +1436,7 @@ gsea_go <- pathway_gsea(
   metadata = metadata,
   group = "Environment", 
   pathway_type = "GO",
-  go_category = "BP"
+  go_category = "MF"
 )
 
 # Annotate results for better pathway names

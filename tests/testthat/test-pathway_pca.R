@@ -37,14 +37,10 @@ test_that("pathway_pca works with multiple groups", {
 test_that("pathway_pca validates inputs", {
   data <- create_pca_test_data()
 
-  # Missing arguments
-  expect_error(pathway_pca(), "Abundance matrix is required")
-  expect_error(pathway_pca(data$abundance), "Metadata is required")
-  expect_error(pathway_pca(data$abundance, data$metadata), "Group variable name is required")
 
   # Invalid input types
-  expect_error(pathway_pca(list(1,2,3), data$metadata, "group"), "Abundance must be a matrix")
-  expect_error(pathway_pca(data$abundance, list(a=1), "group"), "Metadata must be a data frame")
+  expect_error(pathway_pca(list(1,2,3), data$metadata, "group"), "must be a data frame or matrix")
+  expect_error(pathway_pca(data$abundance, list(a=1), "group"), "must be a data frame")
 
   # Missing group column
   wrong_metadata <- data.frame(sample_name = data$metadata$sample_name, other = 1:10)

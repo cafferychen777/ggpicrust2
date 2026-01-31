@@ -19,7 +19,7 @@ pathway_gsea(
   max_size = 500,
   p.adjust = "BH",
   seed = 42,
-  go_category = "BP",
+  go_category = "all",
   organism = "ko"
 )
 }
@@ -72,7 +72,9 @@ Default is 0.01. Use NA to estimate correlation from data for each gene set.}
 
 \item{seed}{An integer specifying the random seed for reproducibility}
 
-\item{go_category}{A character string specifying GO category: "BP" (Biological Process), "MF" (Molecular Function), "CC" (Cellular Component), or "all"}
+\item{go_category}{A character string specifying GO category: "all" (default),
+"BP" (Biological Process), "MF" (Molecular Function), or "CC" (Cellular Component).
+Note: coverage varies by category depending on the reference data.}
 
 \item{organism}{A character string specifying the organism for KEGG analysis (default: "ko" for KEGG Orthology)}
 }

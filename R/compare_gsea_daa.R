@@ -74,8 +74,8 @@ compare_gsea_daa <- function(gsea_results,
 
   # Extract significant pathways from each analysis
   # Convert to character to ensure consistent types for set operations and ggVennDiagram
-  sig_gsea <- as.character(gsea_results$pathway_id[gsea_results$p.adjust < p_threshold])
-  sig_daa <- as.character(daa_results$feature[daa_results$p_adjust < p_threshold])
+  sig_gsea <- as.character(gsea_results$pathway_id[which(gsea_results$p.adjust < p_threshold)])
+  sig_daa <- as.character(daa_results$feature[which(daa_results$p_adjust < p_threshold)])
 
   # Find overlapping and unique pathways
   overlap <- intersect(sig_gsea, sig_daa)

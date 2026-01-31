@@ -26,21 +26,18 @@ This dataset contains mappings between KO identifiers and GO terms, enabling com
   \item \strong{Cellular Components (CC):} Membrane structures, protein complexes, cell wall components, and cytoskeletal elements
 }
 
-The dataset is created by combining information from multiple sources:
+The dataset is built from authoritative biological databases:
 \itemize{
-  \item KEGG database API for KO to GO mappings
-  \item Enhanced basic mapping covering major microbiome-relevant functions
-  \item Manual curation for microbiome-specific processes
+  \item KEGG REST API DBLINKS field for KO to GO cross-references
+  \item EBI QuickGO API for GO term metadata (names and categories)
 }
 
 Each GO term includes a list of associated KO identifiers that are known to be involved in that biological process, molecular function, or cellular component. This enables pathway-level analysis of PICRUSt2 functional predictions.
 }
 \source{
-The dataset is compiled from:
 \itemize{
-  \item KEGG database (https://www.kegg.jp/)
-  \item Gene Ontology database (http://geneontology.org/)
-  \item Enhanced basic mapping for microbiome analysis
+  \item KEGG REST API (\url{https://rest.kegg.jp}) — KO entry DBLINKS section
+  \item EBI QuickGO (\url{https://www.ebi.ac.uk/QuickGO/}) — GO term metadata
 }
 }
 \references{
@@ -61,16 +58,16 @@ str(ko_to_go_reference)
 # Check the distribution of GO categories
 table(ko_to_go_reference$category)
 
-# Find GO terms related to metabolism
-metabolism_terms <- ko_to_go_reference[
-  grepl("metabolic", ko_to_go_reference$go_name, ignore.case = TRUE), ]
-head(metabolism_terms)
+# Find GO terms related to polymerase activity
+polymerase_terms <- ko_to_go_reference[
+  grepl("polymerase", ko_to_go_reference$go_name, ignore.case = TRUE), ]
+head(polymerase_terms)
 
-# Get KO members for a specific GO term
-glycolysis_term <- ko_to_go_reference[ko_to_go_reference$go_id == "GO:0006096", ]
-if (nrow(glycolysis_term) > 0) {
-  ko_list <- strsplit(glycolysis_term$ko_members, ";")[[1]]
-  cat("KO identifiers in glycolytic process:", paste(ko_list, collapse = ", "))
+# Get KO members for a specific GO term (RNA polymerase activity)
+rna_pol <- ko_to_go_reference[ko_to_go_reference$go_id == "GO:0003899", ]
+if (nrow(rna_pol) > 0) {
+  ko_list <- strsplit(rna_pol$ko_members, ";")[[1]]
+  cat("KO identifiers for RNA polymerase activity:", paste(ko_list, collapse = ", "))
 }
 
 # Use in pathway analysis
@@ -89,7 +86,7 @@ gsea_results <- pathway_gsea(
   group = "Environment",
   method = "fgsea",
   pathway_type = "GO",
-  go_category = "BP",
+  go_category = "MF",
   rank_method = "signal2noise"
 )
 

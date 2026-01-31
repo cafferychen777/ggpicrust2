@@ -305,7 +305,7 @@ pathway_errorbar <-
     errorbar_abundance_mat <- as.matrix(abundance)
 
     daa_results_filtered_df <-
-      daa_results_df[daa_results_df$p_adjust < p_values_threshold,]
+      daa_results_df[which(daa_results_df$p_adjust < p_values_threshold),]
 
     if (!is.null(select)) {
       daa_results_filtered_sub_df <-
@@ -336,11 +336,6 @@ pathway_errorbar <-
     sub_relative_abundance_mat <- relative_abundance_mat[rownames(relative_abundance_mat) %in% daa_results_filtered_sub_df$feature, , drop = FALSE]
 
     # Create a matrix for the error bars
-    # Fix mapping error: ensure correct mapping between samples and their experimental groups
-    if (length(Group) != ncol(abundance)) {
-      stop("Length of Group must match number of columns in abundance matrix")
-    }
-    
     # Create a mapping from sample names to their corresponding groups
     # Note: We can't directly use the Group vector as its order may not match the column names in sub_relative_abundance_mat
     sample_to_group_map <- stats::setNames(as.character(Group), colnames(abundance))
@@ -506,32 +501,20 @@ pathway_errorbar <-
 
     # Calculate smart text size for pathway names (y-axis labels)
     pathway_names_final_text_size <- if (pathway_names_text_size == "auto") {
-      if (exists("calculate_smart_text_size")) {
-        calculate_smart_text_size(nrow(daa_results_filtered_sub_df),
+      calculate_smart_text_size(nrow(daa_results_filtered_sub_df),
                                 base_size = 10, min_size = 8, max_size = 14)
-      } else {
-        10  # Default size (current hardcoded value)
-      }
     } else {
       pathway_names_text_size
     }
 
     # Calculate smart text size for pathway class annotations
     pathway_class_final_text_size <- if (pathway_class_text_size == "auto") {
-      if (exists("calculate_smart_text_size")) {
-        calculate_smart_text_size(nrow(daa_results_filtered_sub_df),
+      calculate_smart_text_size(nrow(daa_results_filtered_sub_df),
                                 base_size = 10, min_size = 3, max_size = 4)
-      } else {
-        3.5  # Default size
-      }
     } else {
       as.numeric(pathway_class_text_size)  # Ensure it's numeric
     }
 
-    # Ensure pathway_class_final_text_size is always defined and numeric
-    if (!exists("pathway_class_final_text_size") || is.null(pathway_class_final_text_size) || is.na(pathway_class_final_text_size)) {
-      pathway_class_final_text_size <- 3.5  # Fallback default
-    }
 
     # Set pathway class text color based on theme if "auto"
     pathway_class_final_text_color <- if (pathway_class_text_color == "auto") {
@@ -540,11 +523,6 @@ pathway_errorbar <-
       current_theme$pathway_class_colors[1]  # Use first theme color
     } else {
       pathway_class_text_color
-    }
-
-    # Ensure pathway_class_final_text_color is always defined
-    if (!exists("pathway_class_final_text_color") || is.null(pathway_class_final_text_color) || is.na(pathway_class_final_text_color)) {
-      pathway_class_final_text_color <- "black"  # Fallback default
     }
 
     bar_errorbar <-
@@ -788,15 +766,13 @@ pathway_errorbar <-
 
     # Enhanced p-value formatting using the new system
     format_p_value <- function(p) {
-      # Use smart formatting if available, otherwise fallback to simple formatting
-      if (exists("format_pvalue_smart") && pvalue_format != "numeric") {
-        format_pvalue_smart(p, 
+      if (pvalue_format != "numeric") {
+        format_pvalue_smart(p,
                            format = pvalue_format,
                            stars = pvalue_stars,
                            thresholds = pvalue_thresholds,
                            star_symbols = pvalue_star_symbols)
       } else {
-        # Use simple numeric formatting without "p =" prefix
         ifelse(p < 0.001, sprintf("%.1e", p), sprintf("%.3f", p))
       }
     }
@@ -805,7 +781,7 @@ pathway_errorbar <-
 
 
     # Calculate p-value colors if enabled
-    pvalue_text_colors <- if (pvalue_colors && exists("get_significance_colors")) {
+    pvalue_text_colors <- if (pvalue_colors) {
       get_significance_colors(daa_results_filtered_sub_df$p_adjust,
                             thresholds = pvalue_thresholds,
                             colors = c("#d73027", "#fc8d59", "#fee08b"),
@@ -816,12 +792,8 @@ pathway_errorbar <-
     
     # Calculate smart text size for p-values
     pvalue_text_size <- if (pvalue_size == "auto") {
-      if (exists("calculate_smart_text_size")) {
-        # Use smaller base_size for p-values 
-        calculate_smart_text_size(nrow(daa_results_filtered_sub_df), base_size = 2.5, min_size = 1.8, max_size = 3.0)
-      } else {
-        2.5  # Reduced default size
-      }
+      calculate_smart_text_size(nrow(daa_results_filtered_sub_df),
+                                base_size = 2.5, min_size = 1.8, max_size = 3.0)
     } else {
       pvalue_size
     }

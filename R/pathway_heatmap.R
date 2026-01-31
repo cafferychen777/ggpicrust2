@@ -544,7 +544,7 @@ pathway_heatmap <- function(abundance,
     }
     
     # Create row dendrogram if rows were clustered
-    if (cluster_rows && exists("row_hclust")) {
+    if (cluster_rows) {
       row_dendro <- create_dendrogram(row_hclust, dendro_line_size, dendro_labels, horizontal = TRUE)
       if (!is.null(row_dendro)) {
         p <- row_dendro + p + patchwork::plot_layout(widths = c(0.2, 1))
@@ -552,7 +552,7 @@ pathway_heatmap <- function(abundance,
     }
     
     # Create column dendrogram if columns were clustered
-    if (cluster_cols && exists("col_hclust")) {
+    if (cluster_cols) {
       col_dendro <- create_dendrogram(col_hclust, dendro_line_size, dendro_labels, horizontal = FALSE)
       if (!is.null(col_dendro)) {
         p <- col_dendro / p + patchwork::plot_layout(heights = c(0.2, 1))
@@ -562,21 +562,20 @@ pathway_heatmap <- function(abundance,
 
   # Print the ordered sample names and group levels
   if (!cluster_cols) {
-    cat("The Sample Names in order from left to right are:\n")
-    cat(ordered_sample_names, sep = ", ")
-    cat("\n")
-
-    cat("The Group Levels in order from left to right are:\n")
-    cat(ordered_group_levels, sep = ", ")
-    cat("\n")
+    message("The Sample Names in order from left to right are:")
+    message(paste(ordered_sample_names, collapse = ", "))
+    message("The Group Levels in order from left to right are:")
+    message(paste(ordered_group_levels, collapse = ", "))
   } else {
-    cat("Samples ordered by hierarchical clustering (", clustering_method, " method, ", clustering_distance, " distance)\n")
-    cat("Column order: ", paste(col_order, collapse = ", "), "\n")
+    message("Samples ordered by hierarchical clustering (",
+            clustering_method, " method, ", clustering_distance, " distance)")
+    message("Column order: ", paste(col_order, collapse = ", "))
   }
-  
+
   if (cluster_rows) {
-    cat("Pathways ordered by hierarchical clustering (", clustering_method, " method, ", clustering_distance, " distance)\n")
-    cat("Row order: ", paste(row_order, collapse = ", "), "\n")
+    message("Pathways ordered by hierarchical clustering (",
+            clustering_method, " method, ", clustering_distance, " distance)")
+    message("Row order: ", paste(row_order, collapse = ", "))
   }
 
   return(p)

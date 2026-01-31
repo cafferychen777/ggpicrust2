@@ -1,19 +1,12 @@
-# Tests for pathway_ridgeplot function
-
-test_that("pathway_ridgeplot creates a ggplot object", {
-  skip_if_not_installed("ggridges")
-  skip_on_cran()
-
-  # Load example data
+# Helper: prepare GSEA data for ridgeplot integration tests
+prepare_ridgeplot_gsea_data <- function() {
   data(ko_abundance, package = "ggpicrust2")
   data(metadata, package = "ggpicrust2")
 
-  # Prepare abundance data
   abundance_data <- as.data.frame(ko_abundance)
   rownames(abundance_data) <- abundance_data[, "#NAME"]
   abundance_data <- abundance_data[, -1]
 
-  # Run GSEA
   gsea_results <- suppressMessages(pathway_gsea(
     abundance = abundance_data,
     metadata = metadata,
@@ -23,11 +16,19 @@ test_that("pathway_ridgeplot creates a ggplot object", {
     min_size = 5
   ))
 
-  # Create ridge plot
+  list(gsea_results = gsea_results, abundance = abundance_data, metadata = metadata)
+}
+
+test_that("pathway_ridgeplot creates a ggplot object", {
+  skip_if_not_installed("ggridges")
+  skip_on_cran()
+
+  td <- prepare_ridgeplot_gsea_data()
+
   p <- pathway_ridgeplot(
-    gsea_results = gsea_results,
-    abundance = abundance_data,
-    metadata = metadata,
+    gsea_results = td$gsea_results,
+    abundance = td$abundance,
+    metadata = td$metadata,
     group = "Environment",
     n_pathways = 5
   )
@@ -39,26 +40,12 @@ test_that("pathway_ridgeplot handles custom parameters", {
   skip_if_not_installed("ggridges")
   skip_on_cran()
 
-  data(ko_abundance, package = "ggpicrust2")
-  data(metadata, package = "ggpicrust2")
-
-  abundance_data <- as.data.frame(ko_abundance)
-  rownames(abundance_data) <- abundance_data[, "#NAME"]
-  abundance_data <- abundance_data[, -1]
-
-  gsea_results <- suppressMessages(pathway_gsea(
-    abundance = abundance_data,
-    metadata = metadata,
-    group = "Environment",
-    pathway_type = "KEGG",
-    method = "camera",
-    min_size = 5
-  ))
+  td <- prepare_ridgeplot_gsea_data()
 
   p <- pathway_ridgeplot(
-    gsea_results = gsea_results,
-    abundance = abundance_data,
-    metadata = metadata,
+    gsea_results = td$gsea_results,
+    abundance = td$abundance,
+    metadata = td$metadata,
     group = "Environment",
     n_pathways = 10,
     sort_by = "pvalue",
@@ -76,26 +63,12 @@ test_that("pathway_ridgeplot handles show_direction = FALSE", {
   skip_if_not_installed("ggridges")
   skip_on_cran()
 
-  data(ko_abundance, package = "ggpicrust2")
-  data(metadata, package = "ggpicrust2")
-
-  abundance_data <- as.data.frame(ko_abundance)
-  rownames(abundance_data) <- abundance_data[, "#NAME"]
-  abundance_data <- abundance_data[, -1]
-
-  gsea_results <- suppressMessages(pathway_gsea(
-    abundance = abundance_data,
-    metadata = metadata,
-    group = "Environment",
-    pathway_type = "KEGG",
-    method = "camera",
-    min_size = 5
-  ))
+  td <- prepare_ridgeplot_gsea_data()
 
   p <- pathway_ridgeplot(
-    gsea_results = gsea_results,
-    abundance = abundance_data,
-    metadata = metadata,
+    gsea_results = td$gsea_results,
+    abundance = td$abundance,
+    metadata = td$metadata,
     group = "Environment",
     n_pathways = 5,
     show_direction = FALSE
@@ -156,12 +129,4 @@ test_that("pathway_ridgeplot errors on missing group column", {
     ),
     "not found in metadata"
   )
-})
-
-test_that("pathway_ridgeplot requires ggridges package", {
-  # This test checks that the function properly checks for ggridges
-
-  # We can't easily test this without unloading the package
-  # So we just verify the function exists and has the right structure
-  expect_true(is.function(pathway_ridgeplot))
 })

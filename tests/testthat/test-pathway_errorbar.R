@@ -1,47 +1,42 @@
-library(ggplot2)
-library(patchwork)
-library(dplyr)
-
-# Note: ggprism is checked inside each test_that block
-
-test_that("pathway_errorbar basic functionality works", {
-  skip_if_not_installed("ggprism")
-  library(ggprism)
-
-  # Setup test data
+# Helper: create standard errorbar test data
+create_errorbar_test_data <- function(n_features = 5, p_adjust = NULL) {
   set.seed(123)
-  abundance <- matrix(runif(100), nrow=10, ncol=10)
-  rownames(abundance) <- paste0("pathway", 1:10)
-  colnames(abundance) <- paste0("sample", 1:10)
+  n_samples <- 10
 
-  # 创建一个数据框来存储分组信息
-  metadata <- data.frame(
-    sample = paste0("sample", 1:10),
-    group = rep(c("GroupA", "GroupB"), each=5)
-  )
+  abundance <- matrix(runif(n_features * n_samples), nrow = n_features, ncol = n_samples)
+  rownames(abundance) <- paste0("pathway", 1:n_features)
+  colnames(abundance) <- paste0("sample", 1:n_samples)
+
+  if (is.null(p_adjust)) p_adjust <- rep(0.01, n_features)
 
   daa_results_df <- data.frame(
-    feature = paste0("pathway", 1:10),
-    pathway_name = paste0("Pathway ", 1:10),
-    description = paste0("Description ", 1:10),
-    p_adjust = c(0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1),
-    method = rep("ALDEx2_Welch's t test", 10),
-    group1 = rep("GroupA", 10),
-    group2 = rep("GroupB", 10),
+    feature = paste0("pathway", 1:n_features),
+    pathway_name = paste0("Pathway ", 1:n_features),
+    p_adjust = p_adjust,
+    method = rep("ALDEx2_Welch's t test", n_features),
+    group1 = rep("GroupA", n_features),
+    group2 = rep("GroupB", n_features),
     stringsAsFactors = FALSE
   )
 
-  Group <- metadata$group
-  names(Group) <- metadata$sample
+  Group <- factor(rep(c("GroupA", "GroupB"), each = n_samples / 2))
+  names(Group) <- paste0("sample", 1:n_samples)
 
-  # 添加数据检查
-  testthat::expect_true(all(colnames(abundance) == names(Group)))
-  testthat::expect_true(all(rownames(abundance) == daa_results_df$feature))
+  list(abundance = abundance, daa_results_df = daa_results_df, Group = Group)
+}
+
+test_that("pathway_errorbar basic functionality works", {
+  skip_if_not_installed("ggprism")
+
+  td <- create_errorbar_test_data(
+    n_features = 10,
+    p_adjust = c(0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1)
+  )
 
   p <- pathway_errorbar(
-    abundance = abundance,
-    daa_results_df = daa_results_df,
-    Group = Group,
+    abundance = td$abundance,
+    daa_results_df = td$daa_results_df,
+    Group = td$Group,
     p_values_threshold = 0.05,
     select = paste0("pathway", 1:5),
     x_lab = "pathway_name"
@@ -53,36 +48,16 @@ test_that("pathway_errorbar basic functionality works", {
 test_that("pathway_errorbar pathway_names_text_size parameter works", {
   skip_if_not_installed("ggprism")
 
-  # Setup test data
-  set.seed(123)
-  abundance <- matrix(runif(100), nrow=10, ncol=10)
-  rownames(abundance) <- paste0("pathway", 1:10)
-  colnames(abundance) <- paste0("sample", 1:10)
-
-  metadata <- data.frame(
-    sample = paste0("sample", 1:10),
-    group = rep(c("GroupA", "GroupB"), each=5)
+  td <- create_errorbar_test_data(
+    n_features = 10,
+    p_adjust = c(0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1)
   )
-
-  daa_results_df <- data.frame(
-    feature = paste0("pathway", 1:10),
-    pathway_name = paste0("Pathway ", 1:10),
-    description = paste0("Description ", 1:10),
-    p_adjust = c(0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1),
-    method = rep("ALDEx2_Welch's t test", 10),
-    group1 = rep("GroupA", 10),
-    group2 = rep("GroupB", 10),
-    stringsAsFactors = FALSE
-  )
-
-  Group <- metadata$group
-  names(Group) <- metadata$sample
 
   # Test with auto text size
   p1 <- pathway_errorbar(
-    abundance = abundance,
-    daa_results_df = daa_results_df,
-    Group = Group,
+    abundance = td$abundance,
+    daa_results_df = td$daa_results_df,
+    Group = td$Group,
     p_values_threshold = 0.05,
     select = paste0("pathway", 1:5),
     x_lab = "pathway_name",
@@ -93,9 +68,9 @@ test_that("pathway_errorbar pathway_names_text_size parameter works", {
 
   # Test with custom text size
   p2 <- pathway_errorbar(
-    abundance = abundance,
-    daa_results_df = daa_results_df,
-    Group = Group,
+    abundance = td$abundance,
+    daa_results_df = td$daa_results_df,
+    Group = td$Group,
     p_values_threshold = 0.05,
     select = paste0("pathway", 1:5),
     x_lab = "pathway_name",
@@ -105,168 +80,49 @@ test_that("pathway_errorbar pathway_names_text_size parameter works", {
   expect_s3_class(p2, "patchwork")
 })
 
-test_that("pathway_errorbar handles invalid inputs", {
+test_that("pathway_errorbar handles missing annotations", {
   skip_if_not_installed("ggprism")
 
-  # Test missing annotations
-  abundance <- matrix(runif(20), nrow=2, ncol=10)
-  rownames(abundance) <- c("pathway1", "pathway2")
-  colnames(abundance) <- paste0("sample", 1:10)
+  td <- create_errorbar_test_data(n_features = 2, p_adjust = c(0.01, 0.02))
+  td$daa_results_df$pathway_name <- c(NA, "Pathway 2")
 
-  # 创建分组数据
-  group_data <- data.frame(
-    sample = paste0("sample", 1:10),
-    group = rep(c("GroupA", "GroupB"), each=5),
-    stringsAsFactors = FALSE
-  )
-
-  daa_results_df_missing <- data.frame(
-    feature = c("pathway1", "pathway2"),
-    pathway_name = c(NA, "Pathway 2"),
-    p_adjust = c(0.01, 0.02),
-    method = rep("ALDEx2_Welch's t test", 2),
-    group1 = rep("GroupA", 2),
-    group2 = rep("GroupB", 2),
-    stringsAsFactors = FALSE
-  )
-
-  # 创建 Group 向量，确保是因子类型
-  Group <- factor(group_data$group, levels = c("GroupA", "GroupB"))
-  names(Group) <- group_data$sample
-
-  # 验证数据结构
-  testthat::expect_equal(length(Group), ncol(abundance))
-  testthat::expect_equal(names(Group), colnames(abundance))
-  testthat::expect_equal(rownames(abundance), daa_results_df_missing$feature)
-
-  # 使用 tryCatch 来捕获消息
-  result <- tryCatch({
+  expect_message(
     pathway_errorbar(
-      abundance = abundance,
-      daa_results_df = daa_results_df_missing,
-      Group = Group,
+      abundance = td$abundance,
+      daa_results_df = td$daa_results_df,
+      Group = td$Group,
       x_lab = "pathway_name"
-    )
-  }, message = function(m) m)
-
-  expect_true(grepl("The following pathways are missing annotations", result$message))
-})
-
-test_that("pathway_errorbar ordering works correctly", {
-  skip_if_not_installed("ggprism")
-
-  abundance <- matrix(runif(50), nrow=5, ncol=10)
-  rownames(abundance) <- paste0("pathway", 1:5)
-  colnames(abundance) <- paste0("sample", 1:10)
-
-  group_data <- data.frame(
-    sample = paste0("sample", 1:10),
-    group = rep(c("GroupA", "GroupB"), each=5),
-    stringsAsFactors = FALSE
+    ),
+    "pathways with missing annotations"
   )
-
-  daa_results_df <- data.frame(
-    feature = paste0("pathway", 1:5),
-    pathway_name = paste0("Pathway ", 1:5),
-    pathway_class = c("Class1", "Class1", "Class2", "Class2", "Class3"),
-    p_adjust = c(0.04, 0.01, 0.03, 0.02, 0.05),
-    method = rep("ALDEx2_Welch's t test", 5),
-    group1 = rep("GroupA", 5),
-    group2 = rep("GroupB", 5),
-    stringsAsFactors = FALSE
-  )
-
-  Group <- factor(group_data$group)
-  names(Group) <- group_data$sample
-
-  p1 <- pathway_errorbar(
-    abundance = abundance,
-    daa_results_df = daa_results_df,
-    Group = Group,
-    order = "p_values",
-    x_lab = "pathway_name"
-  )
-  expect_s3_class(p1, "patchwork")
 })
 
 test_that("pathway_errorbar handles too many features", {
   skip_if_not_installed("ggprism")
 
-  n_features <- 31  # 超过30个特征
-  abundance <- matrix(runif(n_features * 10), nrow=n_features, ncol=10)
-  rownames(abundance) <- paste0("pathway", 1:n_features)
-  colnames(abundance) <- paste0("sample", 1:10)
+  td <- create_errorbar_test_data(n_features = 31)
 
-  # 创建分组数据
-  group_data <- data.frame(
-    sample = paste0("sample", 1:10),
-    group = rep(c("GroupA", "GroupB"), each=5),
-    stringsAsFactors = FALSE
-  )
-
-  daa_results_df <- data.frame(
-    feature = paste0("pathway", 1:n_features),
-    pathway_name = paste0("Pathway ", 1:n_features),
-    p_adjust = rep(0.01, n_features),  # 所有p值都显著
-    method = rep("ALDEx2_Welch's t test", n_features),
-    group1 = rep("GroupA", n_features),
-    group2 = rep("GroupB", n_features),
-    stringsAsFactors = FALSE
-  )
-
-  # 创建 Group 向量，确保是因子类型
-  Group <- factor(group_data$group, levels = c("GroupA", "GroupB"))
-  names(Group) <- group_data$sample
-
-  # 验证数据结构
-  testthat::expect_equal(length(Group), ncol(abundance))
-  testthat::expect_equal(names(Group), colnames(abundance))
-  testthat::expect_equal(rownames(abundance), daa_results_df$feature)
-
-  # Function now warns instead of errors for too many features
   expect_warning(
     pathway_errorbar(
-      abundance = abundance,
-      daa_results_df = daa_results_df,
-      Group = Group,
+      abundance = td$abundance,
+      daa_results_df = td$daa_results_df,
+      Group = td$Group,
       x_lab = "pathway_name"
     ),
-    regexp = "The number of features with statistical significance exceeds 30"
+    regexp = "Found \\d+ significant features"
   )
 })
 
 test_that("pathway_errorbar handles custom colors correctly", {
   skip_if_not_installed("ggprism")
 
-  # Setup basic test data
-  abundance <- matrix(runif(50), nrow=5, ncol=10)
-  rownames(abundance) <- paste0("pathway", 1:5)
-  colnames(abundance) <- paste0("sample", 1:10)
+  td <- create_errorbar_test_data()
 
-  group_data <- data.frame(
-    sample = paste0("sample", 1:10),
-    group = rep(c("GroupA", "GroupB"), each=5)
-  )
-
-  daa_results_df <- data.frame(
-    feature = paste0("pathway", 1:5),
-    pathway_name = paste0("Pathway ", 1:5),
-    p_adjust = rep(0.01, 5),
-    method = rep("ALDEx2_Welch's t test", 5),
-    group1 = rep("GroupA", 5),
-    group2 = rep("GroupB", 5)
-  )
-
-  Group <- factor(group_data$group)
-  names(Group) <- group_data$sample
-
-  # Test with custom colors
-  custom_colors <- c("#FF0000", "#0000FF")
   p <- pathway_errorbar(
-    abundance = abundance,
-    daa_results_df = daa_results_df,
-    Group = Group,
-    colors = custom_colors,
+    abundance = td$abundance,
+    daa_results_df = td$daa_results_df,
+    Group = td$Group,
+    colors = c("#FF0000", "#0000FF"),
     x_lab = "pathway_name"
   )
 
@@ -276,48 +132,26 @@ test_that("pathway_errorbar handles custom colors correctly", {
 test_that("pathway_errorbar handles different ordering options", {
   skip_if_not_installed("ggprism")
 
-  # Setup test data
-  abundance <- matrix(runif(50), nrow=5, ncol=10)
-  rownames(abundance) <- paste0("pathway", 1:5)
-  colnames(abundance) <- paste0("sample", 1:10)
+  td <- create_errorbar_test_data(p_adjust = c(0.04, 0.01, 0.03, 0.02, 0.05))
+  td$daa_results_df$pathway_class <- c("Class1", "Class1", "Class2", "Class2", "Class3")
 
-  group_data <- data.frame(
-    sample = paste0("sample", 1:10),
-    group = rep(c("GroupA", "GroupB"), each=5)
-  )
-
-  daa_results_df <- data.frame(
-    feature = paste0("pathway", 1:5),
-    pathway_name = paste0("Pathway ", 1:5),
-    pathway_class = c("Class1", "Class1", "Class2", "Class2", "Class3"),
-    p_adjust = c(0.04, 0.01, 0.03, 0.02, 0.05),
-    method = rep("ALDEx2_Welch's t test", 5),
-    group1 = rep("GroupA", 5),
-    group2 = rep("GroupB", 5)
-  )
-
-  Group <- factor(group_data$group)
-  names(Group) <- group_data$sample
-
-  # Test different ordering options
-  orders <- c("p_values", "name", "group", "pathway_class")
-  for(order_type in orders) {
+  for (order_type in c("p_values", "name", "group", "pathway_class")) {
     p <- pathway_errorbar(
-      abundance = abundance,
-      daa_results_df = daa_results_df,
-      Group = Group,
+      abundance = td$abundance,
+      daa_results_df = td$daa_results_df,
+      Group = td$Group,
       order = order_type,
       x_lab = "pathway_name"
     )
     expect_s3_class(p, "patchwork")
   }
 
-  # Test invalid order type
+  # Invalid order type
   expect_error(
     pathway_errorbar(
-      abundance = abundance,
-      daa_results_df = daa_results_df,
-      Group = Group,
+      abundance = td$abundance,
+      daa_results_df = td$daa_results_df,
+      Group = td$Group,
       order = "invalid_order",
       x_lab = "pathway_name"
     )
@@ -327,41 +161,20 @@ test_that("pathway_errorbar handles different ordering options", {
 test_that("pathway_errorbar handles p_value_bar parameter correctly", {
   skip_if_not_installed("ggprism")
 
-  # Setup basic test data
-  abundance <- matrix(runif(50), nrow=5, ncol=10)
-  rownames(abundance) <- paste0("pathway", 1:5)
-  colnames(abundance) <- paste0("sample", 1:10)
+  td <- create_errorbar_test_data()
 
-  group_data <- data.frame(
-    sample = paste0("sample", 1:10),
-    group = rep(c("GroupA", "GroupB"), each=5)
-  )
-
-  daa_results_df <- data.frame(
-    feature = paste0("pathway", 1:5),
-    pathway_name = paste0("Pathway ", 1:5),
-    p_adjust = rep(0.01, 5),
-    method = rep("ALDEx2_Welch's t test", 5),
-    group1 = rep("GroupA", 5),
-    group2 = rep("GroupB", 5)
-  )
-
-  Group <- factor(group_data$group)
-  names(Group) <- group_data$sample
-
-  # Test with p_value_bar = TRUE and FALSE
   p1 <- pathway_errorbar(
-    abundance = abundance,
-    daa_results_df = daa_results_df,
-    Group = Group,
+    abundance = td$abundance,
+    daa_results_df = td$daa_results_df,
+    Group = td$Group,
     p_value_bar = TRUE,
     x_lab = "pathway_name"
   )
 
   p2 <- pathway_errorbar(
-    abundance = abundance,
-    daa_results_df = daa_results_df,
-    Group = Group,
+    abundance = td$abundance,
+    daa_results_df = td$daa_results_df,
+    Group = td$Group,
     p_value_bar = FALSE,
     x_lab = "pathway_name"
   )
@@ -369,4 +182,37 @@ test_that("pathway_errorbar handles p_value_bar parameter correctly", {
   expect_s3_class(p1, "patchwork")
   expect_s3_class(p2, "patchwork")
   expect_false(identical(p1, p2))
+})
+
+test_that("pathway_errorbar_table function works correctly", {
+  td <- create_errorbar_test_data(n_features = 3, p_adjust = c(0.01, 0.02, 0.03))
+
+  # Run DAA to get properly structured results
+  metadata <- data.frame(
+    sample = colnames(td$abundance),
+    group = td$Group
+  )
+  daa_results <- pathway_daa(
+    abundance = td$abundance,
+    metadata = metadata,
+    group = "group",
+    daa_method = "ALDEx2"
+  )
+  daa_single_method <- daa_results[daa_results$method == "ALDEx2_Welch's t test", ]
+
+  result <- pathway_errorbar_table(
+    abundance = td$abundance,
+    daa_results_df = daa_single_method,
+    Group = td$Group,
+    p_values_threshold = 1.0
+  )
+
+  expect_s3_class(result, "data.frame")
+  expect_true(nrow(result) > 0)
+
+  expected_cols <- c("feature", "group1", "group2",
+                    "mean_rel_abundance_group1", "sd_rel_abundance_group1",
+                    "mean_rel_abundance_group2", "sd_rel_abundance_group2",
+                    "log2_fold_change", "p_adjust")
+  expect_true(all(expected_cols %in% colnames(result)))
 })

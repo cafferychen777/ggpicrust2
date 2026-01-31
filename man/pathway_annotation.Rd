@@ -9,7 +9,8 @@ pathway_annotation(
   pathway = NULL,
   daa_results_df = NULL,
   ko_to_kegg = FALSE,
-  organism = NULL
+  organism = NULL,
+  p_adjust_threshold = 0.05
 )
 }
 \arguments{
@@ -22,10 +23,14 @@ must contain columns: feature, p_values, p_adjust, and method.}
 
 \item{ko_to_kegg}{A logical, decide if convert KO abundance to KEGG pathway abundance. Default is FALSE.
 Set to TRUE when using the function for the second use case. When TRUE, queries KEGG database for
-pathway annotations (requires internet connection) and filters for significant pathways (p_adjust < 0.05).}
+pathway annotations (requires internet connection) and filters for significant pathways.}
 
 \item{organism}{A character string specifying the KEGG organism code (e.g., 'hsa' for human, 'eco' for E. coli).
 Default is NULL, which retrieves generic KO information not specific to any organism. Only used when ko_to_kegg is TRUE.}
+
+\item{p_adjust_threshold}{A numeric value specifying the significance threshold for filtering
+pathways when `ko_to_kegg = TRUE`. Only pathways with `p_adjust < p_adjust_threshold` will be
+annotated via KEGG API. Default is 0.05. Ignored when `ko_to_kegg = FALSE`.}
 }
 \value{
 A data frame with annotated pathway information.
@@ -45,9 +50,10 @@ If \code{ko_to_kegg} is set to TRUE, the output data frame will also include:
   \item \code{pathway_map}: The KEGG pathway map ID.
 }
 
-**Note**: When \code{ko_to_kegg = TRUE}, only pathways with p_adjust < 0.05 are processed.
-If no pathways meet this criterion, all annotation columns will be NA, and a detailed
-warning message will be issued with diagnostic information.
+**Note**: When \code{ko_to_kegg = TRUE}, only pathways with
+\code{p_adjust < p_adjust_threshold} are processed. If no pathways meet this criterion,
+all annotation columns will be NA, and a detailed warning message will be issued with
+diagnostic information.
 
 When \code{ko_to_kegg} is TRUE, the function queries the KEGG database for pathway information.
 By default (organism = NULL), it retrieves generic KO information that is not specific to any organism.
@@ -60,8 +66,8 @@ This function serves two main purposes:
 2. Annotating pathway information from the output of `pathway_daa` function, and converting KO abundance to KEGG pathway abundance when `ko_to_kegg` is set to TRUE.
 
 **Important**: When `ko_to_kegg = TRUE`, this function automatically filters pathways by
-p_adjust < 0.05 threshold. If no pathways meet this criterion, the function returns the
-original data with NA annotation columns and issues a detailed warning message with
+`p_adjust < p_adjust_threshold`. If no pathways meet this criterion, the function returns
+the original data with NA annotation columns and issues a detailed warning message with
 diagnostic information and recommendations.
 }
 \examples{

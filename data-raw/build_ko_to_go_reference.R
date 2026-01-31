@@ -1,717 +1,291 @@
-# Create comprehensive KO to GO reference data for ggpicrust2
-# This script collects KO to GO mappings from multiple sources to create
-# a comprehensive reference dataset for GO pathway analysis
+# Build KO-to-GO reference data for ggpicrust2
+#
+# Data provenance (first principles):
+#   1. KEGG REST API — each KO entry's DBLINKS section lists curated GO IDs
+#   2. EBI QuickGO API — authoritative GO term names and categories (BP/MF/CC)
+#
+# No hardcoded or manually curated KO-GO mappings are used.
+# All data comes directly from authoritative biological databases.
+#
+# The KEGG phase is slow (~35 min for ~5000 KOs at ~4s per batch).
+# Intermediate results are cached to data-raw/.cache/ so the build
+# can be interrupted and resumed without losing progress.
+#
+# Usage:
+#   source("data-raw/build_ko_to_go_reference.R")
+#   build_ko_to_go_reference()               # full build (resumable)
+#   build_ko_to_go_reference(max_kos = 200)  # limited build for testing
 
-# Load required libraries
-library(dplyr)
-library(readr)
-library(httr)
-library(jsonlite)
+source("data-raw/build_utils.R")
 
-# Function to safely make HTTP requests with retry logic
-safe_http_get <- function(url, max_retries = 3, delay = 1) {
-  for (i in 1:max_retries) {
-    tryCatch({
-      response <- GET(url, timeout(30))
-      if (status_code(response) == 200) {
-        return(response)
-      }
-    }, error = function(e) {
-      message(sprintf("Attempt %d failed for URL: %s", i, url))
-      if (i < max_retries) {
-        Sys.sleep(delay * i)  # Exponential backoff
-      }
-    })
-  }
-  return(NULL)
-}
+# =============================================================================
+# Configuration
+# =============================================================================
 
-# Function to parse KEGG entry for GO terms
-parse_kegg_go_terms <- function(kegg_entry) {
-  go_terms <- character(0)
-  
-  # Look for GO terms in DBLINKS section
-  if (grepl("DBLINKS", kegg_entry)) {
-    dblinks_section <- regmatches(kegg_entry, regexpr("DBLINKS.*?(?=\\n[A-Z]|$)", kegg_entry, perl = TRUE))
-    go_matches <- regmatches(dblinks_section, gregexpr("GO: \\d{7}", dblinks_section))[[1]]
-    if (length(go_matches) > 0) {
-      go_terms <- gsub("GO: ", "GO:", go_matches)
+KEGG_BATCH_SIZE    <- 10    # KEGG /get accepts up to 10 entries per request
+KEGG_DELAY         <- 0.4   # seconds between KEGG requests (rate limit)
+QUICKGO_BATCH_SIZE <- 25    # QuickGO comma-separated limit
+QUICKGO_DELAY      <- 0.15  # seconds between QuickGO requests
+MIN_KO_PER_TERM    <- 3     # minimum KO members to include a GO term
+
+# =============================================================================
+# Phase 1: KEGG — Extract GO IDs from KO entry DBLINKS
+# =============================================================================
+
+#' Parse GO IDs from a batch KEGG /get response.
+#' @return Named list: ko_id -> character vector of GO IDs.
+parse_kegg_batch <- function(text) {
+  entries <- strsplit(text, "///")[[1]]
+  results <- list()
+
+  for (entry in entries) {
+    entry <- trimws(entry)
+    if (nchar(entry) == 0) next
+
+    ko_match <- regmatches(entry, regexpr("ENTRY\\s+(K\\d{5})", entry, perl = TRUE))
+    if (length(ko_match) == 0) next
+    ko_id <- sub("ENTRY\\s+", "", ko_match)
+
+    go_line <- regmatches(entry, regexpr("GO:\\s+[0-9 ]+", entry, perl = TRUE))
+    if (length(go_line) == 0) next
+
+    go_nums <- regmatches(go_line, gregexpr("[0-9]{7}", go_line))[[1]]
+    if (length(go_nums) > 0) {
+      results[[ko_id]] <- paste0("GO:", go_nums)
     }
   }
-  
-  return(go_terms)
+  results
 }
 
-# Function to get GO term information
-get_go_term_info <- function(go_id) {
-  # Try to get GO term information from QuickGO API
-  url <- sprintf("https://www.ebi.ac.uk/QuickGO/services/ontology/go/terms/%s", go_id)
-  
-  response <- safe_http_get(url)
-  if (!is.null(response)) {
-    tryCatch({
-      content <- content(response, "text", encoding = "UTF-8")
-      data <- fromJSON(content)
-      
-      if (length(data$results) > 0) {
-        result <- data$results[[1]]
-        return(list(
-          go_id = go_id,
-          go_name = result$name %||% "Unknown",
-          category = switch(result$aspect %||% "P",
-                           "P" = "BP",  # Biological Process
-                           "F" = "MF",  # Molecular Function
-                           "C" = "CC",  # Cellular Component
-                           "BP")
-        ))
-      }
-    }, error = function(e) {
-      message(sprintf("Error parsing GO term %s: %s", go_id, e$message))
-    })
-  }
-  
-  # Fallback: basic categorization based on GO ID ranges
-  go_num <- as.numeric(gsub("GO:", "", go_id))
-  category <- if (go_num >= 3000 & go_num <= 16999) "MF" else 
-              if (go_num >= 5000 & go_num <= 48999) "CC" else "BP"
-  
-  return(list(
-    go_id = go_id,
-    go_name = paste("GO term", go_id),
-    category = category
-  ))
-}
+#' Batch-query KEGG for KO entries, extract GO cross-references.
+#' Uses caching so partial runs can be resumed.
+#' @return Named list: ko_id -> character vector of GO IDs.
+collect_kegg_go_mappings <- function(ko_list) {
+  cache_name <- sprintf("kegg_go_mappings_%d", length(ko_list))
+  cached <- cache_load(cache_name, max_age_hours = 48)
+  if (!is.null(cached)) return(cached)
 
-# Function to get KO list from actual abundance data
-get_relevant_ko_list <- function() {
-  # Load the actual KO abundance data to get relevant KOs
-  tryCatch({
-    data("ko_abundance", package = "ggpicrust2")
-    ko_ids <- ko_abundance[["#NAME"]]
-    # Filter for valid KO format
-    valid_kos <- ko_ids[grepl("^K[0-9]{5}$", ko_ids)]
-    message(sprintf("Found %d valid KO entries in abundance data", length(valid_kos)))
-    return(valid_kos)
-  }, error = function(e) {
-    message("Could not load ko_abundance data, using sample KO list")
-    # Return a sample of common KO IDs
-    return(paste0("K", sprintf("%05d", 1:100)))
-  })
-}
+  n_batches <- ceiling(length(ko_list) / KEGG_BATCH_SIZE)
+  message(sprintf("Querying KEGG for %d KOs in %d batches (~%d min)...",
+                  length(ko_list), n_batches,
+                  ceiling(n_batches * (4 + KEGG_DELAY) / 60)))
 
-# Function to collect KO to GO mappings from KEGG API
-collect_kegg_go_mappings <- function(ko_list = NULL, max_kos = 200) {
-  message("Collecting KO to GO mappings from KEGG API...")
+  all_mappings <- list()
 
-  # Get relevant KO list
-  if (is.null(ko_list)) {
-    ko_list <- get_relevant_ko_list()
-  }
+  for (i in seq_len(n_batches)) {
+    start <- (i - 1) * KEGG_BATCH_SIZE + 1
+    end   <- min(i * KEGG_BATCH_SIZE, length(ko_list))
+    batch <- ko_list[start:end]
 
-  # Limit the number of KOs to process (API rate limiting)
-  if (length(ko_list) > max_kos) {
-    ko_list <- sample(ko_list, max_kos)
-    message(sprintf("Sampling %d KO entries for API efficiency", max_kos))
-  }
-
-  ko_go_mappings <- list()
-  successful_mappings <- 0
-
-  # Progress tracking
-  total_kos <- length(ko_list)
-  message(sprintf("Processing %d KO entries...", total_kos))
-
-  for (i in seq_along(ko_list)) {
-    ko_id <- ko_list[i]
-
-    if (i %% 20 == 0) {
-      message(sprintf("Progress: %d/%d (%.1f%%) - Found %d mappings",
-                      i, total_kos, i/total_kos*100, successful_mappings))
+    if (i %% 25 == 0 || i == n_batches) {
+      show_progress(i, n_batches,
+                    sprintf("%d KOs with GO", length(all_mappings)))
     }
 
-    # Get KO entry details from KEGG
-    ko_url <- sprintf("http://rest.kegg.jp/get/ko:%s", ko_id)
-    ko_response <- safe_http_get(ko_url)
+    url <- sprintf("%s/get/%s", BUILD_CONFIG$kegg_base,
+                   paste(paste0("ko:", batch), collapse = "+"))
+    text <- safe_get(url, as = "text")
 
-    if (!is.null(ko_response)) {
-      ko_entry <- content(ko_response, "text", encoding = "UTF-8")
-      go_terms <- parse_kegg_go_terms(ko_entry)
-
-      if (length(go_terms) > 0) {
-        ko_go_mappings[[ko_id]] <- go_terms
-        successful_mappings <- successful_mappings + 1
-      }
+    if (!is.null(text)) {
+      batch_results <- parse_kegg_batch(text)
+      all_mappings <- c(all_mappings, batch_results)
     }
 
-    # Rate limiting - be respectful to KEGG servers
-    Sys.sleep(0.2)
+    # Save progress every 100 batches
+    if (i %% 100 == 0) {
+      cache_save(all_mappings, cache_name)
+    }
+
+    Sys.sleep(KEGG_DELAY)
   }
 
-  message(sprintf("Successfully collected GO mappings for %d/%d KO entries",
-                  successful_mappings, total_kos))
+  message(sprintf("KEGG: %d/%d KOs have GO cross-references.",
+                  length(all_mappings), length(ko_list)))
 
-  return(ko_go_mappings)
+  cache_save(all_mappings, cache_name)
+  all_mappings
 }
 
-# Function to collect additional mappings from UniProt
-collect_uniprot_go_mappings <- function(ko_list, max_queries = 50) {
-  message("Collecting additional KO-GO mappings from UniProt...")
+# =============================================================================
+# Phase 2: QuickGO — Retrieve GO term names and categories
+# =============================================================================
 
-  # UniProt REST API endpoint
-  base_url <- "https://rest.uniprot.org/uniprotkb/search"
+#' Map QuickGO aspect string to GO category code.
+aspect_to_category <- function(aspect) {
+  switch(aspect,
+         "biological_process"  = "BP",
+         "molecular_function"  = "MF",
+         "cellular_component"  = "CC",
+         NA_character_)
+}
 
-  ko_go_mappings <- list()
+#' Batch-query QuickGO for GO term metadata.
+#' @return data.frame: go_id, go_name, category.
+fetch_go_metadata <- function(go_ids) {
+  cache_name <- sprintf("quickgo_metadata_%d", length(go_ids))
+  cached <- cache_load(cache_name, max_age_hours = 48)
+  if (!is.null(cached)) return(cached)
 
-  # Sample KOs for UniProt queries (more limited due to API complexity)
-  if (length(ko_list) > max_queries) {
-    ko_list <- sample(ko_list, max_queries)
-  }
+  n_batches <- ceiling(length(go_ids) / QUICKGO_BATCH_SIZE)
+  message(sprintf("Querying QuickGO for %d GO terms in %d batches...",
+                  length(go_ids), n_batches))
 
-  for (i in seq_along(ko_list)) {
-    ko_id <- ko_list[i]
+  rows <- vector("list", length(go_ids))
+  idx <- 0
 
-    if (i %% 10 == 0) {
-      message(sprintf("UniProt progress: %d/%d", i, length(ko_list)))
-    }
+  for (i in seq_len(n_batches)) {
+    start <- (i - 1) * QUICKGO_BATCH_SIZE + 1
+    end   <- min(i * QUICKGO_BATCH_SIZE, length(go_ids))
+    batch <- go_ids[start:end]
 
-    # Query UniProt for proteins with this KO annotation
-    query <- sprintf("(xref:ko-%s) AND (reviewed:true)", ko_id)
-    url <- sprintf("%s?query=%s&format=tsv&fields=accession,go_p,go_c,go_f",
-                   base_url, URLencode(query))
+    url <- sprintf("%s/%s", BUILD_CONFIG$quickgo_base,
+                   paste(batch, collapse = ","))
+    data <- safe_get(url, accept = "application/json", as = "parsed")
 
-    response <- safe_http_get(url)
+    if (!is.null(data) && !is.null(data$results)) {
+      for (j in seq_len(nrow(data$results))) {
+        if (isTRUE(data$results$isObsolete[j])) next
+        category <- aspect_to_category(data$results$aspect[j])
+        if (is.na(category)) next
 
-    if (!is.null(response)) {
-      content_text <- content(response, "text", encoding = "UTF-8")
-
-      # Parse UniProt response for GO terms
-      go_terms <- parse_uniprot_go_terms(content_text)
-
-      if (length(go_terms) > 0) {
-        ko_go_mappings[[ko_id]] <- go_terms
+        idx <- idx + 1
+        rows[[idx]] <- data.frame(
+          go_id    = data$results$id[j],
+          go_name  = data$results$name[j],
+          category = category,
+          stringsAsFactors = FALSE
+        )
       }
     }
 
-    # Rate limiting for UniProt
-    Sys.sleep(0.5)
+    Sys.sleep(QUICKGO_DELAY)
   }
 
-  return(ko_go_mappings)
+  go_meta <- do.call(rbind, rows[seq_len(idx)])
+  message(sprintf("QuickGO: metadata for %d/%d terms (excluding obsolete).",
+                  nrow(go_meta), length(go_ids)))
+
+  cache_save(go_meta, cache_name)
+  go_meta
 }
 
-# Function to parse UniProt GO terms
-parse_uniprot_go_terms <- function(uniprot_content) {
-  go_terms <- character(0)
+# =============================================================================
+# Phase 3: Aggregate, validate, save
+# =============================================================================
 
-  tryCatch({
-    lines <- strsplit(uniprot_content, "\n")[[1]]
+#' Aggregate KO-GO mappings and GO metadata into reference format.
+aggregate_reference <- function(ko_go_map, go_meta) {
+  long_df <- do.call(rbind, lapply(names(ko_go_map), function(ko) {
+    data.frame(ko_id = ko, go_id = ko_go_map[[ko]], stringsAsFactors = FALSE)
+  }))
 
-    # Skip header line
-    if (length(lines) > 1) {
-      for (line in lines[-1]) {
-        if (nchar(line) > 0) {
-          fields <- strsplit(line, "\t")[[1]]
+  message(sprintf("Total KO-GO pairs: %d", nrow(long_df)))
+  long_df <- long_df[long_df$go_id %in% go_meta$go_id, ]
 
-          # Extract GO terms from columns (go_p, go_c, go_f)
-          if (length(fields) >= 4) {
-            go_columns <- fields[2:4]  # GO terms columns
+  go_groups <- split(long_df$ko_id, long_df$go_id)
 
-            for (go_col in go_columns) {
-              if (!is.na(go_col) && nchar(go_col) > 0) {
-                # Extract GO IDs from the format "term [GO:1234567]"
-                go_matches <- regmatches(go_col, gregexpr("GO:[0-9]{7}", go_col))[[1]]
-                go_terms <- c(go_terms, go_matches)
-              }
-            }
-          }
-        }
-      }
-    }
-  }, error = function(e) {
-    message(sprintf("Error parsing UniProt content: %s", e$message))
+  rows <- lapply(names(go_groups), function(go_id) {
+    kos <- sort(unique(go_groups[[go_id]]))
+    if (length(kos) < MIN_KO_PER_TERM) return(NULL)
+
+    meta_row <- go_meta[go_meta$go_id == go_id, ][1, ]
+    data.frame(
+      go_id      = go_id,
+      go_name    = meta_row$go_name,
+      category   = meta_row$category,
+      ko_members = paste(kos, collapse = ";"),
+      stringsAsFactors = FALSE
+    )
   })
 
-  return(unique(go_terms))
+  valid_rows <- Filter(Negate(is.null), rows)
+  if (length(valid_rows) == 0) {
+    stop(sprintf("No GO terms have >= %d KO members. Try querying more KOs.",
+                 MIN_KO_PER_TERM), call. = FALSE)
+  }
+
+  ref <- do.call(rbind, valid_rows)
+  rownames(ref) <- NULL
+  ref <- ref[order(as.character(ref$category), as.character(ref$go_id)), ]
+
+  stopifnot(all(grepl("^GO:\\d{7}$", ref$go_id)))
+  stopifnot(all(ref$category %in% c("BP", "MF", "CC")))
+
+  message(sprintf("Kept %d GO terms (>= %d KO members each).", nrow(ref), MIN_KO_PER_TERM))
+  ref
 }
 
-# Function to create scientifically accurate GO reference data
-create_scientific_go_reference <- function() {
-  message("Creating scientifically accurate GO reference data...")
+# =============================================================================
+# Main entry point
+# =============================================================================
 
-  # Load actual KO abundance data to get relevant KOs
+#' Build ko_to_go_reference from authoritative sources.
+#'
+#' @param max_kos Maximum KOs to query (NULL = all). Use 200 for quick testing.
+#' @param use_cache Whether to use cached intermediate results (default TRUE).
+#' @return data.frame: go_id, go_name, category, ko_members (invisible).
+build_ko_to_go_reference <- function(max_kos = NULL, use_cache = TRUE) {
+  message("=== Building ko_to_go_reference ===")
+  message("Sources: KEGG REST API (DBLINKS) + EBI QuickGO\n")
+
+  if (!use_cache) cache_clear()
+
+  # Get KO list from package data
   data("ko_abundance", package = "ggpicrust2")
-  available_kos <- ko_abundance[["#NAME"]]
-  available_kos <- available_kos[grepl("^K[0-9]{5}$", available_kos)]
+  ko_list <- ko_abundance[["#NAME"]]
+  ko_list <- ko_list[grepl("^K[0-9]{5}$", ko_list)]
+  message(sprintf("Found %d valid KO IDs in ko_abundance.", length(ko_list)))
 
-  message(sprintf("Working with %d available KO entries from abundance data", length(available_kos)))
-
-  # Create scientifically curated GO mappings based on KEGG functional classification
-  # This is based on published literature and KEGG pathway classifications
-
-  go_mappings <- list()
-
-  # === BIOLOGICAL PROCESSES (BP) ===
-
-  # Central Carbon Metabolism
-  go_mappings[["GO:0006096"]] <- list(
-    name = "Glycolytic process",
-    category = "BP",
-    kos = intersect(available_kos, c("K00844", "K01810", "K00850", "K01623", "K01803", "K00134", "K00927", "K01834", "K01689", "K00873"))
-  )
-
-  go_mappings[["GO:0006099"]] <- list(
-    name = "Tricarboxylic acid cycle",
-    category = "BP",
-    kos = intersect(available_kos, c("K01902", "K01903", "K00031", "K00164", "K00382", "K01647", "K01681", "K01682", "K00239", "K00240"))
-  )
-
-  go_mappings[["GO:0015980"]] <- list(
-    name = "Energy derivation by oxidation of organic compounds",
-    category = "BP",
-    kos = intersect(available_kos, c("K00164", "K00382", "K00031", "K01902", "K01903", "K01647", "K00239", "K00240", "K00244", "K00245"))
-  )
-
-  go_mappings[["GO:0006091"]] <- list(
-    name = "Generation of precursor metabolites and energy",
-    category = "BP",
-    kos = intersect(available_kos, c("K00844", "K01810", "K00850", "K01623", "K01803", "K00134", "K00927", "K01834", "K01902", "K01903"))
-  )
-
-  # Amino Acid Metabolism
-  go_mappings[["GO:0006520"]] <- list(
-    name = "Cellular amino acid metabolic process",
-    category = "BP",
-    kos = intersect(available_kos, c("K01915", "K00928", "K01914", "K02204", "K00812", "K01776", "K00265", "K00266", "K00261", "K00262"))
-  )
-
-  go_mappings[["GO:0006525"]] <- list(
-    name = "Arginine metabolic process",
-    category = "BP",
-    kos = intersect(available_kos, c("K01478", "K01755", "K00611", "K01940", "K01476", "K00926", "K01484", "K01585"))
-  )
-
-  go_mappings[["GO:0006531"]] <- list(
-    name = "Aspartate metabolic process",
-    category = "BP",
-    kos = intersect(available_kos, c("K00812", "K01914", "K00928", "K01915", "K00265", "K00266", "K01744", "K01745"))
-  )
-
-  # Lipid Metabolism
-  go_mappings[["GO:0006631"]] <- list(
-    name = "Fatty acid metabolic process",
-    category = "BP",
-    kos = intersect(available_kos, c("K00059", "K00625", "K01895", "K07512", "K00626", "K01897", "K00632", "K02372", "K01897", "K00208"))
-  )
-
-  go_mappings[["GO:0008610"]] <- list(
-    name = "Lipid biosynthetic process",
-    category = "BP",
-    kos = intersect(available_kos, c("K00059", "K00625", "K01895", "K07512", "K00626", "K01897", "K00648", "K00655"))
-  )
-
-  # Nucleotide Metabolism
-  go_mappings[["GO:0006163"]] <- list(
-    name = "Purine nucleotide metabolic process",
-    category = "BP",
-    kos = intersect(available_kos, c("K00088", "K00759", "K01756", "K00948", "K01633", "K00939", "K00602", "K00603", "K01951", "K01952"))
-  )
-
-  go_mappings[["GO:0006220"]] <- list(
-    name = "Pyrimidine nucleotide metabolic process",
-    category = "BP",
-    kos = intersect(available_kos, c("K00077", "K00087", "K00384", "K00609", "K00865", "K01489", "K01491", "K01493"))
-  )
-
-  # Stress Response and Environmental Adaptation
-  go_mappings[["GO:0006979"]] <- list(
-    name = "Response to oxidative stress",
-    category = "BP",
-    kos = intersect(available_kos, c("K04068", "K03781", "K00432", "K05919", "K00540", "K03386", "K03387", "K00428", "K03671", "K03672"))
-  )
-
-  go_mappings[["GO:0009314"]] <- list(
-    name = "Response to radiation",
-    category = "BP",
-    kos = intersect(available_kos, c("K03111", "K03575", "K03576", "K03577", "K03578", "K03579", "K04043", "K04044"))
-  )
-
-  go_mappings[["GO:0042594"]] <- list(
-    name = "Response to starvation",
-    category = "BP",
-    kos = intersect(available_kos, c("K07648", "K07649", "K07650", "K07651", "K07652", "K07653", "K07654", "K07655"))
-  )
-
-  # Transport Processes
-  go_mappings[["GO:0006810"]] <- list(
-    name = "Transport",
-    category = "BP",
-    kos = intersect(available_kos, c("K03076", "K05685", "K03327", "K09687", "K03406", "K03088", "K02014", "K02015", "K03282", "K03283"))
-  )
-
-  go_mappings[["GO:0055085"]] <- list(
-    name = "Transmembrane transport",
-    category = "BP",
-    kos = intersect(available_kos, c("K03076", "K05685", "K03327", "K09687", "K03406", "K03088", "K02014", "K02015", "K03282", "K03283"))
-  )
-
-  # Cell Wall and Membrane Processes
-  go_mappings[["GO:0071555"]] <- list(
-    name = "Cell wall organization",
-    category = "BP",
-    kos = intersect(available_kos, c("K01448", "K01449", "K01450", "K01451", "K01452", "K01453", "K01921", "K01922"))
-  )
-
-  go_mappings[["GO:0009252"]] <- list(
-    name = "Peptidoglycan biosynthetic process",
-    category = "BP",
-    kos = intersect(available_kos, c("K01921", "K01922", "K01923", "K01924", "K01925", "K01926", "K02563", "K05364"))
-  )
-
-  # === MOLECULAR FUNCTIONS (MF) ===
-
-  # Enzymatic Activities
-  go_mappings[["GO:0003824"]] <- list(
-    name = "Catalytic activity",
-    category = "MF",
-    kos = intersect(available_kos, c("K00001", "K00002", "K00003", "K00004", "K00005", "K00006", "K00007", "K00008", "K00009", "K00010"))
-  )
-
-  go_mappings[["GO:0016740"]] <- list(
-    name = "Transferase activity",
-    category = "MF",
-    kos = intersect(available_kos, c("K00928", "K01914", "K01915", "K02204", "K00812", "K01776", "K00265", "K00266", "K00261", "K00262"))
-  )
-
-  go_mappings[["GO:0016787"]] <- list(
-    name = "Hydrolase activity",
-    category = "MF",
-    kos = intersect(available_kos, c("K01419", "K08303", "K01273", "K08602", "K01417", "K01362", "K01448", "K01449", "K01450", "K01451"))
-  )
-
-  go_mappings[["GO:0016491"]] <- list(
-    name = "Oxidoreductase activity",
-    category = "MF",
-    kos = intersect(available_kos, c("K00164", "K00382", "K00031", "K01902", "K01903", "K01647", "K00239", "K00240", "K00244", "K00245"))
-  )
-
-  go_mappings[["GO:0016874"]] <- list(
-    name = "Ligase activity",
-    category = "MF",
-    kos = intersect(available_kos, c("K01874", "K01875", "K01876", "K01877", "K01878", "K01879", "K01921", "K01922"))
-  )
-
-  go_mappings[["GO:0016829"]] <- list(
-    name = "Lyase activity",
-    category = "MF",
-    kos = intersect(available_kos, c("K01667", "K01668", "K01669", "K01670", "K01671", "K01672", "K01689", "K01690"))
-  )
-
-  go_mappings[["GO:0016853"]] <- list(
-    name = "Isomerase activity",
-    category = "MF",
-    kos = intersect(available_kos, c("K01803", "K01804", "K01805", "K01806", "K01807", "K01808", "K01809", "K01810"))
-  )
-
-  # Binding Activities
-  go_mappings[["GO:0003677"]] <- list(
-    name = "DNA binding",
-    category = "MF",
-    kos = intersect(available_kos, c("K03040", "K03041", "K03042", "K03043", "K03044", "K03045", "K03046", "K03047"))
-  )
-
-  go_mappings[["GO:0003723"]] <- list(
-    name = "RNA binding",
-    category = "MF",
-    kos = intersect(available_kos, c("K02519", "K02543", "K02992", "K02946", "K02874", "K02878", "K02520", "K02544"))
-  )
-
-  go_mappings[["GO:0043167"]] <- list(
-    name = "Ion binding",
-    category = "MF",
-    kos = intersect(available_kos, c("K01533", "K01534", "K01535", "K01536", "K01537", "K01538", "K01539", "K01540"))
-  )
-
-  go_mappings[["GO:0008289"]] <- list(
-    name = "Lipid binding",
-    category = "MF",
-    kos = intersect(available_kos, c("K00059", "K00625", "K01895", "K07512", "K00626", "K01897", "K00632", "K02372"))
-  )
-
-  # Transport Activities
-  go_mappings[["GO:0005215"]] <- list(
-    name = "Transporter activity",
-    category = "MF",
-    kos = intersect(available_kos, c("K03076", "K05685", "K03327", "K09687", "K03406", "K03088", "K02014", "K02015"))
-  )
-
-  go_mappings[["GO:0022857"]] <- list(
-    name = "Transmembrane transporter activity",
-    category = "MF",
-    kos = intersect(available_kos, c("K03076", "K05685", "K03327", "K09687", "K03406", "K03088", "K02014", "K02015"))
-  )
-
-  # === CELLULAR COMPONENTS (CC) ===
-
-  # Membrane Components
-  go_mappings[["GO:0016020"]] <- list(
-    name = "Membrane",
-    category = "CC",
-    kos = intersect(available_kos, c("K03076", "K05685", "K03327", "K09687", "K03406", "K03088", "K02014", "K02015", "K03282", "K03283"))
-  )
-
-  go_mappings[["GO:0005886"]] <- list(
-    name = "Plasma membrane",
-    category = "CC",
-    kos = intersect(available_kos, c("K03076", "K05685", "K03327", "K09687", "K03406", "K03088", "K02014", "K02015", "K03282", "K03283"))
-  )
-
-  go_mappings[["GO:0009279"]] <- list(
-    name = "Cell outer membrane",
-    category = "CC",
-    kos = intersect(available_kos, c("K03076", "K05685", "K03327", "K09687", "K03406", "K03088", "K02014", "K02015"))
-  )
-
-  go_mappings[["GO:0016021"]] <- list(
-    name = "Integral component of membrane",
-    category = "CC",
-    kos = intersect(available_kos, c("K03076", "K05685", "K03327", "K09687", "K03406", "K03088", "K02014", "K02015"))
-  )
-
-  # Cytoplasmic Components
-  go_mappings[["GO:0005737"]] <- list(
-    name = "Cytoplasm",
-    category = "CC",
-    kos = intersect(available_kos, c("K00134", "K01810", "K00927", "K01623", "K01803", "K00850", "K00844", "K01834", "K01689", "K00873"))
-  )
-
-  go_mappings[["GO:0005829"]] <- list(
-    name = "Cytosol",
-    category = "CC",
-    kos = intersect(available_kos, c("K00164", "K00382", "K00031", "K01902", "K01903", "K01647", "K00239", "K00240"))
-  )
-
-  # Protein Complexes
-  go_mappings[["GO:0005840"]] <- list(
-    name = "Ribosome",
-    category = "CC",
-    kos = intersect(available_kos, c("K02519", "K02543", "K02992", "K02946", "K02874", "K02878", "K02520", "K02544"))
-  )
-
-  go_mappings[["GO:0032991"]] <- list(
-    name = "Protein-containing complex",
-    category = "CC",
-    kos = intersect(available_kos, c("K02519", "K02543", "K02992", "K02946", "K02874", "K02878", "K02520", "K02544"))
-  )
-
-  # Cell Wall Components
-  go_mappings[["GO:0005618"]] <- list(
-    name = "Cell wall",
-    category = "CC",
-    kos = intersect(available_kos, c("K01448", "K01449", "K01450", "K01451", "K01452", "K01453", "K01921", "K01922"))
-  )
-
-  go_mappings[["GO:0030312"]] <- list(
-    name = "External encapsulating structure",
-    category = "CC",
-    kos = intersect(available_kos, c("K01419", "K08303", "K01273", "K08602", "K01417", "K01362", "K01448", "K01449"))
-  )
-
-  # Organelle-like Structures
-  go_mappings[["GO:0044425"]] <- list(
-    name = "Membrane part",
-    category = "CC",
-    kos = intersect(available_kos, c("K03076", "K05685", "K03327", "K09687", "K03406", "K03088", "K02014", "K02015"))
-  )
-
-  go_mappings[["GO:0070013"]] <- list(
-    name = "Intracellular organelle lumen",
-    category = "CC",
-    kos = intersect(available_kos, c("K00134", "K01810", "K00927", "K01623", "K01803", "K00850", "K00844", "K01834"))
-  )
-
-  # Convert to data frame format
-  go_reference <- data.frame(
-    go_id = character(0),
-    go_name = character(0),
-    category = character(0),
-    ko_members = character(0),
-    stringsAsFactors = FALSE
-  )
-
-  for (go_id in names(go_mappings)) {
-    mapping <- go_mappings[[go_id]]
-
-    # Only include if we have at least 3 KOs for this GO term
-    if (length(mapping$kos) >= 3) {
-      ko_string <- paste(mapping$kos, collapse = ";")
-
-      go_reference <- rbind(go_reference, data.frame(
-        go_id = go_id,
-        go_name = mapping$name,
-        category = mapping$category,
-        ko_members = ko_string,
-        stringsAsFactors = FALSE
-      ))
-    }
+  if (!is.null(max_kos) && length(ko_list) > max_kos) {
+    message(sprintf("Limiting to first %d KOs.", max_kos))
+    ko_list <- ko_list[seq_len(max_kos)]
   }
 
-  message(sprintf("Created %d scientifically curated GO mappings", nrow(go_reference)))
+  # Phase 1: KEGG
+  message("\n--- Phase 1: KEGG DBLINKS ---")
+  ko_go_map <- collect_kegg_go_mappings(ko_list)
 
-  return(go_reference)
-}
-
-# Main execution with scientific data collection
-main <- function(use_api = TRUE, max_kos = 100) {
-  message("Starting scientific KO to GO reference data creation...")
-  message("This process collects real biological mappings from multiple databases.")
-
-  ko_to_go_reference <- NULL
-  data_sources <- character(0)
-
-  if (use_api) {
-    tryCatch({
-      # Step 1: Get relevant KO list from abundance data
-      ko_list <- get_relevant_ko_list()
-
-      # Step 2: Collect mappings from KEGG API
-      message("\n=== Phase 1: KEGG API Collection ===")
-      kegg_mappings <- collect_kegg_go_mappings(ko_list, max_kos = max_kos)
-
-      if (length(kegg_mappings) > 0) {
-        message(sprintf("✓ KEGG API: Found %d KO-GO mappings", length(kegg_mappings)))
-        data_sources <- c(data_sources, "KEGG API")
-
-        # Create reference data from KEGG mappings
-        ko_to_go_reference <- create_go_reference_data(kegg_mappings)
-
-        # Step 3: Supplement with UniProt data (optional, smaller sample)
-        message("\n=== Phase 2: UniProt Supplementation ===")
-        uniprot_mappings <- collect_uniprot_go_mappings(ko_list, max_queries = 20)
-
-        if (length(uniprot_mappings) > 0) {
-          message(sprintf("✓ UniProt API: Found %d additional KO-GO mappings", length(uniprot_mappings)))
-          data_sources <- c(data_sources, "UniProt API")
-
-          # Merge UniProt data
-          uniprot_reference <- create_go_reference_data(uniprot_mappings)
-
-          # Combine datasets, avoiding duplicates
-          if (!is.null(ko_to_go_reference) && nrow(ko_to_go_reference) > 0) {
-            new_go_terms <- uniprot_reference[!uniprot_reference$go_id %in% ko_to_go_reference$go_id, ]
-            if (nrow(new_go_terms) > 0) {
-              ko_to_go_reference <- rbind(ko_to_go_reference, new_go_terms)
-            }
-          } else {
-            ko_to_go_reference <- uniprot_reference
-          }
-        }
-      }
-
-    }, error = function(e) {
-      message(sprintf("API collection failed: %s", e$message))
-      ko_to_go_reference <- NULL
-    })
+  if (length(ko_go_map) == 0) {
+    stop("No KO-GO mappings found. Check network connectivity.", call. = FALSE)
   }
 
-  # Step 4: Use scientific curation as primary or supplementary data
-  message("\n=== Phase 3: Scientific Curation ===")
-  scientific_mapping <- create_scientific_go_reference()
+  unique_go_ids <- unique(unlist(ko_go_map, use.names = FALSE))
+  message(sprintf("Unique GO terms to annotate: %d\n", length(unique_go_ids)))
 
-  if (is.null(ko_to_go_reference) || nrow(ko_to_go_reference) < 10) {
-    message("Using scientifically curated mapping as primary data...")
-    ko_to_go_reference <- scientific_mapping
-    data_sources <- c(data_sources, "Scientific Curation")
-  } else {
-    # Supplement API data with scientific curation
-    scientific_supplement <- scientific_mapping[!scientific_mapping$go_id %in% ko_to_go_reference$go_id, ]
-    if (nrow(scientific_supplement) > 0) {
-      ko_to_go_reference <- rbind(ko_to_go_reference, scientific_supplement)
-      data_sources <- c(data_sources, "Scientific Curation (Supplement)")
-    }
+  # Phase 2: QuickGO
+  message("--- Phase 2: QuickGO metadata ---")
+  go_meta <- fetch_go_metadata(unique_go_ids)
+
+  if (is.null(go_meta) || nrow(go_meta) == 0) {
+    stop("No GO metadata retrieved. Check network connectivity.", call. = FALSE)
   }
 
-  # Step 5: Add enhanced basic mapping for additional coverage
-  message("\n=== Phase 4: Enhanced Basic Mapping Supplement ===")
-  source("R/pathway_gsea.R")
-  basic_mapping <- create_basic_go_mapping()
+  # Phase 3: Aggregate
+  message("\n--- Phase 3: Aggregate and validate ---")
+  ko_to_go_reference <- aggregate_reference(ko_go_map, go_meta)
 
-  # Add basic mapping terms not covered by scientific curation
-  basic_supplement <- basic_mapping[!basic_mapping$go_id %in% ko_to_go_reference$go_id, ]
-  if (nrow(basic_supplement) > 0) {
-    ko_to_go_reference <- rbind(ko_to_go_reference, basic_supplement)
-    data_sources <- c(data_sources, "Enhanced Basic Mapping")
-    message(sprintf("Added %d additional GO terms from enhanced basic mapping", nrow(basic_supplement)))
-  }
-
-  # Step 5: Data quality validation and enhancement
-  message("\n=== Phase 4: Data Quality Validation ===")
-  ko_to_go_reference <- validate_and_enhance_go_data(ko_to_go_reference)
-
-  # Add comprehensive metadata
+  # Metadata
   attr(ko_to_go_reference, "creation_date") <- Sys.Date()
-  attr(ko_to_go_reference, "data_sources") <- paste(data_sources, collapse = " + ")
-  attr(ko_to_go_reference, "version") <- "2.0"
-  attr(ko_to_go_reference, "collection_method") <- "Scientific API + Curated"
-  attr(ko_to_go_reference, "total_kos_processed") <- max_kos
+  attr(ko_to_go_reference, "data_sources") <- "KEGG REST API (DBLINKS) + EBI QuickGO"
+  attr(ko_to_go_reference, "version") <- "3.0"
+  attr(ko_to_go_reference, "total_kos_queried") <- length(ko_list)
+  attr(ko_to_go_reference, "min_ko_per_term") <- MIN_KO_PER_TERM
 
-  # Save the data
-  save(ko_to_go_reference, file = "data/ko_to_go_reference.rda")
+  validate_reference(ko_to_go_reference,
+                     c("go_id", "go_name", "category", "ko_members"),
+                     "ko_to_go_reference")
+  save_reference(ko_to_go_reference, "ko_to_go_reference")
 
-  # Report results
-  message("\n=== Final Results ===")
-  message(sprintf("✓ Successfully created ko_to_go_reference with %d GO terms", nrow(ko_to_go_reference)))
-  message(sprintf("  - BP: %d terms", sum(ko_to_go_reference$category == "BP")))
-  message(sprintf("  - MF: %d terms", sum(ko_to_go_reference$category == "MF")))
-  message(sprintf("  - CC: %d terms", sum(ko_to_go_reference$category == "CC")))
-  message(sprintf("  - Data sources: %s", paste(data_sources, collapse = " + ")))
-  message("✓ Data saved to data/ko_to_go_reference.rda")
+  # Report
+  cat_counts <- as.integer(table(factor(ko_to_go_reference$category,
+                                        levels = c("BP", "MF", "CC"))))
+  ko_counts <- sapply(strsplit(ko_to_go_reference$ko_members, ";"), length)
+  message(sprintf("\n=== Results ==="))
+  message(sprintf("GO terms: %d (BP: %d, MF: %d, CC: %d)",
+                  nrow(ko_to_go_reference),
+                  cat_counts[1], cat_counts[2], cat_counts[3]))
+  message(sprintf("KO members per term: min=%d, median=%.0f, max=%d",
+                  min(ko_counts), median(ko_counts), max(ko_counts)))
 
-  return(ko_to_go_reference)
-}
-
-# Function to validate and enhance GO data quality
-validate_and_enhance_go_data <- function(go_data) {
-  message("Validating and enhancing GO data quality...")
-
-  # Remove duplicates
-  go_data <- go_data[!duplicated(go_data$go_id), ]
-
-  # Validate GO ID format
-  valid_go_ids <- grepl("^GO:[0-9]{7}$", go_data$go_id)
-  if (any(!valid_go_ids)) {
-    message(sprintf("Removing %d invalid GO IDs", sum(!valid_go_ids)))
-    go_data <- go_data[valid_go_ids, ]
-  }
-
-  # Validate KO members format
-  valid_ko_members <- sapply(go_data$ko_members, function(x) {
-    kos <- strsplit(x, ";")[[1]]
-    all(grepl("^K[0-9]{5}$", kos))
-  })
-
-  if (any(!valid_ko_members)) {
-    message(sprintf("Fixing %d entries with invalid KO formats", sum(!valid_ko_members)))
-    # Could implement KO format fixing here
-  }
-
-  # Ensure reasonable KO set sizes (remove very small or very large sets)
-  ko_set_sizes <- sapply(go_data$ko_members, function(x) length(strsplit(x, ";")[[1]]))
-  reasonable_sizes <- ko_set_sizes >= 3 & ko_set_sizes <= 100
-
-  if (any(!reasonable_sizes)) {
-    message(sprintf("Filtering %d GO terms with unreasonable KO set sizes", sum(!reasonable_sizes)))
-    go_data <- go_data[reasonable_sizes, ]
-  }
-
-  message(sprintf("✓ Data validation complete. Final dataset: %d GO terms", nrow(go_data)))
-
-  return(go_data)
-}
-
-# Helper function for null coalescing
-`%||%` <- function(x, y) if (is.null(x)) y else x
-
-# Run the main function if script is executed directly
-if (!interactive()) {
-  main()
+  invisible(ko_to_go_reference)
 }

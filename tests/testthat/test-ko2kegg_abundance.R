@@ -39,16 +39,16 @@ test_that("ko2kegg_abundance handles file input correctly", {
 
 test_that("ko2kegg_abundance throws appropriate errors", {
   expect_error(ko2kegg_abundance(), "Please provide either a file or a data.frame")
-  expect_error(ko2kegg_abundance(file = "test.pdf"), "Input file should be in .txt, .tsv, .csv format")
+  expect_error(ko2kegg_abundance(file = "test.pdf"), "File does not exist")
   expect_error(ko2kegg_abundance(data = list(a = 1)), "must be a data.frame")
 
   # Negative values
   negative_data <- data.frame(function. = c("K00001"), Sample1 = c(-1), stringsAsFactors = FALSE)
-  expect_error(ko2kegg_abundance(data = negative_data), "Negative abundance values")
+  expect_error(ko2kegg_abundance(data = negative_data), "Negative values")
 
   # Non-numeric columns
   non_numeric <- data.frame(function. = c("K00001"), Sample1 = c("text"), stringsAsFactors = FALSE)
-  expect_error(ko2kegg_abundance(data = non_numeric), "non-numeric values")
+  expect_error(ko2kegg_abundance(data = non_numeric), "non-numeric")
 })
 
 test_that("ko2kegg_abundance preserves sample names and removes zero pathways", {

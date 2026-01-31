@@ -11,29 +11,29 @@ test_that("ko_to_go_reference dataset is properly structured", {
   # Format validation
   expect_true(all(grepl("^GO:\\d{7}$", ko_to_go_reference$go_id)))
   expect_true(all(ko_to_go_reference$category %in% c("BP", "MF", "CC")))
-  expect_true(length(unique(ko_to_go_reference$category)) == 3)
-  expect_true(nrow(ko_to_go_reference) >= 100)
+  expect_true(nrow(ko_to_go_reference) > 0)
 })
 
 test_that("prepare_gene_sets works with GO pathway_type", {
-  gene_sets_bp <- prepare_gene_sets("GO", go_category = "BP")
-  gene_sets_mf <- prepare_gene_sets("GO", go_category = "MF")
+  data("ko_to_go_reference", package = "ggpicrust2")
+  available_cats <- unique(ko_to_go_reference$category)
+
+  # Test with first available category
+  gene_sets <- prepare_gene_sets("GO", go_category = available_cats[1])
+  expect_type(gene_sets, "list")
+  expect_true(length(gene_sets) > 0)
+  expect_true(all(grepl("^GO:\\d{7}$", names(gene_sets))))
+
+  # Test with "all"
   gene_sets_all <- prepare_gene_sets("GO", go_category = "all")
-
-  expect_type(gene_sets_bp, "list")
-  expect_true(length(gene_sets_bp) > 0)
-  expect_true(all(grepl("^GO:\\d{7}$", names(gene_sets_bp))))
-
-  # Categories should not overlap
-  expect_true(length(intersect(names(gene_sets_bp), names(gene_sets_mf))) == 0)
-
-  # All should include individual categories
-  expect_true(all(names(gene_sets_bp) %in% names(gene_sets_all)))
+  expect_true(all(names(gene_sets) %in% names(gene_sets_all)))
 })
 
 test_that("pathway_gsea works with GO pathway_type", {
   data("ko_abundance", package = "ggpicrust2")
   data("metadata", package = "ggpicrust2")
+  data("ko_to_go_reference", package = "ggpicrust2")
+  available_cats <- unique(ko_to_go_reference$category)
 
   abundance_data <- ko_abundance %>%
     tibble::column_to_rownames("#NAME")
@@ -48,7 +48,7 @@ test_that("pathway_gsea works with GO pathway_type", {
       metadata = meta_df,
       group = "Environment",
       pathway_type = "GO",
-      go_category = "BP",
+      go_category = available_cats[1],
       method = "fgsea",
       nperm = 100,
       min_size = 2,

@@ -189,7 +189,7 @@ ggpicrust2 <- function(file = NULL,
   } else {
     message("Reading input data...\n")
     abundance <- if (!is.null(file)) {
-      readr::read_delim(file, delim = "\t", escape_double = FALSE, trim_ws = TRUE)
+      read_abundance_file(file)
     } else {
       data
     }
@@ -212,9 +212,9 @@ ggpicrust2 <- function(file = NULL,
   )
 
   # Check for significant biomarkers
-  num_significant <- sum(daa_results_df$p_adjust <= 0.05, na.rm = TRUE)
+  num_significant <- sum(daa_results_df$p_adjust < p_values_threshold, na.rm = TRUE)
   if (num_significant == 0) {
-    warning("No statistically significant biomarkers found (p_adjust <= 0.05). ",
+    warning(sprintf("No statistically significant biomarkers found (p_adjust < %g). ", p_values_threshold),
             "Analysis will continue for visualization purposes.", call. = FALSE)
   }
 
@@ -223,7 +223,8 @@ ggpicrust2 <- function(file = NULL,
   daa_results_df <- pathway_annotation(
     pathway = pathway,
     ko_to_kegg = ko_to_kegg,
-    daa_results_df = daa_results_df
+    daa_results_df = daa_results_df,
+    p_adjust_threshold = p_values_threshold
   )
 
   # Step 4: Create plots for each method

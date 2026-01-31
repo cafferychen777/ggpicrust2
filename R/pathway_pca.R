@@ -11,11 +11,9 @@
 #'        Values must be numeric and cannot contain missing values (NA).
 #'
 #' @param metadata A data frame containing sample information.
-#'        Must include:
-#'        \itemize{
-#'          \item A column named "sample_name" matching the column names in abundance
-#'          \item A column for grouping samples (specified by the 'group' parameter)
-#'        }
+#'        Must include a column for grouping samples (specified by the 'group' parameter).
+#'        Sample identifiers are auto-detected from columns named sample_name, Sample_ID,
+#'        SampleID, etc., or from rownames.
 #'
 #' @param group A character string specifying the column name in metadata that contains
 #'        group information for samples (e.g., "treatment", "condition", "group").
@@ -35,14 +33,9 @@
 #'        }
 #'
 #' @details
-#' The function performs several validations on input data:
-#' \itemize{
-#'   \item Abundance matrix must have at least 2 pathways and 3 samples
-#'   \item All values in abundance matrix must be numeric
-#'   \item Sample names must match between abundance and metadata
-#'   \item Group column must exist in metadata
-#'   \item If custom colors are provided, they must be valid color names or codes
-#' }
+#' The function automatically aligns samples between abundance data and metadata,
+#' supporting various sample identifier formats. Samples and pathways with zero
+#' variance are filtered before PCA.
 #'
 #' @examples
 #' # Create example abundance data
@@ -110,102 +103,73 @@ pathway_pca <- function(abundance,
                         group,
                         colors = NULL,
                         show_marginal = TRUE) {
-  # Input validation
-  # Check if inputs are missing
-  if (missing(abundance)) {
-    stop("Abundance matrix is required")
+  # Input validation using unified functions
+  validate_abundance(abundance, min_samples = 3)
+  validate_metadata(metadata)
+  validate_group(metadata, group, min_groups = 1)
+
+  # Align samples between abundance and metadata
+  aligned <- align_samples(abundance, metadata)
+  abundance <- as.matrix(aligned$abundance)
+  metadata <- aligned$metadata
+
+  if (aligned$n_samples < 3) {
+    stop(sprintf("PCA requires at least 3 matching samples, found %d", aligned$n_samples))
   }
-  if (missing(metadata)) {
-    stop("Metadata is required")
-  }
-  if (missing(group)) {
-    stop("Group variable name is required")
-  }
-  
-  # Check abundance matrix
-  if (!is.matrix(abundance) && !is.data.frame(abundance)) {
-    stop("Abundance must be a matrix or data frame")
+
+  # PCA-specific: require complete numeric data
+  if (!is.numeric(abundance)) {
+    stop("Abundance data must contain only numeric values")
   }
   if (any(is.na(abundance))) {
-    stop("Abundance matrix contains missing values (NA)")
-  }
-  if (!all(apply(abundance, 2, is.numeric))) {
-    stop("Abundance matrix must contain only numeric values")
+    stop("Abundance matrix contains missing values (NA). PCA requires complete data.")
   }
   if (nrow(abundance) < 2) {
-    stop("Abundance matrix must contain at least 2 pathways")
+    stop("PCA requires at least 2 pathways (rows)")
   }
-  if (ncol(abundance) < 3) {
-    stop("Abundance matrix must contain at least 3 samples")
-  }
-  
-  # Filter out columns (samples) with zero variance
+
+  # Filter out samples with zero variance
   sample_var <- apply(abundance, 2, var)
   zero_var_samples <- sample_var == 0
   if (any(zero_var_samples)) {
     warning(paste("Removing", sum(zero_var_samples), "sample(s) with zero variance"))
     abundance <- abundance[, !zero_var_samples, drop = FALSE]
-    # Update metadata to match remaining samples
-    metadata <- metadata[metadata$sample_name %in% colnames(abundance), ]
+    metadata <- metadata[!zero_var_samples, , drop = FALSE]
   }
-  
-  # Filter out rows (pathways) with zero variance
+
+  # Filter out pathways with zero variance
   pathway_var <- apply(abundance, 1, var)
   zero_var_pathways <- pathway_var == 0
   if (any(zero_var_pathways)) {
     warning(paste("Removing", sum(zero_var_pathways), "pathway(s) with zero variance"))
     abundance <- abundance[!zero_var_pathways, , drop = FALSE]
   }
-  
-  # Check if we still have enough data after filtering
+
+  # Post-filter dimension checks
   if (nrow(abundance) < 2) {
     stop("After filtering, less than 2 pathways remain. PCA requires at least 2 pathways.")
   }
   if (ncol(abundance) < 3) {
     stop("After filtering, less than 3 samples remain. PCA requires at least 3 samples.")
   }
-  
-  # Check metadata
-  if (!is.data.frame(metadata)) {
-    stop("Metadata must be a data frame")
+
+  # Convert group to factor if needed
+  if (!is.factor(metadata[[group]])) {
+    metadata[[group]] <- factor(metadata[[group]])
   }
-  if (!"sample_name" %in% colnames(metadata)) {
-    stop("Metadata must contain a 'sample_name' column")
-  }
-  if (!group %in% colnames(metadata)) {
-    stop(sprintf("Group column '%s' not found in metadata", group))
-  }
-  
-  # Check sample names match
-  if (length(unique(metadata$sample_name)) != ncol(abundance)) {
-    stop("Number of unique samples in metadata does not match abundance matrix")
-  }
-  if (!all(colnames(abundance) %in% metadata$sample_name)) {
-    stop("Some sample names in abundance matrix are not found in metadata")
-  }
-  
-  # Check group variable
-  group_values <- metadata[[group]]
-  if (length(unique(group_values)) < 1) {
-    stop("Group variable must have at least one level")
-  }
-  if (!is.factor(group_values)) {
-    warning("Converting group variable to factor")
-    metadata[[group]] <- factor(group_values)
-  }
-  
-  # Check colors if provided
+
+  # Validate colors if provided
   if (!is.null(colors)) {
-    if (!is.vector(colors) || !is.character(colors)) {
-      stop("Colors must be provided as a character vector")
+    n_groups <- length(levels(metadata[[group]]))
+    if (!is.character(colors)) {
+      stop("Colors must be a character vector")
     }
     if (!all(sapply(colors, function(x) tryCatch(is.matrix(col2rgb(x)), error = function(e) FALSE)))) {
       stop("Invalid color names provided")
     }
-    levels <- length(levels(factor(metadata[[group]])))
-    if (length(colors) != levels) {
-      stop(sprintf("Number of colors (%d) does not match number of groups (%d)", 
-                  length(colors), levels))
+    if (length(colors) != n_groups) {
+      stop(sprintf("Number of colors (%d) does not match number of groups (%d)",
+                   length(colors), n_groups))
     }
   }
 

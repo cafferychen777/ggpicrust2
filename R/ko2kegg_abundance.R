@@ -101,26 +101,15 @@ ko2kegg_abundance <- function (file = NULL, data = NULL, method = c("abundance",
 
   # Load data from file or use provided data
   if (!is.null(file)) {
-    # Validate file path
-    if (!is.character(file) || length(file) != 1) {
-      stop("'file' must be a file path string. Use 'data' parameter for data frames.")
-    }
-    ext <- tolower(tools::file_ext(file))
-    if (!ext %in% c("txt", "tsv", "csv")) {
-      stop("Input file must be .txt, .tsv, or .csv format")
-    }
-    delim <- if (ext == "csv") "," else "\t"
-    abundance <- readr::read_delim(file, delim = delim, show_col_types = FALSE)
+    abundance <- read_abundance_file(file)
   } else {
     if (!is.data.frame(data)) {
       stop("'data' must be a data.frame")
     }
     abundance <- data
-  }
-
-  # Basic structure validation
-  if (ncol(abundance) < 2) {
-    stop("Data must have at least 2 columns (KO IDs and samples)")
+    if (ncol(abundance) < 2) {
+      stop("Data must have at least 2 columns (KO IDs and samples)")
+    }
   }
 
   # Standardize first column name (PICRUSt2 uses various formats)
@@ -185,11 +174,8 @@ ko2kegg_abundance <- function (file = NULL, data = NULL, method = c("abundance",
     row.names = all_pathways  # Set pathways as row names
   )
 
-  # Add columns for each sample
   sample_names <- colnames(abundance)[-1]
-  for (sample in sample_names) {
-    kegg_abundance[[sample]] <- 0
-  }
+  kegg_abundance[sample_names] <- 0
 
   # Calculate pathway abundances with progress bar
   pb <- txtProgressBar(min = 0, max = nrow(kegg_abundance), style = 3)
@@ -207,11 +193,10 @@ ko2kegg_abundance <- function (file = NULL, data = NULL, method = c("abundance",
       } else {
         # PICRUSt2-style: upper-half mean
         ko_abundances <- as.matrix(abundance[matching_rows, -1, drop = FALSE])
-        for (j in seq_along(sample_names)) {
-          sorted_abun <- sort(ko_abundances[, j])
-          half_i <- ceiling(length(sorted_abun) / 2)
-          kegg_abundance[i, j] <- mean(sorted_abun[half_i:length(sorted_abun)])
-        }
+        kegg_abundance[i, ] <- apply(ko_abundances, 2, function(col) {
+          sorted_col <- sort(col)
+          mean(sorted_col[ceiling(length(sorted_col) / 2):length(sorted_col)])
+        })
       }
     }
   }

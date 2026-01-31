@@ -542,7 +542,7 @@ perform_aldex2_analysis <- function(abundance_mat, Group, Level, length_Level, i
 perform_deseq2_analysis <- function(abundance_mat, metadata, group, Level) {
   counts <- round(as.matrix(abundance_mat))
   
-  # 确保 group 是因子类型
+  # Ensure group column is a factor
   metadata[[group]] <- factor(metadata[[group]], levels = Level)
   
   # Create DESeqDataSet object
