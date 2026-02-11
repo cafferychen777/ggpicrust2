@@ -28,32 +28,36 @@ using different methods in `pathway_daa` from the `ggpicrust2` package. It creat
 different features identified by each method, and the features themselves.
 }
 \examples{
-\donttest{
-library(magrittr)
-library(ggpicrust2)
-library(tibble)
-data("metacyc_abundance")
-data("metadata")
+# Minimal DAA-like results from three methods (no external dependencies required)
+deseq2_df <- data.frame(
+  feature = c("ko00010", "ko00020", "ko00564"),
+  group1 = c("A", "A", "A"),
+  group2 = c("B", "B", "B"),
+  p_adjust = c(0.01, 0.20, 0.03),
+  stringsAsFactors = FALSE
+)
 
-# Run pathway_daa function for multiple methods
-methods <- c("DESeq2", "edgeR","Maaslin2")
-daa_results_list <- lapply(methods, function(method) {
-pathway_daa(abundance = metacyc_abundance \%>\% column_to_rownames("pathway"),
-metadata = metadata, group = "Environment", daa_method = method)
-})
+edgeR_df <- data.frame(
+  feature = c("ko00010", "ko00680", "ko00564"),
+  group1 = c("A", "A", "A"),
+  group2 = c("B", "B", "B"),
+  p_adjust = c(0.02, 0.04, 0.01),
+  stringsAsFactors = FALSE
+)
 
-names(daa_results_list) <- methods
-# Correct Maaslin2 feature names by replacing dots with hyphens.
-# Note: When using Maaslin2 as the differential abundance analysis method,
-# it modifies the original feature names by replacing hyphens (-) with dots (.).
-# This replacement can cause inconsistencies when trying to compare results from Maaslin2
-# with those from other methods that do not modify feature names.
-# Therefore, this line of code reverses that replacement, converting the dots back into
-# hyphens for accurate and consistent comparisons across different methods.
-daa_results_list[["Maaslin2"]]$feature <- gsub("\\\\.", "-", daa_results_list[["Maaslin2"]]$feature)
+maaslin2_df <- data.frame(
+  feature = c("ko00010", "ko03030", "ko00564"),
+  group1 = c("A", "A", "A"),
+  group2 = c("B", "B", "B"),
+  p_adjust = c(0.03, 0.02, 0.04),
+  stringsAsFactors = FALSE
+)
 
-# Compare results across different methods
-comparison_results <- compare_daa_results(daa_results_list = daa_results_list,
-method_names = c("DESeq2", "edgeR", "Maaslin2"))
-}
+daa_results_list <- list(DESeq2 = deseq2_df, edgeR = edgeR_df, Maaslin2 = maaslin2_df)
+comparison_results <- compare_daa_results(
+  daa_results_list = daa_results_list,
+  method_names = c("DESeq2", "edgeR", "Maaslin2"),
+  p_values_threshold = 0.05
+)
+comparison_results
 }

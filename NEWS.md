@@ -1,3 +1,12 @@
+# ggpicrust2 2.5.9
+
+## Bug Fixes
+
+* Refactored `compare_daa_results()` examples to use minimal in-memory DAA-like
+  result tables instead of running external method pipelines.
+* Removed hard dependency on optional method packages in examples (notably
+  `Maaslin2`) so CRAN special `donttest` checks can run without failing.
+
 # ggpicrust2 2.5.8
 
 ## Bug Fixes
