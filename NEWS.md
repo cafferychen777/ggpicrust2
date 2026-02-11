@@ -1,3 +1,12 @@
+# ggpicrust2 2.5.7
+
+## Bug Fixes
+
+* Added a regression test for `pathway_errorbar()` to explicitly cover the
+  `ko_to_kegg = TRUE` + `order = "pathway_class"` path.
+* This guards against reintroducing the historical
+  `tibble::column_to_rownames()` / `Can't find column '.'` failure mode.
+
 # ggpicrust2 2.5.6
 
 ## Breaking Changes

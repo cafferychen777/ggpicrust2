@@ -146,6 +146,30 @@ test_that("pathway_errorbar handles different ordering options", {
   )
 })
 
+test_that("pathway_errorbar regression: ko_to_kegg TRUE with pathway_class order", {
+  td <- create_errorbar_test_data(
+    n_features = 6,
+    p_adjust = c(0.001, 0.002, 0.003, 0.004, 0.005, 0.006)
+  )
+  td$daa_results_df$pathway_class <- c("Class2", "Class1", "Class2", "Class1", "Class3", "Class3")
+
+  # Regression guard for Issue #177/#196 path:
+  # ko_to_kegg=TRUE + order='pathway_class' used to fail with
+  # `tibble::column_to_rownames()` / "Can't find column `.`".
+  expect_error(
+    pathway_errorbar(
+      abundance = td$abundance,
+      daa_results_df = td$daa_results_df,
+      Group = td$Group,
+      ko_to_kegg = TRUE,
+      order = "pathway_class",
+      p_values_threshold = 0.05,
+      x_lab = "pathway_name"
+    ),
+    NA
+  )
+})
+
 test_that("pathway_errorbar handles p_value_bar parameter correctly", {
   td <- create_errorbar_test_data()
 
