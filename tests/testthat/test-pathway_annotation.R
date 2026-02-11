@@ -51,6 +51,31 @@ test_that("pathway_annotation works with ko_to_kegg", {
   expect_true(all(c("pathway_name", "pathway_class") %in% colnames(result)))
 })
 
+test_that("pathway_annotation fills description/class/map for pathway IDs with ko_to_kegg", {
+  skip_if(
+    Sys.getenv("GGPICRUST2_RUN_NETWORK_TESTS", "false") != "true",
+    "Set GGPICRUST2_RUN_NETWORK_TESTS=true to run network-dependent KEGG tests."
+  )
+  skip_if_offline()
+
+  # KEGG pathway IDs from typical ko2kegg_abundance output
+  test_daa_df <- data.frame(
+    feature = c("ko05340", "ko00564"),
+    p_adjust = c(0.01, 0.02),
+    stringsAsFactors = FALSE
+  )
+
+  result <- suppressMessages(pathway_annotation(pathway = "KO", daa_results_df = test_daa_df, ko_to_kegg = TRUE))
+
+  expect_s3_class(result, "data.frame")
+  expect_true(all(c("pathway_name", "pathway_description", "pathway_class", "pathway_map") %in% colnames(result)))
+  # pathway_description is optional for some pathway entries in KEGG;
+  # regression check is that it is no longer uniformly NA.
+  expect_true(any(!is.na(result$pathway_description)))
+  expect_true(any(!is.na(result$pathway_class)))
+  expect_true(any(!is.na(result$pathway_map)))
+})
+
 test_that("pathway_annotation works with all pathway types", {
   # Each annotator gets its own correctly-typed features
   ko_df <- data.frame(feature = c("K00001", "K00002"), p_adjust = c(.04, .03), stringsAsFactors = FALSE)

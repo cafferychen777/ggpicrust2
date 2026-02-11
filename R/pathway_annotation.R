@@ -277,11 +277,16 @@ process_kegg_annotations <- function(df, organism = NULL, p_adjust_threshold = 0
     if (!is.null(entry) && length(entry) > 0) {
       filtered_df$pathway_name[i] <- safe_extract(entry[[1]], "NAME", 1)
 
-      # Use PATHWAY field for pathway_description (contains pathway names)
-      if("PATHWAY" %in% names(entry[[1]]) && !is.null(entry[[1]][["PATHWAY"]]) && length(entry[[1]][["PATHWAY"]]) > 0) {
-        # Extract pathway names (values) and combine them
+      # Prefer PATHWAY (KO entries); fall back to DESCRIPTION (pathway entries).
+      if ("PATHWAY" %in% names(entry[[1]]) &&
+          !is.null(entry[[1]][["PATHWAY"]]) &&
+          length(entry[[1]][["PATHWAY"]]) > 0) {
         pathway_names <- as.character(entry[[1]][["PATHWAY"]])
         filtered_df$pathway_description[i] <- paste(pathway_names, collapse = "; ")
+      } else if ("DESCRIPTION" %in% names(entry[[1]]) &&
+                 !is.null(entry[[1]][["DESCRIPTION"]]) &&
+                 length(entry[[1]][["DESCRIPTION"]]) > 0) {
+        filtered_df$pathway_description[i] <- paste(as.character(entry[[1]][["DESCRIPTION"]]), collapse = "; ")
       } else {
         filtered_df$pathway_description[i] <- NA_character_
       }
