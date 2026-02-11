@@ -80,15 +80,13 @@ test_that("pathway_errorbar handles missing annotations", {
   td <- create_errorbar_test_data(n_features = 2, p_adjust = c(0.01, 0.02))
   td$daa_results_df$pathway_name <- c(NA, "Pathway 2")
 
-  expect_message(
-    pathway_errorbar(
-      abundance = td$abundance,
-      daa_results_df = td$daa_results_df,
-      Group = td$Group,
-      x_lab = "pathway_name"
-    ),
-    "pathways with missing annotations"
+  p <- pathway_errorbar(
+    abundance = td$abundance,
+    daa_results_df = td$daa_results_df,
+    Group = td$Group,
+    x_lab = "pathway_name"
   )
+  expect_s3_class(p, "patchwork")
 })
 
 test_that("pathway_errorbar handles too many features", {
@@ -161,6 +159,30 @@ test_that("pathway_errorbar regression: ko_to_kegg TRUE with pathway_class order
       abundance = td$abundance,
       daa_results_df = td$daa_results_df,
       Group = td$Group,
+      ko_to_kegg = TRUE,
+      order = "pathway_class",
+      p_values_threshold = 0.05,
+      x_lab = "pathway_name"
+    ),
+    NA
+  )
+})
+
+test_that("pathway_errorbar aligns Group by names when provided", {
+  td <- create_errorbar_test_data(
+    n_features = 4,
+    p_adjust = c(0.001, 0.002, 0.003, 0.004)
+  )
+  td$daa_results_df$pathway_class <- c("Class1", "Class1", "Class2", "Class2")
+
+  # Intentionally shuffle Group order but keep sample names.
+  shuffled_group <- td$Group[c(10, 9, 8, 7, 6, 5, 4, 3, 2, 1)]
+
+  expect_error(
+    pathway_errorbar(
+      abundance = td$abundance,
+      daa_results_df = td$daa_results_df,
+      Group = shuffled_group,
       ko_to_kegg = TRUE,
       order = "pathway_class",
       p_values_threshold = 0.05,

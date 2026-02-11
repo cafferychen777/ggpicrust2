@@ -33,6 +33,10 @@ test_that("pathway_annotation works with daa_results_df input", {
 })
 
 test_that("pathway_annotation works with ko_to_kegg", {
+  skip_if(
+    Sys.getenv("GGPICRUST2_RUN_NETWORK_TESTS", "false") != "true",
+    "Set GGPICRUST2_RUN_NETWORK_TESTS=true to run network-dependent KEGG tests."
+  )
   skip_if_offline()
 
   test_daa_df <- data.frame(

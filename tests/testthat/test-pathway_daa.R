@@ -65,7 +65,7 @@ test_that("pathway_daa validates inputs correctly", {
   )
 })
 
-test_that("pathway_daa methods produce expected results", {
+test_that("pathway_daa core methods produce expected results", {
   n_samples <- 10
   n_features <- 3
 
@@ -81,8 +81,9 @@ test_that("pathway_daa methods produce expected results", {
     group = rep(c("control", "treatment"), each = n_samples / 2)
   )
 
-  for (method in c("ALDEx2", "DESeq2", "limma voom", "edgeR", "metagenomeSeq", "LinDA", "Maaslin2")) {
-    result <- pathway_daa(abundance, metadata, "group", daa_method = method)
+  core_methods <- c("ALDEx2", "limma voom", "edgeR")
+  for (method in core_methods) {
+    result <- suppressWarnings(pathway_daa(abundance, metadata, "group", daa_method = method))
 
     expect_true(is.data.frame(result))
     expect_true(all(c("feature", "method", "p_values") %in% colnames(result)))
@@ -94,6 +95,48 @@ test_that("pathway_daa methods produce expected results", {
     }
 
     expect_true(all(result$p_values >= 0 & result$p_values <= 1))
+  }
+})
+
+test_that("pathway_daa extended methods run when explicitly enabled", {
+  skip_if(
+    Sys.getenv("GGPICRUST2_RUN_EXTENDED_DAA_TESTS", "false") != "true",
+    "Set GGPICRUST2_RUN_EXTENDED_DAA_TESTS=true to run extended DAA method tests."
+  )
+
+  n_samples <- 10
+  n_features <- 3
+  set.seed(123)
+  abundance <- as.data.frame(matrix(
+    rpois(n_samples * n_features, lambda = 20),
+    nrow = n_features, ncol = n_samples,
+    dimnames = list(paste0("pathway", 1:n_features), paste0("sample", 1:n_samples))
+  ))
+  metadata <- data.frame(
+    sample = paste0("sample", 1:n_samples),
+    group = rep(c("control", "treatment"), each = n_samples / 2)
+  )
+
+  method_pkg <- c(
+    "DESeq2" = "DESeq2",
+    "metagenomeSeq" = "metagenomeSeq",
+    "Maaslin2" = "Maaslin2"
+  )
+  extended_methods <- c("DESeq2", "metagenomeSeq", "LinDA", "Maaslin2")
+
+  for (method in extended_methods) {
+    if (method %in% names(method_pkg)) {
+      skip_if_not_installed(method_pkg[[method]])
+    }
+
+    # Capture noisy method output to keep default test logs readable.
+    captured <- capture.output({
+      result <- suppressWarnings(pathway_daa(abundance, metadata, "group", daa_method = method))
+    }, type = "output")
+    ignore <- captured
+
+    expect_true(is.data.frame(result))
+    expect_true(all(c("feature", "method", "p_values") %in% colnames(result)))
   }
 })
 
@@ -207,4 +250,56 @@ test_that("pathway_daa include_abundance_stats parameter works correctly", {
   expect_true(all(is.finite(result_enhanced$log2_fold_change)))
   expect_true(all(result_enhanced$sd_rel_abundance_group1 >= 0, na.rm = TRUE))
   expect_true(all(result_enhanced$sd_rel_abundance_group2 >= 0, na.rm = TRUE))
+})
+
+test_that("format_linda_output handles malformed LinDA outputs robustly", {
+  malformed_output <- list(
+    groupB = data.frame(
+      pvalue = I(matrix(c(0.01, 0.02, 0.03, 0.04, 0.05, 0.06), nrow = 3)),
+      log2FoldChange = c(1.2, 0.8, 0.5),
+      row.names = c("path1", "path2", "path3")
+    ),
+    groupC = data.frame(
+      some_other_col = c(1, 2),
+      row.names = c("path4", "path5")
+    )
+  )
+
+  result <- suppressWarnings(
+    ggpicrust2:::format_linda_output(
+      linda_output = malformed_output,
+      group = "group",
+      reference = "A",
+      Level = c("A", "B", "C")
+    )
+  )
+
+  expect_s3_class(result, "data.frame")
+  expect_equal(nrow(result), 5)
+  expect_true(all(c("feature", "method", "group1", "group2", "p_values", "log2_fold_change") %in% colnames(result)))
+
+  group_b_rows <- result$group2 == "B"
+  expect_true(any(group_b_rows))
+  expect_true(all(is.na(result$p_values[group_b_rows])))
+  expect_true(all(!is.na(result$log2_fold_change[group_b_rows])))
+
+  group_c_rows <- result$group2 == "C"
+  expect_true(any(group_c_rows))
+  expect_true(all(is.na(result$p_values[group_c_rows])))
+  expect_true(all(is.na(result$log2_fold_change[group_c_rows])))
+})
+
+test_that("pathway_daa Lefser fails fast for multi-group input", {
+  skip_if_not_installed("lefser")
+
+  td <- create_daa_test_data(n_samples = 6, n_groups = 3)
+  expect_error(
+    pathway_daa(
+      abundance = td$abundance,
+      metadata = td$metadata,
+      group = "group",
+      daa_method = "Lefser"
+    ),
+    "requires exactly 2 groups"
+  )
 })
