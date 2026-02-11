@@ -465,7 +465,13 @@ pathway_heatmap <- function(abundance,
   p <- ggplot2::ggplot(data = long_df,
                     mapping = ggplot2::aes(x = Sample, y = rowname, fill = Value)) +
     ggplot2::geom_tile() +
-    ggplot2::scale_fill_gradient2(low = low_color, mid = mid_color, high = high_color, midpoint = 0) +
+    ggplot2::scale_fill_gradient2(
+      low = low_color,
+      mid = mid_color,
+      high = high_color,
+      midpoint = 0,
+      breaks = colorbar_breaks
+    ) +
     ggplot2::labs(x = NULL, y = NULL) +
     ggplot2::scale_y_discrete(expand = c(0, 0), position = "left") +
     ggplot2::scale_x_discrete(expand = c(0, 0)) +
@@ -497,8 +503,7 @@ pathway_heatmap <- function(abundance,
         title.position = if(colorbar_position %in% c("left", "right")) "top" else "left",
         title.hjust = if(colorbar_position %in% c("left", "right")) 0.5 else 0,
         ticks = TRUE,
-        label = TRUE,
-        breaks = colorbar_breaks
+        label = TRUE
       )
     ) + 
     ggplot2::theme(legend.position = colorbar_position)

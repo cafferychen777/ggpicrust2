@@ -1,3 +1,15 @@
+# ggpicrust2 2.5.8
+
+## Bug Fixes
+
+* Fixed CRAN pretest failure in `tests/testthat/test-pathway_daa.R` by splitting
+  default/core method coverage from optional extended methods that require
+  non-mainstream dependencies (e.g., `Maaslin2`).
+* Kept extended DAA method coverage available behind
+  `GGPICRUST2_RUN_EXTENDED_DAA_TESTS=true`.
+* Corrected `metacyc_reference` documentation to match actual data columns
+  (`id`, `description`), resolving `codoc` mismatch warnings.
+
 # ggpicrust2 2.5.7
 
 ## Bug Fixes

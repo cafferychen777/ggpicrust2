@@ -199,6 +199,13 @@ ggpicrust2 <- function(file = NULL,
     abundance <- abundance[, -1]
   }
 
+  # Align abundance and metadata once for consistent downstream behavior.
+  # This prevents Group/order mismatches in pathway_errorbar() when metadata
+  # row order differs from abundance column order.
+  aligned <- align_samples(abundance, metadata, verbose = FALSE)
+  abundance <- aligned$abundance
+  metadata <- aligned$metadata
+
   # Step 2: Differential abundance analysis
   message("Performing pathway differential abundance analysis...\n")
   daa_results_df <- pathway_daa(
@@ -231,6 +238,7 @@ ggpicrust2 <- function(file = NULL,
   message("Creating pathway error bar plots...\n")
   plot_result_list <- list()
   Group_vec <- metadata[[group]]
+  names(Group_vec) <- colnames(abundance)
 
   for (i in seq_along(unique(daa_results_df$method))) {
     method_name <- unique(daa_results_df$method)[i]

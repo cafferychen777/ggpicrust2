@@ -336,12 +336,28 @@ pathway_errorbar <-
     sub_relative_abundance_mat <- relative_abundance_mat[rownames(relative_abundance_mat) %in% daa_results_filtered_sub_df$feature, , drop = FALSE]
 
     # Create a matrix for the error bars
-    # Create a mapping from sample names to their corresponding groups
-    # Note: We can't directly use the Group vector as its order may not match the column names in sub_relative_abundance_mat
-    sample_to_group_map <- stats::setNames(as.character(Group), colnames(abundance))
+    # Create a mapping from sample names to groups.
+    # Prefer names(Group) when available to avoid order-dependent mismatches.
+    if (!is.null(names(Group)) &&
+        length(names(Group)) == length(Group) &&
+        all(!is.na(names(Group)))) {
+      sample_to_group_map <- stats::setNames(as.character(Group), names(Group))
+    } else {
+      sample_to_group_map <- stats::setNames(as.character(Group), colnames(abundance))
+    }
     
-    # Get the correct groups based on the column names in sub_relative_abundance_mat
+    # Get groups for the current abundance columns.
     correct_groups <- sample_to_group_map[colnames(sub_relative_abundance_mat)]
+    if (any(is.na(correct_groups))) {
+      missing_samples <- colnames(sub_relative_abundance_mat)[is.na(correct_groups)]
+      stop(
+        "Could not map Group values to abundance samples. ",
+        "Missing sample name(s): ",
+        paste(missing_samples, collapse = ", "),
+        ". Ensure Group is in the same order as abundance columns ",
+        "or provide names(Group) matching sample IDs."
+      )
+    }
     
     # Create the error bar matrix using the correctly mapped groups
     error_bar_matrix <- cbind(

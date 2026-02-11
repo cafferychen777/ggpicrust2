@@ -862,8 +862,7 @@ perform_lefser_analysis <- function(abundance_mat, metadata, group, Level) {
 
   # Check if we only have 2 groups (lefser requirement)
   if (length(Level) != 2) {
-    message("Lefser requires exactly 2 groups. Found ", length(Level), " groups.")
-    return(NULL)
+    stop("Lefser requires exactly 2 groups. Found ", length(Level), " groups.")
   }
 
   # Create SummarizedExperiment object
@@ -928,6 +927,81 @@ perform_lefser_analysis <- function(abundance_mat, metadata, group, Level) {
 }
 
 # Helper function: Perform LinDA analysis
+format_linda_output <- function(linda_output, group, reference, Level) {
+  # Create an empty list to store results for each comparison
+  results_list <- list()
+
+  # Get all non-reference groups
+  non_ref_groups <- Level[Level != reference]
+
+  # Process each output element (each corresponds to a group comparison)
+  for (i in seq_along(linda_output)) {
+    output_name <- names(linda_output)[i]
+
+    # Extract non-reference group name from output name
+    group_prefix <- paste0(group, "")
+    if (!is.null(output_name) && startsWith(output_name, group_prefix)) {
+      comparison_group <- substring(output_name, nchar(group_prefix) + 1)
+    } else {
+      comparison_group <- if (i <= length(non_ref_groups)) non_ref_groups[i] else paste0("Group", i)
+    }
+    comparison_group <- as.character(comparison_group)[1]
+
+    comparison_df <- linda_output[[i]]
+    if (!is.data.frame(comparison_df) || nrow(comparison_df) == 0) {
+      next
+    }
+
+    n_features <- nrow(comparison_df)
+    feature_ids <- rownames(comparison_df)
+    if (is.null(feature_ids)) {
+      feature_ids <- paste0("feature_", seq_len(n_features))
+    }
+
+    pvals <- comparison_df$pvalue
+    if (is.null(pvals)) {
+      warning("LinDA output missing 'pvalue' column; filling with NA for this comparison.")
+      pvals <- rep(NA_real_, n_features)
+    } else if (length(pvals) != n_features) {
+      warning(
+        "LinDA output has inconsistent 'pvalue' length (",
+        length(pvals), " vs ", n_features, "); filling with NA for this comparison."
+      )
+      pvals <- rep(NA_real_, n_features)
+    }
+
+    lfc <- comparison_df$log2FoldChange
+    if (is.null(lfc)) {
+      warning("LinDA output missing 'log2FoldChange' column; filling with NA for this comparison.")
+      lfc <- rep(NA_real_, n_features)
+    } else if (length(lfc) != n_features) {
+      warning(
+        "LinDA output has inconsistent 'log2FoldChange' length (",
+        length(lfc), " vs ", n_features, "); filling with NA for this comparison."
+      )
+      lfc <- rep(NA_real_, n_features)
+    }
+
+    # Create a results data frame for this comparison
+    results_list[[length(results_list) + 1]] <- data.frame(
+      feature = feature_ids,
+      method = "LinDA",
+      group1 = reference,
+      group2 = comparison_group,
+      p_values = as.numeric(pvals),
+      log2_fold_change = as.numeric(lfc),
+      stringsAsFactors = FALSE
+    )
+  }
+
+  # Combine all results
+  if (length(results_list) > 0) {
+    do.call(rbind, results_list)
+  } else {
+    create_empty_daa_result(include_log2fc = TRUE)
+  }
+}
+
 perform_linda_analysis <- function(abundance, metadata, group, reference, Level, length_Level) {
   # Filter zero-abundance features using unified validation
   feature.dat <- validate_daa_input(as.matrix(abundance), method = "LinDA", filter_zero = TRUE)
@@ -973,47 +1047,12 @@ perform_linda_analysis <- function(abundance, metadata, group, reference, Level,
       return(create_empty_daa_result(include_log2fc = TRUE))
     }
     
-    # Create an empty list to store results for each comparison
-    results_list <- list()
-    
-    # Get all non-reference groups
-    non_ref_groups <- Level[Level != reference]
-    
-    # Process each output element (each corresponds to a group comparison)
-    for (i in seq_along(linda_obj$output)) {
-      # Get output name, typically in the format "groupVariableNameNonReferenceGroup"
-      output_name <- names(linda_obj$output)[i]
-      # Extract non-reference group name from output name
-      # Here we assume the output name format is "groupVariableNameNonReferenceGroup"
-      group_prefix <- paste0(group, "")
-      if (startsWith(output_name, group_prefix)) {
-        comparison_group <- substring(output_name, nchar(group_prefix) + 1)
-      } else {
-        # If we cannot extract group name from output name, use index to get from non_ref_groups
-        comparison_group <- if (i <= length(non_ref_groups)) non_ref_groups[i] else paste0("Group", i)
-      }
-      
-      comparison_df <- linda_obj$output[[i]]
-      
-      # Create a results data frame for this comparison
-      results_list[[i]] <- data.frame(
-        feature = rownames(comparison_df),
-        method = "LinDA",
-        group1 = reference,
-        group2 = comparison_group,
-        p_values = comparison_df$pvalue,
-        log2_fold_change = comparison_df$log2FoldChange,
-        stringsAsFactors = FALSE
-      )
-    }
-    
-    # Combine all results
-    if (length(results_list) > 0) {
-      do.call(rbind, results_list)
-    } else {
-      # If there are no results, return an empty data frame
-      create_empty_daa_result(include_log2fc = TRUE)
-    }
+    format_linda_output(
+      linda_output = linda_obj$output,
+      group = group,
+      reference = reference,
+      Level = Level
+    )
   }, error = function(e) {
     # Catch and report errors, but return an empty data frame instead of NULL
     message(sprintf("Error in LinDA analysis: %s", e$message))
