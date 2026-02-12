@@ -1,3 +1,12 @@
+# ggpicrust2 2.5.10
+
+## Bug Fixes
+
+* Removed `Maaslin2` from `Suggests` to avoid CRAN/BioC availability failures
+  on special check flavors where the package is not in mainstream repos.
+* Switched the internal MaAsLin2 call in `pathway_daa()` to dynamic lookup so
+  the method remains optional without forcing repository availability checks.
+
 # ggpicrust2 2.5.9
 
 ## Bug Fixes

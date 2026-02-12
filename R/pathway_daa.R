@@ -796,8 +796,9 @@ perform_maaslin2_analysis <- function(abundance_mat, metadata, group, reference,
   # Create temporary output directory
   output_dir <- tempdir()
 
-  # Run Maaslin2 analysis
-  fit_data <- Maaslin2::Maaslin2(
+  # Run Maaslin2 analysis via dynamic lookup so the package remains optional
+  maaslin2_fn <- getExportedValue("Maaslin2", "Maaslin2")
+  fit_data <- maaslin2_fn(
     input_data = abundance_mat_t,
     input_metadata = metadata,
     output = output_dir,
