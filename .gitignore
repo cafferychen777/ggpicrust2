@@ -37,6 +37,7 @@ docs/
 # Development and test files
 *test*.R
 *Test*.R
+!tests/testthat/test-*.R
 *debug*.R
 *Debug*.R
 *validation*.R
@@ -85,6 +86,12 @@ temp_*
 *_backup.*
 *_old.*
 *.bak
+*.bak2
+
+# testthat auto-generated files
+tests/testthat/_problems/
+tests/testthat/testthat-problems.rds
+tests/testthat/_snaps/
 
 # User-specific files
 aashi*
@@ -103,3 +110,13 @@ inspect_*
 *.swp
 *~
 CLAUDE.md
+
+# Build script intermediates
+data-raw/.cache/
+data-raw/intermediate/
+
+# Development archive (local only)
+.dev_archive/
+
+# Local browser automation artifacts
+.playwright-mcp/

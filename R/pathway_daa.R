@@ -793,8 +793,10 @@ perform_maaslin2_analysis <- function(abundance_mat, metadata, group, reference,
   # Transpose abundance matrix (samples become rows, features become columns)
   abundance_mat_t <- t(abundance_mat)
 
-  # Create temporary output directory
-  output_dir <- tempdir()
+  # Use a run-specific directory to avoid stale files from previous Maaslin2 runs.
+  output_dir <- tempfile(pattern = "ggpicrust2_maaslin2_")
+  dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
+  on.exit(unlink(output_dir, recursive = TRUE, force = TRUE), add = TRUE)
 
   # Run Maaslin2 analysis via dynamic lookup so the package remains optional
   maaslin2_fn <- getExportedValue("Maaslin2", "Maaslin2")
