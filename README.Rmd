@@ -103,7 +103,7 @@ We appreciate your support and interest in our tools and look forward to seeing 
 
 -   [Citation](#citation)
 -   [Installation](#installation)
--   [Stay Updated](#stay-updated)
+-   [Project Links](#stay-updated)
 -   [Workflow](#workflow)
 -   [Output](#output)
 -   [Function Details](#function-details)
@@ -164,7 +164,11 @@ devtools::install_github("cafferychen777/ggpicrust2")
 | magrittr       | A Forward-Pipe Operator for R                                                                                                     |
 | utils          | The R Utils Package                                                                                                               |
 
-## Dependent Bioconductor Packages
+## Optional Bioconductor Packages
+
+The package works with a minimal CRAN installation, but several workflows rely on
+Bioconductor packages that should be installed only when you use the corresponding
+analysis methods or visualizations.
 
 | Package              | Description                                                           |
 |----------------------|-----------------------------------------------------------------------|
@@ -199,17 +203,14 @@ for (pkg in pkgs) {
 }
 ```
 
-## Stay Updated {#stay-updated}
+## Project Links {#stay-updated}
 
-Stay up to date with the latest *ggpicrust2* developments by following me on Twitter: [![Follow CafferyYang on Twitter](https://img.shields.io/twitter/follow/CafferyYang?style=social)](https://twitter.com/CafferyYang)
+Use the project resources below for stable updates and support:
 
-On my Twitter account, you'll find regular updates, announcements, and insights related to *ggpicrust2*. By following me, you'll ensure that you never miss any important information or new features.
-
-Feel free to join the conversation, ask questions, and engage with other users who are also interested in *ggpicrust2*. Twitter is a great platform to stay connected and be a part of the community.
-
-Click on the Twitter follow button above or visit [https://twitter.com/CafferyYang](https://twitter.com/CafferyYang) to follow me now!
-
-Thank you for your interest in *ggpicrust2*, and I look forward to keeping you informed about all the exciting updates!
+- Package website: <https://cafferyang.com/ggpicrust2/>
+- Source repository: <https://github.com/cafferychen777/ggpicrust2>
+- Issue tracker: <https://github.com/cafferychen777/ggpicrust2/issues>
+- Release notes: [NEWS.md](NEWS.md)
 
 ## Workflow {#workflow}
 
@@ -930,16 +931,6 @@ annotated_results <- gsea_pathway_annotation(
 # View the annotated results
 head(annotated_results)
 ```
-
-## Share
-
-[![Twitter](https://img.shields.io/twitter/url?url=https%3A%2F%2Fgithub.com%2Fcafferychen777%2Fggpicrust2&style=social)](https://twitter.com/intent/tweet?url=https%3A%2F%2Fgithub.com%2Fcafferychen777%2Fggpicrust2&text=Check%20out%20this%20awesome%20package%20on%20GitHub%21)
-
-[![Facebook](https://img.shields.io/badge/Share_on-Facebook-1877F2?logo=facebook&style=social)](https://www.facebook.com/sharer/sharer.php?u=https%3A%2F%2Fgithub.com%2Fcafferychen777%2Fggpicrust2&quote=Check%20out%20this%20awesome%20package%20on%20GitHub%21)
-
-[![LinkedIn](https://img.shields.io/badge/Share_on-LinkedIn-0077B5?logo=linkedin&style=social)](https://www.linkedin.com/shareArticle?mini=true&url=https%3A%2F%2Fgithub.com%2Fcafferychen777%2Fggpicrust2&title=Check%20out%20this%20awesome%20package%20on%20GitHub%21)
-
-
 
 ## FAQ {#faq}
 

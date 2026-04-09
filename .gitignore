@@ -115,6 +115,7 @@ CLAUDE.md
 # Build script intermediates
 data-raw/.cache/
 data-raw/intermediate/
+cran_*.png
 
 # Development archive (local only)
 .dev_archive/

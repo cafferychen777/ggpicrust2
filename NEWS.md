@@ -1,3 +1,12 @@
+# ggpicrust2 2.5.12
+
+## CRAN Resubmission
+
+* Removed transient social-media URLs from the README in favor of stable
+  project links.
+* Made the `metagenomeSeq` workflow a truly optional runtime dependency
+  instead of a declared package-level suggestion.
+
 # ggpicrust2 2.5.11
 
 ## Documentation

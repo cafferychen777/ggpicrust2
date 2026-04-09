@@ -711,6 +711,10 @@ perform_edger_analysis <- function(abundance_mat, Group, Level, length_Level) {
 
 # Helper function: Perform metagenomeSeq analysis
 perform_metagenomeseq_analysis <- function(abundance_mat, metadata, group, Level) {
+  new_mrexperiment <- getExportedValue("metagenomeSeq", "newMRexperiment")
+  cum_norm <- getExportedValue("metagenomeSeq", "cumNorm")
+  fit_feature_model <- getExportedValue("metagenomeSeq", "fitFeatureModel")
+  mrcoefs <- getExportedValue("metagenomeSeq", "MRcoefs")
 
   # Convert metadata to data.frame and ensure sample names are correct
   metadata <- as.data.frame(metadata)
@@ -732,7 +736,7 @@ perform_metagenomeseq_analysis <- function(abundance_mat, metadata, group, Level
 
   # Create MRexperiment object
   obj <- try({
-    metagenomeSeq::newMRexperiment(
+    new_mrexperiment(
       counts = counts,
       phenoData = phenoData,
       featureData = NULL,
@@ -746,17 +750,17 @@ perform_metagenomeseq_analysis <- function(abundance_mat, metadata, group, Level
   }
 
   # Normalize
-  obj <- metagenomeSeq::cumNorm(obj)
+  obj <- cum_norm(obj)
 
   # Create model matrix
   mod <- stats::model.matrix(as.formula(paste0("~", group)), data = metadata)
 
   # Fit model
-  fit <- metagenomeSeq::fitFeatureModel(obj, mod)
+  fit <- fit_feature_model(obj, mod)
 
   # Extract coefficients using MRcoefs
   coef_table <- tryCatch({
-    metagenomeSeq::MRcoefs(fit, coef = 2)  # coef = 2 for group effect
+    mrcoefs(fit, coef = 2)  # coef = 2 for group effect
   }, error = function(e) {
     warning("Failed to extract coefficients from metagenomeSeq: ", e$message)
     return(NULL)

@@ -19,6 +19,7 @@
 ^COMMIT_PLAN\.md$
 ^COMPREHENSIVE_TEST_REPORT\.md$
 ^cran-comments\.md$
+^cran_.*\.png$
 ^CRAN-SUBMISSION$
 ^data-raw$
 ^demo_issue_.*\.R$
