@@ -13,9 +13,9 @@ knitr::opts_chunk$set(
 )
 ```
 
-# ggpicrust2 vignettes
+# ggpicrust2
 
-<img src="inst/extdata/images/logo.png" align="right" width="200">
+<img src="man/figures/logo.png" alt="ggpicrust2 logo" align="right" width="200">
 
 🌟 **If you find `ggpicrust2` helpful, please consider giving us a star on GitHub!** Your support greatly motivates us to improve and maintain this project. 🌟
 
@@ -71,6 +71,18 @@ The new GSEA module includes:
 
 These new functions complement our existing differential abundance analysis tools, providing researchers with multiple approaches to analyze functional profiles.
 
+🧫 **New Feature: Taxa Contribution Workflow for PICRUSt2 Per-sequence Outputs**
+
+ggpicrust2 now supports parsing and visualizing PICRUSt2 per-sequence contribution outputs:
+
+- `read_contrib_file()`: Reads `pred_metagenome_contrib.tsv`
+- `read_strat_file()`: Reads `pred_metagenome_strat.tsv`
+- `aggregate_taxa_contributions()`: Aggregates contributions by taxon, sample, and function
+- `taxa_contribution_bar()`: Creates stacked bar plots of taxon-level contributions
+- `taxa_contribution_heatmap()`: Summarizes contribution patterns across taxa and functions
+
+This workflow makes it possible to move from pathway-level significance to an interpretable answer for which taxa are driving those pathway shifts.
+
 🌟 **Also Check Out: `mLLMCelltype`**
 
 We're excited to introduce `mLLMCelltype`, our innovative framework for **single-cell RNA sequencing data annotation**. This iterative multi-LLM consensus framework leverages the collective intelligence of multiple large language models (including GPT-4o/4.1, Claude-3.7/3.5, Gemini-2.0, Grok-3, and others) to significantly improve cell type annotation accuracy while providing transparent uncertainty quantification.
@@ -102,9 +114,8 @@ We appreciate your support and interest in our tools and look forward to seeing 
     -   [pathway_errorbar()](#pathway_errorbar)
     -   [pathway_heatmap()](#pathway_heatmap)
     -   [pathway_pca()](#pathway_pca)
-    -   [pathway_volcano()](#pathway_volcano)
-    -   [pathway_ridgeplot()](#pathway_ridgeplot)
     -   [compare_metagenome_results()](#compare_metagenome_results)
+    -   [taxa contribution workflow](#taxa_contribution)
     -   [pathway_gsea()](#pathway_gsea)
     -   [visualize_gsea()](#visualize_gsea)
     -   [compare_gsea_daa()](#compare_gsea_daa)
@@ -190,7 +201,7 @@ for (pkg in pkgs) {
 
 ## Stay Updated {#stay-updated}
 
-Stay up to date with the latest *ggpicrust2* developments by following me on Twitter: [![](https://img.shields.io/twitter/follow/CafferyYang?style=social)](https://twitter.com/CafferyYang)
+Stay up to date with the latest *ggpicrust2* developments by following me on Twitter: [![Follow CafferyYang on Twitter](https://img.shields.io/twitter/follow/CafferyYang?style=social)](https://twitter.com/CafferyYang)
 
 On my Twitter account, you'll find regular updates, announcements, and insights related to *ggpicrust2*. By following me, you'll ensure that you never miss any important information or new features.
 
@@ -206,7 +217,7 @@ The easiest way to analyze the PICRUSt2 output is using ggpicrust2() function. T
 
 ggpicrust2() integrates ko abundance to kegg pathway abundance conversion, annotation of pathway, differential abundance (DA) analysis, part of DA results visualization. When you have trouble running ggpicrust2(), you can debug it by running a separate function, which will greatly increase the speed of your analysis and visualization.
 
-![](https://raw.githubusercontent.com/cafferychen777/ggpicrust2_paper/main/paper_figure/Workflow.png)
+![ggpicrust2 workflow diagram](https://raw.githubusercontent.com/cafferychen777/ggpicrust2_paper/main/paper_figure/Workflow.png)
 
 ### ggpicrust2()
 
@@ -405,7 +416,7 @@ comparison_results <- compare_daa_results(daa_results_list = daa_results_list, m
 
 The typical output of the ggpicrust2 is like this.
 
-![](https://cdn.jsdelivr.net/gh/cafferychen777/ggpicrust2_paper@main/paper_figure/figure1.jpg)
+![ggpicrust2 pathway annotation overview](https://cdn.jsdelivr.net/gh/cafferychen777/ggpicrust2_paper@main/paper_figure/figure1.jpg)
 
 ## function details {#function-details}
 
@@ -686,6 +697,51 @@ print(results$correlation$cor_matrix)
 print(results$correlation$p_matrix)
 ```
 
+### taxa contribution workflow {#taxa_contribution}
+
+The taxa contribution workflow connects PICRUSt2 per-sequence outputs with downstream pathway interpretation. Use `read_contrib_file()` for `pred_metagenome_contrib.tsv`, or `read_strat_file()` for `pred_metagenome_strat.tsv`, then aggregate to the taxonomic level you want to visualize.
+
+```{r taxa contribution workflow, echo = TRUE, eval=FALSE}
+library(ggpicrust2)
+
+# Parse PICRUSt2 per-sequence contribution output
+contrib_data <- read_contrib_file("pred_metagenome_contrib.tsv")
+
+# Optional: use pathway-level DAA results to keep only significant pathways
+data("kegg_abundance")
+data("metadata")
+
+daa_results <- pathway_daa(
+  abundance = kegg_abundance,
+  metadata = metadata,
+  group = "Environment",
+  daa_method = "ALDEx2"
+)
+
+# Aggregate contributions to genus level and keep top taxa
+taxa_contrib <- aggregate_taxa_contributions(
+  contrib_data = contrib_data,
+  taxonomy = your_taxonomy_table,
+  tax_level = "Genus",
+  top_n = 10,
+  daa_results_df = daa_results
+)
+
+# Visualize per-sample contributions
+taxa_contribution_bar(
+  contrib_agg = taxa_contrib,
+  metadata = metadata,
+  group = "Environment",
+  facet_by = "function"
+)
+
+# Summarize mean contribution patterns across taxa and functions
+taxa_contribution_heatmap(
+  contrib_agg = taxa_contrib,
+  n_functions = 20
+)
+```
+
 ### pathway_gsea() {#pathway_gsea}
 
 The `pathway_gsea()` function performs Gene Set Enrichment Analysis (GSEA) on PICRUSt2 predicted functional profiles. GSEA is a powerful method for identifying enriched pathways between different conditions, offering a more nuanced understanding of functional differences compared to traditional differential abundance analysis.
@@ -751,16 +807,23 @@ gsea_results <- pathway_gsea(
 )
 
 # Create an enrichment plot for a specific pathway
-enrichment_plot <- visualize_gsea(
+# Annotate results so plots can use readable pathway names
+annotated_results <- gsea_pathway_annotation(
   gsea_results = gsea_results,
-  plot_type = "enrichment",
-  pathway_id = gsea_results$pathway_id[1]  # Select the first pathway
+  pathway_type = "KEGG"
+)
+
+# Create an enrichment-style summary plot
+enrichment_plot <- visualize_gsea(
+  gsea_results = annotated_results,
+  plot_type = "enrichment_plot",
+  n_pathways = 10
 )
 
 # Create a dot plot showing top enriched pathways
 dot_plot <- visualize_gsea(
-  gsea_results = gsea_results,
-  plot_type = "dot",
+  gsea_results = annotated_results,
+  plot_type = "dotplot",
   n_pathways = 20,  # Show top 20 pathways
   sort_by = "NES"   # Sort by Normalized Enrichment Score
 )
@@ -807,6 +870,9 @@ library(tidyverse)
 data("ko_abundance")
 data("metadata")
 
+# Prepare pathway-level abundance for DAA so identifiers match GSEA pathway IDs
+kegg_pathway_abundance <- ko2kegg_abundance(data = ko_abundance)
+
 # Perform GSEA analysis
 gsea_results <- pathway_gsea(
   abundance = ko_abundance %>% column_to_rownames("#NAME"),
@@ -816,7 +882,7 @@ gsea_results <- pathway_gsea(
 
 # Perform DAA analysis
 daa_results <- pathway_daa(
-  abundance = ko_abundance %>% column_to_rownames("#NAME"),
+  abundance = kegg_pathway_abundance,
   metadata = metadata,
   group = "Environment",
   daa_method = "ALDEx2"
@@ -825,17 +891,16 @@ daa_results <- pathway_daa(
 # Compare GSEA and DAA results
 comparison <- compare_gsea_daa(
   gsea_results = gsea_results,
-  daa_results_df = daa_results,
-  gsea_pvalue_cutoff = 0.05,
-  daa_pvalue_cutoff = 0.05,
-  plot_type = "venn"  # Can be "venn", "upset", or "both"
+  daa_results = daa_results,
+  p_threshold = 0.05,
+  plot_type = "venn"  # Can be "venn", "upset", or "scatter"
 )
 
 # View the comparison plot
 comparison$plot
 
 # View the overlapping pathways
-head(comparison$overlap)
+head(comparison$results$overlap)
 ```
 
 ### gsea_pathway_annotation() {#gsea_pathway_annotation}
@@ -859,7 +924,7 @@ gsea_results <- pathway_gsea(
 # Annotate GSEA results
 annotated_results <- gsea_pathway_annotation(
   gsea_results = gsea_results,
-  pathway = "KO"
+  pathway_type = "KEGG"
 )
 
 # View the annotated results
@@ -1039,6 +1104,6 @@ If you're interested in helping to test and develop MicrobiomeStat, please conta
 
 2. [MicrobiomeGallery](https://cafferyyang.shinyapps.io/MicrobiomeGallery/): This is a web-based platform currently under development, which aims to provide a space for sharing microbiome data visualization code and datasets.
 
-![](https://raw.githubusercontent.com/cafferychen777/ggpicrust2_paper/main/paper_figure/MicrobiomeGallery_preview.jpg)
+![Preview of related microbiome visualization tools](https://raw.githubusercontent.com/cafferychen777/ggpicrust2_paper/main/paper_figure/MicrobiomeGallery_preview.jpg)
 
 We look forward to sharing more updates as these projects progress.

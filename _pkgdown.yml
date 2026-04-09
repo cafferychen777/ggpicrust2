@@ -1,0 +1,86 @@
+url: https://cafferychen777.github.io/ggpicrust2/
+
+template:
+  bootstrap: 5
+
+navbar:
+  structure:
+    left: [reference, articles, news]
+    right: [github]
+  components:
+    github:
+      icon: fab fa-github
+      href: https://github.com/cafferychen777/ggpicrust2
+      aria-label: GitHub repository
+
+articles:
+  - title: Tutorials
+    navbar: Tutorials
+    contents:
+      - using_ggpicrust2
+      - gsea_analysis
+
+reference:
+  - title: Core Workflow
+    contents:
+      - ggpicrust2
+      - ko2kegg_abundance
+      - pathway_daa
+      - pathway_annotation
+      - pathway_errorbar
+      - pathway_errorbar_table
+      - pathway_heatmap
+      - pathway_pca
+      - pathway_volcano
+      - pathway_ridgeplot
+      - compare_daa_results
+      - compare_metagenome_results
+
+  - title: Taxa Contribution
+    contents:
+      - read_contrib_file
+      - read_strat_file
+      - aggregate_taxa_contributions
+      - taxa_contribution_bar
+      - taxa_contribution_heatmap
+
+  - title: GSEA
+    contents:
+      - pathway_gsea
+      - visualize_gsea
+      - compare_gsea_daa
+      - gsea_pathway_annotation
+      - prepare_gene_sets
+
+  - title: Data
+    contents:
+      - metadata
+      - ko_abundance
+      - kegg_abundance
+      - metacyc_abundance
+      - daa_results_df
+      - daa_annotated_results_df
+
+  - title: Reference Data
+    contents:
+      - ko_reference
+      - kegg_pathway_reference
+      - ec_reference
+      - metacyc_reference
+      - ko_to_kegg_reference
+      - ko_to_go_reference
+      - metacyc_to_ec_reference
+
+  - title: Utilities
+    contents:
+      - import_MicrobiomeAnalyst_daa_results
+      - color_themes
+      - legend_annotation_utils
+      - starts_with("create_")
+      - starts_with("get_")
+      - starts_with("calculate_")
+      - starts_with("preview_")
+      - starts_with("format_")
+      - starts_with("smart_")
+      - resolve_annotation_overlaps
+      - safe_extract

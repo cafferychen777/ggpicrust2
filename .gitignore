@@ -33,6 +33,7 @@ renv/local/
 
 # pkgdown site
 docs/
+pkgdown/
 
 # Development and test files
 *test*.R
