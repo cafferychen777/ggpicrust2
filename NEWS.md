@@ -1,3 +1,14 @@
+# ggpicrust2 2.5.11
+
+## Documentation
+
+* Unified the package website URL around the canonical
+  `https://cafferyang.com/ggpicrust2/`.
+* Simplified README citation guidance to use the paper DOI and
+  `citation("ggpicrust2")` instead of redundant publisher-specific links.
+* Replaced a moved LinDA reference URL with its DOI-based link and cleaned a
+  KO-to-GO manual encoding warning.
+
 # ggpicrust2 2.5.10
 
 ## Bug Fixes

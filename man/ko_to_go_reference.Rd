@@ -32,8 +32,8 @@ Each GO term includes at least 3 associated KO identifiers, ensuring statistical
 }
 \source{
 \itemize{
-  \item KEGG REST API (\url{https://rest.kegg.jp}) — KO entry DBLINKS section
-  \item EBI QuickGO (\url{https://www.ebi.ac.uk/QuickGO/}) — GO term metadata
+  \item KEGG REST API (\url{https://rest.kegg.jp}) - KO entry DBLINKS section
+  \item EBI QuickGO (\url{https://www.ebi.ac.uk/QuickGO/}) - GO term metadata
 }
 }
 \references{

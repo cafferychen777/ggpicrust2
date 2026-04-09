@@ -200,14 +200,11 @@ predicted functional profile analysis and visualization.
 *Bioinformatics*, btad470. [DOI
 link](https://doi.org/10.1093/bioinformatics/btad470)
 
-BibTeX entry: [Download
-here](https://academic.oup.com/Citation/Download?resourceId=7234609&resourceType=3&citationFormat=2)
+The package citation is also available directly in R:
 
-ResearchGate link: [Click
-here](https://www.researchgate.net/publication/372829051_ggpicrust2_an_R_package_for_PICRUSt2_predicted_functional_profile_analysis_and_visualization)
-
-Bioinformatics link: [Click
-here](https://academic.oup.com/bioinformatics/article/39/8/btad470/7234609?login=false&utm_source=advanceaccess&utm_campaign=bioinformatics&utm_medium=email)
+``` r
+citation("ggpicrust2")
+```
 
 ## Installation
 
@@ -550,26 +547,25 @@ kegg_abundance <- ko2kegg_abundance(data = ko_abundance)
 
 ### pathway_daa()
 
-Differential abundance(DA) analysis plays a major role in PICRUSt2
-downstream analysis. pathway_daa() integrates almost all DA methods
-applicable to the predicted functional profile which there excludes
-ANCOM and ANCOMBC. It includes
-[ALDEx2](https://www.bioconductor.org/packages/release/bioc/html/ALDEx2.html)(Fernandes
-et al., 2013),
-[DESeq2](https://bioconductor.org/packages/release/bioc/html/DESeq2.html)(Love
-et al., 2014),
-[Maaslin2](https://www.bioconductor.org/packages/release/bioc/html/Maaslin2.html)(Mallick
-et al., 2021),
-[LinDA](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-022-02655-5)(Zhou
-et al., 2022),
-[edgeR](https://bioconductor.org/packages/release/bioc/html/edgeR.html)(Robinson
-et al., 2010) , [limma
-voom](https://ucdavis-bioinformatics-training.github.io/2018-June-RNA-Seq-Workshop/thursday/DE.html)(Ritchie
-et al., 2015),
-[metagenomeSeq](https://www.bioconductor.org/packages/release/bioc/html/metagenomeSeq.html#:~:text=metagenomeSeq%20is%20designed%20to%20address,the%20testing%20of%20feature%20correlations.)(Paulson
-et al., 2013),
-[Lefser](https://bioconductor.org/packages/release/bioc/html/lefser.html)(Segata
-et al., 2011).
+Differential abundance (DA) analysis plays a major role in PICRUSt2
+downstream analysis. `pathway_daa()` integrates the main DA methods used
+for predicted functional profiles, excluding ANCOM and ANCOMBC. It
+includes
+[ALDEx2](https://www.bioconductor.org/packages/release/bioc/html/ALDEx2.html)
+(Fernandes et al., 2013),
+[DESeq2](https://bioconductor.org/packages/release/bioc/html/DESeq2.html)
+(Love et al., 2014),
+[Maaslin2](https://www.bioconductor.org/packages/release/bioc/html/Maaslin2.html)
+(Mallick et al., 2021),
+[LinDA](https://doi.org/10.1186/s13059-022-02655-5) (Zhou et al., 2022),
+[edgeR](https://bioconductor.org/packages/release/bioc/html/edgeR.html)
+(Robinson et al., 2010), [limma
+voom](https://ucdavis-bioinformatics-training.github.io/2018-June-RNA-Seq-Workshop/thursday/DE.html)
+(Ritchie et al., 2015),
+[metagenomeSeq](https://www.bioconductor.org/packages/release/bioc/html/metagenomeSeq.html)
+(Paulson et al., 2013), and
+[Lefser](https://bioconductor.org/packages/release/bioc/html/lefser.html)
+(Segata et al., 2011).
 
 ``` r
 # The abundance table is recommended to be a data.frame rather than a tibble.
