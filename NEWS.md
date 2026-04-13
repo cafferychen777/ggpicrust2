@@ -1,3 +1,20 @@
+# ggpicrust2 2.5.13
+
+## Bug Fixes
+
+* `ggpicrust2()` now rejects the incompatible combination of
+  `ko_to_kegg = TRUE` with `pathway = "EC"` or `"MetaCyc"` up front, with an
+  actionable error message. Previously this misuse produced a cryptic
+  `No features in abundance data` error thrown from deep inside
+  `pathway_daa()` (reported in #198).
+* `ko2kegg_abundance()` now errors when none of the input feature IDs match
+  the expected KO format (e.g. when EC numbers are passed in), instead of
+  silently producing an empty result. Total-mismatch detection in the
+  internal `validate_feature_ids()` helper was previously a blind spot.
+* `ko2kegg_abundance()` also errors when the input contains only KO IDs that
+  are absent from the KEGG reference, rather than returning an empty data
+  frame that would break downstream DAA.
+
 # ggpicrust2 2.5.12
 
 ## CRAN Resubmission

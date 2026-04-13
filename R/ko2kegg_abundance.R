@@ -202,14 +202,17 @@ ko2kegg_abundance <- function (file = NULL, data = NULL, method = c("abundance",
   }
   close(pb)
 
-  # Remove zero-abundance pathways
+  # Remove zero-abundance pathways. Reaching all-zero here means the IDs
+  # passed format validation but none are present in the KEGG reference
+  # (e.g. outdated or non-standard KO identifiers). Continuing would just
+  # hand an empty matrix to downstream DAA and produce a misleading error.
   zero_rows <- rowSums(kegg_abundance, na.rm = TRUE) == 0
   if (all(zero_rows)) {
-    warning("No KO IDs matched known pathways")
-    kegg_abundance <- kegg_abundance[0, , drop = FALSE]
-  } else {
-    kegg_abundance <- kegg_abundance[!zero_rows, , drop = FALSE]
+    stop("No KO IDs in the input matched any KEGG pathway. ",
+         "This usually means the KO IDs are outdated or not in the KEGG reference. ",
+         "Expected format: K##### (e.g., K00001).")
   }
+  kegg_abundance <- kegg_abundance[!zero_rows, , drop = FALSE]
 
   kegg_abundance
 }

@@ -50,6 +50,40 @@ test_that("ko2kegg_abundance throws appropriate errors", {
   expect_error(ko2kegg_abundance(data = non_numeric), "non-numeric")
 })
 
+test_that("ko2kegg_abundance fails fast when input is not KO data (e.g. EC IDs)", {
+  # EC-number-shaped input: passes the first-column name check (column named
+  # "function") but no ID matches the KO format. Should stop at
+  # validate_feature_ids instead of silently producing an empty matrix.
+  ec_shaped_data <- data.frame(
+    `function` = c("1.1.1.1", "1.1.1.2", "2.7.1.1"),
+    Sample1 = c(10, 20, 30),
+    Sample2 = c(15, 25, 35),
+    check.names = FALSE,
+    stringsAsFactors = FALSE
+  )
+
+  expect_error(
+    suppressMessages(ko2kegg_abundance(data = ec_shaped_data)),
+    "None of the feature IDs match expected KO format"
+  )
+})
+
+test_that("ko2kegg_abundance fails fast when KO IDs are absent from the KEGG reference", {
+  # KO IDs that pass format validation (K#####) but are not in the reference.
+  # Use IDs outside the current KEGG space to trigger the all-zero branch.
+  unknown_ko_data <- data.frame(
+    function. = c("K99991", "K99992", "K99993"),
+    Sample1 = c(10, 20, 30),
+    Sample2 = c(15, 25, 35),
+    stringsAsFactors = FALSE
+  )
+
+  expect_error(
+    suppressMessages(ko2kegg_abundance(data = unknown_ko_data)),
+    "No KO IDs in the input matched any KEGG pathway"
+  )
+})
+
 test_that("ko2kegg_abundance preserves sample names and removes zero pathways", {
   ko_to_kegg_reference <- ggpicrust2:::load_reference_data("ko_to_kegg")
   real_kos <- head(unique(ko_to_kegg_reference$ko_id), 5)

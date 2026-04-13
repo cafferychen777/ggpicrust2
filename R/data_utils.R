@@ -588,7 +588,14 @@ validate_feature_ids <- function(ids, type = "auto") {
 
   if (type %in% names(patterns)) {
     invalid <- ids[!grepl(patterns[[type]], ids)]
-    if (length(invalid) > 0 && length(invalid) < length(ids)) {
+    if (length(invalid) == length(ids) && length(ids) > 0) {
+      # Total mismatch: the input is almost certainly the wrong data type.
+      # Fail loudly here so the caller gets an actionable message instead of
+      # an empty downstream matrix.
+      stop(sprintf(
+        "None of the feature IDs match expected %s format (e.g., got '%s'). Check that your input is %s abundance data.",
+        type, paste(head(invalid, 2), collapse = ", "), type))
+    } else if (length(invalid) > 0) {
       warning(sprintf("%d %s IDs don't match expected format (e.g., %s)",
                       length(invalid), type, paste(head(invalid, 2), collapse = ", ")))
     }

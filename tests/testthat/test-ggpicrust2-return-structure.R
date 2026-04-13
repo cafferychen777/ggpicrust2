@@ -95,3 +95,45 @@ test_that("ggpicrust2 aligns Group vector to abundance sample order before plott
   expect_equal(names(captured_group), c("S_B", "S_A"))
   expect_equal(unname(captured_group), c("B", "A"))
 })
+
+test_that("ggpicrust2 rejects inconsistent ko_to_kegg / pathway combinations", {
+  # Catch the user-intent conflict up front: ko_to_kegg = TRUE aggregates KO
+  # counts into KEGG pathways, so it is only meaningful when pathway = "KO".
+  # Previously this combination produced a cryptic "No features in abundance
+  # data" error after the matrix collapsed to zero rows downstream.
+  minimal_data <- data.frame(
+    function. = c("1.1.1.1", "1.1.1.2"),
+    S1 = c(10, 20),
+    S2 = c(15, 25),
+    stringsAsFactors = FALSE
+  )
+  minimal_metadata <- data.frame(
+    sample = c("S1", "S2"),
+    Condition = c("A", "B"),
+    stringsAsFactors = FALSE
+  )
+
+  expect_error(
+    ggpicrust2(
+      data = minimal_data,
+      metadata = minimal_metadata,
+      group = "Condition",
+      pathway = "EC",
+      daa_method = "LinDA",
+      ko_to_kegg = TRUE
+    ),
+    "requires .pathway = .KO."
+  )
+
+  expect_error(
+    ggpicrust2(
+      data = minimal_data,
+      metadata = minimal_metadata,
+      group = "Condition",
+      pathway = "MetaCyc",
+      daa_method = "LinDA",
+      ko_to_kegg = TRUE
+    ),
+    "requires .pathway = .KO."
+  )
+})

@@ -177,6 +177,14 @@ ggpicrust2 <- function(file = NULL,
     stop("The 'Lefse' method is not suitable for ggpicrust2() as it does not output p-values.")
   }
 
+  # `ko_to_kegg = TRUE` aggregates KO abundances into KEGG pathways, so it is
+  # only meaningful when the input is KO abundance (pathway = "KO"). Pairing it
+  # with EC/MetaCyc produces an empty matrix and a cryptic downstream error.
+  if (isTRUE(ko_to_kegg) && !identical(pathway, "KO")) {
+    stop(sprintf(
+      "`ko_to_kegg = TRUE` requires `pathway = \"KO\"`, but got pathway = \"%s\".\n  - For EC or MetaCyc data, set `ko_to_kegg = FALSE`.\n  - For KO -> KEGG pathway analysis, set `pathway = \"KO\"`.",
+      pathway))
+  }
 
   # Step 1: Load abundance data
   if (ko_to_kegg) {
