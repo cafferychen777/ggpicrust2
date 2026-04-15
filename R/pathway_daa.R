@@ -264,41 +264,42 @@ calculate_abundance_stats <- function(abundance, metadata, group, features, grou
     relative_abundance <- relative_abundance[features_available, , drop = FALSE]
   }
 
-  # Calculate statistics for each feature
-  results <- data.frame(
-    feature = rownames(relative_abundance),
-    mean_rel_abundance_group1 = NA_real_,
-    sd_rel_abundance_group1 = NA_real_,
-    mean_rel_abundance_group2 = NA_real_,
-    sd_rel_abundance_group2 = NA_real_,
-    log2_fold_change = NA_real_,
-    stringsAsFactors = FALSE
+  # Per-feature mean and sd for the two groups of interest. Restrict the
+  # matrix to group1 + group2 columns before aggregation so the helper does
+  # not spend time on samples that wouldn't show up in the output anyway.
+  # This is also the only entry point that computes the mean/sd inputs to
+  # the log2 fold change: `pathway_errorbar()` reuses the same helper, so
+  # any future change to the aggregation rule (e.g. na.rm strategy,
+  # trimmed means, etc.) only needs to happen in one place.
+  keep <- group_assignments %in% c(group1, group2)
+  long_stats <- summarize_abundance_by_group(
+    relative_abundance[, keep, drop = FALSE],
+    group_assignments[keep]
   )
 
-  # Calculate data-driven pseudocount using unified function
+  feature_order <- rownames(relative_abundance)
+  g1 <- long_stats[long_stats$group == group1, , drop = FALSE]
+  g2 <- long_stats[long_stats$group == group2, , drop = FALSE]
+  g1 <- g1[match(feature_order, g1$name), , drop = FALSE]
+  g2 <- g2[match(feature_order, g2$name), , drop = FALSE]
+
+  # Data-driven pseudocount must be computed from the full relative-
+  # abundance matrix (same scope as before the refactor), not from the
+  # per-group means -- otherwise the pseudocount would track fold-change
+  # scale and inflate artificially for small-sample comparisons.
   pseudocount <- calculate_pseudocount(as.vector(relative_abundance))
 
-  for (i in seq_len(nrow(relative_abundance))) {
-    # Get abundance values for each group
-    group1_values <- relative_abundance[i, group1_samples, drop = TRUE]
-    group2_values <- relative_abundance[i, group2_samples, drop = TRUE]
-
-    # Calculate means and standard deviations
-    mean1 <- mean(group1_values, na.rm = TRUE)
-    sd1 <- stats::sd(group1_values, na.rm = TRUE)
-    mean2 <- mean(group2_values, na.rm = TRUE)
-    sd2 <- stats::sd(group2_values, na.rm = TRUE)
-
-    # Calculate log2 fold change using unified function
-    log2_fc <- calculate_log2_fold_change(mean1, mean2, pseudocount = pseudocount)
-
-    # Store results
-    results[i, "mean_rel_abundance_group1"] <- mean1
-    results[i, "sd_rel_abundance_group1"] <- sd1
-    results[i, "mean_rel_abundance_group2"] <- mean2
-    results[i, "sd_rel_abundance_group2"] <- sd2
-    results[i, "log2_fold_change"] <- log2_fc
-  }
+  results <- data.frame(
+    feature = feature_order,
+    mean_rel_abundance_group1 = g1$mean,
+    sd_rel_abundance_group1 = g1$sd,
+    mean_rel_abundance_group2 = g2$mean,
+    sd_rel_abundance_group2 = g2$sd,
+    log2_fold_change = calculate_log2_fold_change(
+      g1$mean, g2$mean, pseudocount = pseudocount
+    ),
+    stringsAsFactors = FALSE
+  )
 
   return(results)
 }

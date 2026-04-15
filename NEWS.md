@@ -100,6 +100,16 @@
   parallel implementation of the same logic as well as a duplicated
   `length(Group) != ncol(abundance)` check. Accepted metadata shapes
   are now identical to `pathway_daa()` and `ggpicrust2()`.
+* `pathway_errorbar()` and `pathway_errorbar_table()` (via
+  `calculate_abundance_stats()`) now derive per-feature, per-group mean
+  and standard deviation from a single shared helper,
+  `summarize_abundance_by_group()`. Previously `pathway_errorbar()`
+  rolled its own `pivot_longer() %>% group_by(name, group) %>%
+  summarise(mean(value), sd(value))` path without `na.rm = TRUE`, so the
+  same abundance matrix could produce different bar heights in the plot
+  versus the companion table if any NA slipped through the pipeline.
+  Unifying the aggregation removes that latent divergence and guarantees
+  both entry points evolve together.
 * `pathway_annotation(file = ..., ko_to_kegg = FALSE)` now actually
   populates the `description` column. The file-mode branch previously
   extracted features from sample column names (skipping columns 1 and 2

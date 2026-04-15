@@ -339,7 +339,6 @@ pathway_errorbar <-
     # Subset to only include the features present in daa_results_filtered_sub_df$feature
     sub_relative_abundance_mat <- relative_abundance_mat[rownames(relative_abundance_mat) %in% daa_results_filtered_sub_df$feature, , drop = FALSE]
 
-    # Create a matrix for the error bars
     # Create a mapping from sample names to groups.
     # Prefer names(Group) when available to avoid order-dependent mismatches.
     if (!is.null(names(Group)) &&
@@ -349,7 +348,7 @@ pathway_errorbar <-
     } else {
       sample_to_group_map <- stats::setNames(as.character(Group), colnames(abundance))
     }
-    
+
     # Get groups for the current abundance columns.
     correct_groups <- sample_to_group_map[colnames(sub_relative_abundance_mat)]
     if (any(is.na(correct_groups))) {
@@ -362,39 +361,23 @@ pathway_errorbar <-
         "or provide names(Group) matching sample IDs."
       )
     }
-    
-    # Create the error bar matrix using the correctly mapped groups
-    error_bar_matrix <- cbind(
-      sample = colnames(sub_relative_abundance_mat),
-      group = correct_groups,
-      t(sub_relative_abundance_mat)
-    )
-    error_bar_df <- as.data.frame(error_bar_matrix)
 
-    # Fix for duplicate factor levels issue
+    # Per-feature, per-group mean and sd. Route through the shared helper
+    # instead of the older pivot_longer + group_by(...) + summarise(...)
+    # path that used to live here. That hand-rolled aggregation diverged
+    # from pathway_errorbar_table()'s path on NA handling (it did not set
+    # `na.rm = TRUE`), so the same abundance matrix could yield different
+    # bar heights in the plot vs the table. Using summarize_abundance_by_group()
+    # makes the mean/sd a single source of truth across the package.
     Group_levels <- unique(as.character(Group))
-    error_bar_df$group <- factor(correct_groups, levels = Group_levels)
-
-      error_bar_pivot_longer_df <- tidyr::pivot_longer(error_bar_df,-c(sample, group))
-
-    error_bar_pivot_longer_tibble <-
-      mutate(error_bar_pivot_longer_df, group = as.factor(group))
-
-    error_bar_pivot_longer_tibble$sample <-
-      factor(error_bar_pivot_longer_tibble$sample)
-
-    error_bar_pivot_longer_tibble$name <-
-      factor(error_bar_pivot_longer_tibble$name)
-
-    error_bar_pivot_longer_tibble$value <-
-      as.numeric(error_bar_pivot_longer_tibble$value)
-
     error_bar_pivot_longer_tibble_summarised <-
-      error_bar_pivot_longer_tibble %>% group_by(name, group) %>%
-      summarise(mean = mean(value), sd = stats::sd(value))
-
-    error_bar_pivot_longer_tibble_summarised <-
-      error_bar_pivot_longer_tibble_summarised %>% mutate(group2 = "nonsense")
+      summarize_abundance_by_group(sub_relative_abundance_mat, correct_groups)
+    error_bar_pivot_longer_tibble_summarised$name <-
+      factor(error_bar_pivot_longer_tibble_summarised$name,
+             levels = rownames(sub_relative_abundance_mat))
+    error_bar_pivot_longer_tibble_summarised$group <-
+      factor(error_bar_pivot_longer_tibble_summarised$group, levels = Group_levels)
+    error_bar_pivot_longer_tibble_summarised$group2 <- "nonsense"
 
     # When ko_to_kegg = TRUE, validate pathway_class column exists
     # This is required for proper alignment of pathway class annotations

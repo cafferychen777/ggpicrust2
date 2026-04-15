@@ -249,6 +249,65 @@ test_that("pathway_errorbar_table function works correctly", {
   expect_true(all(expected_cols %in% colnames(result)))
 })
 
+test_that("pathway_errorbar and pathway_errorbar_table share the same mean/sd source", {
+  # Regression guard for the hand-rolled `pivot_longer %>% group_by %>%
+  # summarise(mean(value), sd(value))` path that used to live inside
+  # pathway_errorbar(). That path diverged from pathway_errorbar_table()
+  # (which went through calculate_abundance_stats()) on NA handling and
+  # was a latent bug: fix one path, miss the other. Both entry points now
+  # route through summarize_abundance_by_group(), so the per-feature /
+  # per-group mean and sd must be numerically identical.
+  td <- create_errorbar_test_data(
+    n_features = 5,
+    p_adjust = c(0.01, 0.02, 0.03, 0.04, 0.05)
+  )
+
+  stats_tbl <- pathway_errorbar_table(
+    abundance = td$abundance,
+    daa_results_df = td$daa_results_df,
+    Group = td$Group,
+    p_values_threshold = 0.05
+  )
+
+  # Reach into the plot to grab the exact data frame ggplot consumed.
+  plot <- pathway_errorbar(
+    abundance = td$abundance,
+    daa_results_df = td$daa_results_df,
+    Group = td$Group,
+    p_values_threshold = 0.05,
+    x_lab = "pathway_name"
+  )
+  # The first patchwork panel is the errorbar plot itself; its $data holds
+  # the long-format summary the new code feeds to ggplot.
+  errorbar_data <- plot[[1]]$data
+
+  # For each (feature, group) pair the plot used, the table must agree.
+  group1_name <- unique(td$daa_results_df$group1)[1]
+  group2_name <- unique(td$daa_results_df$group2)[1]
+  for (feat in unique(as.character(errorbar_data$name))) {
+    tbl_row <- stats_tbl[stats_tbl$feature == feat, , drop = FALSE]
+    if (nrow(tbl_row) == 0) next
+
+    plot_g1 <- errorbar_data[
+      as.character(errorbar_data$name) == feat &
+        as.character(errorbar_data$group) == group1_name,
+    ]
+    plot_g2 <- errorbar_data[
+      as.character(errorbar_data$name) == feat &
+        as.character(errorbar_data$group) == group2_name,
+    ]
+
+    expect_equal(plot_g1$mean, tbl_row$mean_rel_abundance_group1,
+                 tolerance = 1e-12, info = feat)
+    expect_equal(plot_g1$sd, tbl_row$sd_rel_abundance_group1,
+                 tolerance = 1e-12, info = feat)
+    expect_equal(plot_g2$mean, tbl_row$mean_rel_abundance_group2,
+                 tolerance = 1e-12, info = feat)
+    expect_equal(plot_g2$sd, tbl_row$sd_rel_abundance_group2,
+                 tolerance = 1e-12, info = feat)
+  }
+})
+
 test_that("pathway_errorbar rejects samples with zero total abundance", {
   # Regression: the relative-abundance conversion used to be
   # `apply(t(mat), 1, function(x) x / sum(x))`, which produced silent NaN

@@ -100,3 +100,66 @@ test_that("validate_abundance tolerates a non-numeric ID column in data frames",
   )
   expect_true(va(df))
 })
+
+# Unit tests for summarize_abundance_by_group(), the per-feature/per-group
+# mean/sd helper that pathway_errorbar() and calculate_abundance_stats()
+# both route through. Locks down contract so future refactors do not
+# silently break one caller while leaving the other intact.
+test_that("summarize_abundance_by_group matches manual mean/sd per group", {
+  sbg <- getFromNamespace("summarize_abundance_by_group", "ggpicrust2")
+
+  set.seed(42)
+  M <- matrix(runif(12), nrow = 3, ncol = 4,
+              dimnames = list(c("f1", "f2", "f3"),
+                              c("S1", "S2", "S3", "S4")))
+  g <- c("A", "A", "B", "B")
+
+  out <- sbg(M, g)
+  # Feature-major order: (f1,A), (f1,B), (f2,A), ... — required for
+  # downstream compatibility with pathway_errorbar's match()/order() code.
+  expect_equal(out$name, rep(c("f1", "f2", "f3"), each = 2))
+  expect_equal(out$group, rep(c("A", "B"), times = 3))
+
+  # Numerics must match manual computation exactly.
+  for (feat in rownames(M)) {
+    manual_A_mean <- mean(M[feat, g == "A"])
+    manual_A_sd   <- stats::sd(M[feat, g == "A"])
+    manual_B_mean <- mean(M[feat, g == "B"])
+    manual_B_sd   <- stats::sd(M[feat, g == "B"])
+    row <- out[out$name == feat, ]
+    expect_equal(row$mean[row$group == "A"], manual_A_mean)
+    expect_equal(row$sd[row$group == "A"], manual_A_sd)
+    expect_equal(row$mean[row$group == "B"], manual_B_mean)
+    expect_equal(row$sd[row$group == "B"], manual_B_sd)
+  }
+})
+
+test_that("summarize_abundance_by_group handles NA in abundance via na.rm = TRUE", {
+  sbg <- getFromNamespace("summarize_abundance_by_group", "ggpicrust2")
+
+  M <- matrix(c(1, 2, NA, 4,
+                5, 6, 7, 8),
+              nrow = 2, byrow = TRUE,
+              dimnames = list(c("f1", "f2"), c("S1", "S2", "S3", "S4")))
+  g <- c("A", "A", "B", "B")
+  out <- sbg(M, g)
+
+  # f1 in group B: only S4 is non-NA, so mean = 4, sd = NA (stats::sd on
+  # length-1 vector returns NA). This matches calculate_abundance_stats().
+  f1_B <- out[out$name == "f1" & out$group == "B", ]
+  expect_equal(f1_B$mean, 4)
+  expect_true(is.na(f1_B$sd))
+
+  # f2 across all samples is intact.
+  f2_A <- out[out$name == "f2" & out$group == "A", ]
+  expect_equal(f2_A$mean, mean(c(5, 6)))
+  expect_equal(f2_A$sd, stats::sd(c(5, 6)))
+})
+
+test_that("summarize_abundance_by_group errors on length mismatch", {
+  sbg <- getFromNamespace("summarize_abundance_by_group", "ggpicrust2")
+
+  M <- matrix(1:6, nrow = 2, ncol = 3,
+              dimnames = list(c("f1", "f2"), c("S1", "S2", "S3")))
+  expect_error(sbg(M, c("A", "B")), regexp = "length")
+})

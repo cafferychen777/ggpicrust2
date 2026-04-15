@@ -527,6 +527,93 @@ compute_relative_abundance <- function(abundance, context = "abundance") {
   sweep(mat, 2, col_totals, "/")
 }
 
+#' Summarize Per-Feature Mean and SD by Group
+#'
+#' Given a relative-abundance matrix (features x samples, already normalized)
+#' and a parallel vector of per-sample group assignments, return a long-format
+#' data frame with one row per (feature, group) combination containing the
+#' mean and standard deviation across the samples in that group.
+#'
+#' This helper is the single source of truth for the per-feature-per-group
+#' mean/sd that both `calculate_abundance_stats()` (used by `pathway_daa()`
+#' and `pathway_errorbar_table()`) and `pathway_errorbar()` need. Previously
+#' `pathway_errorbar()` recomputed these via a `pivot_longer + group_by +
+#' summarise` chain without `na.rm`, which silently diverged from the table
+#' path whenever any NA slipped through the pipeline.
+#'
+#' @param relative_abundance Numeric matrix (features x samples). Callers
+#'   are expected to have already normalized with
+#'   `compute_relative_abundance()` (or any equivalent) and validated
+#'   samples with `validate_abundance()` so that zero-sum columns are
+#'   already ruled out.
+#' @param group_vector Character (or coercible) vector of length
+#'   `ncol(relative_abundance)` assigning each sample column to a group.
+#'   NA entries are dropped from the summary.
+#' @return A data frame with columns `name`, `group`, `mean`, `sd` in long
+#'   format. `name` preserves the row order of the input matrix; `group`
+#'   appears in first-seen order from `group_vector`.
+#' @noRd
+summarize_abundance_by_group <- function(relative_abundance, group_vector) {
+  if (!is.matrix(relative_abundance)) {
+    relative_abundance <- as.matrix(relative_abundance)
+  }
+  n_samples <- ncol(relative_abundance)
+  if (length(group_vector) != n_samples) {
+    stop(sprintf(
+      "summarize_abundance_by_group(): group_vector length (%d) must equal ncol(relative_abundance) (%d).",
+      length(group_vector), n_samples
+    ), call. = FALSE)
+  }
+
+  feature_names <- rownames(relative_abundance)
+  if (is.null(feature_names)) {
+    feature_names <- as.character(seq_len(nrow(relative_abundance)))
+  }
+
+  group_chr <- as.character(group_vector)
+  # Preserve first-seen order; drop NA.
+  present <- group_chr[!is.na(group_chr)]
+  unique_groups <- unique(present)
+
+  if (length(unique_groups) == 0) {
+    return(data.frame(
+      name = character(0), group = character(0),
+      mean = numeric(0), sd = numeric(0),
+      stringsAsFactors = FALSE
+    ))
+  }
+
+  # Compute per-group stats first (group-major intermediate), then
+  # interleave to produce feature-major output: (feature1,gA), (feature1,gB),
+  # (feature2,gA), (feature2,gB), .... This matches the row order that
+  # `pathway_errorbar()` previously produced via `group_by(name, group) %>%
+  # summarise()` and keeps downstream `match()`/`order()` code stable
+  # regardless of the `order()` sort method.
+  means <- matrix(NA_real_, nrow = nrow(relative_abundance),
+                  ncol = length(unique_groups),
+                  dimnames = list(feature_names, unique_groups))
+  sds <- means
+  for (g in unique_groups) {
+    mask <- !is.na(group_chr) & group_chr == g
+    sub <- relative_abundance[, mask, drop = FALSE]
+    # `na.rm = TRUE` matches calculate_abundance_stats() so that the two
+    # entry points agree on how to treat NA abundance cells. After the
+    # zero-sum guard in compute_relative_abundance(), the only way NA
+    # can reach here is if the upstream abundance already contained NA.
+    means[, g] <- apply(sub, 1, mean, na.rm = TRUE)
+    sds[, g] <- apply(sub, 1, stats::sd, na.rm = TRUE)
+  }
+
+  n_groups <- length(unique_groups)
+  data.frame(
+    name = rep(feature_names, each = n_groups),
+    group = rep(unique_groups, times = nrow(relative_abundance)),
+    mean = as.vector(t(means)),
+    sd = as.vector(t(sds)),
+    stringsAsFactors = FALSE
+  )
+}
+
 #' Validate Metadata
 #'
 #' Validates that metadata is in the correct format.
