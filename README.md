@@ -407,13 +407,22 @@ metadata <- read_delim("path/to/your/metadata.txt", delim = "\t", escape_double 
 # data(kegg_abundance)
 kegg_abundance <- ko2kegg_abundance("path/to/your/pred_metagenome_unstrat.tsv")
 
-# Perform pathway differential abundance analysis (DAA) using ALDEx2 method
-# Please change group to "your_group_column" if you are not using example dataset
+# Perform pathway differential abundance analysis (DAA) using ALDEx2 method.
+# Please change group to "your_group_column" if you are not using example dataset.
+# From v2.5.14 ALDEx2 results include effect_size, diff_btw, log2_fold_change,
+# rab_all, and overlap columns by default (via ALDEx2::aldex.effect()), matching
+# the other DAA methods that return log2 fold changes by default. Pass
+# include_effect_size = FALSE to skip that step.
 daa_results_df <- pathway_daa(abundance = kegg_abundance, metadata = metadata, group = "Environment", daa_method = "ALDEx2", select = NULL, reference = NULL)
 
 # Filter results for ALDEx2_Welch's t test method
 # Please check the unique(daa_results_df$method) and choose one
 daa_sub_method_results_df <- daa_results_df[daa_results_df$method == "ALDEx2_Wilcoxon rank test", ]
+
+# Ranking by |log2_fold_change| is generally more biologically informative than
+# ranking by p-value, especially for large datasets where small effects can
+# reach statistical significance without being biologically meaningful.
+top_hits <- daa_sub_method_results_df[order(-abs(daa_sub_method_results_df$log2_fold_change)), ]
 
 # Annotate pathway results using KO to KEGG conversion
 daa_annotated_sub_method_results_df <- pathway_annotation(pathway = "KO", daa_results_df = daa_sub_method_results_df, ko_to_kegg = TRUE)
@@ -435,6 +444,8 @@ ko_abundance <- read.delim("path/to/your/pred_metagenome_unstrat.tsv")
 # Perform pathway DAA using ALDEx2 method
 # Please change column_to_rownames() to the feature column if you are not using example dataset
 # Please change group to "your_group_column" if you are not using example dataset
+# ALDEx2 effect size columns (effect_size, diff_btw, log2_fold_change, rab_all,
+# overlap) are included by default; see the section above.
 daa_results_df <- pathway_daa(abundance = ko_abundance %>% column_to_rownames("#NAME"), metadata = metadata, group = "Environment", daa_method = "ALDEx2", select = NULL, reference = NULL)
 
 # Filter results for ALDEx2_Kruskal-Wallace test method

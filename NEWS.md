@@ -1,3 +1,29 @@
+# ggpicrust2 2.5.14
+
+## Behavior Changes
+
+* `pathway_daa()` now defaults `include_effect_size = TRUE`. ALDEx2 results
+  include `effect_size`, `diff_btw`, `log2_fold_change`, `rab_all`, and
+  `overlap` columns by default, aligning ALDEx2 output with DESeq2, edgeR,
+  limma voom, LinDA, Maaslin2, and metagenomeSeq, which all return log2 fold
+  changes without an opt-in flag. The extra `ALDEx2::aldex.effect()` call
+  reuses the already-computed CLR object, so the cost is modest. Pass
+  `include_effect_size = FALSE` to restore the p-value-only output
+  (requested in #181).
+* Multi-group ALDEx2 runs no longer warn that "effect size only available
+  for two-group comparisons"; the flag is silently ignored when
+  `aldex.effect()` cannot apply.
+
+## Bug Fixes
+
+* `pathway_daa()` with `include_abundance_stats = TRUE` no longer produces
+  `log2_fold_change.x` / `log2_fold_change.y` columns when the DAA method
+  already returns its own `log2_fold_change` (ALDEx2 with effect size,
+  DESeq2, edgeR, limma voom, LinDA, Maaslin2, metagenomeSeq). The
+  method-native log2 fold change is kept and the relative-abundance ratio
+  is not recomputed, so model-based and ratio-based effect sizes are never
+  conflated under the same column name.
+
 # ggpicrust2 2.5.13
 
 ## Bug Fixes

@@ -13,7 +13,7 @@ pathway_daa(
   p_adjust_method = "BH",
   reference = NULL,
   include_abundance_stats = FALSE,
-  include_effect_size = FALSE,
+  include_effect_size = TRUE,
   p.adjust = NULL,
   ...
 )
@@ -62,16 +62,21 @@ Choices are:
 If NULL (default), the first level is used as reference.}
 
 \item{include_abundance_stats}{Logical value indicating whether to include
-abundance statistics (mean relative abundance, standard deviation,
-and log2 fold change) in the output. Default is FALSE for backward
-compatibility.}
+abundance statistics (mean relative abundance and standard deviation
+per group) in the output. Default is FALSE. When the selected
+\code{daa_method} already provides a \code{log2_fold_change} column
+(ALDEx2 with effect size, DESeq2, edgeR, limma voom, LinDA, Maaslin2,
+metagenomeSeq), the method-native log2 fold change is preserved and
+the relative-abundance ratio is not recomputed.}
 
-\item{include_effect_size}{Logical value indicating whether to include
-effect size information in the output for ALDEx2 analysis. When TRUE,
-additional columns are added including effect_size, diff_btw,
-log2_fold_change, rab_all, and overlap. Only applicable for two-group
-comparisons with ALDEx2 method. Default is FALSE for backward
-compatibility.}
+\item{include_effect_size}{Logical value indicating whether to compute
+ALDEx2 effect size information via \code{ALDEx2::aldex.effect()}.
+When TRUE, adds \code{effect_size}, \code{diff_btw},
+\code{log2_fold_change}, \code{rab_all}, and \code{overlap} columns,
+aligning ALDEx2 output with the other DAA methods that return log2
+fold changes by default. Only applicable for two-group comparisons
+with the ALDEx2 method; ignored otherwise. Default is TRUE; set to
+FALSE to skip the extra \code{aldex.effect()} computation.}
 
 \item{p.adjust}{Deprecated. Use \code{p_adjust_method} instead.}
 
@@ -93,6 +98,15 @@ the following columns:
   \item \code{adj_method}: Method used for p-value adjustment
 }
 
+Methods that fit a model on the abundance data (DESeq2, edgeR, limma voom,
+LinDA, Maaslin2, metagenomeSeq) return a \code{log2_fold_change} column
+computed in the method's own model space. ALDEx2 returns
+\code{log2_fold_change} (plus \code{effect_size}, \code{diff_btw},
+\code{rab_all}, \code{overlap}) when \code{include_effect_size = TRUE}
+(the default), derived from \code{ALDEx2::aldex.effect()} in CLR space.
+Lefser returns an \code{lda_score} column instead, which is its native
+effect-size metric.
+
 When \code{include_abundance_stats = TRUE}, the following additional columns
 are included:
 \itemize{
@@ -102,22 +116,10 @@ are included:
   \item \code{mean_rel_abundance_group2}: Mean relative abundance for group2
   \item \code{sd_rel_abundance_group2}: Standard deviation of relative
         abundance for group2
-  \item \code{log2_fold_change}: Log2 fold change (group2/group1)
 }
-
-Some methods may provide additional columns, such as \code{log2_fold_change}
-for effect size information.
-
-When \code{include_effect_size = TRUE} and using ALDEx2 method with two groups,
-the following additional effect size columns are included:
-\itemize{
-  \item \code{effect_size}: ALDEx2 effect size (median of the ratio of between-group
-        difference and within-group variance)
-  \item \code{diff_btw}: Median difference between groups in CLR space
-  \item \code{log2_fold_change}: Log2 fold change (same as diff_btw for ALDEx2)
-  \item \code{rab_all}: Median CLR abundance across all samples
-  \item \code{overlap}: Proportion of effect size that is 0 or less
-}
+A \code{log2_fold_change} column from relative abundance is only added when
+the DAA method does not already provide one, to avoid conflating model-based
+and ratio-based effect sizes.
 }
 \description{
 Performs differential abundance analysis on predicted functional pathway data using various statistical methods.
@@ -176,14 +178,18 @@ limma_results <- pathway_daa(abundance, metadata, "group",
 subset_results <- pathway_daa(abundance, metadata, "group",
                              select = c("sample1", "sample2", "sample3", "sample4"))
 
-# Include effect size information for ALDEx2 analysis
-aldex2_with_effect <- pathway_daa(abundance, metadata, "group",
-                                 daa_method = "ALDEx2",
-                                 include_effect_size = TRUE)
+# ALDEx2 returns effect size columns by default
+# (effect_size, diff_btw, log2_fold_change, rab_all, overlap).
+# Ranking by |log2_fold_change| is generally more biologically informative
+# than ranking by p-value, especially for large datasets where small effects
+# can reach statistical significance without being biologically meaningful.
+aldex2_res <- pathway_daa(abundance, metadata, "group", daa_method = "ALDEx2")
+head(aldex2_res)
 
-# The result will include additional columns: effect_size, diff_btw,
-# log2_fold_change, rab_all, and overlap
-head(aldex2_with_effect)
+# Opt out of the extra aldex.effect() computation if only p-values are needed
+aldex2_pvals_only <- pathway_daa(abundance, metadata, "group",
+                                daa_method = "ALDEx2",
+                                include_effect_size = FALSE)
 }
 
 }

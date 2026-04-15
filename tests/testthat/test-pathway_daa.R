@@ -228,28 +228,82 @@ test_that("pathway_daa handles p-value adjustment correctly", {
 test_that("pathway_daa include_abundance_stats parameter works correctly", {
   td <- create_daa_test_data(n_samples = 4)
 
-  # Without abundance stats (default)
-  result_basic <- pathway_daa(td$abundance, td$metadata, "group",
-                             daa_method = "ALDEx2", include_abundance_stats = FALSE)
-
+  # Columns contributed by abundance stats (relative-abundance means/SDs).
+  # log2_fold_change is intentionally excluded here: when the DAA method
+  # already provides a log2_fold_change column (ALDEx2 with effect size on),
+  # the relative-abundance ratio is suppressed to avoid conflating two
+  # different effect-size definitions. That behavior is covered by a
+  # dedicated test below.
   abundance_cols <- c("mean_rel_abundance_group1", "sd_rel_abundance_group1",
-                     "mean_rel_abundance_group2", "sd_rel_abundance_group2",
-                     "log2_fold_change")
+                     "mean_rel_abundance_group2", "sd_rel_abundance_group2")
+
+  # Without abundance stats (default). Disable effect size too so this test
+  # isolates the abundance-stats toggle from the ALDEx2 effect-size toggle.
+  result_basic <- pathway_daa(td$abundance, td$metadata, "group",
+                             daa_method = "ALDEx2",
+                             include_abundance_stats = FALSE,
+                             include_effect_size = FALSE)
 
   expect_false(any(abundance_cols %in% colnames(result_basic)))
+  expect_false("log2_fold_change" %in% colnames(result_basic))
 
-  # With abundance stats
+  # With abundance stats, still isolating from effect size.
   result_enhanced <- pathway_daa(td$abundance, td$metadata, "group",
-                                daa_method = "ALDEx2", include_abundance_stats = TRUE)
+                                daa_method = "ALDEx2",
+                                include_abundance_stats = TRUE,
+                                include_effect_size = FALSE)
 
   expect_true(all(abundance_cols %in% colnames(result_enhanced)))
+  # With no method-native log2FC in the result, abundance stats should
+  # contribute its relative-abundance-ratio log2_fold_change column.
+  expect_true("log2_fold_change" %in% colnames(result_enhanced))
 
-  for (col in abundance_cols) {
+  for (col in c(abundance_cols, "log2_fold_change")) {
     expect_true(is.numeric(result_enhanced[[col]]))
   }
   expect_true(all(is.finite(result_enhanced$log2_fold_change)))
   expect_true(all(result_enhanced$sd_rel_abundance_group1 >= 0, na.rm = TRUE))
   expect_true(all(result_enhanced$sd_rel_abundance_group2 >= 0, na.rm = TRUE))
+})
+
+test_that("ALDEx2 returns effect size columns by default", {
+  td <- create_daa_test_data(n_samples = 4)
+
+  # Default call: no explicit include_effect_size.
+  result_default <- pathway_daa(td$abundance, td$metadata, "group",
+                                daa_method = "ALDEx2")
+
+  effect_cols <- c("effect_size", "diff_btw", "log2_fold_change",
+                   "rab_all", "overlap")
+  expect_true(all(effect_cols %in% colnames(result_default)))
+  for (col in effect_cols) {
+    expect_true(is.numeric(result_default[[col]]))
+  }
+
+  # Opt-out recovers the minimal p-value-only output.
+  result_opt_out <- pathway_daa(td$abundance, td$metadata, "group",
+                                daa_method = "ALDEx2",
+                                include_effect_size = FALSE)
+  expect_false(any(effect_cols %in% colnames(result_opt_out)))
+})
+
+test_that("include_abundance_stats does not collide with method-native log2FC", {
+  td <- create_daa_test_data(n_samples = 4)
+
+  # ALDEx2 with both flags on: method-native log2_fold_change (CLR-space
+  # diff.btw) must be preserved, and merging abundance stats must not
+  # introduce .x / .y suffixes.
+  result <- pathway_daa(td$abundance, td$metadata, "group",
+                        daa_method = "ALDEx2",
+                        include_abundance_stats = TRUE,
+                        include_effect_size = TRUE)
+
+  expect_true("log2_fold_change" %in% colnames(result))
+  expect_false(any(c("log2_fold_change.x", "log2_fold_change.y") %in%
+                     colnames(result)))
+  # The retained log2_fold_change should equal ALDEx2's diff_btw (CLR space),
+  # not the relative-abundance ratio.
+  expect_equal(result$log2_fold_change, result$diff_btw)
 })
 
 test_that("format_linda_output handles malformed LinDA outputs robustly", {
