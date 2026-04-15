@@ -13,7 +13,7 @@ pathway_errorbar_table(
   select = NULL,
   max_features = 30,
   metadata = NULL,
-  sample_col = "sample_name"
+  sample_col = NULL
 )
 }
 \arguments{
@@ -45,7 +45,10 @@ Default is 30.}
 the Group vector will be reordered to match the abundance column order.}
 
 \item{sample_col}{Character string specifying the column name in metadata
-that contains sample identifiers. Default is "sample_name".}
+that contains sample identifiers. Default is NULL, which triggers
+auto-detection via the same logic used by \code{pathway_daa()}
+(common names like "sample", "Sample", "sample_id", "sample_name",
+or metadata rownames).}
 }
 \value{
 A data frame containing the following columns:
