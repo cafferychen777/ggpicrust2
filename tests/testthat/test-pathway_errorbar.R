@@ -387,3 +387,13 @@ test_that("pathway_errorbar falls back to mean-ratio log2_fold_change when the c
   expect_true("log2_fold_change" %in% colnames(p$data))
   expect_false(any(is.na(p$data$log2_fold_change)))
 })
+
+# Regression: several theme() calls used `legend.position = "non"` (typo).
+# In ggplot2 4.x any unrecognized string silently falls back to hiding the
+# legend, so the plot looked correct -- but a future ggplot2 release that
+# tightens this check would turn the typo into an error. Lock the spelling.
+test_that("pathway_errorbar uses legend.position = 'none' (not 'non')", {
+  body_src <- paste(deparse(body(ggpicrust2::pathway_errorbar)), collapse = "\n")
+  expect_false(grepl("legend\\.position\\s*=\\s*\"non\"", body_src))
+  expect_true(grepl("legend\\.position\\s*=\\s*\"none\"", body_src))
+})

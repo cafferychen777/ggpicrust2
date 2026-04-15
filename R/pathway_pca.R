@@ -235,31 +235,41 @@ pathway_pca <- function(abundance,
     ggplot2::geom_vline(xintercept = 0, linetype = "dashed", color = "black") +
     ggplot2::geom_hline(yintercept = 0, linetype = "dashed", color = "black")
 
-  # Create a ggplot object for the density plot of PC1
-  # Plot the density of PC1 colored by Group
+  # Marginal density for PC1.
+  #
+  # geom_density() maps `..density..` (a continuous value) to y, so the
+  # matching position scale is `scale_y_continuous()`. The previous
+  # `scale_y_discrete()` was a latent type mismatch: ggplot2 silently
+  # coerced the continuous aesthetic through a discrete scale, and
+  # `expand = c(0, 0.001)` ended up interpreted in discrete-category
+  # units rather than the intended "0 multiplicative + small additive
+  # padding" on a continuous axis. Using the continuous scale makes
+  # the grammar-of-graphics contract explicit and keeps the behavior
+  # stable across ggplot2 versions.
   Fig1a.taxa.pc1.density <-
     ggplot2::ggplot(pca) +
-    ggplot2::geom_density(ggplot2::aes(x=PC1, group=Group, fill=Group), # Plot the density of PC1
+    ggplot2::geom_density(ggplot2::aes(x=PC1, group=Group, fill=Group),
                  color="black", alpha=1, position = 'identity',show.legend = F) +
-    ggplot2::scale_fill_manual(values=colors) + # Manually set the fill color for each group
-    ggplot2::theme_classic() + # Set the classic theme
-    ggplot2::scale_y_discrete(expand = c(0,0.001)) + # Scale the y-axis with a small expansion to improve appearance
-    ggplot2::labs(x=NULL, y=NULL) + # Remove x and y labels
-    ggplot2::theme(axis.text.x=ggplot2::element_blank(), # Remove x axis text
-          axis.ticks.x = ggplot2::element_blank()) # Remove x axis ticks
+    ggplot2::scale_fill_manual(values=colors) +
+    ggplot2::theme_classic() +
+    ggplot2::scale_y_continuous(expand = c(0, 0.001)) +
+    ggplot2::labs(x=NULL, y=NULL) +
+    ggplot2::theme(axis.text.x=ggplot2::element_blank(),
+          axis.ticks.x = ggplot2::element_blank())
 
-  # Plot the density of PC2 colored by Group
+  # Marginal density for PC2 (horizontal after coord_flip()). Same
+  # continuous-scale reasoning applies.
   Fig1a.taxa.pc2.density <-
     ggplot2::ggplot(pca) +
-    ggplot2::geom_density(ggplot2::aes(x=PC2, group=Group, fill=Group), # Plot the density of PC2
+    ggplot2::geom_density(ggplot2::aes(x=PC2, group=Group, fill=Group),
                  color="black", alpha=1, position = 'identity',show.legend = F) +
-    ggplot2::scale_fill_manual(values=colors) + # Manually set the fill color for each group
-    ggplot2::theme_classic() + # Set the classic theme
-    ggplot2::scale_y_discrete(expand = c(0,0.001)) + # Scale the y-axis with a small expansion to improve appearance
-    ggplot2::labs(x=NULL, y=NULL) + # Remove x and y labels
-    ggplot2::theme(axis.text.y = ggplot2::element_blank(), # Remove y axis text
-          axis.ticks.y = ggplot2::element_blank()) + # Remove y axis ticks
-    ggplot2::coord_flip() # Flip the plot to change it from a horizontal to a vertical orientation
+    ggplot2::scale_fill_manual(values=colors) +
+    ggplot2::theme_classic() +
+    ggplot2::scale_y_continuous(expand = c(0, 0.001)) +
+    ggplot2::labs(x=NULL, y=NULL) +
+    ggplot2::theme(axis.text.y = ggplot2::element_blank(),
+          axis.ticks.y = ggplot2::element_blank()) +
+    ggplot2::coord_flip()
 
   # Return plot with or without marginal density plots
   if (show_marginal) {

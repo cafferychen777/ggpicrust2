@@ -730,7 +730,7 @@ pathway_errorbar <-
           color = "black",
           hjust = 0.5
         ),
-        legend.position = "non"
+        legend.position = "none"
       ) +
       ggplot2::coord_flip()
 
@@ -780,7 +780,7 @@ pathway_errorbar <-
           },
           axis.title.y =  ggplot2::element_blank(),
           axis.title.x = ggplot2::element_blank(),
-          legend.position = "non"
+          legend.position = "none"
         ) +
         ggplot2::coord_cartesian(clip = "off")
     }
@@ -852,7 +852,7 @@ pathway_errorbar <-
           vjust = 0
         ),
         axis.title.x = ggplot2::element_blank(),
-        legend.position = "non"
+        legend.position = "none"
       )
     if (p_value_bar == TRUE) {
       if (ko_to_kegg == TRUE) {

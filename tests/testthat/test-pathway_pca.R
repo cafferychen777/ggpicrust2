@@ -68,3 +68,17 @@ test_that("pathway_pca show_marginal parameter works", {
   expect_s3_class(result_with, "ggplot")
   expect_s3_class(result_without, "ggplot")
 })
+
+# Regression: the marginal density panels used to attach
+# scale_y_discrete() to geom_density(), which produces a continuous y.
+# ggplot2 silently tolerated that mismatch but it was a latent type bug
+# and mis-interpreted `expand = c(0, 0.001)` in discrete-category units.
+# Assert the source no longer attaches a discrete scale to the density
+# y aesthetic.
+test_that("pathway_pca marginal density uses a continuous y scale", {
+  body_src <- paste(deparse(body(ggpicrust2::pathway_pca)), collapse = "\n")
+  # The continuous scale must be present on the density panels.
+  expect_true(grepl("scale_y_continuous\\(", body_src))
+  # And the discrete scale must be gone from the density construction.
+  expect_false(grepl("scale_y_discrete\\(", body_src))
+})
