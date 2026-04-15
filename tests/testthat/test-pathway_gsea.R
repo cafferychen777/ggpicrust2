@@ -98,3 +98,35 @@ test_that("prepare_gene_sets works for KEGG and MetaCyc pathway types", {
   gene_sets_metacyc <- prepare_gene_sets("MetaCyc")
   expect_type(gene_sets_metacyc, "list")
 })
+
+test_that("prepare_gene_sets warns when `organism` is set to a non-default value but still returns the same KO gene sets", {
+  # Regression: `organism` was documented on both `prepare_gene_sets()`
+  # and `pathway_gsea()` but the KEGG and GO branches both read
+  # KO-based reference tables (`ko_to_kegg_reference`,
+  # `ko_to_go_reference`) that are organism-independent by
+  # construction. A user passing `organism = "hsa"` silently got the
+  # same gene sets as the default -- a promise/implementation gap --
+  # which we now surface as a deprecation warning. The gene-set
+  # content must remain identical across organism values (the
+  # argument truly has no effect), both for KEGG and GO.
+  expect_warning(
+    gs_hsa <- prepare_gene_sets("KEGG", organism = "hsa"),
+    regexp = "organism.*deprecated.*no effect"
+  )
+  gs_default <- suppressWarnings(prepare_gene_sets("KEGG", organism = "ko"))
+  expect_identical(gs_hsa, gs_default)
+
+  # Default value does not warn.
+  expect_warning(
+    prepare_gene_sets("KEGG", organism = "ko"),
+    regexp = NA
+  )
+
+  # GO branch: same contract.
+  expect_warning(
+    go_hsa <- prepare_gene_sets("GO", organism = "hsa"),
+    regexp = "organism.*deprecated.*no effect"
+  )
+  go_default <- suppressWarnings(prepare_gene_sets("GO", organism = "ko"))
+  expect_identical(go_hsa, go_default)
+})

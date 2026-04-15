@@ -79,7 +79,13 @@ The fgsea method uses adaptive multilevel splitting and does not require a fixed
 Valid categories are determined by the reference data (currently MF and CC).
 See \code{table(ko_to_go_reference$category)} for available categories.}
 
-\item{organism}{A character string specifying the organism for KEGG analysis (default: "ko" for KEGG Orthology)}
+\item{organism}{Deprecated and has no effect. The KEGG and GO
+reference data bundled with ggpicrust2 are KO-based
+(organism-independent), so gene sets are returned in KO space
+regardless of this argument. Retained only for signature
+compatibility; passing any value other than the default
+\code{"ko"} emits a deprecation warning. Will be removed in a
+future release.}
 
 \item{p.adjust}{Deprecated. Use \code{p_adjust_method} instead.}
 }

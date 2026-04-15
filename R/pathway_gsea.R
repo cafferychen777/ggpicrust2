@@ -90,7 +90,13 @@ validate_group_sizes <- function(group_vector, group_name) {
 #'   "all" (default) uses all categories present in the reference data.
 #'   Valid categories are determined by the reference data (currently MF and CC).
 #'   See \code{table(ko_to_go_reference$category)} for available categories.
-#' @param organism A character string specifying the organism for KEGG analysis (default: "ko" for KEGG Orthology)
+#' @param organism Deprecated and has no effect. The KEGG and GO
+#'   reference data bundled with ggpicrust2 are KO-based
+#'   (organism-independent), so gene sets are returned in KO space
+#'   regardless of this argument. Retained only for signature
+#'   compatibility; passing any value other than the default
+#'   \code{"ko"} emits a deprecation warning. Will be removed in a
+#'   future release.
 #'
 #' @return A data frame containing GSEA results with columns:
 #'   \itemize{
@@ -427,7 +433,9 @@ pathway_gsea <- function(abundance,
 #' Prepare gene sets for GSEA
 #'
 #' @param pathway_type A character string specifying the pathway type: "KEGG", "MetaCyc", or "GO"
-#' @param organism A character string specifying the organism (only relevant for KEGG and GO)
+#' @param organism Deprecated and has no effect; gene sets are KO-based
+#'   for both KEGG and GO. See \code{\link{pathway_gsea}} for details.
+#'   Retained for signature compatibility only.
 #' @param go_category A character string specifying the GO category to use.
 #'   "all" (default) uses all categories. Valid values are determined by
 #'   the reference data; see \code{table(ko_to_go_reference$category)}.
@@ -440,6 +448,28 @@ prepare_gene_sets <- function(pathway_type = "KEGG", organism = "ko", go_categor
   valid_types <- c("KEGG", "MetaCyc", "GO")
   if (!pathway_type %in% valid_types) {
     stop("pathway_type must be one of: ", paste(valid_types, collapse = ", "))
+  }
+
+  # Soft-deprecate `organism`. The KEGG and GO reference tables loaded
+  # below -- `ko_to_kegg_reference` and `ko_to_go_reference` -- are
+  # both keyed on KO identifiers and are organism-independent by
+  # construction, so this argument never actually influenced either
+  # branch. A caller that set `organism = "hsa"` expecting
+  # human-specific pathways silently got the same KO gene sets as
+  # `organism = "ko"`. Raise a visible deprecation warning at the
+  # single choke point both `pathway_gsea()` and direct callers go
+  # through, rather than letting the promise-implementation gap stay
+  # silent. The default value is unchanged so existing callers that
+  # relied on the (ignored) default keep working without a warning.
+  if (!identical(organism, "ko")) {
+    warning(sprintf(
+      "'organism' argument is deprecated and has no effect (got '%s'). ",
+      as.character(organism)[1]),
+      "The KEGG and GO reference data bundled with ggpicrust2 are ",
+      "KO-based (organism-independent), so all gene sets are returned ",
+      "in KO space regardless of this argument. This parameter will ",
+      "be removed in a future release.",
+      call. = FALSE)
   }
 
   if (pathway_type == "KEGG") {

@@ -130,6 +130,17 @@
   parallel implementation of the same logic as well as a duplicated
   `length(Group) != ncol(abundance)` check. Accepted metadata shapes
   are now identical to `pathway_daa()` and `ggpicrust2()`.
+* `pathway_gsea(organism = ...)` and
+  `prepare_gene_sets(organism = ...)` now warn when a non-default value
+  is supplied. Both functions advertised an `organism` argument but
+  the KEGG and GO branches read KO-based reference tables
+  (`ko_to_kegg_reference`, `ko_to_go_reference`) that are
+  organism-independent by construction, so a caller passing e.g.
+  `organism = "hsa"` silently got the same gene sets as `"ko"`. The
+  argument is retained for signature compatibility with a deprecation
+  warning, its documentation now records the no-op, and the parameter
+  will be removed in a future release. Callers that rely on the
+  default value are unaffected.
 * `ggpicrust2()` no longer forwards its `select` argument into
   `pathway_daa()`. The wrapper's `@param select` documents a vector of
   **pathway names** for plot-time feature selection, but the same value
