@@ -415,9 +415,15 @@ calculate_log2_fold_change <- function(mean1, mean2, pseudocount = NULL,
 #' @param abundance Data frame or matrix to validate
 #' @param min_samples Minimum number of samples required (default: 2)
 #' @param require_numeric Whether all non-ID columns must be numeric (default: TRUE)
+#' @param check_zero_columns If TRUE (default), reject sample columns whose
+#'   total abundance is zero. Such samples would turn into NaN inside
+#'   `x / sum(x)` and then be silently dropped by downstream
+#'   `mean(..., na.rm = TRUE)`, producing stats computed from the wrong
+#'   sample size without any warning.
 #' @return TRUE if valid, otherwise stops with error
 #' @noRd
-validate_abundance <- function(abundance, min_samples = 2, require_numeric = TRUE) {
+validate_abundance <- function(abundance, min_samples = 2, require_numeric = TRUE,
+                               check_zero_columns = TRUE) {
   if (!is.data.frame(abundance) && !is.matrix(abundance)) {
     stop("'abundance' must be a data frame or matrix")
   }
@@ -434,7 +440,91 @@ validate_abundance <- function(abundance, min_samples = 2, require_numeric = TRU
     }
   }
 
+  if (check_zero_columns) {
+    numeric_mat <- abundance_to_numeric_matrix(abundance)
+    if (!is.null(numeric_mat)) {
+      col_totals <- colSums(numeric_mat, na.rm = FALSE)
+      bad <- which(!is.finite(col_totals) | col_totals == 0)
+      if (length(bad) > 0) {
+        offenders <- column_labels(numeric_mat, bad)
+        stop(sprintf(
+          "Invalid abundance data: %d sample column(s) have a total abundance of 0 or NA: %s.\n  Each sample must contain at least one non-zero feature. Drop or reprocess these samples before analysis.",
+          length(bad),
+          paste(head(offenders, 5), collapse = ", ")
+        ), call. = FALSE)
+      }
+    }
+  }
+
   TRUE
+}
+
+#' Extract the numeric sample-by-feature matrix from abundance input
+#'
+#' `validate_abundance()` accepts either a matrix or a data.frame that may
+#' carry a non-numeric ID column. For the zero-column check we only care
+#' about the numeric part; this helper normalizes both shapes.
+#'
+#' Returns NULL when no numeric columns exist (the caller has already
+#' errored via `require_numeric` when appropriate).
+#' @noRd
+abundance_to_numeric_matrix <- function(abundance) {
+  if (is.matrix(abundance)) {
+    if (!is.numeric(abundance)) return(NULL)
+    return(abundance)
+  }
+  # data.frame
+  numeric_cols <- vapply(abundance, is.numeric, logical(1))
+  if (!any(numeric_cols)) return(NULL)
+  as.matrix(abundance[, numeric_cols, drop = FALSE])
+}
+
+#' Return human-readable column labels for a set of positions
+#'
+#' Prefer column names when they exist and are non-empty; otherwise fall
+#' back to the position index so the error is still actionable.
+#' @noRd
+column_labels <- function(x, positions) {
+  nm <- colnames(x)
+  if (is.null(nm)) return(as.character(positions))
+  labs <- nm[positions]
+  labs[!nzchar(labs)] <- as.character(positions[!nzchar(labs)])
+  labs
+}
+
+#' Compute Relative Abundance with Zero-Column Guard
+#'
+#' Divides each sample column by its column sum to produce relative
+#' abundances. Replaces the duplicated `apply(., 2, function(x) x / sum(x))`
+#' idiom and -- more importantly -- refuses zero-sum columns instead of
+#' silently producing NaN that later gets dropped by `na.rm = TRUE` in
+#' downstream aggregations (which would compute stats on fewer samples
+#' than the user expects without any indication).
+#'
+#' @param abundance Numeric matrix or numeric-only data frame with features
+#'   as rows and samples as columns.
+#' @param context Short string describing the caller, used in the error
+#'   message so the user knows where the zero-sum sample was detected.
+#' @return A matrix of relative abundances with the same shape as the
+#'   input.
+#' @noRd
+compute_relative_abundance <- function(abundance, context = "abundance") {
+  mat <- if (is.matrix(abundance)) abundance else as.matrix(abundance)
+  if (!is.numeric(mat)) {
+    stop(sprintf("Cannot compute relative abundance: %s is not numeric.", context),
+         call. = FALSE)
+  }
+  col_totals <- colSums(mat, na.rm = FALSE)
+  bad <- which(!is.finite(col_totals) | col_totals == 0)
+  if (length(bad) > 0) {
+    offenders <- column_labels(mat, bad)
+    stop(sprintf(
+      "Cannot compute relative abundance for %s: %d sample column(s) have a total of 0 or NA: %s.\n  Drop or reprocess these samples before analysis.",
+      context, length(bad),
+      paste(head(offenders, 5), collapse = ", ")
+    ), call. = FALSE)
+  }
+  sweep(mat, 2, col_totals, "/")
 }
 
 #' Validate Metadata

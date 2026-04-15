@@ -248,3 +248,28 @@ test_that("pathway_errorbar_table function works correctly", {
                     "log2_fold_change", "p_adjust")
   expect_true(all(expected_cols %in% colnames(result)))
 })
+
+test_that("pathway_errorbar rejects samples with zero total abundance", {
+  # Regression: the relative-abundance conversion used to be
+  # `apply(t(mat), 1, function(x) x / sum(x))`, which produced silent NaN
+  # for any sample column whose total was 0. Those NaN propagated into
+  # the plotted error bars without any warning. The zero-sum sample must
+  # now surface as an actionable error that names the offending column.
+  td <- create_errorbar_test_data(
+    n_features = 6,
+    p_adjust = c(0.01, 0.02, 0.03, 0.04, 0.05, 0.06)
+  )
+  zero_sample <- colnames(td$abundance)[1]
+  td$abundance[, zero_sample] <- 0
+
+  expect_error(
+    pathway_errorbar(
+      abundance = td$abundance,
+      daa_results_df = td$daa_results_df,
+      Group = td$Group,
+      p_values_threshold = 0.05,
+      x_lab = "pathway_name"
+    ),
+    regexp = zero_sample
+  )
+})

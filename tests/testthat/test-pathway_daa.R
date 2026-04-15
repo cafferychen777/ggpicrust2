@@ -839,3 +839,29 @@ test_that("pathway_daa rejects unsupported daa_method with a typo suggestion", {
     "Unsupported daa_method"
   )
 })
+
+test_that("pathway_daa rejects samples with zero total abundance", {
+  # Regression: `x / sum(x)` inside calculate_abundance_stats() produced
+  # NaN for zero-sum sample columns; the surrounding `mean(..., na.rm =
+  # TRUE)` then silently dropped those NaN values, so the reported group
+  # means were computed from fewer samples than the user had supplied.
+  # The zero-sum column must now surface as an actionable error that
+  # names the offending sample.
+  skip_if_not_installed("ALDEx2")
+
+  td <- create_daa_test_data(n_samples = 6, n_groups = 2)
+  bad_abundance <- td$abundance
+  zero_sample <- colnames(bad_abundance)[3]
+  bad_abundance[, zero_sample] <- 0
+
+  expect_error(
+    pathway_daa(
+      abundance = bad_abundance,
+      metadata = td$metadata,
+      group = "group",
+      daa_method = "ALDEx2",
+      include_abundance_stats = TRUE
+    ),
+    regexp = zero_sample
+  )
+})

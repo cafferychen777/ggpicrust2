@@ -327,9 +327,14 @@ pathway_errorbar <-
         "For possible solutions, please check the FAQ section of the tutorial."
       )
     }
-    # Convert to relative abundance
-    relative_abundance_mat <- apply(t(errorbar_abundance_mat), 1, function(x)
-      x / sum(x))
+    # Convert to relative abundance via the shared helper. This keeps
+    # the normalization identical to calculate_abundance_stats() and
+    # rejects zero-sum sample columns up front, instead of silently
+    # propagating NaN into the plotted error bars.
+    relative_abundance_mat <- compute_relative_abundance(
+      errorbar_abundance_mat,
+      context = "pathway_errorbar()"
+    )
 
     # Subset to only include the features present in daa_results_filtered_sub_df$feature
     sub_relative_abundance_mat <- relative_abundance_mat[rownames(relative_abundance_mat) %in% daa_results_filtered_sub_df$feature, , drop = FALSE]

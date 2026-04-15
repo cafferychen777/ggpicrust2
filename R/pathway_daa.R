@@ -246,8 +246,14 @@ calculate_abundance_stats <- function(abundance, metadata, group, features, grou
     stop("No samples found for group2: ", group2)
   }
 
-  # Convert to relative abundance
-  relative_abundance <- apply(abundance_filtered, 2, function(x) x / sum(x))
+  # Convert to relative abundance via the shared helper so zero-sum sample
+  # columns fail fast here instead of producing NaN that later gets
+  # dropped by `na.rm = TRUE` inside the mean()/sd() aggregations,
+  # silently changing the effective sample size.
+  relative_abundance <- compute_relative_abundance(
+    abundance_filtered,
+    context = "calculate_abundance_stats()"
+  )
 
   # Filter for specified features
   if (!is.null(features)) {
