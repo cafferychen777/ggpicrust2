@@ -110,6 +110,18 @@
   versus the companion table if any NA slipped through the pipeline.
   Unifying the aggregation removes that latent divergence and guarantees
   both entry points evolve together.
+
+## Internal
+
+* Removed the `"nonsense"` placeholder columns and values from
+  `pathway_errorbar()`'s internal data frames. The log2-fold-change bar
+  now sets its fill directly on `geom_bar()` instead of routing a single
+  color through `aes(fill = group_nonsense)` + `scale_fill_manual()`,
+  and the pathway-class / p-value side panels anchor all labels at a
+  single x via `aes(x = "")` instead of padding each data frame with a
+  constant dummy column. A dead `$group2 <- "nonsense"` column that was
+  written but never read downstream is also gone. No user-visible
+  change.
 * `pathway_annotation(file = ..., ko_to_kegg = FALSE)` now actually
   populates the `description` column. The file-mode branch previously
   extracted features from sample column names (skipping columns 1 and 2

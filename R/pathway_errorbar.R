@@ -149,7 +149,7 @@
 #'   log2_fold_change_color = "#006400" # Dark green for log2 fold change bars
 #' )
 #' }
-utils::globalVariables(c("group", "name", "value", "feature", "negative_log10_p", "group_nonsense", "nonsense", "pathway_class", "p_adjust", "log2_fold_change", "transform_sample_counts", "column_to_rownames", "txtProgressBar", "setTxtProgressBar", "utils"))
+utils::globalVariables(c("group", "name", "value", "feature", "negative_log10_p", "pathway_class", "p_adjust", "log2_fold_change", "transform_sample_counts", "column_to_rownames", "txtProgressBar", "setTxtProgressBar", "utils"))
 pathway_errorbar <-
   function(abundance,
            daa_results_df,
@@ -377,7 +377,6 @@ pathway_errorbar <-
              levels = rownames(sub_relative_abundance_mat))
     error_bar_pivot_longer_tibble_summarised$group <-
       factor(error_bar_pivot_longer_tibble_summarised$group, levels = Group_levels)
-    error_bar_pivot_longer_tibble_summarised$group2 <- "nonsense"
 
     # When ko_to_kegg = TRUE, validate pathway_class column exists
     # This is required for proper alignment of pathway class annotations
@@ -637,8 +636,7 @@ pathway_errorbar <-
     }
     # Add necessary columns
     daa_results_filtered_sub_df$negative_log10_p <- -log10(daa_results_filtered_sub_df$p_adjust)
-    daa_results_filtered_sub_df$group_nonsense <- "nonsense"
-    
+
     # Only add log2_fold_change if it doesn't exist
     if (!"log2_fold_change" %in% colnames(daa_results_filtered_sub_df)) {
       daa_results_filtered_sub_df$log2_fold_change <- rep(NA, nrow(daa_results_filtered_sub_df))
@@ -675,15 +673,20 @@ pathway_errorbar <-
       }
     }
     daa_results_filtered_sub_df$feature <- factor(daa_results_filtered_sub_df$feature,levels = rev(daa_results_filtered_sub_df$feature))
+    # This panel plots a single log2 fold change bar per feature. There is
+    # no grouping to map to `fill`, so the color is set directly on
+    # geom_bar() instead of routing through a one-level fill scale with a
+    # dummy constant column. The old code used `aes(fill = group_nonsense)`
+    # + `scale_fill_manual(values = log2_fold_change_color)` to accomplish
+    # the same visual result via an extra indirection.
     p_values_bar <- daa_results_filtered_sub_df %>%
-      ggplot2::ggplot(ggplot2::aes(feature, log2_fold_change, fill = group_nonsense)) +
+      ggplot2::ggplot(ggplot2::aes(feature, log2_fold_change)) +
       ggplot2::geom_bar(stat = "identity",
                position = ggplot2::position_dodge(width = 0.8),
-               width = 0.8) +
+               width = 0.8,
+               fill = log2_fold_change_color) +
       ggplot2::labs(y = "log2 fold change", x = NULL) +
       GGally::geom_stripped_cols() +
-      ggplot2::scale_fill_manual(values = log2_fold_change_color) +
-      ggplot2::scale_color_manual(values = log2_fold_change_color) +
       ggplot2::geom_hline(ggplot2::aes(yintercept = 0),
                  linetype = 'dashed',
                  color = 'black') +
@@ -716,24 +719,20 @@ pathway_errorbar <-
       # Calculate label y-position as the center of each rectangle
       # The -0.5 offset was causing misalignment (see demos/alignment_debug_analysis.R)
       pathway_class_y <- (ymax + ymin) / 2
-      pathway_class_plot_df <-
-        as.data.frame(
-          cbind(
-            nonsense = "nonsense",
-            pathway_class_y = pathway_class_y,
-            pathway_class = rev(unique(
-              daa_results_filtered_sub_df$pathway_class
-            ))
-          )
-        )
-      pathway_class_plot_df$pathway_class_y <-
-        as.numeric(pathway_class_plot_df$pathway_class_y)
+      # This side-panel draws pathway-class labels aligned to the main plot.
+      # All labels share the same x, so we set `x = ""` directly in aes()
+      # instead of padding the data frame with a constant dummy column.
+      pathway_class_plot_df <- data.frame(
+        pathway_class_y = as.numeric(pathway_class_y),
+        pathway_class = rev(unique(daa_results_filtered_sub_df$pathway_class)),
+        stringsAsFactors = FALSE
+      )
       # Number of features for y-axis limits
       n_features <- nrow(daa_results_filtered_sub_df)
 
       pathway_class_annotation <-
-        pathway_class_plot_df %>% ggplot2::ggplot(ggplot2::aes(nonsense, pathway_class_y)) + ggplot2::geom_text(
-          ggplot2::aes(nonsense, pathway_class_y, label = pathway_class),
+        pathway_class_plot_df %>% ggplot2::ggplot(ggplot2::aes(x = "", y = pathway_class_y)) + ggplot2::geom_text(
+          ggplot2::aes(label = pathway_class),
           size = pathway_class_final_text_size,
           color = pathway_class_final_text_color,
           fontface = pathway_class_text_face,
@@ -803,10 +802,13 @@ pathway_errorbar <-
 
     daa_results_filtered_sub_df$unique <-
       nrow(daa_results_filtered_sub_df) - seq_len(nrow(daa_results_filtered_sub_df)) + 1
+    # All p-value labels share a single x anchor (this panel is a vertical
+    # strip), so we set `x = ""` in aes() instead of adding a constant
+    # dummy column just to have a variable name to map.
     p_annotation <- daa_results_filtered_sub_df %>%
-      ggplot2::ggplot(ggplot2::aes(group_nonsense, p_adjust)) +
+      ggplot2::ggplot(ggplot2::aes(x = "", y = p_adjust)) +
       ggplot2::geom_text(
-        ggplot2::aes(group_nonsense, unique, 
+        ggplot2::aes(x = "", y = unique,
                     label = format_p_value(p_adjust),
                     color = I(pvalue_text_colors)),
         size = pvalue_text_size,
