@@ -79,8 +79,7 @@
 \item{pathway_names_text_size}{A numeric value or "auto" for pathway names (y-axis labels) text size. Default is "auto".}
 }
 \value{
-A ggplot2 plot showing the error bar plot of the differential abundance analysis results for the functional pathways.
-The plot visualizes the differential abundance results of a specific differential abundance analysis method. The corresponding dataframe contains the results used to create the plot.
+A ggplot2 (patchwork) plot showing the error bar plot of the differential abundance analysis results for the functional pathways.
 }
 \description{
 The function pathway_errorbar() is used to visualize the results of functional pathway differential abundance analysis as error bar plots.

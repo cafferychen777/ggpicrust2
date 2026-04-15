@@ -21,7 +21,10 @@ compare_gsea_daa(
 \item{p_threshold}{A numeric value specifying the significance threshold}
 }
 \value{
-A ggplot2 object or a list containing the plot and comparison results
+A list with two elements: \code{plot} (a ggplot2 object, or an
+  UpSetR object when \code{plot_type = "upset"} and UpSetR is installed)
+  and \code{results} (a named list with the overlap, GSEA-only, and
+  DAA-only pathway sets plus their counts).
 }
 \description{
 This function compares the results from Gene Set Enrichment Analysis (GSEA) and
