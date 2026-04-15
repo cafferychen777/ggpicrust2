@@ -130,6 +130,13 @@
   parallel implementation of the same logic as well as a duplicated
   `length(Group) != ncol(abundance)` check. Accepted metadata shapes
   are now identical to `pathway_daa()` and `ggpicrust2()`.
+* `DESCRIPTION` now lists `Maaslin2` and `metagenomeSeq` under
+  `Suggests`. Both packages are documented as supported
+  \code{daa_method} values in \code{pathway_daa()} and are dispatched
+  via \code{require_package()}, but neither appeared in `Suggests`, so
+  the declared dependency graph, the public method list, and the
+  runtime dispatch had drifted apart. Declaring them brings the three
+  sources back into alignment.
 * `pathway_gsea(organism = ...)` and
   `prepare_gene_sets(organism = ...)` now warn when a non-default value
   is supplied. Both functions advertised an `organism` argument but

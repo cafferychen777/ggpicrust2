@@ -54,6 +54,8 @@ Suggests:
     SummarizedExperiment,
     circlize,
     lefser,
+    Maaslin2,
+    metagenomeSeq,
     fgsea,
     clusterProfiler,
     enrichplot,
