@@ -48,6 +48,20 @@
   `metadata$sample`; sample-column autodetection from `align_samples()`
   is honored so metadata with a non-default sample identifier (e.g.
   `SampleID`) works end-to-end.
+* `pathway_daa(daa_method = "metagenomeSeq")` with three or more groups
+  now emits one row-block per (reference, non-reference) contrast --
+  `(k - 1) * n_features` rows total -- matching the shape returned by
+  DESeq2 / edgeR / limma voom / LinDA / Maaslin2. Previously the
+  function built a full k-column model matrix, called
+  `fitFeatureModel()` once, read `coef = 2`, and hard-coded the labels
+  as `group1 = Level[1] / group2 = Level[2]`, so any contrast beyond
+  the first non-reference level was silently dropped while the output
+  shape looked like a two-group result. `fitFeatureModel()` is also
+  metagenomeSeq's documented two-group entry point (it tests a single
+  coefficient and returns one p-value per feature), so each pairwise
+  contrast is now refit on the subset of samples in the two levels of
+  interest. The `reference` argument governs which level is held fixed
+  as `group1` across all contrasts.
 * Calling `pathway_daa(daa_method = "Maaslin2")` twice in the same R
   session no longer fails with `cannot open the connection`. Stale
   handlers left by Maaslin2's `logging` package after its first-call

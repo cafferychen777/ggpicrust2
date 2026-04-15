@@ -783,6 +783,62 @@ test_that("pathway_daa metagenomeSeq honors user-specified reference", {
   expect_true(all(m_trt$group2 == "control"))
 })
 
+test_that("pathway_daa metagenomeSeq emits one block per non-reference level for >=3 groups", {
+  # Regression: metagenomeSeq previously built a full k-column model matrix,
+  # called fit_feature_model() once, read `coef = 2`, and hard-coded the
+  # output as `group1 = Level[1] / group2 = Level[2]` regardless of how
+  # many groups existed. Contrasts against any level beyond the first
+  # non-reference one were silently dropped. The result should now have
+  # `(k - 1) * n_features` rows, one (ref, non-ref) block per contrast,
+  # with both the coefficient and the labels redone per pair (since
+  # fitFeatureModel is documented as a two-group entry point).
+  skip_if_not_installed("metagenomeSeq")
+
+  set.seed(11)
+  n_feat <- 8
+  per_group <- 6
+  groups <- rep(c("A", "B", "C"), each = per_group)
+  n_samp <- length(groups)
+  abund <- matrix(rpois(n_feat * n_samp, 50),
+                  nrow = n_feat, ncol = n_samp,
+                  dimnames = list(paste0("f", seq_len(n_feat)),
+                                  paste0("S", seq_len(n_samp))))
+  meta <- data.frame(
+    sample = paste0("S", seq_len(n_samp)),
+    Env = groups,
+    stringsAsFactors = FALSE
+  )
+
+  res <- suppressWarnings(suppressMessages(
+    pathway_daa(abundance = abund, metadata = meta, group = "Env",
+                daa_method = "metagenomeSeq")
+  ))
+
+  # Shape: k = 3 groups -> 2 non-reference contrasts -> 2 * n_feat rows.
+  expect_equal(nrow(res), 2 * n_feat)
+
+  # Reference defaults to the first level ("A"). group1 must always be A,
+  # group2 must cover exactly {B, C} once each per feature.
+  expect_true(all(res$group1 == "A"))
+  expect_setequal(unique(res$group2), c("B", "C"))
+  expect_equal(sum(res$group2 == "B"), n_feat)
+  expect_equal(sum(res$group2 == "C"), n_feat)
+
+  # reference = "B" must flip group1 to B and restrict group2 to {A, C}.
+  res_refB <- suppressWarnings(suppressMessages(
+    pathway_daa(abundance = abund, metadata = meta, group = "Env",
+                daa_method = "metagenomeSeq", reference = "B")
+  ))
+  expect_equal(nrow(res_refB), 2 * n_feat)
+  expect_true(all(res_refB$group1 == "B"))
+  expect_setequal(unique(res_refB$group2), c("A", "C"))
+
+  # p_values and log2_fold_change columns must both be present across the
+  # full output even if individual MRcoefs() calls fall back to NA.
+  expect_true("p_values" %in% colnames(res))
+  expect_true("log2_fold_change" %in% colnames(res))
+})
+
 test_that("pathway_daa re-validates group count after align/select", {
   # Regression: validate_group() only checks the raw metadata. If
   # align_samples() or a narrow `select =` filter removes every sample

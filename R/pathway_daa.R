@@ -846,73 +846,107 @@ perform_metagenomeseq_analysis <- function(abundance_mat, metadata, group, refer
   )
   Level <- levels(metadata[[group]])
 
-  # Create phenoData
-  phenoData <- new("AnnotatedDataFrame",
-                   data = metadata,
-                   varMetadata = data.frame(
-                     labelDescription = colnames(metadata),
-                     row.names = colnames(metadata)
-                   ))
+  counts_all <- round(as.matrix(abundance_mat))
 
-  # Ensure data is an integer matrix
-  counts <- round(as.matrix(abundance_mat))
-
-  # Create MRexperiment object
-  obj <- try({
-    new_mrexperiment(
-      counts = counts,
-      phenoData = phenoData,
-      featureData = NULL,
-      libSize = NULL,
-      normFactors = NULL
+  # Single two-group fit. `fitFeatureModel()` is metagenomeSeq's documented
+  # entry point for two-group comparisons (it tests a single coefficient and
+  # returns one p-value per feature in `fit@pvalues`). For each pairwise
+  # contrast we fit this two-group model on the subset of samples in the
+  # two levels of interest and read `coef = 2` -- the non-reference dummy.
+  # Returns a list of two length-nrow(counts_sub) vectors so the shape is
+  # stable across contrasts regardless of log-fold-change extraction
+  # success.
+  fit_pair <- function(counts_sub, meta_sub, group_col) {
+    phenoData <- new("AnnotatedDataFrame",
+                     data = meta_sub,
+                     varMetadata = data.frame(
+                       labelDescription = colnames(meta_sub),
+                       row.names = colnames(meta_sub)
+                     ))
+    obj <- try(
+      new_mrexperiment(counts = counts_sub, phenoData = phenoData,
+                       featureData = NULL, libSize = NULL, normFactors = NULL),
+      silent = TRUE
     )
-  }, silent = TRUE)
+    if (inherits(obj, "try-error")) {
+      stop("Failed to create MRexperiment object: ",
+           attr(obj, "condition")$message)
+    }
+    # cumNormStatFast() chooses a normalization quantile by comparing
+    # per-sample CDFs; with very small or near-uniform matrices (e.g. the
+    # minimum 4-sample input) the underlying quantile math returns NaN,
+    # and metagenomeSeq then aborts inside an `if (x <= 0.5)` check with
+    # "missing value where TRUE/FALSE needed". Precompute the factor
+    # ourselves and fall back to metagenomeSeq's documented default
+    # (p = 0.5) whenever it is degenerate.
+    p_norm <- tryCatch(cum_norm_stat_fast(obj), error = function(e) NA_real_)
+    if (!is.finite(p_norm)) p_norm <- 0.5
+    obj <- cum_norm(obj, p = p_norm)
 
-  if (inherits(obj, "try-error")) {
-    stop("Failed to create MRexperiment object: ", attr(obj, "condition")$message)
+    mod <- stats::model.matrix(as.formula(paste0("~", group_col)),
+                               data = meta_sub)
+    fit <- fit_feature_model(obj, mod)
+
+    coef_table <- tryCatch(
+      mrcoefs(fit, coef = 2),
+      error = function(e) {
+        warning("Failed to extract coefficients from metagenomeSeq: ",
+                e$message)
+        NULL
+      }
+    )
+    log2fc <- if (!is.null(coef_table) && "logFC" %in% colnames(coef_table)) {
+      coef_table$logFC
+    } else {
+      rep(NA_real_, nrow(counts_sub))
+    }
+    list(p_values = fit@pvalues, log2_fold_change = log2fc)
   }
 
-  # Normalize. cumNormStatFast() chooses a normalization quantile by
-  # comparing per-sample CDFs; with very small or near-uniform matrices
-  # (e.g. the minimum 4-sample input) the underlying quantile math
-  # returns NaN, and metagenomeSeq then aborts inside an
-  # `if (x <= 0.5)` check with "missing value where TRUE/FALSE needed".
-  # Precompute the factor ourselves and fall back to metagenomeSeq's
-  # documented default (p = 0.5) whenever it is degenerate.
-  p_norm <- tryCatch(cum_norm_stat_fast(obj), error = function(e) NA_real_)
-  if (!is.finite(p_norm)) p_norm <- 0.5
-  obj <- cum_norm(obj, p = p_norm)
+  if (length(Level) == 2) {
+    res <- fit_pair(counts_all, metadata, group)
+    return(data.frame(
+      feature = rownames(abundance_mat),
+      method = "metagenomeSeq",
+      group1 = Level[1],
+      group2 = Level[2],
+      p_values = res$p_values,
+      log2_fold_change = res$log2_fold_change,
+      stringsAsFactors = FALSE
+    ))
+  }
 
-  # Create model matrix
-  mod <- stats::model.matrix(as.formula(paste0("~", group)), data = metadata)
-
-  # Fit model
-  fit <- fit_feature_model(obj, mod)
-
-  # Extract coefficients using MRcoefs
-  coef_table <- tryCatch({
-    mrcoefs(fit, coef = 2)  # coef = 2 for group effect
-  }, error = function(e) {
-    warning("Failed to extract coefficients from metagenomeSeq: ", e$message)
-    return(NULL)
+  # Multi-group: emit one (reference, non-reference) contrast block per
+  # non-reference level. Previously the function built a full k-column
+  # model matrix, called fit_feature_model() once, extracted coef = 2,
+  # and hard-coded group1 = Level[1] / group2 = Level[2] -- which
+  # silently dropped all contrasts beyond the first non-reference level
+  # and shaped the output as if only two groups existed. fitFeatureModel
+  # is also documented as a two-group entry point, so re-fitting per pair
+  # on the subset of samples in the two levels of interest is the correct
+  # multi-group handling and matches the shape returned by edgeR / LinDA
+  # / Maaslin2 / DESeq2 / limma voom.
+  non_ref_levels <- Level[-1]
+  results_list <- lapply(non_ref_levels, function(lvl) {
+    keep <- metadata[[group]] %in% c(Level[1], lvl)
+    meta_sub <- metadata[keep, , drop = FALSE]
+    # Relevel within the subset so the 2-column model matrix has the
+    # reference level first and the current non-reference level second.
+    meta_sub[[group]] <- factor(as.character(meta_sub[[group]]),
+                                levels = c(Level[1], lvl))
+    counts_sub <- counts_all[, keep, drop = FALSE]
+    res <- fit_pair(counts_sub, meta_sub, group)
+    data.frame(
+      feature = rownames(abundance_mat),
+      method = "metagenomeSeq",
+      group1 = Level[1],
+      group2 = lvl,
+      p_values = res$p_values,
+      log2_fold_change = res$log2_fold_change,
+      stringsAsFactors = FALSE
+    )
   })
-
-  # Extract results
-  results <- data.frame(
-    feature = rownames(abundance_mat),
-    method = "metagenomeSeq",
-    group1 = Level[1],
-    group2 = Level[2],
-    p_values = fit@pvalues,
-    stringsAsFactors = FALSE
-  )
-
-  # Add log2_fold_change if coefficients are available
-  if (!is.null(coef_table) && "logFC" %in% colnames(coef_table)) {
-    results$log2_fold_change <- coef_table$logFC
-  }
-
-  return(results)
+  do.call(rbind, results_list)
 }
 
 # Helper function: Perform Maaslin2 analysis
