@@ -64,29 +64,66 @@ compare_metagenome_results <- function(metagenomes, names, daa_method = "ALDEx2"
     stop("The length of 'metagenomes' must match the length of 'names'")
   }
 
-  # Align every metagenome on the shared feature set before anything else.
-  # `cbind()` concatenates matrices by position, and the later per-feature
-  # correlation also indexes rows by position (`metagenomes[[i]][k, ]` vs
-  # `metagenomes[[j]][k, ]`). If two inputs have the same row names but
-  # different row orders, both the DAA matrix and the Spearman correlations
-  # compare *different* features -- producing correlations that can flip
-  # sign relative to the correct by-name alignment. We therefore take the
-  # intersection of row names across all metagenomes and reorder each
-  # matrix to that shared feature order before either step runs.
+  # Align every metagenome on the shared feature set AND the shared sample
+  # set before anything else. Both downstream steps index by position:
+  #
+  #   * `cbind()` concatenates feature-by-position for the DAA matrix.
+  #   * the per-feature Spearman correlation indexes
+  #     `metagenomes[[i]][k, ]` vs `metagenomes[[j]][k, ]` -- i.e. compares
+  #     a feature's abundance pattern *across samples* between two
+  #     metagenomes, which is only biologically meaningful if column k
+  #     refers to the same biological sample in both matrices.
+  #
+  # So two alignments are needed in parallel:
+  #   1. Intersect row names (features). Two metagenomes with identical
+  #      feature names in different orders used to produce correlations
+  #      that could flip sign vs the correct by-name alignment.
+  #   2. Intersect column names (samples). Two metagenomes with identical
+  #      sample names in different orders used to correlate "sample 1 of
+  #      metagenome A" against "sample 5 of metagenome B" and produce
+  #      meaningless negative correlations. Mismatched column counts also
+  #      used to fall through to `stats::cor()` and abort mid-loop with
+  #      "incompatible dimensions" instead of failing at the boundary.
   if (any(vapply(metagenomes, function(m) is.null(rownames(m)), logical(1)))) {
     stop("Every element of 'metagenomes' must have row names (feature identifiers) ",
          "so features can be aligned across metagenomes.")
+  }
+  if (any(vapply(metagenomes, function(m) is.null(colnames(m)), logical(1)))) {
+    stop("Every element of 'metagenomes' must have column names (sample identifiers) ",
+         "so samples can be aligned across metagenomes.")
   }
   shared_features <- Reduce(intersect, lapply(metagenomes, rownames))
   if (length(shared_features) == 0) {
     stop("No shared feature identifiers (row names) across the provided metagenomes.")
   }
-  metagenomes <- lapply(metagenomes, function(m) m[shared_features, , drop = FALSE])
+  shared_samples <- Reduce(intersect, lapply(metagenomes, colnames))
+  if (length(shared_samples) == 0) {
+    stop("No shared sample identifiers (column names) across the provided metagenomes. ",
+         "Per-sample correlation requires the same biological samples to appear ",
+         "in every metagenome.")
+  }
+  # Warn if alignment drops samples. A partial overlap is almost always a
+  # user mistake (the function is designed for parallel quantifications on
+  # the same samples); proceeding silently would hide it.
+  for (nm_i in seq_along(metagenomes)) {
+    dropped <- setdiff(colnames(metagenomes[[nm_i]]), shared_samples)
+    if (length(dropped) > 0) {
+      warning(sprintf(
+        "Metagenome '%s': %d sample(s) dropped by cross-metagenome intersection (%s).",
+        names[nm_i], length(dropped),
+        paste(utils::head(dropped, 5),
+              collapse = ", ")),
+        call. = FALSE)
+    }
+  }
+  metagenomes <- lapply(metagenomes,
+                        function(m) m[shared_features, shared_samples, drop = FALSE])
 
   # Concatenate metagenomes with pseudonym column names. After the
-  # alignment above, every matrix has identical rownames in the same
-  # order, so cbind() is now guaranteed to stack the same feature across
-  # columns.
+  # alignment above, every matrix has identical rownames AND identical
+  # colnames in the same order, so cbind() is guaranteed to stack the
+  # same feature across columns, and the downstream per-feature
+  # correlation compares the same biological samples across matrices.
   pseudonym_metagenomes <- lapply(seq_along(metagenomes), function(i) {
     new_metagenome <- metagenomes[[i]]
     colnames(new_metagenome) <- paste0(names[i], "_", colnames(new_metagenome))
@@ -106,9 +143,10 @@ compare_metagenome_results <- function(metagenomes, names, daa_method = "ALDEx2"
                              p_adjust_method = p_adjust_method,
                              reference = reference)
 
-  # Compute per-feature Spearman correlations between metagenomes. Safe to
-  # index by row position now that every metagenome is on the shared
-  # feature order.
+  # Compute per-feature Spearman correlations between metagenomes. Safe
+  # to index by both row position (shared feature order) and column
+  # position (shared sample order) now that every metagenome has been
+  # aligned in both dimensions above.
   n_metagenomes <- length(names)
   cor_matrix <- matrix(NA, nrow = n_metagenomes, ncol = n_metagenomes)
   p_matrix <- matrix(NA, nrow = n_metagenomes, ncol = n_metagenomes)

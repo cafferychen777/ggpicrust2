@@ -95,6 +95,22 @@
   returns correlation = 1 for identical inputs regardless of row order.
   The function also errors cleanly when a metagenome is missing row
   names or when the metagenomes share no features.
+* `compare_metagenome_results()` now aligns every input metagenome on
+  the shared **sample** set by column name in addition to the existing
+  feature alignment. Previously the per-feature Spearman correlation
+  computed `stats::cor(m1[k, ], m2[k, ])` by indexing columns by
+  position, so two metagenomes with identical content but columns in
+  different orders were compared "sample i of metagenome A" against
+  "sample i of metagenome B" as if they were the same biological
+  sample, producing median correlations that could be strongly negative
+  (e.g. `-0.6`) on data that was really identical under by-name
+  alignment. Mismatched column counts also used to fall through to
+  `stats::cor()` and abort mid-loop with "incompatible dimensions"; the
+  function now stops at the boundary with an actionable message when
+  column names are missing, sample sets are disjoint, and warns when
+  the intersection drops samples. Per-sample cross-metagenome
+  correlation is only defined for parallel samples; this makes that
+  contract explicit instead of enforcing it by happy-path coincidence.
 * `find_sample_column()` now requires the Priority 1 standard-named
   column (e.g. `sample`, `Sample`, `sample_id`, `sample_name`) to
   contain unique values that match the abundance sample IDs. Previously
