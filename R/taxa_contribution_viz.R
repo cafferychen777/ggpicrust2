@@ -233,18 +233,40 @@ taxa_contribution_heatmap <- function(contrib_agg,
   mat <- as.matrix(mat[, -1, drop = FALSE])
   rownames(mat) <- taxa_names
 
-  # Replace function IDs with annotations if available
+  # Replace function IDs with annotations if available.
+  # pathway_annotation() produces `feature` as the ID column and
+  # `description` as the readable label (non-ko_to_kegg mode); with
+  # ko_to_kegg=TRUE it produces `pathway_name`. Accept either shape so
+  # users can drop in whatever pathway_annotation() returned without
+  # silently getting raw IDs on the heatmap axis.
   if (!is.null(annotation_data)) {
-    desc_map <- stats::setNames(
-      annotation_data$description,
-      annotation_data$pathway
-    )
-    new_names <- desc_map[colnames(mat)]
-    # Only replace where we found a match, truncate long names
-    found <- !is.na(new_names)
-    new_names[found] <- substr(new_names[found], 1, 50)
-    new_names[!found] <- colnames(mat)[!found]
-    colnames(mat) <- new_names
+    id_col <- if ("feature" %in% colnames(annotation_data)) {
+      "feature"
+    } else if ("pathway" %in% colnames(annotation_data)) {
+      "pathway"
+    } else {
+      NULL
+    }
+    label_col <- if ("description" %in% colnames(annotation_data)) {
+      "description"
+    } else if ("pathway_name" %in% colnames(annotation_data)) {
+      "pathway_name"
+    } else {
+      NULL
+    }
+
+    if (!is.null(id_col) && !is.null(label_col)) {
+      desc_map <- stats::setNames(
+        as.character(annotation_data[[label_col]]),
+        as.character(annotation_data[[id_col]])
+      )
+      new_names <- desc_map[colnames(mat)]
+      # Only replace where we found a non-empty match, truncate long names
+      found <- !is.na(new_names) & nzchar(new_names)
+      new_names[found] <- substr(new_names[found], 1, 50)
+      new_names[!found] <- colnames(mat)[!found]
+      colnames(mat) <- new_names
+    }
   }
 
   # Clustering
