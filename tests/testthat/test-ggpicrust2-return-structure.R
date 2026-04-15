@@ -185,6 +185,89 @@ test_that("ggpicrust2 does not emit p.adjust deprecation warning on a normal cal
   expect_length(dep_msgs, 0)
 })
 
+test_that("ggpicrust2 does not forward `select` (pathway names) to pathway_daa's sample-name `select`", {
+  # Regression: `select` is documented on ggpicrust2() as a vector of
+  # pathway names for plot-time feature selection (@param select). The
+  # wrapper, however, forwarded it unchanged to pathway_daa() where
+  # `select` means SAMPLE names, so `ggpicrust2(..., select =
+  # pathway_names)` aborted immediately inside pathway_daa() with
+  # "Some selected samples not in abundance data". The same value was
+  # also forwarded to pathway_errorbar() where its documented meaning
+  # (feature selection) is correct; the fix is to stop sending it into
+  # pathway_daa() so its only downstream consumer is the errorbar step.
+  captured_daa_select   <- "SENTINEL"
+  captured_errbar_select <- "SENTINEL"
+
+  mock_abundance <- data.frame(
+    S_A = c(10, 20, 30),
+    S_B = c(15, 25, 35),
+    row.names = c("K00001", "K00002", "K00003"),
+    check.names = FALSE
+  )
+
+  metadata <- data.frame(
+    sample = c("S_A", "S_B"),
+    Environment = c("A", "B"),
+    stringsAsFactors = FALSE
+  )
+
+  mock_pathway_daa <- function(abundance, metadata, group, daa_method,
+                               p_adjust_method, reference, ...) {
+    # Capture whether a `select` arg made it through ... (it should not).
+    extra <- list(...)
+    captured_daa_select <<- if ("select" %in% names(extra)) extra$select else NULL
+    data.frame(
+      feature  = rownames(abundance),
+      method   = "mock_method",
+      p_values = c(0.001, 0.5, 0.001),
+      adj_method = "BH",
+      p_adjust = c(0.001, 0.5, 0.001),
+      group1   = "A",
+      group2   = "B",
+      stringsAsFactors = FALSE
+    )
+  }
+
+  mock_pathway_annotation <- function(pathway, ko_to_kegg, daa_results_df,
+                                      p_adjust_threshold) {
+    daa_results_df$pathway_name  <- daa_results_df$feature
+    daa_results_df$pathway_class <- "Class1"
+    daa_results_df
+  }
+
+  mock_pathway_errorbar <- function(abundance, daa_results_df, Group,
+                                    ko_to_kegg, p_value_bar, order,
+                                    colors, select, x_lab,
+                                    p_values_threshold) {
+    captured_errbar_select <<- select
+    NULL
+  }
+
+  pathway_ids <- rownames(mock_abundance)
+
+  testthat::with_mocked_bindings(
+    ggpicrust2(
+      data = data.frame(function. = rownames(mock_abundance),
+                        mock_abundance, check.names = FALSE),
+      metadata   = metadata,
+      group      = "Environment",
+      pathway    = "KO",
+      daa_method = "ALDEx2",
+      ko_to_kegg = FALSE,
+      select     = pathway_ids  # pathway names, per the docstring
+    ),
+    pathway_daa         = mock_pathway_daa,
+    pathway_annotation  = mock_pathway_annotation,
+    pathway_errorbar    = mock_pathway_errorbar
+  )
+
+  # pathway_daa must receive no `select` at all (so it runs on the full
+  # sample set), while pathway_errorbar must receive the pathway names
+  # the user passed in -- that is where feature-level filtering belongs.
+  expect_null(captured_daa_select)
+  expect_equal(captured_errbar_select, pathway_ids)
+})
+
 test_that("ggpicrust2 still warns when caller passes legacy p.adjust argument", {
   skip_if_not_installed("MicrobiomeStat")
 

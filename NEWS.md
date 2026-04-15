@@ -130,6 +130,16 @@
   parallel implementation of the same logic as well as a duplicated
   `length(Group) != ncol(abundance)` check. Accepted metadata shapes
   are now identical to `pathway_daa()` and `ggpicrust2()`.
+* `ggpicrust2()` no longer forwards its `select` argument into
+  `pathway_daa()`. The wrapper's `@param select` documents a vector of
+  **pathway names** for plot-time feature selection, but the same value
+  was also being passed into `pathway_daa()` where `select` means
+  **sample names**, so any call with `select = <pathway names>` aborted
+  immediately inside `pathway_daa()` with
+  "Some selected samples not in abundance data". The user-supplied
+  `select` is now only forwarded to `pathway_errorbar()` -- where
+  feature-level filtering for the figure actually happens -- and
+  `pathway_daa()` runs on the full sample set as documented.
 * `pathway_errorbar()` no longer silently overwrites a method-native
   `log2_fold_change` column with a relative-abundance mean ratio. The
   previous code added the column as NA only when missing, then

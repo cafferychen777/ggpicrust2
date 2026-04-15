@@ -229,13 +229,20 @@ ggpicrust2 <- function(file = NULL,
   metadata <- aligned$metadata
 
   # Step 2: Differential abundance analysis
-  message("Performing pathway differential abundance analysis...\n")
+  #
+  # Do NOT forward `select` to pathway_daa() here. In this wrapper `select`
+  # is documented as pathway/feature names (see @param select -- "A vector
+  # consisting of pathway names to be selected"), whereas pathway_daa()'s
+  # own `select` argument means sample names. Passing pathway names into
+  # pathway_daa() immediately failed with "Some selected samples not in
+  # abundance data". The user-supplied `select` is forwarded to
+  # pathway_errorbar() below, which is where feature-level filtering for
+  # the plot actually happens; pathway_daa() runs on the full sample set.
   daa_results_df <- pathway_daa(
     abundance = abundance,
     metadata = metadata,
     group = group,
     daa_method = daa_method,
-    select = select,
     p_adjust_method = p_adjust_method,
     reference = reference
   )
