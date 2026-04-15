@@ -13,6 +13,12 @@
 * Multi-group ALDEx2 runs no longer warn that "effect size only available
   for two-group comparisons"; the flag is silently ignored when
   `aldex.effect()` cannot apply.
+* `pathway_daa(daa_method = "DESeq2", reference = ...)` now honors the
+  user-supplied reference level and supports multi-group designs (one
+  row-block per non-reference contrast), matching the shape returned by
+  `edgeR` and `limma voom`. Previously the `reference` argument was
+  silently ignored and multi-group input yielded only a single
+  `Level[2]` vs `Level[1]` contrast.
 
 ## Bug Fixes
 
@@ -23,6 +29,156 @@
   method-native log2 fold change is kept and the relative-abundance ratio
   is not recomputed, so model-based and ratio-based effect sizes are never
   conflated under the same column name.
+* `pathway_daa(select = ...)` now reorders metadata rows to match the
+  reordered abundance columns. Previously the `select` branch reordered
+  abundance but only filtered metadata with `%in%`, leaving group labels
+  desynchronized from samples whenever `select` was not in natural order,
+  which silently produced wrong p-values and log fold changes.
+* `pathway_daa(daa_method = "limma voom")` with three or more groups now
+  labels `group2` correctly. Previously the length-(k-1) contrast vector
+  was recycled into a result of `n_features * (k-1)` rows, producing
+  interleaved `B,C,B,C,...` labels that no longer corresponded to the
+  `as.vector()`-flattened p-values and coefficients.
+* `pathway_daa(daa_method = "Maaslin2")` with three or more groups now
+  emits one row per (feature, non-reference level) contrast instead of
+  flattening the output via `match()` to a single row per feature. The
+  `group2` column is taken from Maaslin2's own `value` column rather than
+  being recycled from a length-(k-1) vector.
+* `pathway_daa(daa_method = "metagenomeSeq")` no longer hardcodes
+  `metadata$sample`; sample-column autodetection from `align_samples()`
+  is honored so metadata with a non-default sample identifier (e.g.
+  `SampleID`) works end-to-end.
+* Calling `pathway_daa(daa_method = "Maaslin2")` twice in the same R
+  session no longer fails with `cannot open the connection`. Stale
+  handlers left by Maaslin2's `logging` package after its first-call
+  tempdir is cleaned up are now cleared before each invocation.
+* `pathway_daa()` now rejects abundance matrices containing negative
+  values or duplicate sample identifiers at the validation layer,
+  instead of letting them propagate into method-specific failures with
+  cryptic messages.
+* `pathway_daa()` now validates `daa_method` against the supported set
+  up front and suggests the canonical spelling for common typos
+  (e.g. `"linDA"` -> `"LinDA"`, `"Lefse"` -> `"Lefser"`, `"aldex"` ->
+  `"ALDEx2"`). Previously the method dispatch fell through `switch()`
+  with no default branch and returned `NULL` silently, breaking
+  downstream annotation and plotting with opaque errors.
+* `compare_metagenome_results()` now aligns every input metagenome on
+  the shared feature set by row name before the `cbind` and per-feature
+  Spearman correlation steps. Previously both steps indexed rows by
+  position, so two metagenomes with identical row names but different
+  row orders were compared feature-by-position and produced meaningless
+  (often negative) correlations. A by-name alignment now correctly
+  returns correlation = 1 for identical inputs regardless of row order.
+  The function also errors cleanly when a metagenome is missing row
+  names or when the metagenomes share no features.
+* `find_sample_column()` now requires the Priority 1 standard-named
+  column (e.g. `sample`, `Sample`, `sample_id`, `sample_name`) to
+  contain unique values that match the abundance sample IDs. Previously
+  a standard-named column with duplicate values (e.g. `sample =
+  c("S1","S1","S2","S2")`) was picked purely on its name, silently
+  misaligning every downstream function that relies on
+  `align_samples()`.
+* `ggpicrust2()`'s internal call to `pathway_daa()` now uses the modern
+  `p_adjust_method` argument. Previously it still forwarded the
+  deprecated `p.adjust` argument, so every normal `ggpicrust2()` call
+  emitted the deprecation warning that is meant to fire only when a
+  user explicitly supplies the legacy name. The legacy `p.adjust`
+  parameter remains accepted with a deprecation warning for backward
+  compatibility.
+* `pathway_errorbar_table()` now delegates sample-column detection and
+  Group reordering to the shared `align_samples()` helper, removing a
+  parallel implementation of the same logic as well as a duplicated
+  `length(Group) != ncol(abundance)` check. Accepted metadata shapes
+  are now identical to `pathway_daa()` and `ggpicrust2()`.
+* `pathway_annotation(file = ..., ko_to_kegg = FALSE)` now actually
+  populates the `description` column. The file-mode branch previously
+  extracted features from sample column names (skipping columns 1 and 2
+  and taking the rest as IDs), so the description column was always
+  filled with `NA`. Feature IDs are now read from the first column, in
+  one unified code path shared with the DAA-results branch.
+* `pathway_daa(daa_method = "metagenomeSeq")` no longer aborts with
+  `missing value where TRUE/FALSE needed` on small or near-uniform
+  inputs (e.g. the minimum 4-sample / 2-group case). The normalization
+  quantile returned by `cumNormStatFast()` is now checked for NA/NaN
+  and falls back to metagenomeSeq's documented default (`p = 0.5`).
+* `pathway_errorbar_table(sample_col = ...)` now defaults to
+  auto-detection via the same logic `align_samples()` uses, so
+  metadata using `sample`, `Sample`, `sample_id`, etc. works without
+  passing `sample_col` explicitly. Previously the default was
+  hardcoded to `"sample_name"`, which caused the common `sample`
+  convention to fail with `Column 'sample_name' not found in metadata`.
+* `pathway_daa(daa_method = "LinDA", reference = ...)` now actually
+  contrasts against the user-specified reference level. The formula
+  passed to `MicrobiomeStat::linda()` did not relevel the grouping
+  factor, so LinDA kept the factor's natural first level as reference
+  while the `group1` label in the result used the user's `reference`
+  argument. That produced rows with `group1 == group2` and an
+  `log2_fold_change` whose sign did not reflect the requested
+  direction.
+* `pathway_daa(daa_method = "Maaslin2", reference = ...)` now honors
+  the requested reference in the two-group case. Previously the
+  `reference` argument was only forwarded to Maaslin2 for k > 2
+  groups and the two-group branch passed `NULL`, so Maaslin2 fell
+  back to its alphabetical default while the result labeled
+  `group1 = <user reference>` -- producing the same `group1 == group2`
+  /no-sign-flip symptom as the LinDA bug above.
+* `pathway_daa()` now re-validates the group count after sample
+  alignment and `select` filtering. A narrow `select =` that removes
+  every sample of a level, or `align_samples()` dropping the only
+  samples for a group, would previously let a single-group dataset
+  reach the backends with a less actionable downstream error.
+* `pathway_annotation(ko_to_kegg = TRUE)` now returns the full input
+  `daa_results_df` with annotation columns, populating `pathway_name`,
+  `pathway_description`, `pathway_class`, and `pathway_map` only for
+  rows where `p_adjust < p_adjust_threshold` and leaving the rest as
+  `NA`. Previously it returned just the significant subset, silently
+  dropping non-significant rows that downstream code (e.g.
+  `ggpicrust2()`'s `plot_result_list$daa_results_df`) expected to
+  still be present.
+* `pathway_annotation(ko_to_kegg = TRUE, organism = ...)` no longer
+  picks the first organism-specific gene linked to a KO as a
+  "representative" and fetches its record in place of the KO entry.
+  Gene order from `KEGGREST::keggLink()` is not semantically
+  meaningful, so isozymes or paralogs participating in different
+  pathways could yield different annotations across KEGG builds. The
+  function now always fetches the generic KO entry (the authoritative
+  KO-level record) and rewrites pathway IDs from the `ko` prefix to
+  the organism prefix (e.g. `ko00010` → `hsa00010`), which is
+  KEGG's own convention for organism-specific pathway projection.
+* `find_sample_column()` (internal) no longer picks up categorical
+  columns or columns with only partial overlap when auto-detecting
+  the sample identifier column in metadata. The scan-every-column
+  fallback now requires unique values and >= 90% overlap with the
+  abundance sample names; standard-named columns (`sample`,
+  `sample_id`, etc.) retain the previous lenient threshold because
+  the column name is itself strong evidence. This prevents
+  `align_samples()` from mistakenly treating a `subject_id` or
+  `batch` column as the sample ID when it happens to share a few
+  strings with the sample names.
+* `pathway_daa(daa_method = "edgeR", reference = ...)` now honors the
+  user-supplied reference. edgeR's `exactTest()` took `pair = c(1, 2)`
+  against the raw factor order, so `reference` was silently ignored
+  and the result always labeled `group1 = Level[1]` / `group2 = Level[2]`.
+  The grouping factor is now releveled so the tested contrast is
+  `log(non-ref / ref)` and the labels reflect the requested direction.
+  Multi-group edgeR runs now emit one block per (reference,
+  non-reference) contrast rather than every pairwise combination,
+  matching the shape returned by DESeq2 / limma voom / LinDA / Maaslin2.
+* `pathway_daa(daa_method = "metagenomeSeq", reference = ...)` now
+  honors the user-supplied reference. The model matrix used the raw
+  factor order and the result labels were hardcoded to
+  `Level[1]` / `Level[2]`, so flipping `reference` left both labels
+  and coefficients unchanged. The grouping factor is releveled before
+  `fitFeatureModel()` so the contrast and labels track the requested
+  direction.
+* `taxa_contribution_heatmap(annotation_data = ...)` now accepts the
+  column shape actually produced by `pathway_annotation()`. The
+  heatmap used to look up `annotation_data$pathway` / `$description`,
+  but `pathway_annotation()` emits `feature` (ID) and `description`
+  (non-ko_to_kegg) or `pathway_name` (ko_to_kegg). The lookup silently
+  returned all-NA, leaving raw IDs on the axis. The heatmap now
+  detects `feature`/`description` and `pathway`/`pathway_name`
+  column pairs and relabels correctly.
 
 # ggpicrust2 2.5.13
 
