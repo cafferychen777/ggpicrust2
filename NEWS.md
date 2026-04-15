@@ -56,6 +56,16 @@
   values or duplicate sample identifiers at the validation layer,
   instead of letting them propagate into method-specific failures with
   cryptic messages.
+* `pathway_daa()` and `pathway_errorbar()` now refuse sample columns
+  with a total abundance of zero (or NA) instead of silently producing
+  NaN inside the `x / sum(x)` relative-abundance step. The NaN used to
+  be absorbed by downstream `mean(..., na.rm = TRUE)` aggregations, so
+  group statistics and error-bar plots were computed from fewer samples
+  than supplied with no warning. The error now names the offending
+  sample(s). The shared `compute_relative_abundance()` helper replaces
+  the duplicated `apply(., 2, function(x) x / sum(x))` idiom, and
+  `validate_abundance()` gained a `check_zero_columns` gate so every
+  entry point shares the same contract.
 * `pathway_daa()` now validates `daa_method` against the supported set
   up front and suggests the canonical spelling for common typos
   (e.g. `"linDA"` -> `"LinDA"`, `"Lefse"` -> `"Lefser"`, `"aldex"` ->
