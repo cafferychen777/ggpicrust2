@@ -136,14 +136,25 @@ ggpicrust2 <- function(file = NULL,
                        daa_method = "ALDEx2",
                        ko_to_kegg = FALSE,
                        filter_for_prokaryotes = TRUE,
-                       p.adjust = "BH",
+                       p_adjust_method = "BH",
                        order = "group",
                        p_values_bar = TRUE,
                        x_lab = NULL,
                        select = NULL,
                        reference = NULL,
                        colors = NULL,
-                       p_values_threshold = 0.05) {
+                       p_values_threshold = 0.05,
+                       p.adjust = NULL) {
+  # Backward compatibility for the deprecated `p.adjust` parameter. We
+  # keep it accepted (with NULL default so we can distinguish unset from
+  # set) but migrate users onto `p_adjust_method` to match the rest of
+  # the package. Only warn when the caller actually supplied it.
+  if (!is.null(p.adjust)) {
+    warning("'p.adjust' parameter is deprecated. Use 'p_adjust_method' instead.",
+            call. = FALSE)
+    p_adjust_method <- p.adjust
+  }
+
   # Input validation
   if (is.null(file) && is.null(data)) {
     stop("Error: Please provide either a 'file' path (character string) or a 'data' data frame.")
@@ -171,10 +182,13 @@ ggpicrust2 <- function(file = NULL,
     }
   }
 
-  # Validate daa_method early
-
-  if (daa_method == "Lefse") {
-    stop("The 'Lefse' method is not suitable for ggpicrust2() as it does not output p-values.")
+  # Validate daa_method early. Lefser returns LDA effect sizes, not
+  # p-values per pathway, so it cannot drive the downstream
+  # pathway_errorbar() step that ggpicrust2() produces. Accept the
+  # historical misspelling "Lefse" for backward compatibility but
+  # forward it through as an error with the canonical name.
+  if (daa_method %in% c("Lefser", "Lefse")) {
+    stop("The 'Lefser' method is not suitable for ggpicrust2() as it does not output p-values.")
   }
 
   # `ko_to_kegg = TRUE` aggregates KO abundances into KEGG pathways, so it is
@@ -222,7 +236,7 @@ ggpicrust2 <- function(file = NULL,
     group = group,
     daa_method = daa_method,
     select = select,
-    p.adjust = p.adjust,
+    p_adjust_method = p_adjust_method,
     reference = reference
   )
 

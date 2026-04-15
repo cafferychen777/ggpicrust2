@@ -13,14 +13,15 @@ ggpicrust2(
   daa_method = "ALDEx2",
   ko_to_kegg = FALSE,
   filter_for_prokaryotes = TRUE,
-  p.adjust = "BH",
+  p_adjust_method = "BH",
   order = "group",
   p_values_bar = TRUE,
   x_lab = NULL,
   select = NULL,
   reference = NULL,
   colors = NULL,
-  p_values_threshold = 0.05
+  p_values_threshold = 0.05,
+  p.adjust = NULL
 )
 }
 \arguments{
@@ -49,14 +50,6 @@ ggpicrust2(
 that are specific to eukaryotes (e.g., human diseases, organismal systems) when
 ko_to_kegg = TRUE. Set to FALSE to include all KEGG pathways.}
 
-\item{p.adjust}{a character specifying the method for p-value adjustment, default is "BH", choices are:
-- "BH": Benjamini-Hochberg correction
-- "holm": Holm's correction
-- "bonferroni": Bonferroni correction
-- "hochberg": Hochberg's correction
-- "fdr": False discovery rate correction
-- "none": No p-value adjustment.}
-
 \item{order}{A character to control the order of the main plot rows}
 
 \item{p_values_bar}{A character to control if the main plot has the p_values bar}
@@ -72,6 +65,14 @@ ko_to_kegg = TRUE. Set to FALSE to include all KEGG pathways.}
 \item{p_values_threshold}{A numeric value specifying the threshold for statistical
 significance of differential abundance. Pathways with adjusted p-values below this
 threshold will be displayed in the plot. Default is 0.05.}
+
+\item{p.adjust}{a character specifying the method for p-value adjustment, default is "BH", choices are:
+- "BH": Benjamini-Hochberg correction
+- "holm": Holm's correction
+- "bonferroni": Bonferroni correction
+- "hochberg": Hochberg's correction
+- "fdr": False discovery rate correction
+- "none": No p-value adjustment.}
 }
 \value{
 A list containing:

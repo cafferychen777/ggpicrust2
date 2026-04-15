@@ -53,7 +53,7 @@ test_that("ggpicrust2 aligns Group vector to abundance sample order before plott
     stringsAsFactors = FALSE
   )
 
-  mock_pathway_daa <- function(abundance, metadata, group, daa_method, select, p.adjust, reference) {
+  mock_pathway_daa <- function(abundance, metadata, group, daa_method, select, p_adjust_method, reference) {
     data.frame(
       feature = rownames(abundance)[1],
       method = "mock_method",
@@ -136,4 +136,94 @@ test_that("ggpicrust2 rejects inconsistent ko_to_kegg / pathway combinations", {
     ),
     "requires .pathway = .KO."
   )
+})
+
+test_that("ggpicrust2 does not emit p.adjust deprecation warning on a normal call", {
+  # Regression: ggpicrust2() had been renamed to accept `p_adjust_method`,
+  # but its internal pathway_daa() call still passed `p.adjust = p.adjust`.
+  # That made every normal ggpicrust2() call trigger the deprecation
+  # warning that is supposed to fire only when a user explicitly supplies
+  # the legacy argument.
+  skip_if_not_installed("MicrobiomeStat")
+
+  set.seed(42)
+  n_ko <- 15; n_samp <- 8
+  abund <- matrix(rpois(n_ko * n_samp, lambda = 50),
+                  nrow = n_ko, ncol = n_samp)
+  rownames(abund) <- paste0("K", sprintf("%05d", seq_len(n_ko)))
+  colnames(abund) <- paste0("S", seq_len(n_samp))
+  abund_df <- cbind(
+    `function` = rownames(abund),
+    as.data.frame(abund)
+  )
+  meta <- data.frame(
+    sample_name = colnames(abund),
+    Env = rep(c("A", "B"), each = n_samp / 2),
+    stringsAsFactors = FALSE
+  )
+
+  dep_msgs <- character(0)
+  tryCatch(
+    withCallingHandlers(
+      suppressMessages(ggpicrust2(
+        data = abund_df,
+        metadata = meta,
+        group = "Env",
+        pathway = "KO",
+        daa_method = "LinDA",
+        ko_to_kegg = FALSE
+      )),
+      warning = function(w) {
+        if (grepl("p.adjust.*deprecated", conditionMessage(w))) {
+          dep_msgs <<- c(dep_msgs, conditionMessage(w))
+        }
+        invokeRestart("muffleWarning")
+      }
+    ),
+    error = function(e) invisible(NULL)   # unrelated downstream errors OK
+  )
+  expect_length(dep_msgs, 0)
+})
+
+test_that("ggpicrust2 still warns when caller passes legacy p.adjust argument", {
+  skip_if_not_installed("MicrobiomeStat")
+
+  set.seed(42)
+  n_ko <- 10; n_samp <- 6
+  abund <- matrix(rpois(n_ko * n_samp, lambda = 50),
+                  nrow = n_ko, ncol = n_samp)
+  rownames(abund) <- paste0("K", sprintf("%05d", seq_len(n_ko)))
+  colnames(abund) <- paste0("S", seq_len(n_samp))
+  abund_df <- cbind(
+    `function` = rownames(abund),
+    as.data.frame(abund)
+  )
+  meta <- data.frame(
+    sample_name = colnames(abund),
+    Env = rep(c("A", "B"), each = n_samp / 2),
+    stringsAsFactors = FALSE
+  )
+
+  got_dep <- FALSE
+  tryCatch(
+    withCallingHandlers(
+      suppressMessages(ggpicrust2(
+        data = abund_df,
+        metadata = meta,
+        group = "Env",
+        pathway = "KO",
+        daa_method = "LinDA",
+        ko_to_kegg = FALSE,
+        p.adjust = "BH"
+      )),
+      warning = function(w) {
+        if (grepl("p.adjust.*deprecated", conditionMessage(w))) {
+          got_dep <<- TRUE
+        }
+        invokeRestart("muffleWarning")
+      }
+    ),
+    error = function(e) invisible(NULL)
+  )
+  expect_true(got_dep)
 })
