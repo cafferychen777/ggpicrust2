@@ -549,9 +549,24 @@ pathway_annotation <- function(file = NULL,
   if (is.null(file) && is.null(daa_results_df)) {
     stop("Please input the picrust2 output or results of pathway_daa daa_results_df")
   }
-  
+
   if (!is.null(daa_results_df) && nrow(daa_results_df) == 0) {
     stop("Input data frame is empty")
+  }
+
+  # ko_to_kegg is only meaningful for KO-level features: the KEGG REST API
+  # we query (KEGGREST::keggGet) expects KO IDs, and the whole branch is
+  # documented as "convert KO abundance to KEGG pathway abundance". If the
+  # caller also passes pathway = "EC" or "MetaCyc", they have given
+  # contradictory information. The previous code silently ignored `pathway`
+  # and ran the KEGG path anyway, which surfaced later as either cryptic
+  # HTTP 404s or mis-shaped enzyme records. Fail fast with an actionable
+  # message instead.
+  if (isTRUE(ko_to_kegg) && !is.null(pathway) && !identical(pathway, "KO")) {
+    stop(sprintf(
+      "ko_to_kegg = TRUE requires pathway = 'KO' (or NULL), got pathway = '%s'. KEGG annotation operates on KO IDs; if your features are %s IDs, set ko_to_kegg = FALSE.",
+      pathway, pathway
+    ), call. = FALSE)
   }
   
   # Process file input

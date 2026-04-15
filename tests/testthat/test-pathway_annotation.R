@@ -169,3 +169,54 @@ test_that("pathway_annotation validates inputs", {
   empty_df <- data.frame(feature = character(0), p_adjust = numeric(0))
   expect_error(suppressMessages(pathway_annotation(pathway = "KO", daa_results_df = empty_df)), "empty")
 })
+
+# Regression: ko_to_kegg = TRUE used to silently ignore `pathway`, so a caller
+# that passed pathway = "EC" or "MetaCyc" together with ko_to_kegg = TRUE was
+# quietly routed into the KEGG (KO-only) code path. That surfaced either as a
+# generic HTTP 404 or as mis-shaped enzyme records. The parameter combination
+# is semantically contradictory and should fail at the function boundary.
+test_that("pathway_annotation rejects ko_to_kegg = TRUE with non-KO pathway", {
+  test_df <- data.frame(
+    feature = c("EC:1.1.1.1", "EC:2.7.1.1"),
+    p_adjust = c(0.01, 0.02),
+    stringsAsFactors = FALSE
+  )
+
+  expect_error(
+    pathway_annotation(pathway = "EC", daa_results_df = test_df, ko_to_kegg = TRUE),
+    "ko_to_kegg = TRUE requires pathway = 'KO'"
+  )
+  expect_error(
+    pathway_annotation(pathway = "MetaCyc", daa_results_df = test_df, ko_to_kegg = TRUE),
+    "ko_to_kegg = TRUE requires pathway = 'KO'"
+  )
+})
+
+test_that("pathway_annotation allows ko_to_kegg = TRUE with pathway = 'KO' or NULL", {
+  # Both forms are the legitimate KO-to-KEGG use case. We only exercise input
+  # validation here (network calls are gated by GGPICRUST2_RUN_NETWORK_TESTS),
+  # so wrap the network hop in tryCatch and assert we get past the parameter
+  # check.
+  test_df <- data.frame(
+    feature = c("K00001"),
+    p_adjust = c(0.01),
+    stringsAsFactors = FALSE
+  )
+
+  past_check <- function(expr) {
+    result <- tryCatch(expr, error = function(e) e)
+    # If validation rejected the combination it would raise the KO-only
+    # message; any other error means we made it past the boundary check.
+    if (inherits(result, "error")) {
+      expect_false(grepl("ko_to_kegg = TRUE requires pathway = 'KO'",
+                         conditionMessage(result), fixed = TRUE))
+    }
+  }
+
+  past_check(suppressMessages(
+    pathway_annotation(pathway = "KO", daa_results_df = test_df, ko_to_kegg = TRUE)
+  ))
+  past_check(suppressMessages(
+    pathway_annotation(pathway = NULL, daa_results_df = test_df, ko_to_kegg = TRUE)
+  ))
+})
