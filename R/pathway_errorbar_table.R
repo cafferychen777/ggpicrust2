@@ -180,9 +180,15 @@ pathway_errorbar_table <- function(abundance,
          "Consider adjusting p_values_threshold.")
   }
   
-  # Get group names
-  group1_name <- unique(daa_results_filtered_sub_df$group1)[1]
-  group2_name <- unique(daa_results_filtered_sub_df$group2)[1]
+  # Get group names. validate_daa_results() above hard-rejects multi-pair
+  # input, so daa_results_filtered_sub_df is guaranteed to carry a single
+  # (group1, group2) pair here. Avoid the `unique(...)[1]` idiom because
+  # it LOOKS like "silently pick the first of many" behavior -- that is
+  # exactly the bug we rely on the validator to prevent, and leaving the
+  # idiom in place would mask a validator bypass with silently truncated
+  # results instead of failing fast.
+  group1_name <- daa_results_filtered_sub_df$group1[1]
+  group2_name <- daa_results_filtered_sub_df$group2[1]
   
   # Calculate abundance statistics using the helper function.
   # Group is already confirmed (above) to be in the same order as

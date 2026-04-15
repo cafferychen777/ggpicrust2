@@ -114,6 +114,19 @@
   parallel implementation of the same logic as well as a duplicated
   `length(Group) != ncol(abundance)` check. Accepted metadata shapes
   are now identical to `pathway_daa()` and `ggpicrust2()`.
+* `pathway_errorbar_table()` no longer derives its two group names via
+  `unique(daa_results_filtered_sub_df$group1)[1]` /
+  `unique(daa_results_filtered_sub_df$group2)[1]`. The surrounding
+  `validate_daa_results()` call already hard-rejects multi-contrast
+  input, so the `unique(...)[1]` idiom was dead defensive code --
+  but it was also shaped exactly like "silently pick the first of
+  many", which would have masked any future validator bypass by
+  collapsing a `(k-1) * n_features` multi-contrast DAA result (as
+  produced by `pathway_daa()` for >=3 groups with DESeq2 / edgeR /
+  limma voom / LinDA / Maaslin2 / metagenomeSeq) down to a single
+  contrast without warning. Both names are now read via direct `[1]`
+  indexing, keeping the fast-fail path routed through the validator
+  where contract violations belong.
 * `pathway_errorbar()` and `pathway_errorbar_table()` (via
   `calculate_abundance_stats()`) now derive per-feature, per-group mean
   and standard deviation from a single shared helper,
