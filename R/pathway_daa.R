@@ -370,7 +370,16 @@ pathway_daa <- function(abundance, metadata, group, daa_method = "ALDEx2",
   validate_metadata(metadata)
   validate_group(metadata, group, min_groups = 2)
 
-  # Align samples
+  # Align samples. This is the contract for STANDALONE callers of
+  # pathway_daa() who may pass unaligned abundance/metadata. When the
+  # wrapper ggpicrust2() calls us, inputs are already aligned; since
+  # align_samples() is deterministic and idempotent, that pre-aligned
+  # case is a cheap no-op here and not a source of drift. The two
+  # call sites (this one and ggpicrust2.R) are invoked with identical
+  # arguments so they cannot silently disagree on the aligned shape;
+  # see the commentary at the ggpicrust2 call site for the full
+  # rationale and the invariant that any future change to alignment
+  # semantics must update both sites together.
   aligned <- align_samples(abundance, metadata, verbose = FALSE)
   abundance <- aligned$abundance
   metadata <- tibble::as_tibble(aligned$metadata)

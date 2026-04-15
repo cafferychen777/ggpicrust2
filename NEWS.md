@@ -196,6 +196,17 @@
 
 ## Internal
 
+* Documented the intentional duplicate `align_samples()` call in
+  `ggpicrust2()` and `pathway_daa()`. The wrapper must pre-align
+  abundance/metadata before Step 4 builds `Group_vec` by positional
+  zipping of `metadata[[group]]` with `colnames(abundance)`;
+  `pathway_daa()` must also align independently to honor its
+  standalone-caller contract. The two call sites are deliberately
+  invoked with identical arguments, and `align_samples()` is
+  deterministic and idempotent, so running it twice on the same
+  inputs is a cheap no-op and cannot drift. A regression test in
+  `test-data_utils.R` now locks the idempotency invariant so any
+  future change that breaks it fails loudly at test time.
 * Removed the `"nonsense"` placeholder columns and values from
   `pathway_errorbar()`'s internal data frames. The log2-fold-change bar
   now sets its fill directly on `geom_bar()` instead of routing a single

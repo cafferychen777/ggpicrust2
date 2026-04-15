@@ -221,9 +221,24 @@ ggpicrust2 <- function(file = NULL,
     abundance <- abundance[, -1]
   }
 
-  # Align abundance and metadata once for consistent downstream behavior.
-  # This prevents Group/order mismatches in pathway_errorbar() when metadata
-  # row order differs from abundance column order.
+  # Align abundance and metadata once at the wrapper level. This is
+  # required for Step 4 below (`Group_vec <- metadata[[group]]` /
+  # `names(Group_vec) <- colnames(abundance)`), which depends on
+  # metadata row i corresponding to abundance column i by position.
+  # Without this pre-alignment, pathway_errorbar() would see
+  # Group/sample mismatches whenever the user-supplied metadata row
+  # order differed from abundance column order.
+  #
+  # pathway_daa() below performs its own independent alignment -- that
+  # call is the contract for standalone callers, who may pass
+  # unaligned inputs. `align_samples()` is deterministic and
+  # idempotent: running it a second time on already-aligned inputs is
+  # a no-op, so the duplicate work is bounded. The two call sites are
+  # deliberately invoked with identical arguments (no `sample_col`, no
+  # other overrides) so they cannot silently disagree on the aligned
+  # shape; any future change to alignment semantics MUST update both
+  # sites together. See also R/pathway_daa.R where the second call
+  # lives.
   aligned <- align_samples(abundance, metadata, verbose = FALSE)
   abundance <- aligned$abundance
   metadata <- aligned$metadata

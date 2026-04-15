@@ -163,3 +163,30 @@ test_that("summarize_abundance_by_group errors on length mismatch", {
               dimnames = list(c("f1", "f2"), c("S1", "S2", "S3")))
   expect_error(sbg(M, c("A", "B")), regexp = "length")
 })
+
+test_that("align_samples is idempotent on already-aligned inputs", {
+  # Contract: ggpicrust2() pre-aligns inputs at its top, then calls
+  # pathway_daa(), which independently re-aligns. Both sites use the
+  # same helper with identical arguments, so the duplicate is bounded
+  # by the invariant that running align_samples() twice on the result
+  # of the first call is a no-op. This test locks that invariant --
+  # any future change to align_samples() that breaks idempotency
+  # would silently reintroduce drift between the two paths.
+  set.seed(11)
+  abund <- matrix(runif(20), nrow = 5, ncol = 4,
+                  dimnames = list(paste0("K", 1:5),
+                                  paste0("S", 1:4)))
+  meta <- data.frame(
+    sample = paste0("S", 1:4),
+    Env    = c("A", "A", "B", "B"),
+    stringsAsFactors = FALSE
+  )
+
+  first  <- align_samples(abund, meta, verbose = FALSE)
+  second <- align_samples(first$abundance, first$metadata, verbose = FALSE)
+
+  expect_identical(first$abundance, second$abundance)
+  expect_identical(first$metadata,  second$metadata)
+  expect_identical(first$sample_col, second$sample_col)
+  expect_identical(first$n_samples,  second$n_samples)
+})
