@@ -196,6 +196,19 @@
 
 ## Internal
 
+* `compare_metagenome_results()` no longer emits "cannot compute exact
+  p-value with ties" warnings from the per-metagenome-pair Wilcoxon
+  test. The test now passes `exact = FALSE` explicitly, forcing the
+  normal approximation instead of letting `stats::wilcox.test()` first
+  try (and fail on ties) to compute an exact p-value. Ties are endemic
+  to Spearman correlations -- any pair of features with the same rank
+  pattern yields identical coefficients -- so the previous default
+  produced warnings that were purely an internal implementation
+  detail and drowned out the user-facing "samples dropped by
+  cross-metagenome intersection" warning that the function's recent
+  by-name alignment now emits. The numerical p-value is unchanged in
+  the tied case, and the typical n (feature count, usually thousands)
+  puts the normal approximation well within its accurate regime.
 * Documented the intentional duplicate `align_samples()` call in
   `ggpicrust2()` and `pathway_daa()`. The wrapper must pre-align
   abundance/metadata before Step 4 builds `Group_vec` by positional

@@ -159,8 +159,20 @@ compare_metagenome_results <- function(metagenomes, names, daa_method = "ALDEx2"
       cor_matrix[i, j] <- median(feature_cors, na.rm = TRUE)
       cor_matrix[j, i] <- cor_matrix[i, j]
 
-      # Test if median correlation differs from 0
-      p_matrix[i, j] <- stats::wilcox.test(feature_cors, mu = 0)$p.value
+      # Test if the per-feature correlations differ from 0 as a group.
+      # `exact = FALSE` forces the normal approximation instead of letting
+      # wilcox.test() try (and fail on ties) to compute an exact p-value.
+      # Ties are endemic to Spearman correlations -- any pair of features
+      # with the same rank pattern yields identical coefficients -- so the
+      # default `exact = NULL` would spam "cannot compute exact p-value
+      # with ties" warnings that are purely an internal implementation
+      # detail and would drown out user-facing warnings (e.g. dropped
+      # samples from the cross-metagenome intersection just above). The
+      # numerical p-value is unchanged whenever ties exist, and this
+      # function's typical n (feature count, usually thousands) puts the
+      # normal approximation well within its accurate regime anyway.
+      p_matrix[i, j] <- stats::wilcox.test(feature_cors, mu = 0,
+                                           exact = FALSE)$p.value
       p_matrix[j, i] <- p_matrix[i, j]
     }
   }
