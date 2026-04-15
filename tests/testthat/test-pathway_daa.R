@@ -159,6 +159,266 @@ test_that("pathway_daa handles sample selection correctly", {
   )
 })
 
+test_that("pathway_daa select= keeps metadata rows aligned with abundance columns", {
+  # Regression: previously the select= branch reordered abundance columns to
+  # match `select`, but only filtered metadata rows without reordering them.
+  # Group labels then drifted relative to abundance, producing wrong p-values
+  # (and sometimes significance flips) when `select` was not in natural order.
+  #
+  # Build a strong-signal dataset and compare results against a pre-subset
+  # baseline. Internal select= must equal the pre-subset path.
+  set.seed(7)
+  n_features <- 3
+  ctl <- matrix(rpois(n_features * 3, lambda = 5),  nrow = n_features)
+  trt <- matrix(rpois(n_features * 3, lambda = 50), nrow = n_features)
+  abundance <- as.data.frame(cbind(ctl, trt))
+  colnames(abundance) <- paste0("S", 1:6)
+  rownames(abundance) <- paste0("p", seq_len(n_features))
+
+  metadata <- data.frame(
+    sample = colnames(abundance),
+    group  = rep(c("ctl", "trt"), each = 3),
+    stringsAsFactors = FALSE
+  )
+
+  # Pick samples in a deliberately non-natural order that mixes the two groups.
+  selected <- c("S4", "S2", "S6", "S1")
+
+  via_select <- pathway_daa(abundance, metadata, "group",
+                            daa_method = "ALDEx2", select = selected)
+  via_preset <- pathway_daa(abundance[, selected, drop = FALSE],
+                            metadata[metadata$sample %in% selected, ],
+                            "group",
+                            daa_method = "ALDEx2")
+
+  # Same features, same method rows, same (group1, group2) assignment.
+  expect_equal(via_select$feature, via_preset$feature)
+  expect_equal(via_select$method,  via_preset$method)
+  expect_equal(via_select$group1,  via_preset$group1)
+  expect_equal(via_select$group2,  via_preset$group2)
+
+  # p-values should agree closely (ALDEx2 is Monte Carlo-based but
+  # deterministic enough here for a tight tolerance).
+  expect_true(cor(via_select$p_values, via_preset$p_values) > 0.99)
+})
+
+test_that("limma voom multi-group labels align with p-values and coefficients", {
+  # Regression: group2 was assigned a length-(k-1) vector and R's recycling
+  # produced interleaved B,C,B,C,... labels for a 3-group design. The correct
+  # labeling is B repeated N_features times, then C repeated N_features times,
+  # matching as.vector()'s column-major flattening of fit$p.value[,-1].
+  n_features <- 4
+  n_per_group <- 4
+  set.seed(42)
+  abundance <- as.data.frame(matrix(
+    rpois(n_features * n_per_group * 3, lambda = 20),
+    nrow = n_features,
+    dimnames = list(paste0("p", seq_len(n_features)),
+                    paste0("S", seq_len(n_per_group * 3)))
+  ))
+  metadata <- data.frame(
+    sample = colnames(abundance),
+    group  = rep(c("A", "B", "C"), each = n_per_group),
+    stringsAsFactors = FALSE
+  )
+
+  res <- suppressWarnings(
+    pathway_daa(abundance, metadata, "group",
+                daa_method = "limma voom", reference = "A")
+  )
+
+  # 4 features * 2 non-reference contrasts = 8 rows.
+  expect_equal(nrow(res), n_features * 2)
+
+  # Within each contrast block, every feature must appear exactly once
+  # (not interleaved across contrasts).
+  expect_equal(sort(res$feature[res$group2 == "B"]), paste0("p", 1:n_features))
+  expect_equal(sort(res$feature[res$group2 == "C"]), paste0("p", 1:n_features))
+
+  # group1 must be the reference for every row.
+  expect_true(all(res$group1 == "A"))
+})
+
+test_that("DESeq2 respects the user-supplied reference level", {
+  skip_if_not_installed("DESeq2")
+  td <- create_daa_test_data(n_samples = 6)
+
+  captured <- capture.output({
+    res_default   <- suppressWarnings(
+      pathway_daa(td$abundance, td$metadata, "group", daa_method = "DESeq2")
+    )
+    res_reference <- suppressWarnings(
+      pathway_daa(td$abundance, td$metadata, "group",
+                  daa_method = "DESeq2", reference = "treatment")
+    )
+  }, type = "output")
+  ignore <- captured
+
+  # Default behavior unchanged: alphabetical first level is the reference.
+  expect_true(all(res_default$group1 == "control"))
+  expect_true(all(res_default$group2 == "treatment"))
+
+  # Explicit reference inverts the contrast direction.
+  expect_true(all(res_reference$group1 == "treatment"))
+  expect_true(all(res_reference$group2 == "control"))
+
+  # Flipping the reference flips the sign of log2 fold changes. DESeq2
+  # re-fits dispersion per call so the magnitudes are not bit-identical,
+  # but should match to several decimals.
+  merged <- merge(
+    res_default[, c("feature", "log2_fold_change")],
+    res_reference[, c("feature", "log2_fold_change")],
+    by = "feature", suffixes = c("_def", "_ref")
+  )
+  finite <- is.finite(merged$log2_fold_change_def) &
+            is.finite(merged$log2_fold_change_ref)
+  expect_true(all(abs(
+    merged$log2_fold_change_def[finite] + merged$log2_fold_change_ref[finite]
+  ) < 1e-4))
+})
+
+test_that("DESeq2 handles multi-group input", {
+  skip_if_not_installed("DESeq2")
+
+  td <- create_daa_test_data(n_samples = 9, n_groups = 3)
+
+  captured <- capture.output({
+    res <- suppressWarnings(
+      pathway_daa(td$abundance, td$metadata, "group",
+                  daa_method = "DESeq2", reference = "control")
+    )
+  }, type = "output")
+  ignore <- captured
+
+  # 3 features * 2 non-reference contrasts = 6 rows.
+  expect_equal(nrow(res), nrow(td$abundance) * 2)
+  expect_true(all(res$group1 == "control"))
+  expect_setequal(unique(res$group2), c("treatment", "other"))
+})
+
+test_that("Maaslin2 multi-group produces one row per (feature, contrast)", {
+  skip_if_not_installed("Maaslin2")
+
+  n_features <- 4
+  n_per_group <- 4
+  set.seed(123)
+  abundance <- as.data.frame(matrix(
+    rpois(n_features * n_per_group * 3, lambda = 30),
+    nrow = n_features,
+    dimnames = list(paste0("p", seq_len(n_features)),
+                    paste0("S", seq_len(n_per_group * 3)))
+  ))
+  metadata <- data.frame(
+    sample = colnames(abundance),
+    group  = rep(c("A", "B", "C"), each = n_per_group),
+    stringsAsFactors = FALSE
+  )
+
+  captured <- capture.output({
+    res <- suppressWarnings(
+      pathway_daa(abundance, metadata, "group",
+                  daa_method = "Maaslin2", reference = "A")
+    )
+  }, type = "output")
+  ignore <- captured
+
+  # Was flattened to n_features rows pre-fix; expect n_features * (k-1).
+  expect_equal(nrow(res), n_features * 2)
+  expect_true(all(res$group1 == "A"))
+  expect_setequal(unique(res$group2), c("B", "C"))
+
+  # Features preserved after Maaslin2's hyphen-to-dot renaming round-trip.
+  expect_true(all(res$feature %in% rownames(abundance)))
+})
+
+test_that("metagenomeSeq works with non-default sample column name", {
+  skip_if_not_installed("metagenomeSeq")
+
+  # cumNormStatFast() needs enough inter-sample variance to estimate a
+  # scaling quantile, so use Poisson-generated counts with n=10 samples
+  # (matching the existing extended-method test pattern) rather than the
+  # tiny deterministic pool from create_daa_test_data().
+  n_samples  <- 10
+  n_features <- 3
+  set.seed(321)
+  abundance <- as.data.frame(matrix(
+    rpois(n_samples * n_features, lambda = 20),
+    nrow = n_features,
+    dimnames = list(paste0("p", seq_len(n_features)),
+                    paste0("S", seq_len(n_samples)))
+  ))
+  # Exercise the branch that previously hardcoded metadata$sample by
+  # naming the sample column something other than "sample".
+  metadata <- data.frame(
+    SampleID = colnames(abundance),
+    group    = rep(c("control", "treatment"), each = n_samples / 2),
+    stringsAsFactors = FALSE
+  )
+
+  captured <- capture.output({
+    res <- suppressWarnings(
+      pathway_daa(abundance, metadata, "group", daa_method = "metagenomeSeq")
+    )
+  }, type = "output")
+  ignore <- captured
+
+  expect_s3_class(res, "data.frame")
+  expect_true(all(c("feature", "method", "p_values") %in% colnames(res)))
+  expect_equal(nrow(res), n_features)
+})
+
+test_that("metagenomeSeq survives degenerate cumNormStat input", {
+  skip_if_not_installed("metagenomeSeq")
+
+  # Minimal-but-legal input: 4 samples, 3 features, monotonic counts.
+  # metagenomeSeq::cumNormStatFast() returns NaN for this shape because the
+  # per-sample quantile search has nothing to stabilize on, and the package
+  # then aborts with the cryptic "missing value where TRUE/FALSE needed".
+  # We pre-compute the normalization factor with a fallback to p = 0.5,
+  # which is metagenomeSeq's own documented default.
+  abundance <- data.frame(
+    S1 = c(10, 20, 30), S2 = c(15, 25, 35),
+    S3 = c(30, 40, 50), S4 = c(35, 45, 55),
+    row.names = paste0("p", 1:3)
+  )
+  metadata <- data.frame(
+    sample = paste0("S", 1:4),
+    group  = c("A", "A", "B", "B"),
+    stringsAsFactors = FALSE
+  )
+
+  captured <- capture.output({
+    res <- suppressWarnings(
+      pathway_daa(abundance, metadata, "group", daa_method = "metagenomeSeq")
+    )
+  }, type = "output")
+  ignore <- captured
+
+  expect_s3_class(res, "data.frame")
+  expect_equal(nrow(res), nrow(abundance))
+  expect_true(all(c("feature", "method", "p_values") %in% colnames(res)))
+})
+
+test_that("pathway_daa rejects negative abundance values", {
+  # Regression: validate_daa_input() previously skipped numeric-matrix quality
+  # checks, so negative entries silently flowed into downstream methods and
+  # produced cryptic failures or nonsense results.
+  abundance <- data.frame(
+    S1 = c(10, 20, 30), S2 = c(20, -5, 40),
+    S3 = c(30, 40, 50), S4 = c(40, 50, 60),
+    row.names = paste0("p", 1:3)
+  )
+  metadata <- data.frame(
+    sample = paste0("S", 1:4),
+    group  = c("a", "a", "b", "b"),
+    stringsAsFactors = FALSE
+  )
+  expect_error(
+    pathway_daa(abundance, metadata, "group", daa_method = "ALDEx2"),
+    "Negative values found"
+  )
+})
+
 test_that("pathway_daa handles factor levels correctly with subset", {
   # GitHub issue #158: 3 groups, select only 2
   abundance <- data.frame(
@@ -209,6 +469,24 @@ test_that("pathway_daa handles multiple groups correctly", {
 
   expect_s3_class(result, "data.frame")
   expect_true(all(!is.na(result$p_values)))
+
+  # A correctly wired multi-group result should have one row per
+  # (feature, non-reference level) pair -- `N_features * (k - 1)` total --
+  # with `group1` pinned to the reference and `group2` covering every
+  # other level. Asserting only `!is.na(p_values)` misses label/row-count
+  # regressions like the one fixed in 2.5.15 where group2 was recycled
+  # into interleaved B,C,B,C,... labels.
+  expected_contrasts <- setdiff(unique(td$metadata$group), "control")
+  expect_equal(nrow(result), nrow(td$abundance) * length(expected_contrasts))
+  expect_true(all(result$group1 == "control"))
+  expect_setequal(unique(result$group2), expected_contrasts)
+  # Every feature must appear exactly once within each contrast block,
+  # confirming `group2` labels align with per-feature p-values instead
+  # of being recycled across rows.
+  for (lvl in expected_contrasts) {
+    expect_equal(sort(result$feature[result$group2 == lvl]),
+                 sort(rownames(td$abundance)))
+  }
 })
 
 test_that("pathway_daa handles p-value adjustment correctly", {
@@ -355,5 +633,209 @@ test_that("pathway_daa Lefser fails fast for multi-group input", {
       daa_method = "Lefser"
     ),
     "requires exactly 2 groups"
+  )
+})
+
+test_that("pathway_daa LinDA honors user-specified reference", {
+  # Regression: LinDA used `~ group` without releveling, so the factor's
+  # natural first level was always used as reference while the result's
+  # group1 column was labeled with the user-supplied `reference`. That
+  # produced rows with group1 == group2 and log2FC that did not reflect
+  # the requested contrast direction.
+  skip_if_not_installed("MicrobiomeStat")
+
+  set.seed(42)
+  n_feat <- 12; n_samp <- 12
+  abund <- matrix(rpois(n_feat * n_samp, 40),
+                  nrow = n_feat, ncol = n_samp,
+                  dimnames = list(paste0("f", seq_len(n_feat)),
+                                  paste0("S", seq_len(n_samp))))
+  meta <- data.frame(
+    sample = paste0("S", seq_len(n_samp)),
+    Env = c(rep("control", 6), rep("treatment", 6)),
+    stringsAsFactors = FALSE
+  )
+
+  r_ctrl <- suppressMessages(suppressWarnings(
+    pathway_daa(abundance = abund, metadata = meta, group = "Env",
+                daa_method = "LinDA", reference = "control")
+  ))
+  r_trt <- suppressMessages(suppressWarnings(
+    pathway_daa(abundance = abund, metadata = meta, group = "Env",
+                daa_method = "LinDA", reference = "treatment")
+  ))
+
+  expect_true(all(r_ctrl$group1 == "control"))
+  expect_true(all(r_ctrl$group2 == "treatment"))
+  expect_true(all(r_trt$group1 == "treatment"))
+  expect_true(all(r_trt$group2 == "control"))
+  # Flipping the reference must flip the sign of log2 fold change.
+  expect_equal(r_ctrl$log2_fold_change, -r_trt$log2_fold_change, tolerance = 1e-6)
+})
+
+test_that("pathway_daa Maaslin2 honors user-specified reference in 2-group case", {
+  # Regression: the 2-group branch passed `reference = NULL` to Maaslin2,
+  # so Maaslin2 used its alphabetical default regardless of the user's
+  # `reference` argument. Combined with the result-labeling that used
+  # the user's `reference` for group1, this produced group1 == group2
+  # and a coefficient whose sign did not flip when the user flipped
+  # the reference.
+  skip_if_not_installed("Maaslin2")
+
+  set.seed(42)
+  n_feat <- 12; n_samp <- 12
+  abund <- matrix(rpois(n_feat * n_samp, 40),
+                  nrow = n_feat, ncol = n_samp,
+                  dimnames = list(paste0("f", seq_len(n_feat)),
+                                  paste0("S", seq_len(n_samp))))
+  meta <- data.frame(
+    sample = paste0("S", seq_len(n_samp)),
+    Env = c(rep("control", 6), rep("treatment", 6)),
+    stringsAsFactors = FALSE
+  )
+
+  m_ctrl <- suppressMessages(suppressWarnings(
+    pathway_daa(abundance = abund, metadata = meta, group = "Env",
+                daa_method = "Maaslin2", reference = "control")
+  ))
+  m_trt <- suppressMessages(suppressWarnings(
+    pathway_daa(abundance = abund, metadata = meta, group = "Env",
+                daa_method = "Maaslin2", reference = "treatment")
+  ))
+
+  expect_true(all(m_ctrl$group1 == "control"))
+  expect_true(all(m_ctrl$group2 == "treatment"))
+  expect_true(all(m_trt$group1 == "treatment"))
+  expect_true(all(m_trt$group2 == "control"))
+  # Align rows by feature before comparing — Maaslin2 may reorder.
+  ord_ctrl <- order(m_ctrl$feature)
+  ord_trt <- order(m_trt$feature)
+  expect_equal(m_ctrl$log2_fold_change[ord_ctrl],
+               -m_trt$log2_fold_change[ord_trt],
+               tolerance = 1e-6)
+})
+
+test_that("pathway_daa edgeR honors user-specified reference", {
+  # Regression: edgeR's exactTest() used raw factor order (pair = c(1, 2)),
+  # so the `reference` argument was silently ignored and result labels
+  # were always Level[1]/Level[2]. Relevel the grouping factor so edgeR
+  # and the labels agree with the documented semantics.
+  skip_if_not_installed("edgeR")
+
+  set.seed(7)
+  n_feat <- 10; n_samp <- 12
+  abund <- matrix(rpois(n_feat * n_samp, 40),
+                  nrow = n_feat, ncol = n_samp,
+                  dimnames = list(paste0("f", seq_len(n_feat)),
+                                  paste0("S", seq_len(n_samp))))
+  meta <- data.frame(
+    sample = paste0("S", seq_len(n_samp)),
+    Env = c(rep("control", 6), rep("treatment", 6)),
+    stringsAsFactors = FALSE
+  )
+
+  e_ctrl <- suppressWarnings(suppressMessages(
+    pathway_daa(abundance = abund, metadata = meta, group = "Env",
+                daa_method = "edgeR", reference = "control")
+  ))
+  e_trt <- suppressWarnings(suppressMessages(
+    pathway_daa(abundance = abund, metadata = meta, group = "Env",
+                daa_method = "edgeR", reference = "treatment")
+  ))
+
+  expect_true(all(e_ctrl$group1 == "control"))
+  expect_true(all(e_ctrl$group2 == "treatment"))
+  expect_true(all(e_trt$group1 == "treatment"))
+  expect_true(all(e_trt$group2 == "control"))
+  expect_equal(e_ctrl$log2_fold_change, -e_trt$log2_fold_change, tolerance = 1e-6)
+})
+
+test_that("pathway_daa metagenomeSeq honors user-specified reference", {
+  # Regression: metagenomeSeq labels were fixed to Level[1]/Level[2] and
+  # the model matrix used raw factor order, so `reference = "treatment"`
+  # left both labels and p-values unchanged.
+  skip_if_not_installed("metagenomeSeq")
+
+  set.seed(7)
+  n_feat <- 10; n_samp <- 12
+  abund <- matrix(rpois(n_feat * n_samp, 40),
+                  nrow = n_feat, ncol = n_samp,
+                  dimnames = list(paste0("f", seq_len(n_feat)),
+                                  paste0("S", seq_len(n_samp))))
+  meta <- data.frame(
+    sample = paste0("S", seq_len(n_samp)),
+    Env = c(rep("control", 6), rep("treatment", 6)),
+    stringsAsFactors = FALSE
+  )
+
+  m_ctrl <- suppressWarnings(suppressMessages(
+    pathway_daa(abundance = abund, metadata = meta, group = "Env",
+                daa_method = "metagenomeSeq", reference = "control")
+  ))
+  m_trt <- suppressWarnings(suppressMessages(
+    pathway_daa(abundance = abund, metadata = meta, group = "Env",
+                daa_method = "metagenomeSeq", reference = "treatment")
+  ))
+
+  expect_true(all(m_ctrl$group1 == "control"))
+  expect_true(all(m_ctrl$group2 == "treatment"))
+  expect_true(all(m_trt$group1 == "treatment"))
+  expect_true(all(m_trt$group2 == "control"))
+})
+
+test_that("pathway_daa re-validates group count after align/select", {
+  # Regression: validate_group() only checks the raw metadata. If
+  # align_samples() or a narrow `select =` filter removes every sample
+  # of a level, the single-group leftover could propagate into backends
+  # with a confusing downstream error.
+  td <- create_daa_test_data(n_samples = 6, n_groups = 2)
+
+  expect_error(
+    pathway_daa(
+      abundance = td$abundance,
+      metadata = td$metadata,
+      group = "group",
+      daa_method = "ALDEx2",
+      select = td$metadata$sample[td$metadata$group == "control"]
+    ),
+    "at least 2 groups with samples"
+  )
+})
+
+test_that("pathway_daa rejects unsupported daa_method with a typo suggestion", {
+  # Regression: pathway_daa() used to dispatch via switch() with no
+  # default branch, so a misspelled method like "linDA" fell through and
+  # returned NULL silently. Now we whitelist-validate up front and hint
+  # the canonical spelling for common typos.
+  td <- create_daa_test_data(n_samples = 6, n_groups = 2)
+
+  expect_error(
+    pathway_daa(
+      abundance = td$abundance,
+      metadata = td$metadata,
+      group = "group",
+      daa_method = "linDA"
+    ),
+    "Did you mean 'LinDA'"
+  )
+
+  expect_error(
+    pathway_daa(
+      abundance = td$abundance,
+      metadata = td$metadata,
+      group = "group",
+      daa_method = "Lefse"
+    ),
+    "Did you mean 'Lefser'"
+  )
+
+  expect_error(
+    pathway_daa(
+      abundance = td$abundance,
+      metadata = td$metadata,
+      group = "group",
+      daa_method = "totally_unknown"
+    ),
+    "Unsupported daa_method"
   )
 })

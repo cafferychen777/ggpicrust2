@@ -582,18 +582,18 @@ metadata <- read_delim("path/to/your/metadata.txt", delim = "\t", escape_double 
 
 # The default DAA method is "ALDEx2"
 # Please change group to "your_group_column" if you are not using example dataset
-daa_results_df <- pathway_daa(abundance = kegg_abundance, metadata = metadata, group = "Environment", daa_method = "linDA", select = NULL, p.adjust = "BH", reference = NULL)
+daa_results_df <- pathway_daa(abundance = kegg_abundance, metadata = metadata, group = "Environment", daa_method = "LinDA", select = NULL, p_adjust_method = "BH", reference = NULL)
 
 # If you have more than 3 group levels and want to use the LinDA, limma voom, or Maaslin2 methods, you should provide a reference.
 metadata <- read_delim("path/to/your/metadata.txt", delim = "\t", escape_double = FALSE, trim_ws = TRUE)
 
 # Please change group to "your_group_column" if you are not using example dataset
-daa_results_df <- pathway_daa(abundance = kegg_abundance, metadata = metadata, group = "Group", daa_method = "LinDA", select = NULL, p.adjust = "BH", reference = "Harvard BRI")
+daa_results_df <- pathway_daa(abundance = kegg_abundance, metadata = metadata, group = "Group", daa_method = "LinDA", select = NULL, p_adjust_method = "BH", reference = "Harvard BRI")
 
 # Other example
 data("metacyc_abundance")
 data("metadata")
-metacyc_daa_results_df <- pathway_daa(abundance = metacyc_abundance %>% column_to_rownames("pathway"), metadata = metadata, group = "Environment", daa_method = "LinDA", select = NULL, p.adjust = "BH", reference = NULL)
+metacyc_daa_results_df <- pathway_daa(abundance = metacyc_abundance %>% column_to_rownames("pathway"), metadata = metadata, group = "Environment", daa_method = "LinDA", select = NULL, p_adjust_method = "BH", reference = NULL)
 ```
 
 ### compare_daa_results()
