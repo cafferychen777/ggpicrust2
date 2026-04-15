@@ -66,13 +66,31 @@ compare_gsea_daa <- function(gsea_results,
     stop("plot_type must be one of 'venn', 'upset', or 'scatter'")
   }
 
-  # Check if required columns exist
+  # Check if required columns exist. Baseline (for set-membership plots)
+  # is just the ID + adjusted p. The scatter variant additionally plots
+  # effect sizes (NES vs log2_fold_change), so it needs those columns;
+  # checking here rather than only inside the scatter branch means the
+  # user gets an up-front, single error naming exactly what's missing
+  # instead of a cryptic "undefined columns selected" from merge().
   if (!all(c("pathway_id", "p.adjust") %in% colnames(gsea_results))) {
     stop("GSEA results missing required columns: pathway_id, p.adjust")
   }
 
   if (!all(c("feature", "p_adjust") %in% colnames(daa_results))) {
     stop("DAA results missing required columns: feature, p_adjust")
+  }
+
+  if (plot_type == "scatter") {
+    missing_gsea <- setdiff("NES", colnames(gsea_results))
+    missing_daa <- setdiff("log2_fold_change", colnames(daa_results))
+    if (length(missing_gsea) > 0 || length(missing_daa) > 0) {
+      stop(sprintf(
+        "plot_type = 'scatter' requires effect-size columns: %s%s%s. Use plot_type = 'venn' or 'upset' if effect sizes are unavailable.",
+        if (length(missing_gsea)) paste0("gsea_results needs '", missing_gsea, "'") else "",
+        if (length(missing_gsea) && length(missing_daa)) "; " else "",
+        if (length(missing_daa)) paste0("daa_results needs '", missing_daa, "'") else ""
+      ), call. = FALSE)
+    }
   }
 
   # Extract significant pathways from each analysis

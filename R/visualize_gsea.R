@@ -109,13 +109,11 @@ visualize_gsea <- function(gsea_results,
   # Convert to integer if it's not already
   n_pathways <- as.integer(n_pathways)
 
-  # Check if required packages are installed
-  if (plot_type == "enrichment_plot" || plot_type == "dotplot" || plot_type == "barplot") {
-    if (!requireNamespace("enrichplot", quietly = TRUE)) {
-      stop("Package 'enrichplot' is required. Please install it using BiocManager::install('enrichplot').")
-    }
-  }
-
+  # Note: enrichment_plot / dotplot / barplot are built entirely with
+  # ggplot2 (see the branches below); they do not call into enrichplot
+  # at runtime, so we don't require that Bioconductor package here.
+  # Network and heatmap branches still depend on their own stacks and
+  # are checked below.
   if (plot_type == "network") {
     if (!requireNamespace("igraph", quietly = TRUE) || !requireNamespace("ggraph", quietly = TRUE)) {
       stop("Packages 'igraph' and 'ggraph' are required for network plots. Please install them.")
@@ -630,6 +628,18 @@ create_heatmap_plot <- function(gsea_results,
     ))
   }
 
+  # Align abundance columns with metadata rows using the package-wide
+  # sample-alignment utility. Previously this branch relied solely on
+  # `rownames(metadata)` to locate samples, which silently broke on the
+  # common case of metadata carrying a `sample_name`/`sample_id` column
+  # with default integer rownames -- the column annotation then came
+  # out as all-NA, diverging from how every other function in the
+  # package matches abundance to metadata.
+  aligned <- align_samples(abundance, metadata, verbose = FALSE)
+  abundance <- as.matrix(aligned$abundance)
+  metadata <- aligned$metadata
+  validate_group(metadata, group, min_groups = 1)
+
   # Create heatmap data matrix
   # For each pathway, calculate the average expression of leading edge genes
   heatmap_data <- matrix(0, nrow = length(leading_edges), ncol = ncol(abundance))
@@ -637,8 +647,6 @@ create_heatmap_plot <- function(gsea_results,
   colnames(heatmap_data) <- colnames(abundance)
 
   for (i in seq_along(leading_edges)) {
-    # Get pathway ID and genes
-    current_pathway_id <- names(leading_edges)[i]
     genes <- leading_edges[[i]]
 
     # Ensure all genes are in abundance data
@@ -650,15 +658,15 @@ create_heatmap_plot <- function(gsea_results,
     }
   }
 
-  # Scale data
+  # Scale data. Constant rows produce NA after t(scale(t(.))); coerce
+  # them to 0 so ComplexHeatmap doesn't crash on clustering.
   heatmap_data_scaled <- t(scale(t(heatmap_data)))
+  heatmap_data_scaled[!is.finite(heatmap_data_scaled)] <- 0
 
-  # Prepare column annotation
+  # Column annotation now derives from the aligned metadata, which is
+  # guaranteed to match `colnames(heatmap_data)` by construction.
   column_annotation <- metadata[[group]]
-  names(column_annotation) <- rownames(metadata)
-
-  # Ensure column annotation matches heatmap columns
-  column_annotation <- column_annotation[colnames(heatmap_data)]
+  names(column_annotation) <- colnames(heatmap_data)
 
   # Create column annotation object
   ha <- ComplexHeatmap::HeatmapAnnotation(

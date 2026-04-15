@@ -2,8 +2,8 @@
 # create_gsea_test_results() is defined in helper-gsea.R
 
 test_that("visualize_gsea creates different plot types correctly", {
-  skip_if_not_installed("enrichplot")
-
+  # enrichment_plot/dotplot/barplot are pure ggplot2 and do not require
+  # enrichplot; asserting that here locks the dependency boundary.
   gsea_results <- create_gsea_test_results()
 
   p_bar <- visualize_gsea(gsea_results, plot_type = "barplot")
@@ -54,8 +54,6 @@ test_that("visualize_gsea creates heatmap plot correctly", {
 })
 
 test_that("visualize_gsea validates inputs correctly", {
-  skip_if_not_installed("enrichplot")
-
   gsea_results <- create_gsea_test_results()
 
   expect_error(visualize_gsea(gsea_results = "invalid"), "'gsea_results' must be a data frame")
@@ -64,8 +62,6 @@ test_that("visualize_gsea validates inputs correctly", {
 })
 
 test_that("visualize_gsea limits pathways correctly", {
-  skip_if_not_installed("enrichplot")
-
   gsea_results <- create_gsea_test_results(n_pathways = 30)
 
   p_default <- visualize_gsea(gsea_results, plot_type = "barplot")

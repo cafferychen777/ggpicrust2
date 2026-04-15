@@ -364,8 +364,11 @@ test_that("aggregate_taxa_contributions errors on empty data after filtering", {
   td <- create_contrib_test_data()
   contrib <- read_contrib_file(data = td$contrib_raw)
 
+  # Use a syntactically valid but non-existent pathway ID so the filter
+  # reaches the "no matching KOs in contrib_data" branch rather than the
+  # strict ID-shape check.
   expect_error(
-    aggregate_taxa_contributions(contrib, pathway_ids = "nonexistent_pathway"),
+    aggregate_taxa_contributions(contrib, pathway_ids = "ko99999"),
     "No data remaining"
   )
 })

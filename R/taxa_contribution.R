@@ -274,22 +274,28 @@ aggregate_taxa_contributions <- function(contrib_data,
     stop(sprintf("Missing required columns: %s", paste(missing, collapse = ", ")))
   }
 
-  # Filter to significant pathways via DAA results
+  # Filter to significant pathways via DAA results.
+  #
+  # `daa_results_df$feature` (or `pathway_ids`) may be either:
+  #   - pathway IDs (e.g. "ko00010"), which must be mapped back to their
+  #     constituent KOs because `contrib_data$function_id` is KO-level; or
+  #   - KO IDs (e.g. "K00001"), which match `function_id` directly and
+  #     must NOT go through the ko_to_kegg mapping, otherwise every KO
+  #     is treated as a (non-existent) pathway and the entire contrib
+  #     table is filtered away.
+  #
+  # We dispatch on ID shape rather than asking the caller, because the
+  # upstream ggpicrust2 pipeline legitimately produces DAA results at
+  # either level depending on the chosen abundance table.
   if (!is.null(daa_results_df)) {
-    sig_pathways <- daa_results_df$feature[daa_results_df$p_adjust < p_threshold]
-    sig_pathways <- unique(sig_pathways[!is.na(sig_pathways)])
-    if (length(sig_pathways) == 0) {
-      stop("No significant pathways found at p_threshold = ", p_threshold)
+    sig_features <- daa_results_df$feature[daa_results_df$p_adjust < p_threshold]
+    sig_features <- unique(sig_features[!is.na(sig_features)])
+    if (length(sig_features) == 0) {
+      stop("No significant features found at p_threshold = ", p_threshold)
     }
-    # Map pathway IDs to KO IDs
-    ko_to_kegg <- load_reference_data("ko_to_kegg")
-    pathway_kos <- ko_to_kegg$ko_id[ko_to_kegg$pathway_id %in% sig_pathways]
-    contrib_data <- contrib_data[contrib_data$function_id %in% pathway_kos, ]
+    contrib_data <- filter_contrib_by_features(contrib_data, sig_features)
   } else if (!is.null(pathway_ids)) {
-    # Map pathway IDs to KO IDs
-    ko_to_kegg <- load_reference_data("ko_to_kegg")
-    pathway_kos <- ko_to_kegg$ko_id[ko_to_kegg$pathway_id %in% pathway_ids]
-    contrib_data <- contrib_data[contrib_data$function_id %in% pathway_kos, ]
+    contrib_data <- filter_contrib_by_features(contrib_data, pathway_ids)
   }
 
   if (nrow(contrib_data) == 0) {
@@ -332,6 +338,54 @@ aggregate_taxa_contributions <- function(contrib_data,
 # =============================================================================
 # Internal helpers
 # =============================================================================
+
+#' Filter contribution data by a vector of DAA features (KO or pathway IDs)
+#'
+#' Dispatches on ID shape: KO-like (`K\d{5}`) intersects directly with
+#' `function_id`; pathway-like (`ko\d{5}`, `map\d{5}`, `ec\d{5}`) is first
+#' expanded to its constituent KOs via the ko_to_kegg reference. Mixed
+#' inputs are handled by combining both resolved sets.
+#'
+#' @noRd
+filter_contrib_by_features <- function(contrib_data, features) {
+  ko_pattern <- "^K\\d{5}$"
+  pathway_pattern <- "^(ko|map|ec)\\d{5}$"
+
+  is_ko <- grepl(ko_pattern, features)
+  is_pathway <- grepl(pathway_pattern, features)
+
+  if (!any(is_ko | is_pathway)) {
+    stop(
+      "None of the features look like KO IDs (K#####) or pathway IDs ",
+      "(ko#####/map#####/ec#####). Example: '",
+      paste(head(features, 2), collapse = "', '"),
+      "'. Check that your DAA input is KEGG-based."
+    )
+  }
+
+  matched_kos <- character(0)
+  if (any(is_ko)) {
+    matched_kos <- c(matched_kos, features[is_ko])
+  }
+  if (any(is_pathway)) {
+    ko_to_kegg <- load_reference_data("ko_to_kegg")
+    pathway_kos <- ko_to_kegg$ko_id[ko_to_kegg$pathway_id %in% features[is_pathway]]
+    matched_kos <- c(matched_kos, pathway_kos)
+  }
+  matched_kos <- unique(matched_kos)
+
+  filtered <- contrib_data[contrib_data$function_id %in% matched_kos, ]
+  if (nrow(filtered) == 0) {
+    stop(
+      "No data remaining after filtering. Check that function IDs match ",
+      "between contrib_data (e.g. '",
+      paste(head(unique(contrib_data$function_id), 2), collapse = "', '"),
+      "') and the requested feature IDs (e.g. '",
+      paste(head(features, 2), collapse = "', '"), "')."
+    )
+  }
+  filtered
+}
 
 #' Parse a QIIME2-style taxonomy string
 #'

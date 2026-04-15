@@ -239,6 +239,21 @@ align_samples <- function(abundance, metadata, sample_col = NULL, verbose = TRUE
 
   metadata_samples <- as.character(metadata[[sample_col]])
 
+  # A sample identifier column is a primary key: one row per sample.
+  # find_sample_column() already enforces uniqueness when auto-detecting,
+  # but users who pass `sample_col` explicitly bypass that path. Without
+  # this guard, duplicated IDs silently collapse in match() below
+  # (match() returns only the first hit), so a metadata row is dropped
+  # without warning and the caller gets stats on the wrong sample count.
+  dup_ids <- unique(metadata_samples[duplicated(metadata_samples)])
+  if (length(dup_ids) > 0) {
+    stop(sprintf(
+      "Sample column '%s' contains duplicated IDs: %s. Each metadata row must correspond to a unique sample.",
+      sample_col,
+      paste(head(dup_ids, 5), collapse = ", ")
+    ), call. = FALSE)
+  }
+
   # Find common samples
   common_samples <- intersect(abundance_samples, metadata_samples)
 

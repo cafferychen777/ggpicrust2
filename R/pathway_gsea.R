@@ -848,19 +848,26 @@ run_limma_gsea <- function(abundance_mat,
   # First, add a small pseudocount to avoid log(0)
   abundance_mat <- abundance_mat + 0.5
 
-  # Use limma-voom for count data transformation
-  # This estimates the mean-variance relationship and computes precision weights
-  tryCatch({
-    v <- limma::voom(abundance_mat, design, plot = FALSE)
-  }, error = function(e) {
-    # Fallback: use log2 transformation if voom fails
-    warning("voom transformation failed, using log2 transformation instead: ", e$message)
-    v <<- list(
-      E = log2(abundance_mat),
-      weights = matrix(1, nrow = nrow(abundance_mat), ncol = ncol(abundance_mat))
-    )
-    class(v) <<- "EList"
-  })
+  # Use limma-voom for count data transformation. This estimates the
+  # mean-variance relationship and computes precision weights.
+  #
+  # The fallback (log2 transform with unit weights) was previously
+  # written with `<<-`, which injected the fallback object into the
+  # enclosing frame as a side effect. That violates functional scoping
+  # and pollutes whichever environment the handler happened to run in.
+  # Treat `tryCatch()` as an expression and bind its value locally.
+  v <- tryCatch(
+    limma::voom(abundance_mat, design, plot = FALSE),
+    error = function(e) {
+      warning("voom transformation failed, using log2 transformation instead: ", e$message)
+      fallback <- list(
+        E = log2(abundance_mat),
+        weights = matrix(1, nrow = nrow(abundance_mat), ncol = ncol(abundance_mat))
+      )
+      class(fallback) <- "EList"
+      fallback
+    }
+  )
 
   # Run the selected method
   if (method == "camera") {

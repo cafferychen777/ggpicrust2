@@ -378,9 +378,24 @@ pathway_heatmap <- function(abundance,
   # Validate group column
   validate_group(metadata, group, min_groups = 2)
 
-  # Perform z-score normalization
+  # Perform z-score normalization. A constant (zero-variance) row has
+  # sd = 0, so `scale()` divides by zero and returns NA for every sample.
+  # The semantically correct value for "this feature is identical across
+  # all samples" is 0 (right at the mean), so we coerce those NA back to
+  # 0. Leaving them as NA would also crash `dist()`/`hclust()` below
+  # whenever `cluster_rows = TRUE`.
   z_abundance <- t(apply(abundance, 1, scale))
   colnames(z_abundance) <- colnames(abundance)
+  constant_rows <- apply(z_abundance, 1, function(x) any(!is.finite(x)))
+  if (any(constant_rows)) {
+    z_abundance[constant_rows, ] <- 0
+    if (cluster_rows) {
+      message(sprintf(
+        "%d constant pathway(s) have zero variance; treated as z-score 0 for clustering.",
+        sum(constant_rows)
+      ))
+    }
+  }
 
   # Convert the abundance matrix to a data frame
   z_df <- as.data.frame(z_abundance)

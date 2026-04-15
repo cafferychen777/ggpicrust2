@@ -105,15 +105,17 @@ compare_daa_results <- function(daa_results_list, method_names, p_values_thresho
   intersect_features <- Reduce(intersect, features_flat)
   union_features <- unique(unlist(features_flat))
 
-  # Calculate the differences in the features obtained by each method (exclude common)
+  # "diff_features" for method i = features method i reports whose
+  # significance is NOT endorsed by every other method. Equivalently:
+  # method_i_features \ intersection_of_all_methods. A feature found by
+  # 2 of 3 methods is a disagreement from the perspective of each of
+  # those 2 methods, so it MUST appear in both of their diff lists.
+  #
+  # Previously there was a second filter that kept only features
+  # appearing in a single method, which silently collapsed "found by
+  # 2/3" into "unanimous" and zeroed out the disagreement signal that
+  # this function exists to surface.
   diff_features <- lapply(features_flat, function(x) setdiff(x, intersect_features))
-
-  # Find features unique to each method (not shared with any other method)
-  # Using duplicated() for correct handling of features appearing in 3+ methods
-  all_diff <- unlist(diff_features)
-  is_duplicated <- duplicated(all_diff) | duplicated(all_diff, fromLast = TRUE)
-  unique_only_features <- unique(all_diff[!is_duplicated])
-  diff_features <- lapply(diff_features, function(x) x[x %in% unique_only_features])
 
   # Initialize a data frame to store the comparison results
   comparison_results <- data.frame(
