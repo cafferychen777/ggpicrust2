@@ -97,13 +97,20 @@ clean_ko_abundance <- function(abundance, verbose = TRUE) {
 #' @param threshold Minimum proportion of overlap required (default: 0.5)
 #' @return Logical indicating whether vectors have sufficient overlap
 #' @noRd
-samples_match <- function(vec1, vec2, threshold = 0.5) {
+samples_match <- function(vec1, vec2, threshold = 0.5, require_unique = FALSE) {
   vec1 <- as.character(vec1)
   vec2 <- as.character(vec2)
   n_common <- length(intersect(vec1, vec2))
   min_length <- min(length(vec1), length(vec2))
 
   if (min_length == 0) return(FALSE)
+
+  # A true sample identifier column has one row per sample, so its values
+  # must be unique. Without this guard, a low-cardinality categorical column
+  # (e.g. "group", "batch") whose levels coincidentally include a few sample
+  # names can pass the overlap threshold.
+  if (require_unique && anyDuplicated(vec1)) return(FALSE)
+
   n_common / min_length >= threshold
 }
 
@@ -128,23 +135,41 @@ find_sample_column <- function(metadata, abundance_samples) {
     "samples", "Samples"
   )
 
+  # Priority 1 uses a more lenient overlap threshold (50%) because a
+  # standard column name ("sample", "sample_id", etc.) is itself strong
+  # evidence that this is the sample identifier -- partial overlap is
+  # usually just metadata filtering upstream. But uniqueness is not
+  # optional: a "sample" column with duplicate values is not a sample ID
+  # no matter what it's called, so enforce require_unique = TRUE here
+  # too to prevent mis-detection on metadata whose standard-named column
+  # happens to be a subject_id / replicate_id with repeats.
   for (col in standard_names) {
     if (col %in% colnames(metadata)) {
-      if (samples_match(metadata[[col]], abundance_samples)) {
+      if (samples_match(metadata[[col]], abundance_samples,
+                        require_unique = TRUE)) {
         return(col)
       }
     }
   }
 
-  # Priority 2: Any column that matches
+  # Priority 2 scans every column without a name signal, so we require much
+  # stronger evidence: (a) column values must be unique within metadata (a
+  # real sample ID is one-per-row), and (b) near-complete overlap with the
+  # abundance columns (>= 90%). A loose 50% threshold here can silently
+  # pick up a subject_id or batch column whose levels happen to share a
+  # few strings with the sample names.
   for (col in colnames(metadata)) {
-    if (samples_match(metadata[[col]], abundance_samples)) {
+    if (samples_match(metadata[[col]], abundance_samples,
+                      threshold = 0.9, require_unique = TRUE)) {
       return(col)
     }
   }
 
-  # Priority 3: Rownames
-  if (samples_match(rownames(metadata), abundance_samples)) {
+  # Priority 3: rownames -- also require uniqueness and high overlap, since
+  # default integer rownames ("1", "2", ...) should not be mistaken for
+  # sample identifiers.
+  if (samples_match(rownames(metadata), abundance_samples,
+                    threshold = 0.9, require_unique = TRUE)) {
     return(".rownames")
   }
 
@@ -616,6 +641,11 @@ validate_feature_ids <- function(ids, type = "auto") {
 #' @return If filter_zero=FALSE: TRUE. If filter_zero=TRUE: filtered matrix.
 #' @noRd
 validate_daa_input <- function(mat, method = NULL, min_features = 2, filter_zero = FALSE) {
+  # Matrix-quality gate: numeric, no negatives, no duplicated sample names.
+  # NA values only warn (some upstream pipelines emit them legitimately) so
+  # downstream methods can still fail explicitly if they cannot tolerate NAs.
+  validate_numeric_matrix(mat)
+
   # Basic zero checks
   result <- validate_zero_abundance(mat)
 
