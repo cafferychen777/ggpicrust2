@@ -15,6 +15,12 @@ test_that("pathway_annotation basic functionality works", {
   expect_true("description" %in% colnames(result))
   expect_equal(nrow(result), 2)
 
+  # Regression: the file-mode branch previously took sample column names as
+  # features, so `description` came back all-NA even for well-known KOs.
+  # After the fix, rows whose feature IDs live in the reference data should
+  # carry non-NA descriptions.
+  expect_true(any(!is.na(result$description)))
+
   unlink(temp_file)
 })
 
@@ -90,6 +96,64 @@ test_that("pathway_annotation works with all pathway types", {
 
   metacyc_result <- suppressMessages(pathway_annotation(pathway = "MetaCyc", daa_results_df = metacyc_df, ko_to_kegg = FALSE))
   expect_s3_class(metacyc_result, "data.frame")
+})
+
+test_that("pathway_annotation ko_to_kegg returns every input row (merges back)", {
+  # Regression: process_kegg_annotations() used to return only the
+  # p_adjust < threshold subset, silently dropping non-significant
+  # features that downstream code (e.g. ggpicrust2()'s
+  # plot_result_list$daa_results_df) expected to still be present.
+  # Annotations should be populated for significant rows and NA for
+  # the rest, but every row must survive the call.
+  cache <- getFromNamespace("kegg_cache", "ggpicrust2")
+
+  # Pre-populate the cache with fake KEGG entries so the function never
+  # touches the network.
+  fake_entry <- function(name, path_id, path_desc) {
+    pathway_vec <- stats::setNames(path_desc, path_id)
+    map_vec <- stats::setNames("map_title", path_id)
+    list(list(
+      NAME = name,
+      PATHWAY = pathway_vec,
+      PATHWAY_MAP = map_vec,
+      CLASS = "Metabolism; Carbohydrate metabolism"
+    ))
+  }
+  assign("K00001", fake_entry("alcohol dehydrogenase", "ko00010", "Glycolysis"), envir = cache)
+  assign("K00002", fake_entry("alcohol dehydrogenase NADP+", "ko00010", "Glycolysis"), envir = cache)
+  on.exit({
+    if (exists("K00001", envir = cache)) rm("K00001", envir = cache)
+    if (exists("K00002", envir = cache)) rm("K00002", envir = cache)
+    if (exists("K99999", envir = cache)) rm("K99999", envir = cache)
+  }, add = TRUE)
+  assign("K99999", fake_entry("non-significant placeholder", "ko99999", "Other"),
+         envir = cache)
+
+  daa_df <- data.frame(
+    feature  = c("K00001", "K00002", "K99999"),
+    p_values = c(0.001, 0.002, 0.4),
+    p_adjust = c(0.01, 0.02, 0.9),
+    method   = "ALDEx2",
+    stringsAsFactors = FALSE
+  )
+
+  result <- suppressMessages(suppressWarnings(
+    pathway_annotation(pathway = "KO", daa_results_df = daa_df,
+                       ko_to_kegg = TRUE, p_adjust_threshold = 0.05)
+  ))
+
+  # All input rows preserved.
+  expect_equal(nrow(result), 3)
+  expect_setequal(result$feature, c("K00001", "K00002", "K99999"))
+
+  # Significant rows carry annotations.
+  sig_rows <- result[result$feature %in% c("K00001", "K00002"), , drop = FALSE]
+  expect_true(all(!is.na(sig_rows$pathway_name)))
+
+  # Non-significant row has NA annotation columns (filtered out of the
+  # annotation step, but still present as a row).
+  ns_row <- result[result$feature == "K99999", , drop = FALSE]
+  expect_true(is.na(ns_row$pathway_name))
 })
 
 test_that("pathway_annotation validates inputs", {

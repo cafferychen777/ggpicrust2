@@ -11,97 +11,83 @@ kegg_cache <- new.env(parent = emptyenv())
 #' @return KEGG annotation
 #' @noRd
 get_kegg_with_cache <- function(ko_id, organism = NULL) {
-  # Create a cache key that includes the organism if specified
+  # Cache key includes organism so organism-specific pathway IDs do not
+  # collide with the generic entries.
   cache_key <- if (!is.null(organism)) {
     paste0(organism, ":", ko_id)
   } else {
     ko_id
   }
-  
+
   if (!exists(cache_key, envir = kegg_cache)) {
-    # Add request interval
-    Sys.sleep(0.1)  # 100ms delay to avoid too frequent requests
-    
-    # Different query strategy based on whether organism is specified
-    if (!is.null(organism)) {
-      # For organism-specific queries, we need a two-step process:
-      # 1. Find organism-specific genes linked to this KO
-      # 2. Get pathway information for those genes
-      
-      # Step 1: Find organism-specific genes
-      organism_genes <- tryCatch({
-        # Use keggLink to find genes in the specified organism that are linked to this KO
-        links <- KEGGREST::keggLink(organism, ko_id)
-        links
-      }, error = function(e) {
-        log_message(sprintf("Error finding %s genes for %s: %s", organism, ko_id, e$message), "WARN")
-        NULL
-      })
-      
-      # If we found organism-specific genes
-      if (!is.null(organism_genes) && length(organism_genes) > 0) {
-        # Step 2: Get pathway information for the first gene (as a representative)
-        # We use the first gene as most genes linked to the same KO participate in the same pathways
-        gene_id <- names(organism_genes)[1]
-        
-        result <- with_retry({
-          KEGGREST::keggGet(gene_id)
-        })
-        
-        # If successful, store in cache
-        if (!is.null(result) && !inherits(result, "kegg_error")) {
-          assign(cache_key, result, envir = kegg_cache)
-        } else {
-          # If we couldn't get gene info, fall back to generic KO query
-          log_message(sprintf("Could not get info for %s gene %s, falling back to generic KO query", 
-                             organism, gene_id), "INFO")
-          
-          result <- with_retry({
-            KEGGREST::keggGet(ko_id)
-          })
-          
-          if (!is.null(result) && !inherits(result, "kegg_error")) {
-            assign(cache_key, result, envir = kegg_cache)
-          }
-        }
-      } else {
-        # If no organism-specific genes found, fall back to generic KO query
-        log_message(sprintf("No %s genes found for %s, falling back to generic KO query", 
-                           organism, ko_id), "INFO")
-        
-        result <- with_retry({
-          KEGGREST::keggGet(ko_id)
-        })
-        
-        if (!is.null(result) && !inherits(result, "kegg_error")) {
-          assign(cache_key, result, envir = kegg_cache)
-        }
-      }
-    } else {
-      # For generic KO queries, directly query KEGG
-      result <- with_retry({
-        KEGGREST::keggGet(ko_id)
-      })
-      
-      # Handle error objects
-      if (inherits(result, "kegg_error")) {
-        result$ko_id <- ko_id
-        return(result)
-      }
-      
-      if (!is.null(result)) {
-        assign(cache_key, result, envir = kegg_cache)
-      }
+    # Throttle to avoid hammering the KEGG API
+    Sys.sleep(0.1)
+
+    # Always fetch the generic KO entry. The previous organism-specific
+    # branch picked the *first* gene returned by keggLink() as a
+    # "representative" and fetched that gene's record instead, but gene
+    # order from keggLink is not semantically meaningful: isozymes or
+    # paralogs can belong to different pathways, so the same KO could
+    # yield different annotations on different KEGG builds. The generic
+    # KO entry is the authoritative KO-level annotation; organism-specific
+    # pathway maps share the same numeric IDs as the generic `ko`/`map`
+    # pathways and only differ by prefix (e.g. ko00010 <-> hsa00010), so
+    # we rewrite the prefix below rather than drilling into individual
+    # genes.
+    result <- with_retry({
+      KEGGREST::keggGet(ko_id)
+    })
+
+    if (inherits(result, "kegg_error")) {
+      result$ko_id <- ko_id
+      return(result)
+    }
+
+    if (!is.null(result) && !is.null(organism)) {
+      result <- rewrite_kegg_pathway_organism(result, organism)
+    }
+
+    if (!is.null(result)) {
+      assign(cache_key, result, envir = kegg_cache)
     }
   }
-  
-  # If exists in cache, retrieve it
+
   if (exists(cache_key, envir = kegg_cache)) {
     return(get(cache_key, envir = kegg_cache, inherits = FALSE))
   }
-  
-  # If not in cache, return NULL
+
   NULL
+}
+
+#' Rewrite KO pathway IDs to organism-specific prefix
+#'
+#' KO entries reference pathways by their generic `ko`-prefixed IDs
+#' (e.g. `ko00010`). KEGG mirrors every generic pathway under the
+#' organism code using the same numeric suffix (e.g. `hsa00010`).
+#' Substituting the prefix in `PATHWAY` and `PATHWAY_MAP` is equivalent
+#' to the organism-specific pathway projection while keeping the KO-level
+#' name/description intact, and avoids the fragile first-gene heuristic.
+#' @noRd
+rewrite_kegg_pathway_organism <- function(result, organism) {
+  if (is.null(result) || length(result) == 0) {
+    return(result)
+  }
+  rewrite <- function(ids) {
+    if (is.null(ids)) return(ids)
+    # Replace leading `ko` (KO pathway prefix) with the organism code.
+    sub("^ko", organism, ids)
+  }
+  for (i in seq_along(result)) {
+    entry <- result[[i]]
+    if (!is.list(entry)) next
+    for (fld in c("PATHWAY", "PATHWAY_MAP")) {
+      if (!is.null(entry[[fld]]) && length(entry[[fld]]) > 0) {
+        names(entry[[fld]]) <- rewrite(names(entry[[fld]]))
+      }
+    }
+    result[[i]] <- entry
+  }
+  result
 }
 
 #' Retry mechanism for KEGG queries
@@ -407,8 +393,23 @@ process_kegg_annotations <- function(df, organism = NULL, p_adjust_threshold = 0
   if (!has_annotations) {
     warning("No valid KEGG annotations found for any features")
   }
-  
-  filtered_df
+
+  # Merge annotations back onto the full input so the return value keeps
+  # every row of `daa_results_df`. Previously we returned only the
+  # p_adjust < threshold subset, which silently dropped non-significant
+  # features that downstream code (e.g. ggpicrust2()'s plot_result_list$
+  # daa_results_df and user post-hoc analyses) expected to still be there.
+  # Non-significant rows get NA annotation columns, mirroring the
+  # no-significant-pathways branch above.
+  new_cols <- c("pathway_name", "pathway_description", "pathway_class", "pathway_map")
+  df[new_cols] <- NA_character_
+  match_idx <- match(df$feature, filtered_df$feature)
+  populated <- !is.na(match_idx)
+  for (col in new_cols) {
+    df[populated, col] <- filtered_df[[col]][match_idx[populated]]
+  }
+
+  df
 }
 
 #' Annotate pathways using reference data
@@ -423,15 +424,20 @@ annotate_pathways <- function(data, pathway_type, ref_data) {
   # Check if data is from DAA results (check for feature column with any p-value column)
   is_daa_results <- "feature" %in% colnames(data) &&
     any(c("p_values", "p_adjust", "pvalue", "p.adjust") %in% colnames(data))
-  
-  # Extract features
+
+  # Extract features.
+  # DAA results:  feature IDs live in the `feature` column (one per row).
+  # File input:   the abundance data frame produced by read_abundance_file()
+  #               followed by add_column(description, .after = 1) has feature
+  #               IDs in column 1 (with description now in column 2 and samples
+  #               in columns 3+). Either way, features are a per-row attribute.
   if (is_daa_results) {
     message("DAA results data frame is not null. Proceeding...")
     features <- data$feature
   } else {
-    features <- colnames(data)[-c(1, 2)]  # Skip first two columns (typically ID and description)
+    features <- data[[1]]
   }
-  
+
   # Match features with reference data
   # For EC pathways, try both with and without EC: prefix
   if (pathway_type == "EC") {
@@ -449,27 +455,17 @@ annotate_pathways <- function(data, pathway_type, ref_data) {
     matches <- match(features, ref_data$id)
   }
 
-  # Create description column
+  # Create description vector (one entry per feature / per row)
   descriptions <- rep(NA_character_, length(features))
   valid_matches <- !is.na(matches)
   if (any(valid_matches)) {
     descriptions[valid_matches] <- ref_data$description[matches[valid_matches]]
   }
-  
-  # Update data frame
-  if (is_daa_results) {
-    # For DAA results, add description column
-    data$description <- descriptions
-  } else {
-    # For abundance data, update description column
-    for (i in seq_along(features)) {
-      feature_idx <- which(colnames(data) == features[i])
-      if (length(feature_idx) > 0) {
-        data$description[feature_idx - 2] <- descriptions[i]  # Adjust for offset
-      }
-    }
-  }
-  
+
+  # Assign row-wise; works identically for DAA results and file-mode tables
+  # because both have one feature per row.
+  data$description <- descriptions
+
   message("Pathway annotation completed.")
   data
 }
