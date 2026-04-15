@@ -332,3 +332,58 @@ test_that("pathway_errorbar rejects samples with zero total abundance", {
     regexp = zero_sample
   )
 })
+
+test_that("pathway_errorbar preserves a method-native log2_fold_change instead of overwriting it with a mean-ratio", {
+  # Regression: the function defensively added log2_fold_change as NA
+  # only when missing, then unconditionally OVERWROTE every row with a
+  # log2 of a relative-abundance mean ratio. For methods that ship
+  # their own model-based effect size (DESeq2, edgeR, limma voom, LinDA,
+  # Maaslin2, metagenomeSeq, and ALDEx2 with include_effect_size), the
+  # bar in the side panel then disagreed with the p_adjust in the next
+  # panel -- two outputs of the same fit telling different stories.
+  # The fix only runs the mean-ratio fallback when no log2_fold_change
+  # column is supplied.
+  td <- create_errorbar_test_data(n_features = 5, p_adjust = rep(0.01, 5))
+
+  # Distinctive sentinel values that the mean-ratio fallback cannot
+  # coincidentally produce.
+  sentinel <- c(99, -99, 77, -77, 42)
+  td$daa_results_df$log2_fold_change <- sentinel
+
+  p <- pathway_errorbar(
+    abundance      = td$abundance,
+    daa_results_df = td$daa_results_df,
+    Group          = td$Group,
+    p_values_threshold = 0.05,
+    x_lab          = "pathway_name"
+  )
+
+  # The returned patchwork exposes the log2-fold-change panel data via
+  # the main plot and one of the sub-patches; both must carry the user-
+  # supplied values exactly. We compare sets because the plot reorders
+  # features for display.
+  plot_log2fc <- p$data$log2_fold_change
+  expect_setequal(plot_log2fc, sentinel)
+})
+
+test_that("pathway_errorbar falls back to mean-ratio log2_fold_change when the column is absent", {
+  # Guard: methods without a model-based effect size (ALDEx2 with
+  # include_effect_size = FALSE, Lefser, user-supplied frames without
+  # a log2_fold_change column) should still get a bar in the side
+  # panel. The mean-ratio fallback must remain in place for that case.
+  td <- create_errorbar_test_data(n_features = 5, p_adjust = rep(0.01, 5))
+  # No log2_fold_change column on input.
+  expect_false("log2_fold_change" %in% colnames(td$daa_results_df))
+
+  p <- pathway_errorbar(
+    abundance      = td$abundance,
+    daa_results_df = td$daa_results_df,
+    Group          = td$Group,
+    p_values_threshold = 0.05,
+    x_lab          = "pathway_name"
+  )
+
+  # Every feature should get a non-NA fallback log2_fold_change value.
+  expect_true("log2_fold_change" %in% colnames(p$data))
+  expect_false(any(is.na(p$data$log2_fold_change)))
+})

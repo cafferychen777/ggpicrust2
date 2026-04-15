@@ -130,6 +130,18 @@
   parallel implementation of the same logic as well as a duplicated
   `length(Group) != ncol(abundance)` check. Accepted metadata shapes
   are now identical to `pathway_daa()` and `ggpicrust2()`.
+* `pathway_errorbar()` no longer silently overwrites a method-native
+  `log2_fold_change` column with a relative-abundance mean ratio. The
+  previous code added the column as NA only when missing, then
+  unconditionally overwrote every row inside a `for` loop, so the
+  effect size displayed in the side panel disagreed with the model
+  output that produced the p_adjust shown next to it. The bar is now
+  taken as-is when the DAA method supplies `log2_fold_change` (DESeq2,
+  edgeR, limma voom, LinDA, Maaslin2, metagenomeSeq, and ALDEx2 with
+  `include_effect_size = TRUE`), so both panels of the same figure
+  report the same model-based estimate. The mean-ratio fallback still
+  runs when no `log2_fold_change` column is supplied (ALDEx2 with
+  `include_effect_size = FALSE`, Lefser, or custom DAA frames).
 * `pathway_errorbar_table()` no longer derives its two group names via
   `unique(daa_results_filtered_sub_df$group1)[1]` /
   `unique(daa_results_filtered_sub_df$group2)[1]`. The surrounding

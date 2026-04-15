@@ -637,38 +637,57 @@ pathway_errorbar <-
     # Add necessary columns
     daa_results_filtered_sub_df$negative_log10_p <- -log10(daa_results_filtered_sub_df$p_adjust)
 
-    # Only add log2_fold_change if it doesn't exist
+    # Compute the log2 fold change displayed in the side panel.
+    #
+    # When the DAA method already supplied a `log2_fold_change` column --
+    # DESeq2, edgeR, limma voom, LinDA, Maaslin2, metagenomeSeq, and
+    # ALDEx2 with `include_effect_size = TRUE` -- we MUST preserve it.
+    # The effect size printed as a bar here and the p_adjust driving the
+    # significance panel next to it are two outputs of the same model
+    # fit; replacing the bar with a relative-abundance mean ratio while
+    # the p-value still comes from the model produces a figure where the
+    # two panels tell different stories about the same feature. The
+    # previous implementation added the column defensively as NA only
+    # when missing, then unconditionally overwrote every row with a
+    # mean-ratio calculation -- so e.g. `log2_fold_change = 99` went in
+    # and a number computed from relative abundances came out, silently.
+    #
+    # The mean-ratio pathway is still the right fallback for methods
+    # that do not estimate effect sizes (ALDEx2 with
+    # `include_effect_size = FALSE`, Lefser, or user-supplied DAA
+    # results without a log2_fold_change column). We only run it in that
+    # case.
     if (!"log2_fold_change" %in% colnames(daa_results_filtered_sub_df)) {
-      daa_results_filtered_sub_df$log2_fold_change <- rep(NA, nrow(daa_results_filtered_sub_df))
-    }
+      daa_results_filtered_sub_df$log2_fold_change <- NA_real_
 
-    # Calculate pseudocount once using all mean values for consistency
-    all_means <- error_bar_pivot_longer_tibble_summarised_ordered$mean
-    pseudocount <- calculate_pseudocount(all_means)
+      # Calculate pseudocount once using all mean values for consistency
+      all_means <- error_bar_pivot_longer_tibble_summarised_ordered$mean
+      pseudocount <- calculate_pseudocount(all_means)
 
-    for (i in daa_results_filtered_sub_df$feature){
-      # Get mean values for this feature
-      feature_means <- error_bar_pivot_longer_tibble_summarised_ordered[error_bar_pivot_longer_tibble_summarised_ordered$name %in% i,]
+      for (i in daa_results_filtered_sub_df$feature){
+        # Get mean values for this feature
+        feature_means <- error_bar_pivot_longer_tibble_summarised_ordered[error_bar_pivot_longer_tibble_summarised_ordered$name %in% i,]
 
-      # Get group1 and group2 names for this feature from DAA results
-      feature_row <- daa_results_filtered_sub_df[daa_results_filtered_sub_df$feature == i, ]
-      group1_name <- feature_row$group1[1]
-      group2_name <- feature_row$group2[1]
+        # Get group1 and group2 names for this feature from DAA results
+        feature_row <- daa_results_filtered_sub_df[daa_results_filtered_sub_df$feature == i, ]
+        group1_name <- feature_row$group1[1]
+        group2_name <- feature_row$group2[1]
 
-      # Get mean values for each group in the correct order
-      mean_group1 <- feature_means[feature_means$group == group1_name, ]$mean
-      mean_group2 <- feature_means[feature_means$group == group2_name, ]$mean
+        # Get mean values for each group in the correct order
+        mean_group1 <- feature_means[feature_means$group == group1_name, ]$mean
+        mean_group2 <- feature_means[feature_means$group == group2_name, ]$mean
 
-      # Calculate log2 fold change using unified function
-      if (length(mean_group1) > 0 && length(mean_group2) > 0) {
-        log2_fc <- calculate_log2_fold_change(mean_group1, mean_group2, pseudocount = pseudocount)
-        daa_results_filtered_sub_df[daa_results_filtered_sub_df$feature==i,]$log2_fold_change <- log2_fc
-      } else {
-        # Fallback using unified function with auto-calculated pseudocount
-        mean_vals <- feature_means$mean
-        if (length(mean_vals) >= 2) {
-          log2_fc <- calculate_log2_fold_change(mean_vals[1], mean_vals[2])
+        # Calculate log2 fold change using unified function
+        if (length(mean_group1) > 0 && length(mean_group2) > 0) {
+          log2_fc <- calculate_log2_fold_change(mean_group1, mean_group2, pseudocount = pseudocount)
           daa_results_filtered_sub_df[daa_results_filtered_sub_df$feature==i,]$log2_fold_change <- log2_fc
+        } else {
+          # Fallback using unified function with auto-calculated pseudocount
+          mean_vals <- feature_means$mean
+          if (length(mean_vals) >= 2) {
+            log2_fc <- calculate_log2_fold_change(mean_vals[1], mean_vals[2])
+            daa_results_filtered_sub_df[daa_results_filtered_sub_df$feature==i,]$log2_fold_change <- log2_fc
+          }
         }
       }
     }
