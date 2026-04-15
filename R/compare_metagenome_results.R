@@ -5,7 +5,7 @@
 #' @param names A vector of names for the metagenomes in the same order as in the `metagenomes` list.
 #' @param daa_method A character specifying the method for differential abundance analysis (DAA).
 #' Possible choices are: "ALDEx2", "DESeq2", "edgeR", "limma voom", "metagenomeSeq", "LinDA",
-#' "Maaslin2", and "Lefse". The default is "ALDEx2".
+#' "Maaslin2", and "Lefser". The default is "ALDEx2".
 #' @param p_adjust_method A character specifying the method for p-value adjustment.
 #' Possible choices are: "BH" (Benjamini-Hochberg), "holm", "bonferroni", "hochberg", "fdr", and "none".
 #' The default is "BH".
@@ -64,7 +64,29 @@ compare_metagenome_results <- function(metagenomes, names, daa_method = "ALDEx2"
     stop("The length of 'metagenomes' must match the length of 'names'")
   }
 
-  # Concatenate metagenomes with pseudonym column names
+  # Align every metagenome on the shared feature set before anything else.
+  # `cbind()` concatenates matrices by position, and the later per-feature
+  # correlation also indexes rows by position (`metagenomes[[i]][k, ]` vs
+  # `metagenomes[[j]][k, ]`). If two inputs have the same row names but
+  # different row orders, both the DAA matrix and the Spearman correlations
+  # compare *different* features -- producing correlations that can flip
+  # sign relative to the correct by-name alignment. We therefore take the
+  # intersection of row names across all metagenomes and reorder each
+  # matrix to that shared feature order before either step runs.
+  if (any(vapply(metagenomes, function(m) is.null(rownames(m)), logical(1)))) {
+    stop("Every element of 'metagenomes' must have row names (feature identifiers) ",
+         "so features can be aligned across metagenomes.")
+  }
+  shared_features <- Reduce(intersect, lapply(metagenomes, rownames))
+  if (length(shared_features) == 0) {
+    stop("No shared feature identifiers (row names) across the provided metagenomes.")
+  }
+  metagenomes <- lapply(metagenomes, function(m) m[shared_features, , drop = FALSE])
+
+  # Concatenate metagenomes with pseudonym column names. After the
+  # alignment above, every matrix has identical rownames in the same
+  # order, so cbind() is now guaranteed to stack the same feature across
+  # columns.
   pseudonym_metagenomes <- lapply(seq_along(metagenomes), function(i) {
     new_metagenome <- metagenomes[[i]]
     colnames(new_metagenome) <- paste0(names[i], "_", colnames(new_metagenome))
@@ -84,18 +106,18 @@ compare_metagenome_results <- function(metagenomes, names, daa_method = "ALDEx2"
                              p_adjust_method = p_adjust_method,
                              reference = reference)
 
-  # Compute per-feature Spearman correlations between metagenomes
-  # For each pair, compute correlation per feature row, then summarize with median
+  # Compute per-feature Spearman correlations between metagenomes. Safe to
+  # index by row position now that every metagenome is on the shared
+  # feature order.
   n_metagenomes <- length(names)
   cor_matrix <- matrix(NA, nrow = n_metagenomes, ncol = n_metagenomes)
   p_matrix <- matrix(NA, nrow = n_metagenomes, ncol = n_metagenomes)
 
   for (i in seq_along(names)) {
     for (j in seq(from = i, to = n_metagenomes)) {
-      # Per-feature correlation: correlate sample profiles for each feature
-      feature_cors <- sapply(seq_len(nrow(metagenomes[[i]])), function(k) {
+      feature_cors <- vapply(seq_along(shared_features), function(k) {
         stats::cor(metagenomes[[i]][k, ], metagenomes[[j]][k, ], method = "spearman")
-      })
+      }, numeric(1))
       cor_matrix[i, j] <- median(feature_cors, na.rm = TRUE)
       cor_matrix[j, i] <- cor_matrix[i, j]
 

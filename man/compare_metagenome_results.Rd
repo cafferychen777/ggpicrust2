@@ -21,7 +21,7 @@ Each matrix in the list should correspond to a different metagenome.}
 
 \item{daa_method}{A character specifying the method for differential abundance analysis (DAA).
 Possible choices are: "ALDEx2", "DESeq2", "edgeR", "limma voom", "metagenomeSeq", "LinDA",
-"Maaslin2", and "Lefse". The default is "ALDEx2".}
+"Maaslin2", and "Lefser". The default is "ALDEx2".}
 
 \item{p_adjust_method}{A character specifying the method for p-value adjustment.
 Possible choices are: "BH" (Benjamini-Hochberg), "holm", "bonferroni", "hochberg", "fdr", and "none".
