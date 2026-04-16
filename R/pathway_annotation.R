@@ -571,6 +571,25 @@ pathway_annotation <- function(file = NULL,
   
   # Process file input
   if (!is.null(file)) {
+    # File mode uses local reference data — KEGG-specific parameters have
+    # no effect here. Warn so the user doesn't silently get a different
+    # annotation source than they asked for.
+    if (isTRUE(ko_to_kegg)) {
+      warning(
+        "ko_to_kegg is ignored in file mode. ",
+        "File-based annotation uses local reference data and does not query KEGG. ",
+        "To get KEGG API annotations, first run pathway_daa(), then call ",
+        "pathway_annotation(daa_results_df = ..., ko_to_kegg = TRUE).",
+        call. = FALSE
+      )
+    }
+    if (!is.null(organism)) {
+      warning(
+        "organism is ignored in file mode (only used with ko_to_kegg = TRUE on DAA results).",
+        call. = FALSE
+      )
+    }
+
     abundance <- read_abundance_file(file)
     abundance <- tibble::add_column(abundance, description = NA, .after = 1)
     ref_data <- load_reference_data(pathway)

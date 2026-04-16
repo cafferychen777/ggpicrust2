@@ -1,5 +1,28 @@
 # Tests for pathway_annotation function
 
+# Regression: file mode silently ignored ko_to_kegg and organism. A caller
+# who passed file + ko_to_kegg = TRUE expected KEGG API annotations but got
+# local reference annotations with no indication. Now we warn.
+test_that("pathway_annotation warns when file mode receives KEGG-specific params", {
+  temp_file <- tempfile(fileext = ".tsv")
+  test_data <- data.frame(
+    feature = c("K00001", "K00002"),
+    sample1 = c(1, 2),
+    sample2 = c(3, 4)
+  )
+  suppressMessages(write.table(test_data, temp_file, sep = "\t", row.names = FALSE))
+  on.exit(unlink(temp_file))
+
+  expect_warning(
+    suppressMessages(pathway_annotation(file = temp_file, pathway = "KO", ko_to_kegg = TRUE)),
+    "ko_to_kegg is ignored in file mode"
+  )
+  expect_warning(
+    suppressMessages(pathway_annotation(file = temp_file, pathway = "KO", organism = "hsa")),
+    "organism is ignored in file mode"
+  )
+})
+
 test_that("pathway_annotation basic functionality works", {
   temp_file <- tempfile(fileext = ".tsv")
   test_data <- data.frame(
