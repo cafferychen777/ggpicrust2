@@ -102,3 +102,69 @@ test_that("ko2kegg_abundance preserves sample names and removes zero pathways", 
     expect_true(all(rowSums(result) > 0))
   }
 })
+
+test_that("KEGG pathway filter removes non-pathway buckets", {
+  ko_to_kegg_reference <- ggpicrust2:::load_reference_data("ko_to_kegg")
+  filtered_reference <- ggpicrust2:::filter_kegg_reference_to_pathways(ko_to_kegg_reference)
+
+  expect_false("ko01001" %in% filtered_reference$pathway_id)
+  expect_false("ko99980" %in% filtered_reference$pathway_id)
+  expect_false(any(grepl("^(09180|09190)\\b", filtered_reference$level1)))
+})
+
+test_that("prokaryote filter removes eukaryotic pathways and keeps microbial disease pathways", {
+  ko_to_kegg_reference <- ggpicrust2:::load_reference_data("ko_to_kegg")
+  pathway_reference <- ggpicrust2:::filter_kegg_reference_to_pathways(ko_to_kegg_reference)
+  filtered_reference <- ggpicrust2:::filter_kegg_reference_for_prokaryotes(pathway_reference)
+
+  expect_false("ko05200" %in% filtered_reference$pathway_id)
+  expect_false("ko04910" %in% filtered_reference$pathway_id)
+  expect_true("ko05130" %in% filtered_reference$pathway_id)
+  expect_true("ko01501" %in% filtered_reference$pathway_id)
+
+  expect_false(any(grepl("^09150\\b", filtered_reference$level1)))
+  expect_false(any(
+    grepl("^09160\\b", filtered_reference$level1) &
+      !grepl("^(09171|09175)\\b", filtered_reference$level2)
+  ))
+  expect_true(any(grepl("^09171\\b", filtered_reference$level2)))
+  expect_true(any(grepl("^09175\\b", filtered_reference$level2)))
+})
+
+test_that("ko2kegg_abundance applies pathway and prokaryote filters to output pathways", {
+  ko_to_kegg_reference <- ggpicrust2:::load_reference_data("ko_to_kegg")
+  real_kos <- head(unique(ko_to_kegg_reference$ko_id), 10)
+
+  mock_ko_data <- data.frame(
+    function. = real_kos,
+    Sample1 = seq_along(real_kos),
+    stringsAsFactors = FALSE
+  )
+
+  result <- suppressMessages(ko2kegg_abundance(data = mock_ko_data))
+
+  expect_false("ko01001" %in% rownames(result))
+  expect_false("ko99980" %in% rownames(result))
+  expect_false("ko05200" %in% rownames(result))
+})
+
+test_that("filter_for_prokaryotes = FALSE keeps true eukaryotic pathways but not non-pathway buckets", {
+  ko_to_kegg_reference <- ggpicrust2:::load_reference_data("ko_to_kegg")
+  kos <- unique(c(
+    ko_to_kegg_reference$ko_id[ko_to_kegg_reference$pathway_id == "ko05200"],
+    ko_to_kegg_reference$ko_id[ko_to_kegg_reference$pathway_id == "ko99980"]
+  ))
+
+  mock_ko_data <- data.frame(
+    function. = head(kos, 20),
+    Sample1 = seq_len(min(20, length(kos))),
+    stringsAsFactors = FALSE
+  )
+
+  result <- suppressMessages(
+    ko2kegg_abundance(data = mock_ko_data, filter_for_prokaryotes = FALSE)
+  )
+
+  expect_true("ko05200" %in% rownames(result))
+  expect_false("ko99980" %in% rownames(result))
+})

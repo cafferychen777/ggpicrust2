@@ -23,8 +23,9 @@ ko2kegg_abundance(
 }}
 
 \item{filter_for_prokaryotes}{Logical. If TRUE (default), filters out KEGG pathways
-that are not relevant to prokaryotic (bacterial/archaeal) analysis. This removes
-pathways in categories such as:
+that are not relevant to prokaryotic (bacterial/archaeal) analysis. The function
+always removes non-pathway KEGG buckets before this filter is applied. The
+prokaryote filter removes pathways in categories such as:
 \itemize{
   \item Human diseases (cancer, neurodegenerative diseases, addiction, etc.)
   \item Organismal systems (immune system, nervous system, endocrine system, etc.)
@@ -58,6 +59,10 @@ This approach has several advantages over simple summation:
 The \code{"sum"} method is provided for backward compatibility and simply sums all KO abundances for each pathway.
 }
 \section{Pathway Filtering}{
+
+Before abundance calculation, KEGG BRITE hierarchies and "Not Included in Pathway or
+Brite" pseudo-pathways are removed because they are not KEGG pathway maps and cannot
+be consistently annotated as pathways (for example, \code{ko99980}).
 
 When \code{filter_for_prokaryotes = TRUE}, the function excludes KEGG pathways that are
 biologically irrelevant to prokaryotic organisms. KEGG reference pathways include pathways

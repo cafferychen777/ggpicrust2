@@ -11,8 +11,9 @@
 #'     \item \code{"sum"}: Simple summation of all KO abundances. This is the legacy method and may double-count KOs belonging to multiple pathways.
 #'   }
 #' @param filter_for_prokaryotes Logical. If TRUE (default), filters out KEGG pathways
-#'   that are not relevant to prokaryotic (bacterial/archaeal) analysis. This removes
-#'   pathways in categories such as:
+#'   that are not relevant to prokaryotic (bacterial/archaeal) analysis. The function
+#'   always removes non-pathway KEGG buckets before this filter is applied. The
+#'   prokaryote filter removes pathways in categories such as:
 #'   \itemize{
 #'     \item Human diseases (cancer, neurodegenerative diseases, addiction, etc.)
 #'     \item Organismal systems (immune system, nervous system, endocrine system, etc.)
@@ -42,6 +43,10 @@
 #' The \code{"sum"} method is provided for backward compatibility and simply sums all KO abundances for each pathway.
 #'
 #' @section Pathway Filtering:
+#' Before abundance calculation, KEGG BRITE hierarchies and "Not Included in Pathway or
+#' Brite" pseudo-pathways are removed because they are not KEGG pathway maps and cannot
+#' be consistently annotated as pathways (for example, \code{ko99980}).
+#'
 #' When \code{filter_for_prokaryotes = TRUE}, the function excludes KEGG pathways that are
 #' biologically irrelevant to prokaryotic organisms. KEGG reference pathways include pathways
 #' from all domains of life, and many human/animal-specific pathways would appear in bacterial
@@ -144,23 +149,15 @@ ko2kegg_abundance <- function (file = NULL, data = NULL, method = c("abundance",
   # Load KEGG reference data using unified loader
   ko_to_kegg_reference <- load_reference_data("ko_to_kegg")
 
+  # Keep only KEGG pathway maps. The bundled KO-to-KEGG reference also contains
+  # BRITE hierarchies and "Not Included in Pathway or Brite" buckets such as
+  # ko99980; those are KO groupings, not pathways, and downstream pathway
+  # annotation should not be asked to treat them as pathway IDs.
+  ko_to_kegg_reference <- filter_kegg_reference_to_pathways(ko_to_kegg_reference)
+
   # Filter for prokaryotic pathways if requested
   if (filter_for_prokaryotes) {
-    # Exclude eukaryote-specific KEGG Level 2 categories
-    eukaryote_specific_level2 <- c(
-      "9161 Cancer: overview", "9162 Cancer: specific types",
-      "9163 Immune disease", "9164 Neurodegenerative disease",
-      "9165 Substance dependence", "9166 Cardiovascular disease",
-      "9167 Endocrine and metabolic disease",
-      "9149 Aging", "9151 Immune system", "9152 Endocrine system",
-      "9153 Circulatory system", "9154 Digestive system",
-      "9155 Excretory system", "9156 Nervous system",
-      "9157 Sensory system", "9158 Development and regeneration",
-      "9159 Environmental adaptation"
-    )
-    ko_to_kegg_reference <- ko_to_kegg_reference[
-      !ko_to_kegg_reference$level2 %in% eukaryote_specific_level2,
-    ]
+    ko_to_kegg_reference <- filter_kegg_reference_for_prokaryotes(ko_to_kegg_reference)
   }
 
   # Get all unique pathway IDs
@@ -215,4 +212,40 @@ ko2kegg_abundance <- function (file = NULL, data = NULL, method = c("abundance",
   kegg_abundance <- kegg_abundance[!zero_rows, , drop = FALSE]
 
   kegg_abundance
+}
+
+#' Filter KO-to-KEGG reference data to true KEGG pathway maps
+#'
+#' @param ko_to_kegg_reference KO-to-KEGG reference data frame
+#' @return Filtered data frame
+#' @noRd
+filter_kegg_reference_to_pathways <- function(ko_to_kegg_reference) {
+  level1 <- as.character(ko_to_kegg_reference$level1)
+  is_non_pathway <- grepl("^(09180|09190)\\b", level1)
+
+  ko_to_kegg_reference[!is_non_pathway, , drop = FALSE]
+}
+
+#' Filter KO-to-KEGG reference data for prokaryotic analyses
+#'
+#' KEGG hierarchy labels in the bundled reference include BRITE numeric
+#' prefixes (for example, "09160 Human Diseases"). Match on those stable
+#' hierarchy IDs instead of exact free-text labels.
+#'
+#' @param ko_to_kegg_reference KO-to-KEGG reference data frame
+#' @return Filtered data frame
+#' @noRd
+filter_kegg_reference_for_prokaryotes <- function(ko_to_kegg_reference) {
+  level1 <- as.character(ko_to_kegg_reference$level1)
+  level2 <- as.character(ko_to_kegg_reference$level2)
+
+  is_organismal_system <- grepl("^09150\\b", level1)
+  is_human_disease <- grepl("^09160\\b", level1)
+  retained_human_disease <- grepl("^(09171|09175)\\b", level2)
+  excluded_human_disease <- is_human_disease & !retained_human_disease
+
+  keep <- !(is_organismal_system |
+              excluded_human_disease)
+
+  ko_to_kegg_reference[keep, , drop = FALSE]
 }

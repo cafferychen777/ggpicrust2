@@ -22,6 +22,15 @@
 
 ## Bug Fixes
 
+* `ko2kegg_abundance(filter_for_prokaryotes = TRUE)` now actually removes
+  eukaryotic / human-system pathway classes from the bundled KEGG hierarchy.
+  The previous filter matched obsolete Level 2 labels without the `091xx`
+  BRITE prefixes used in `ko_to_kegg_reference`, so it removed no rows.
+  `ko2kegg_abundance()` also now excludes KEGG BRITE hierarchies and
+  "Not Included in Pathway or Brite" buckets such as `ko99980` before
+  abundance calculation, because they are not pathway maps and cannot be
+  consistently annotated as pathways. Bacterial infection and antimicrobial
+  resistance pathways remain available in the default prokaryotic mode.
 * `pathway_daa()` with `include_abundance_stats = TRUE` no longer produces
   `log2_fold_change.x` / `log2_fold_change.y` columns when the DAA method
   already returns its own `log2_fold_change` (ALDEx2 with effect size,
