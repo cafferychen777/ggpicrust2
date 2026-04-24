@@ -221,6 +221,15 @@ pathway_gsea <- function(abundance,
     p_adjust_method <- p.adjust
   }
   
+  # Normalize PICRUSt2-style input before validation so the feature ID column
+  # is not counted as a sample or mixed into numeric matrix checks.
+  if (is.data.frame(abundance) && ncol(abundance) > 0 &&
+      identical(colnames(abundance)[1], "#NAME")) {
+    abundance <- as.data.frame(abundance)
+    rownames(abundance) <- abundance[, 1]
+    abundance <- abundance[, -1, drop = FALSE]
+  }
+
   # Input validation using unified functions
   validate_abundance(abundance, min_samples = 4)
   validate_metadata(metadata)
@@ -287,15 +296,6 @@ pathway_gsea <- function(abundance,
   
   # Set seed for reproducibility
   set.seed(seed)
-  
-  # Prepare data
-  # Handle #NAME column commonly found in PICRUSt2 output
-  if (ncol(abundance) > 0 && colnames(abundance)[1] == "#NAME") {
-    # Convert tibble to data.frame if necessary and set proper rownames
-    abundance <- as.data.frame(abundance)
-    rownames(abundance) <- abundance[, 1]
-    abundance <- abundance[, -1]
-  }
   
   # Ensure abundance is a matrix with samples as columns
   abundance_mat <- as.matrix(abundance)
@@ -475,6 +475,7 @@ prepare_gene_sets <- function(pathway_type = "KEGG", organism = "ko", go_categor
   if (pathway_type == "KEGG") {
     # Load KEGG reference using unified loader
     ko_to_kegg_reference <- load_reference_data("ko_to_kegg")
+    ko_to_kegg_reference <- filter_kegg_reference_to_pathways(ko_to_kegg_reference)
 
     # Create gene sets: list where each element is a pathway containing KO IDs
     gene_sets <- split(ko_to_kegg_reference$ko_id, ko_to_kegg_reference$pathway_id)
@@ -579,17 +580,17 @@ calculate_rank_metric <- function(abundance,
                                  group, 
                                  method = "signal2noise") {
   
-  # Extract group information
-  Group <- factor(metadata[[group]])
-  names(Group) <- rownames(metadata)
-  
   # Ensure abundance is a matrix with samples as columns
   abundance <- as.matrix(abundance)
-  
-  # Subset abundance to include only samples in metadata
-  common_samples <- intersect(colnames(abundance), names(Group))
-  abundance <- abundance[, common_samples, drop = FALSE]
-  Group <- Group[common_samples]
+
+  aligned <- align_samples(abundance, metadata, verbose = FALSE)
+  abundance <- as.matrix(aligned$abundance)
+  metadata <- aligned$metadata
+
+  # Extract group information after alignment so sample names come from the
+  # authoritative abundance columns, not from metadata row names.
+  Group <- factor(metadata[[group]])
+  names(Group) <- colnames(abundance)
 
   # Handle problematic values - replace with 0 (undetected features)
   if (any(is.infinite(abundance))) {
@@ -644,8 +645,18 @@ calculate_rank_metric <- function(abundance,
     names(metric) <- rownames(abundance)
     
     for (i in seq_len(nrow(abundance))) {
-      t_test <- stats::t.test(abundance[i, group1_samples], abundance[i, group2_samples])
-      metric[i] <- t_test$statistic
+      metric[i] <- tryCatch({
+        t_test <- stats::t.test(abundance[i, group1_samples], abundance[i, group2_samples])
+        as.numeric(t_test$statistic)
+      }, error = function(e) {
+        # Constant rows carry no ranking signal. Keep them in the ranked
+        # vector as neutral rather than aborting the whole preranked GSEA run.
+        if (grepl("constant|not enough", e$message, ignore.case = TRUE)) {
+          0
+        } else {
+          stop(e)
+        }
+      })
     }
     
   } else if (method == "log2_ratio") {

@@ -16,23 +16,41 @@
 #' }
 #'
 #' @export
-utils::globalVariables(c("read.csv"))
-import_MicrobiomeAnalyst_daa_results <- function(file_path = NULL, data = NULL, method = "MicrobiomeAnalyst", group_levels = NULL) {
-  # Check if a data frame is provided
+import_MicrobiomeAnalyst_daa_results <- function(file_path = NULL,
+                                                data = NULL,
+                                                method = "MicrobiomeAnalyst",
+                                                group_levels = c("control", "treatment")) {
+  if (!is.null(data) && !is.null(file_path)) {
+    warning("Both file_path and data were provided. Using data and ignoring file_path.",
+            call. = FALSE)
+  }
+
   if (is.null(data)) {
-    # Read the CSV file if data frame is not provided
     if (is.null(file_path)) {
       stop("Please provide either a file_path or a data frame.")
     }
-    data <- read.csv(file_path, stringsAsFactors = FALSE)
+    if (!file.exists(file_path)) {
+      stop("file_path does not exist: ", file_path, call. = FALSE)
+    }
+    data <- utils::read.csv(file_path, stringsAsFactors = FALSE)
   }
 
-  if (is.null(group_levels)) {
-    stop("Please provide group levels.")
+  validate_dataframe(data, param_name = "data")
+
+  if (!is.character(group_levels) || length(group_levels) < 1 || anyNA(group_levels)) {
+    stop("group_levels must be a non-empty character vector without NA values.",
+         call. = FALSE)
   }
 
-  # Rename the columns
-  names(data) <- c("feature", "p_values", "p_adjust", "Statistics")
+  required_output_cols <- c("feature", "p_values", "p_adjust", "Statistics")
+  if (ncol(data) < length(required_output_cols)) {
+    stop("MicrobiomeAnalyst DAA results must contain at least four columns: ",
+         paste(required_output_cols, collapse = ", "),
+         call. = FALSE)
+  }
+
+  data <- as.data.frame(data, stringsAsFactors = FALSE)
+  names(data)[seq_along(required_output_cols)] <- required_output_cols
 
   # Create a new column for method
   data$method <- method

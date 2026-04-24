@@ -141,13 +141,14 @@ pathway_volcano <- function(daa_results,
    stop("No valid data rows after removing NA values.")
  }
 
- # Add significance categories and -log10(p)
- df$neg_log10_p <- -log10(df[[p_col]])
- # Handle infinite values (when p-value is 0)
- if (any(is.infinite(df$neg_log10_p))) {
-   max_finite <- max(df$neg_log10_p[is.finite(df$neg_log10_p)], na.rm = TRUE)
-   df$neg_log10_p[is.infinite(df$neg_log10_p)] <- max_finite * 1.1
+ if (any(df[[p_col]] < 0, na.rm = TRUE)) {
+   stop("P-value column contains negative values.")
  }
+
+ # Add significance categories and -log10(p). Clamp exact zero p-values to
+ # the smallest positive double so all-zero inputs remain finite and plottable.
+ p_for_log <- pmax(df[[p_col]], .Machine$double.xmin)
+ df$neg_log10_p <- -log10(p_for_log)
  df$significance <- ifelse(
    df[[p_col]] < p_threshold & df[[fc_col]] > fc_threshold, "Up",
    ifelse(df[[p_col]] < p_threshold & df[[fc_col]] < -fc_threshold, "Down",

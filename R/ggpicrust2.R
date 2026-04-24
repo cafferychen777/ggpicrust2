@@ -13,10 +13,13 @@
 #' - "metagenomeSeq": Fit logistic regression models to test for differential abundance between groups using metagenomeSeq
 #' - "LinDA": Linear models for differential abundance analysis of microbiome compositional data
 #' - "Maaslin2": Multivariate Association with Linear Models (MaAsLin2) for differential abundance analysis
-#' @param ko_to_kegg A character to control the conversion of KO abundance to KEGG abundance
+#' @param ko_to_kegg Logical or logical-like string controlling conversion of
+#'   KO abundance to KEGG pathway abundance.
 #' @param filter_for_prokaryotes Logical. If TRUE (default), filters out KEGG pathways
 #'   that are specific to eukaryotes (e.g., human diseases, organismal systems) when
 #'   ko_to_kegg = TRUE. Set to FALSE to include all KEGG pathways.
+#' @param p_adjust_method A character specifying the method for p-value adjustment,
+#'   default is "BH".
 #' @param p.adjust a character specifying the method for p-value adjustment, default is "BH", choices are:
 #'- "BH": Benjamini-Hochberg correction
 #'- "holm": Holm's correction
@@ -154,6 +157,8 @@ ggpicrust2 <- function(file = NULL,
             call. = FALSE)
     p_adjust_method <- p.adjust
   }
+  ko_to_kegg <- normalize_logical_flag(ko_to_kegg, "ko_to_kegg")
+  filter_for_prokaryotes <- normalize_logical_flag(filter_for_prokaryotes, "filter_for_prokaryotes")
 
   # Input validation
   if (is.null(file) && is.null(data)) {
@@ -194,7 +199,7 @@ ggpicrust2 <- function(file = NULL,
   # `ko_to_kegg = TRUE` aggregates KO abundances into KEGG pathways, so it is
   # only meaningful when the input is KO abundance (pathway = "KO"). Pairing it
   # with EC/MetaCyc produces an empty matrix and a cryptic downstream error.
-  if (isTRUE(ko_to_kegg) && !identical(pathway, "KO")) {
+  if (ko_to_kegg && !identical(pathway, "KO")) {
     stop(sprintf(
       "`ko_to_kegg = TRUE` requires `pathway = \"KO\"`, but got pathway = \"%s\".\n  - For EC or MetaCyc data, set `ko_to_kegg = FALSE`.\n  - For KO -> KEGG pathway analysis, set `pathway = \"KO\"`.",
       pathway))
@@ -221,24 +226,9 @@ ggpicrust2 <- function(file = NULL,
     abundance <- abundance[, -1]
   }
 
-  # Align abundance and metadata once at the wrapper level. This is
-  # required for Step 4 below (`Group_vec <- metadata[[group]]` /
-  # `names(Group_vec) <- colnames(abundance)`), which depends on
-  # metadata row i corresponding to abundance column i by position.
-  # Without this pre-alignment, pathway_errorbar() would see
-  # Group/sample mismatches whenever the user-supplied metadata row
-  # order differed from abundance column order.
-  #
-  # pathway_daa() below performs its own independent alignment -- that
-  # call is the contract for standalone callers, who may pass
-  # unaligned inputs. `align_samples()` is deterministic and
-  # idempotent: running it a second time on already-aligned inputs is
-  # a no-op, so the duplicate work is bounded. The two call sites are
-  # deliberately invoked with identical arguments (no `sample_col`, no
-  # other overrides) so they cannot silently disagree on the aligned
-  # shape; any future change to alignment semantics MUST update both
-  # sites together. See also R/pathway_daa.R where the second call
-  # lives.
+  # Align once at the wrapper boundary. Both DAA and plotting consume this
+  # same sample order, so pathway_daa() is called with an explicit
+  # pre-aligned contract below instead of redoing the same alignment.
   aligned <- align_samples(abundance, metadata, verbose = FALSE)
   abundance <- aligned$abundance
   metadata <- aligned$metadata
@@ -259,7 +249,9 @@ ggpicrust2 <- function(file = NULL,
     group = group,
     daa_method = daa_method,
     p_adjust_method = p_adjust_method,
-    reference = reference
+    reference = reference,
+    .pre_aligned = TRUE,
+    .sample_col = aligned$sample_col
   )
 
   # Check for significant biomarkers

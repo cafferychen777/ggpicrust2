@@ -190,10 +190,17 @@ pathway_errorbar <-
            pathway_class_text_face = "bold",
            pathway_class_text_angle = 0,
            pathway_class_position = "right",
-           # Pathway names text size parameter
-           pathway_names_text_size = "auto") {
-    # Input validation using unified functions
-    validate_abundance(abundance)
+	           # Pathway names text size parameter
+	           pathway_names_text_size = "auto") {
+    ko_to_kegg <- normalize_logical_flag(ko_to_kegg, "ko_to_kegg")
+    p_value_bar <- normalize_logical_flag(p_value_bar, "p_value_bar")
+    smart_colors <- normalize_logical_flag(smart_colors, "smart_colors")
+    accessibility_mode <- normalize_logical_flag(accessibility_mode, "accessibility_mode")
+    pvalue_stars <- normalize_logical_flag(pvalue_stars, "pvalue_stars")
+    pvalue_colors <- normalize_logical_flag(pvalue_colors, "pvalue_colors")
+
+	    # Input validation using unified functions
+	    validate_abundance(abundance)
     validate_dataframe(daa_results_df,
                        required_cols = c("feature", "method", "group1", "group2", "p_adjust"),
                        param_name = "daa_results_df")
@@ -229,10 +236,10 @@ pathway_errorbar <-
 
     # Set x_lab if not provided
     if (is.null(x_lab)){
-      if (ko_to_kegg == TRUE){
-        x_lab <- "pathway_name"
-      }else{
-        x_lab <- "description"
+	      if (ko_to_kegg) {
+	        x_lab <- "pathway_name"
+	      }else{
+	        x_lab <- "description"
       }
 
       if (is.null(daa_results_df$pathway_name) && is.null(daa_results_df$description)){
@@ -380,9 +387,9 @@ pathway_errorbar <-
 
     # When ko_to_kegg = TRUE, validate pathway_class column exists
     # This is required for proper alignment of pathway class annotations
-    if (ko_to_kegg == TRUE && !"pathway_class" %in% colnames(daa_results_filtered_sub_df)) {
-      stop(
-        "The 'pathway_class' column is missing but ko_to_kegg = TRUE. ",
+	    if (ko_to_kegg && !"pathway_class" %in% colnames(daa_results_filtered_sub_df)) {
+	      stop(
+	        "The 'pathway_class' column is missing but ko_to_kegg = TRUE. ",
         "Please use pathway_annotation(..., ko_to_kegg = TRUE) to annotate the data, ",
         "or set ko_to_kegg = FALSE if you don't need pathway class annotations."
       )
@@ -391,7 +398,7 @@ pathway_errorbar <-
     switch(
       order,
       "p_values" = {
-        if (ko_to_kegg == TRUE) {
+	        if (ko_to_kegg) {
           # Nested sorting: first by pathway_class, then by p_adjust within each class
           # This ensures pathway class color blocks align correctly
           order <- order(
@@ -403,7 +410,7 @@ pathway_errorbar <-
         }
       },
       "name" = {
-        if (ko_to_kegg == TRUE) {
+	        if (ko_to_kegg) {
           # Nested sorting: first by pathway_class, then by feature name within each class
           order <- order(
             daa_results_filtered_sub_df$pathway_class,
@@ -414,21 +421,25 @@ pathway_errorbar <-
         }
       },
       "group" = {
-        # Initialize pro column with default value 1
-        daa_results_filtered_sub_df$pro <- 1
+	        # Track the group with the highest mean abundance per feature.
+	        # Ties are resolved by the original group-level order so ordering is
+	        # deterministic and assigns exactly one group per feature.
+	        daa_results_filtered_sub_df$pro <- NA_character_
 
-        for (i in levels(error_bar_pivot_longer_tibble_summarised$name)) {
+	        for (i in levels(error_bar_pivot_longer_tibble_summarised$name)) {
           # Get subset for current feature
           error_bar_pivot_longer_tibble_summarised_sub <-
             error_bar_pivot_longer_tibble_summarised[error_bar_pivot_longer_tibble_summarised$name == i,]
 
           # Find group with maximum mean abundance
-          pro_group <-
-            error_bar_pivot_longer_tibble_summarised_sub[error_bar_pivot_longer_tibble_summarised_sub$mean ==
-                                                            max(error_bar_pivot_longer_tibble_summarised_sub$mean),]$group
-          pro_group <- as.vector(pro_group)
+	          group_means <- stats::setNames(
+	            error_bar_pivot_longer_tibble_summarised_sub$mean,
+	            as.character(error_bar_pivot_longer_tibble_summarised_sub$group)
+	          )
+	          tied_groups <- names(group_means)[group_means == max(group_means, na.rm = TRUE)]
+	          pro_group <- Group_levels[Group_levels %in% tied_groups][1]
 
-          # Find indices of rows matching the current feature, excluding NA values
+	          # Find indices of rows matching the current feature, excluding NA values
           idx <- which(daa_results_filtered_sub_df$feature == i & !is.na(daa_results_filtered_sub_df$feature))
 
           # Only assign values if valid indices exist
@@ -437,19 +448,19 @@ pathway_errorbar <-
           }
         }
 
-        if (ko_to_kegg == TRUE) {
+	        if (ko_to_kegg) {
           # Nested sorting: first by pathway_class, then by group and p_adjust within each class
           order <- order(
             daa_results_filtered_sub_df$pathway_class,
-            daa_results_filtered_sub_df$pro,
-            daa_results_filtered_sub_df$p_adjust
-          )
-        } else {
-          # Order by group and p-value
-          order <-
-            order(daa_results_filtered_sub_df$pro,
-                  daa_results_filtered_sub_df$p_adjust)
-        }
+	            factor(daa_results_filtered_sub_df$pro, levels = Group_levels),
+	            daa_results_filtered_sub_df$p_adjust
+	          )
+	        } else {
+	          # Order by group and p-value
+	          order <-
+	            order(factor(daa_results_filtered_sub_df$pro, levels = Group_levels),
+	                  daa_results_filtered_sub_df$p_adjust)
+	        }
       },
       "pathway_class" = {
         if (!"pathway_class" %in% colnames(daa_results_filtered_sub_df)) {
@@ -481,7 +492,7 @@ pathway_errorbar <-
       error_bar_pivot_longer_tibble_summarised[order(error_bar_pivot_longer_tibble_summarised$feature_order), ]
     error_bar_pivot_longer_tibble_summarised_ordered$feature_order <- NULL
 
-    if (ko_to_kegg == FALSE) {
+	    if (!ko_to_kegg) {
       # Match by feature name using the match function
       matched_indices <- match(
         error_bar_pivot_longer_tibble_summarised_ordered$name,
@@ -491,7 +502,7 @@ pathway_errorbar <-
         daa_results_filtered_sub_df[matched_indices, x_lab]
     }
 
-    if (ko_to_kegg == TRUE) {
+	    if (ko_to_kegg) {
       error_bar_pivot_longer_tibble_summarised_ordered$pathway_class <-
         rep(daa_results_filtered_sub_df$pathway_class,
             each = length(levels(
@@ -595,7 +606,7 @@ pathway_errorbar <-
         plot.margin = ggplot2::unit(c(1, 1, 1, 1), "cm")
       )
 
-    if (ko_to_kegg == TRUE) {
+	    if (ko_to_kegg) {
       # Convert table to matrix to preserve names as rownames
       pathway_class_table <- table(daa_results_filtered_sub_df$pathway_class)
       pathway_class_group_mat <- as.data.frame(as.matrix(pathway_class_table))
@@ -635,7 +646,11 @@ pathway_errorbar <-
       }
     }
     # Add necessary columns
-    daa_results_filtered_sub_df$negative_log10_p <- -log10(daa_results_filtered_sub_df$p_adjust)
+	    if (any(daa_results_filtered_sub_df$p_adjust < 0, na.rm = TRUE)) {
+	      stop("p_adjust values must be non-negative.", call. = FALSE)
+	    }
+	    daa_results_filtered_sub_df$negative_log10_p <-
+	      -log10(pmax(daa_results_filtered_sub_df$p_adjust, .Machine$double.xmin))
 
     # Compute the log2 fold change displayed in the side panel.
     #
@@ -734,7 +749,7 @@ pathway_errorbar <-
       ) +
       ggplot2::coord_flip()
 
-    if (ko_to_kegg == TRUE) {
+	    if (ko_to_kegg) {
       # Calculate label y-position as the center of each rectangle
       # The -0.5 offset was causing misalignment (see demos/alignment_debug_analysis.R)
       pathway_class_y <- (ymax + ymin) / 2
@@ -854,8 +869,8 @@ pathway_errorbar <-
         axis.title.x = ggplot2::element_blank(),
         legend.position = "none"
       )
-    if (p_value_bar == TRUE) {
-      if (ko_to_kegg == TRUE) {
+	    if (p_value_bar) {
+	      if (ko_to_kegg) {
         combination_bar_plot <-
           pathway_class_annotation + bar_errorbar + p_values_bar + p_annotation + patchwork::plot_layout(ncol = 4, widths =
                                                                                                 c(2.5, 2.0, 0.7, 0.3))
@@ -865,7 +880,7 @@ pathway_errorbar <-
           bar_errorbar + p_values_bar + p_annotation + patchwork::plot_layout(ncol = 3, widths = c(2.3, 0.7, 0.3))
       }
     }else{
-      if (ko_to_kegg == TRUE) {
+	      if (ko_to_kegg) {
         combination_bar_plot <-
           pathway_class_annotation + bar_errorbar + p_annotation + patchwork::plot_layout(ncol = 3, widths =
                                                                                                            c(2.5, 2.0, 0.3))

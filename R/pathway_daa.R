@@ -71,6 +71,11 @@ NULL
 #'        FALSE to skip the extra \code{aldex.effect()} computation.
 #'
 #' @param p.adjust Deprecated. Use \code{p_adjust_method} instead.
+#' @param .pre_aligned Internal logical. Set to TRUE only when the caller has
+#'        already aligned abundance columns and metadata rows in identical
+#'        sample order.
+#' @param .sample_col Internal character. Sample identifier column used when
+#'        \code{.pre_aligned = TRUE}.
 #'
 #' @param ... Additional arguments passed to the specific DAA method
 #'
@@ -309,7 +314,8 @@ calculate_abundance_stats <- function(abundance, metadata, group, features, grou
 pathway_daa <- function(abundance, metadata, group, daa_method = "ALDEx2",
                        select = NULL, p_adjust_method = "BH", reference = NULL,
                        include_abundance_stats = FALSE, include_effect_size = TRUE,
-                       p.adjust = NULL, ...) {
+                       p.adjust = NULL, .pre_aligned = FALSE,
+                       .sample_col = NULL, ...) {
   # Backward compatibility for deprecated parameter
   if (!is.null(p.adjust)) {
     warning("'p.adjust' parameter is deprecated. Use 'p_adjust_method' instead.", call. = FALSE)
@@ -370,17 +376,42 @@ pathway_daa <- function(abundance, metadata, group, daa_method = "ALDEx2",
   validate_metadata(metadata)
   validate_group(metadata, group, min_groups = 2)
 
-  # Align samples. This is the contract for STANDALONE callers of
-  # pathway_daa() who may pass unaligned abundance/metadata. When the
-  # wrapper ggpicrust2() calls us, inputs are already aligned; since
-  # align_samples() is deterministic and idempotent, that pre-aligned
-  # case is a cheap no-op here and not a source of drift. The two
-  # call sites (this one and ggpicrust2.R) are invoked with identical
-  # arguments so they cannot silently disagree on the aligned shape;
-  # see the commentary at the ggpicrust2 call site for the full
-  # rationale and the invariant that any future change to alignment
-  # semantics must update both sites together.
-  aligned <- align_samples(abundance, metadata, verbose = FALSE)
+  # Alignment ownership is explicit. Standalone callers use the public
+  # contract and get automatic sample matching here. ggpicrust2() aligns
+  # once at the wrapper boundary because it also needs the same aligned
+  # objects for plotting, then calls this function with `.pre_aligned = TRUE`
+  # so we validate the invariant instead of repeating the alignment.
+  .pre_aligned <- normalize_logical_flag(.pre_aligned, ".pre_aligned")
+  if (.pre_aligned) {
+    if (is.null(colnames(abundance))) {
+      stop("Pre-aligned abundance data must have sample column names.", call. = FALSE)
+    }
+    metadata <- as.data.frame(metadata)
+    sample_col <- .sample_col
+    if (is.null(sample_col) || !sample_col %in% colnames(metadata)) {
+      sample_col <- find_sample_column(metadata, colnames(abundance))
+    }
+    if (is.null(sample_col)) {
+      stop("Pre-aligned metadata must contain sample identifiers matching abundance columns.",
+           call. = FALSE)
+    }
+    if (sample_col == ".rownames") {
+      metadata$.sample_id <- rownames(metadata)
+      sample_col <- ".sample_id"
+    }
+    if (!identical(colnames(abundance), as.character(metadata[[sample_col]]))) {
+      stop("Pre-aligned abundance and metadata are not in the same sample order.",
+           call. = FALSE)
+    }
+    aligned <- list(
+      abundance = abundance,
+      metadata = metadata,
+      sample_col = sample_col,
+      n_samples = ncol(abundance)
+    )
+  } else {
+    aligned <- align_samples(abundance, metadata, verbose = FALSE)
+  }
   abundance <- aligned$abundance
   metadata <- tibble::as_tibble(aligned$metadata)
   sample_col <- aligned$sample_col

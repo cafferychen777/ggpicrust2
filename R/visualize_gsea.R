@@ -95,6 +95,7 @@ visualize_gsea <- function(gsea_results,
   validate_dataframe(gsea_results, param_name = "gsea_results")
   validate_choice(plot_type, c("enrichment_plot", "dotplot", "barplot", "network", "heatmap"), "plot_type")
   validate_choice(sort_by, c("NES", "pvalue", "p.adjust"), "sort_by")
+  validate_dataframe(gsea_results, required_cols = sort_by, param_name = "gsea_results")
 
   if (!is.null(colors) && !is.character(colors)) {
     stop("colors must be NULL or a character vector")
@@ -115,15 +116,24 @@ visualize_gsea <- function(gsea_results,
   # Network and heatmap branches still depend on their own stacks and
   # are checked below.
   if (plot_type == "network") {
-    if (!requireNamespace("igraph", quietly = TRUE) || !requireNamespace("ggraph", quietly = TRUE)) {
-      stop("Packages 'igraph' and 'ggraph' are required for network plots. Please install them.")
-    }
+    require_package("igraph", "network plots")
+    require_package("ggraph", "network plots")
+    require_package("tidygraph", "network plots")
+    validate_dataframe(
+      gsea_results,
+      required_cols = c("pathway_id", "NES", "pvalue", "p.adjust", "size", "leading_edge"),
+      param_name = "gsea_results"
+    )
   }
 
   if (plot_type == "heatmap") {
-    if (!requireNamespace("ComplexHeatmap", quietly = TRUE) || !requireNamespace("circlize", quietly = TRUE)) {
-      stop("Packages 'ComplexHeatmap' and 'circlize' are required for heatmap plots. Please install them.")
-    }
+    require_package("ComplexHeatmap", "heatmap plots")
+    require_package("circlize", "heatmap plots")
+    validate_dataframe(
+      gsea_results,
+      required_cols = c("pathway_id", "NES", "leading_edge"),
+      param_name = "gsea_results"
+    )
 
     # Check if required parameters are provided
     if (is.null(abundance) || is.null(metadata) || is.null(group)) {
@@ -277,7 +287,7 @@ visualize_gsea <- function(gsea_results,
         plot.title = ggplot2::element_text(hjust = 0.5)
       )
 
-  } else if (plot_type == "network") {
+	  } else if (plot_type == "network") {
     # Set default network parameters
     default_params <- list(
       similarity_measure = "jaccard",
@@ -287,8 +297,28 @@ visualize_gsea <- function(gsea_results,
       edge_width_by = "similarity"
     )
 
-    # Merge with user-provided parameters
-    network_params <- utils::modifyList(default_params, network_params)
+	    # Merge with user-provided parameters
+	    network_params <- utils::modifyList(default_params, network_params)
+	    validate_choice(network_params$similarity_measure,
+	                    c("jaccard", "overlap", "correlation"),
+	                    "network_params$similarity_measure")
+	    validate_choice(network_params$layout,
+	                    c("fruchterman", "kamada", "circle"),
+	                    "network_params$layout")
+	    validate_choice(network_params$node_color_by,
+	                    c("NES", "pvalue", "p.adjust"),
+	                    "network_params$node_color_by")
+	    validate_choice(network_params$edge_width_by,
+	                    c("similarity", "constant"),
+	                    "network_params$edge_width_by")
+	    if (!is.numeric(network_params$similarity_cutoff) ||
+	        length(network_params$similarity_cutoff) != 1 ||
+	        is.na(network_params$similarity_cutoff) ||
+	        network_params$similarity_cutoff < 0 ||
+	        network_params$similarity_cutoff > 1) {
+	      stop("network_params$similarity_cutoff must be a single numeric value between 0 and 1",
+	           call. = FALSE)
+	    }
 
     # Create network plot
     p <- create_network_plot(
@@ -311,8 +341,11 @@ visualize_gsea <- function(gsea_results,
       annotation_colors = list(Group = stats::setNames(colors[seq_along(unique(metadata[[group]]))], unique(metadata[[group]])))
     )
 
-    # Merge with user-provided parameters
-    heatmap_params <- utils::modifyList(default_params, heatmap_params)
+	    # Merge with user-provided parameters
+	    heatmap_params <- utils::modifyList(default_params, heatmap_params)
+	    if (is.null(heatmap_params$annotation_colors)) {
+	      heatmap_params$annotation_colors <- default_params$annotation_colors
+	    }
 
     # Create heatmap
     p <- create_heatmap_plot(
@@ -563,12 +596,23 @@ create_network_plot <- function(gsea_results,
     layout_name <- "fr"
   }
 
-  # Create ggraph visualization
-  p <- ggraph::ggraph(tbl_graph, layout = layout_name) +
-    ggraph::geom_edge_link(ggplot2::aes(width = .data$weight, alpha = .data$weight)) +
-    ggraph::geom_node_point(ggplot2::aes(color = .data[[node_color_by]], size = .data$size)) +
-    ggraph::geom_node_text(ggplot2::aes(label = .data$pathway_label), repel = TRUE, size = 3) +
-    ggraph::scale_edge_width(range = c(0.1, 2)) +
+	  edge_layer <- if (edge_width_by == "similarity") {
+	    ggraph::geom_edge_link(ggplot2::aes(width = .data$weight, alpha = .data$weight))
+	  } else {
+	    ggraph::geom_edge_link(ggplot2::aes(alpha = .data$weight), width = 0.5)
+	  }
+	  edge_width_scale <- if (edge_width_by == "similarity") {
+	    ggraph::scale_edge_width(range = c(0.1, 2))
+	  } else {
+	    NULL
+	  }
+
+	  # Create ggraph visualization
+	  p <- ggraph::ggraph(tbl_graph, layout = layout_name) +
+	    edge_layer +
+	    ggraph::geom_node_point(ggplot2::aes(color = .data[[node_color_by]], size = .data$size)) +
+	    ggraph::geom_node_text(ggplot2::aes(label = .data$pathway_label), repel = TRUE, size = 3) +
+	    edge_width_scale +
     ggraph::scale_edge_alpha(range = c(0.1, 0.8)) +
     # apply user-provided diverging scale for node color if available (fallback to default)
     {

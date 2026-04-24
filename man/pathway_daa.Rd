@@ -15,6 +15,8 @@ pathway_daa(
   include_abundance_stats = FALSE,
   include_effect_size = TRUE,
   p.adjust = NULL,
+  .pre_aligned = FALSE,
+  .sample_col = NULL,
   ...
 )
 }
@@ -79,6 +81,13 @@ with the ALDEx2 method; ignored otherwise. Default is TRUE; set to
 FALSE to skip the extra \code{aldex.effect()} computation.}
 
 \item{p.adjust}{Deprecated. Use \code{p_adjust_method} instead.}
+
+\item{.pre_aligned}{Internal logical. Set to TRUE only when the caller has
+already aligned abundance columns and metadata rows in identical
+sample order.}
+
+\item{.sample_col}{Internal character. Sample identifier column used when
+\code{.pre_aligned = TRUE}.}
 
 \item{...}{Additional arguments passed to the specific DAA method}
 }

@@ -77,6 +77,35 @@ test_that("pathway_volcano errors on non-data.frame input", {
   expect_error(pathway_volcano("not a data frame"), "must be a data frame")
 })
 
+test_that("pathway_volcano keeps all-zero p-values finite", {
+  daa_results <- data.frame(
+    feature = c("ko00001", "ko00002"),
+    pathway_name = c("Pathway 1", "Pathway 2"),
+    log2_fold_change = c(2, -2),
+    p_adjust = c(0, 0),
+    stringsAsFactors = FALSE
+  )
+
+  expect_warning(
+    p <- pathway_volcano(daa_results),
+    regexp = NA
+  )
+  expect_true(all(is.finite(p$data$neg_log10_p)))
+  expect_true(all(p$data$neg_log10_p > 0))
+})
+
+test_that("pathway_volcano rejects negative p-values", {
+  daa_results <- data.frame(
+    feature = "ko00001",
+    pathway_name = "Pathway 1",
+    log2_fold_change = 2,
+    p_adjust = -0.01,
+    stringsAsFactors = FALSE
+  )
+
+  expect_error(pathway_volcano(daa_results), "negative")
+})
+
 test_that("pathway_volcano works with real DAA workflow", {
   skip_if_not_installed("ggrepel")
   skip_on_cran()

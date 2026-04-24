@@ -36,6 +36,39 @@ test_that("ko2kegg_abundance handles file input correctly", {
   }
 })
 
+test_that("ko2kegg_abundance uses data when both file and data are supplied", {
+  bad_file <- tempfile(fileext = ".tsv")
+  writeLines(c("bad\tS1", "not_ko\t1"), bad_file)
+  on.exit(unlink(bad_file), add = TRUE)
+
+  ko_to_kegg_reference <- ggpicrust2:::load_reference_data("ko_to_kegg")
+  real_kos <- head(unique(ko_to_kegg_reference$ko_id), 3)
+  valid_data <- data.frame(
+    function. = real_kos,
+    Sample1 = c(10, 20, 30),
+    stringsAsFactors = FALSE
+  )
+
+  expect_warning(
+    result <- ko2kegg_abundance(file = bad_file, data = valid_data),
+    "Using data and ignoring file"
+  )
+  expect_s3_class(result, "data.frame")
+})
+
+test_that("ko2kegg_abundance suppresses progress output by default in non-interactive use", {
+  ko_to_kegg_reference <- ggpicrust2:::load_reference_data("ko_to_kegg")
+  real_kos <- head(unique(ko_to_kegg_reference$ko_id), 3)
+  valid_data <- data.frame(
+    function. = real_kos,
+    Sample1 = c(10, 20, 30),
+    stringsAsFactors = FALSE
+  )
+
+  out <- capture.output(invisible(ko2kegg_abundance(data = valid_data)), type = "output")
+  expect_equal(out, character(0))
+})
+
 test_that("ko2kegg_abundance throws appropriate errors", {
   expect_error(ko2kegg_abundance(), "Please provide either a file or a data.frame")
   expect_error(ko2kegg_abundance(file = "test.pdf"), "File does not exist")

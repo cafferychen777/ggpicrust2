@@ -198,6 +198,25 @@ test_that("compare_gsea_daa('venn') still works without effect-size columns", {
   expect_equal(res$results$overlap, "ko00010")
 })
 
+test_that("compare_gsea_daa() counts significant pathways with set semantics", {
+  gsea <- data.frame(
+    pathway_id = c("ko00010", "ko00020"),
+    p.adjust = c(0.01, 0.2),
+    stringsAsFactors = FALSE
+  )
+  daa <- data.frame(
+    feature = c("ko00010", "ko00010", "ko00030"),
+    p_adjust = c(0.02, 0.03, 0.01),
+    stringsAsFactors = FALSE
+  )
+
+  res <- compare_gsea_daa(gsea, daa, plot_type = "venn")
+  expect_equal(res$results$n_gsea_total, 1)
+  expect_equal(res$results$n_daa_total, 2)
+  expect_equal(res$results$n_overlap, 1)
+  expect_equal(res$results$daa_only, "ko00030")
+})
+
 
 # -----------------------------------------------------------------------------
 # Issue 5: compare_daa_results() used to double-filter diff_features so

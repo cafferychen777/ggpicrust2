@@ -8,7 +8,8 @@ ko2kegg_abundance(
   file = NULL,
   data = NULL,
   method = c("abundance", "sum"),
-  filter_for_prokaryotes = TRUE
+  filter_for_prokaryotes = TRUE,
+  progress = interactive()
 )
 }
 \arguments{
@@ -32,6 +33,10 @@ prokaryote filter removes pathways in categories such as:
 }
 Bacterial infection pathways and antimicrobial resistance pathways are retained.
 Set to FALSE to include all KEGG pathways (for eukaryotic analysis or custom filtering).}
+
+\item{progress}{Logical. Whether to show a progress bar while aggregating
+pathways. Defaults to \code{interactive()} so non-interactive scripts and
+tests stay quiet.}
 }
 \value{
 A data frame with KEGG pathway abundance values. Rows represent KEGG pathways, identified by their KEGG pathway IDs. Columns represent samples, identified by their sample IDs from the input file.

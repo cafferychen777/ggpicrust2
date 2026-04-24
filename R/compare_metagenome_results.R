@@ -63,6 +63,8 @@ compare_metagenome_results <- function(metagenomes, names, daa_method = "ALDEx2"
   if (length(metagenomes) != length(names)) {
     stop("The length of 'metagenomes' must match the length of 'names'")
   }
+  require_package("circlize", "comparison heatmap")
+  require_package("ComplexHeatmap", "comparison heatmap")
 
   # Align every metagenome on the shared feature set AND the shared sample
   # set before anything else. Both downstream steps index by position:

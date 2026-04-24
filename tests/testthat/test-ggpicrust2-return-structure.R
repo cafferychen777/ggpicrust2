@@ -53,7 +53,11 @@ test_that("ggpicrust2 aligns Group vector to abundance sample order before plott
     stringsAsFactors = FALSE
   )
 
-  mock_pathway_daa <- function(abundance, metadata, group, daa_method, select, p_adjust_method, reference) {
+  mock_pathway_daa <- function(abundance, metadata, group, daa_method, select = NULL,
+                               p_adjust_method, reference, .pre_aligned = FALSE,
+                               .sample_col = NULL) {
+    expect_true(.pre_aligned)
+    expect_true(.sample_col %in% colnames(metadata))
     data.frame(
       feature = rownames(abundance)[1],
       method = "mock_method",
@@ -136,6 +140,18 @@ test_that("ggpicrust2 rejects inconsistent ko_to_kegg / pathway combinations", {
     ),
     "requires .pathway = .KO."
   )
+
+  expect_error(
+    ggpicrust2(
+      data = minimal_data,
+      metadata = minimal_metadata,
+      group = "Condition",
+      pathway = "MetaCyc",
+      daa_method = "LinDA",
+      ko_to_kegg = "TRUE"
+    ),
+    "requires .pathway = .KO."
+  )
 })
 
 test_that("ggpicrust2 does not emit p.adjust deprecation warning on a normal call", {
@@ -212,10 +228,13 @@ test_that("ggpicrust2 does not forward `select` (pathway names) to pathway_daa's
   )
 
   mock_pathway_daa <- function(abundance, metadata, group, daa_method,
-                               p_adjust_method, reference, ...) {
+                               p_adjust_method, reference, .pre_aligned = FALSE,
+                               .sample_col = NULL, ...) {
     # Capture whether a `select` arg made it through ... (it should not).
     extra <- list(...)
     captured_daa_select <<- if ("select" %in% names(extra)) extra$select else NULL
+    expect_true(.pre_aligned)
+    expect_equal(.sample_col, "sample")
     data.frame(
       feature  = rownames(abundance),
       method   = "mock_method",

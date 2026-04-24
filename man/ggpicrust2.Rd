@@ -44,11 +44,15 @@ ggpicrust2(
 - "LinDA": Linear models for differential abundance analysis of microbiome compositional data
 - "Maaslin2": Multivariate Association with Linear Models (MaAsLin2) for differential abundance analysis}
 
-\item{ko_to_kegg}{A character to control the conversion of KO abundance to KEGG abundance}
+\item{ko_to_kegg}{Logical or logical-like string controlling conversion of
+KO abundance to KEGG pathway abundance.}
 
 \item{filter_for_prokaryotes}{Logical. If TRUE (default), filters out KEGG pathways
 that are specific to eukaryotes (e.g., human diseases, organismal systems) when
 ko_to_kegg = TRUE. Set to FALSE to include all KEGG pathways.}
+
+\item{p_adjust_method}{A character specifying the method for p-value adjustment,
+default is "BH".}
 
 \item{order}{A character to control the order of the main plot rows}
 

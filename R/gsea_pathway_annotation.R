@@ -71,6 +71,7 @@ gsea_pathway_annotation <- function(gsea_results,
 annotate_kegg_gsea <- function(gsea_results) {
   # Load KEGG pathway reference using unified loader
   kegg_ref <- load_reference_data("KEGG")
+  gsea_results$.gsea_input_order <- seq_len(nrow(gsea_results))
 
   # Remove pathway_name from gsea_results if present (will be replaced by reference)
   if ("pathway_name" %in% colnames(gsea_results)) {
@@ -83,8 +84,12 @@ annotate_kegg_gsea <- function(gsea_results) {
     kegg_ref,
     by.x = "pathway_id",
     by.y = "pathway",
-    all.x = TRUE
+    all.x = TRUE,
+    sort = FALSE
   )
+  annotated_results <- annotated_results[order(annotated_results$.gsea_input_order), ]
+  annotated_results$.gsea_input_order <- NULL
+  rownames(annotated_results) <- NULL
 
   # Fill missing pathway names with pathway_id
   if ("pathway_name" %in% colnames(annotated_results)) {
@@ -104,6 +109,7 @@ annotate_kegg_gsea <- function(gsea_results) {
 annotate_metacyc_gsea <- function(gsea_results) {
   # Load MetaCyc reference using unified loader
   metacyc_ref <- load_reference_data("MetaCyc")
+  gsea_results$.gsea_input_order <- seq_len(nrow(gsea_results))
 
   # Remove pathway_name from gsea_results if present (will be replaced by reference)
   if ("pathway_name" %in% colnames(gsea_results)) {
@@ -116,8 +122,12 @@ annotate_metacyc_gsea <- function(gsea_results) {
     metacyc_ref,
     by.x = "pathway_id",
     by.y = "id",
-    all.x = TRUE
+    all.x = TRUE,
+    sort = FALSE
   )
+  annotated_results <- annotated_results[order(annotated_results$.gsea_input_order), ]
+  annotated_results$.gsea_input_order <- NULL
+  rownames(annotated_results) <- NULL
 
   # Use description as pathway_name
   annotated_results$pathway_name <- ifelse(
@@ -137,6 +147,7 @@ annotate_metacyc_gsea <- function(gsea_results) {
 annotate_go_gsea <- function(gsea_results) {
   # Load GO reference using unified loader
   go_ref <- load_reference_data("ko_to_go")
+  gsea_results$.gsea_input_order <- seq_len(nrow(gsea_results))
 
   # Remove pathway_name from gsea_results if present (will be replaced by reference)
   if ("pathway_name" %in% colnames(gsea_results)) {
@@ -155,8 +166,12 @@ annotate_go_gsea <- function(gsea_results) {
     gsea_results,
     go_lookup,
     by = "pathway_id",
-    all.x = TRUE
+    all.x = TRUE,
+    sort = FALSE
   )
+  annotated_results <- annotated_results[order(annotated_results$.gsea_input_order), ]
+  annotated_results$.gsea_input_order <- NULL
+  rownames(annotated_results) <- NULL
 
   # Fill missing pathway names with pathway_id
   if ("pathway_name" %in% colnames(annotated_results)) {

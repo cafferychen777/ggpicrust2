@@ -904,6 +904,27 @@ validate_choice <- function(value, choices, param_name = "value") {
   TRUE
 }
 
+#' Normalize a scalar logical flag
+#'
+#' Public APIs historically accepted both logical TRUE/FALSE and the string
+#' forms "TRUE"/"FALSE" for some flags. Normalize that contract once at the
+#' boundary so downstream code can use plain logical tests without drifting
+#' between `isTRUE(x)`, `x == TRUE`, and `if (x)` semantics.
+#' @noRd
+normalize_logical_flag <- function(value, param_name) {
+  if (is.logical(value) && length(value) == 1 && !is.na(value)) {
+    return(value)
+  }
+
+  if (is.character(value) && length(value) == 1 && !is.na(value)) {
+    lowered <- tolower(trimws(value))
+    if (lowered %in% c("true", "t", "1")) return(TRUE)
+    if (lowered %in% c("false", "f", "0")) return(FALSE)
+  }
+
+  stop(sprintf("'%s' must be TRUE or FALSE.", param_name), call. = FALSE)
+}
+
 #' Validate Data Frame Input
 #'
 #' Validates that input is a data frame with required columns.

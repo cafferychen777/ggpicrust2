@@ -3,6 +3,14 @@
 \name{import_MicrobiomeAnalyst_daa_results}
 \alias{import_MicrobiomeAnalyst_daa_results}
 \title{Import Differential Abundance Analysis (DAA) results from MicrobiomeAnalyst}
+\usage{
+import_MicrobiomeAnalyst_daa_results(
+  file_path = NULL,
+  data = NULL,
+  method = "MicrobiomeAnalyst",
+  group_levels = c("control", "treatment")
+)
+}
 \arguments{
 \item{file_path}{a character string specifying the path to the CSV file containing the DAA results from MicrobiomeAnalyst. If this parameter is NULL and no data frame is provided, an error will be thrown. Default is NULL.}
 

@@ -20,6 +20,9 @@
 #'   }
 #'   Bacterial infection pathways and antimicrobial resistance pathways are retained.
 #'   Set to FALSE to include all KEGG pathways (for eukaryotic analysis or custom filtering).
+#' @param progress Logical. Whether to show a progress bar while aggregating
+#'   pathways. Defaults to \code{interactive()} so non-interactive scripts and
+#'   tests stay quiet.
 #'
 #' @return
 #' A data frame with KEGG pathway abundance values. Rows represent KEGG pathways, identified by their KEGG pathway IDs. Columns represent samples, identified by their sample IDs from the input file.
@@ -93,8 +96,12 @@
 #' }
 #' @export
 ko2kegg_abundance <- function (file = NULL, data = NULL, method = c("abundance", "sum"),
-                               filter_for_prokaryotes = TRUE) {
+                               filter_for_prokaryotes = TRUE,
+                               progress = interactive()) {
   method <- match.arg(method)
+  filter_for_prokaryotes <- normalize_logical_flag(filter_for_prokaryotes, "filter_for_prokaryotes")
+  progress <- normalize_logical_flag(progress, "progress")
+
   # Basic parameter validation
   if (is.null(file) & is.null(data)) {
     stop("Error: Please provide either a file or a data.frame.")
@@ -102,6 +109,7 @@ ko2kegg_abundance <- function (file = NULL, data = NULL, method = c("abundance",
 
   if (!is.null(file) && !is.null(data)) {
     warning("Both file and data provided. Using data and ignoring file.")
+    file <- NULL
   }
 
   # Load data from file or use provided data
@@ -174,12 +182,16 @@ ko2kegg_abundance <- function (file = NULL, data = NULL, method = c("abundance",
   sample_names <- colnames(abundance)[-1]
   kegg_abundance[sample_names] <- 0
 
-  # Calculate pathway abundances with progress bar
-  pb <- txtProgressBar(min = 0, max = nrow(kegg_abundance), style = 3)
-  on.exit(close(pb), add = TRUE)
+  # Calculate pathway abundances. Progress is interactive-only by default so
+  # scripts and tests do not get flooded with carriage-return progress output.
+  pb <- NULL
+  if (progress) {
+    pb <- utils::txtProgressBar(min = 0, max = nrow(kegg_abundance), style = 3)
+    on.exit(close(pb), add = TRUE)
+  }
 
   for (i in seq_len(nrow(kegg_abundance))) {
-    setTxtProgressBar(pb, i)
+    if (!is.null(pb)) utils::setTxtProgressBar(pb, i)
     current_kegg <- rownames(kegg_abundance)[i]
     relevant_kos <- pathway_to_ko[[current_kegg]]
     matching_rows <- abundance[[1]] %in% relevant_kos
@@ -197,7 +209,10 @@ ko2kegg_abundance <- function (file = NULL, data = NULL, method = c("abundance",
       }
     }
   }
-  close(pb)
+  if (!is.null(pb)) {
+    close(pb)
+    pb <- NULL
+  }
 
   # Remove zero-abundance pathways. Reaching all-zero here means the IDs
   # passed format validation but none are present in the KEGG reference

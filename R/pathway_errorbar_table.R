@@ -98,11 +98,12 @@ pathway_errorbar_table <- function(abundance,
                                   ko_to_kegg = FALSE,
                                   p_values_threshold = 0.05,
                                   select = NULL,
-                                  max_features = 30,
-                                  metadata = NULL,
-                                  sample_col = NULL) {
+	                                  max_features = 30,
+	                                  metadata = NULL,
+	                                  sample_col = NULL) {
+  ko_to_kegg <- normalize_logical_flag(ko_to_kegg, "ko_to_kegg")
 
-  # Input validation
+	  # Input validation
   if (!is.matrix(abundance) && !is.data.frame(abundance)) {
     stop("'abundance' must be a matrix or data frame")
   }
@@ -153,8 +154,16 @@ pathway_errorbar_table <- function(abundance,
          ncol(abundance), ")")
   }
 
-  # Validate single method and group pair
-  validate_daa_results(daa_results_df)
+	  # Validate single method and group pair
+	  validate_daa_results(daa_results_df)
+  if (ko_to_kegg && !"pathway_class" %in% colnames(daa_results_df)) {
+    stop(
+      "The 'pathway_class' column is missing but ko_to_kegg = TRUE. ",
+      "Please use pathway_annotation(..., ko_to_kegg = TRUE) to annotate the data, ",
+      "or set ko_to_kegg = FALSE if you don't need pathway class annotations.",
+      call. = FALSE
+    )
+  }
   
   # Filter for significant features
   daa_results_filtered_df <- daa_results_df[

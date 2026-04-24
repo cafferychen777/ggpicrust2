@@ -64,7 +64,8 @@ Suggests:
     UpSetR,
     igraph,
     ggridges,
-    ggrepel
+    ggrepel,
+    logging
 Config/testthat/edition: 3
 biocViews: Microbiome, Metagenomics, Software
 VignetteBuilder: knitr
