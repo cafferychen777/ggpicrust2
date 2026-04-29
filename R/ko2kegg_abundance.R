@@ -187,7 +187,9 @@ ko2kegg_abundance <- function (file = NULL, data = NULL, method = c("abundance",
   pb <- NULL
   if (progress) {
     pb <- utils::txtProgressBar(min = 0, max = nrow(kegg_abundance), style = 3)
-    on.exit(close(pb), add = TRUE)
+    on.exit({
+      if (!is.null(pb)) close(pb)
+    }, add = TRUE)
   }
 
   for (i in seq_len(nrow(kegg_abundance))) {

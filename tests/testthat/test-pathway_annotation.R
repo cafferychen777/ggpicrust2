@@ -47,6 +47,23 @@ test_that("pathway_annotation basic functionality works", {
   unlink(temp_file)
 })
 
+test_that("pathway_annotation supports PICRUSt2 ko-prefixed KO IDs", {
+  temp_file <- tempfile(fileext = ".tsv")
+  test_data <- data.frame(
+    `function` = c("ko:K00001", "ko:K00002"),
+    sample1 = c(1, 2),
+    sample2 = c(3, 4),
+    check.names = FALSE
+  )
+  suppressMessages(write.table(test_data, temp_file, sep = "\t", row.names = FALSE))
+  on.exit(unlink(temp_file))
+
+  result <- suppressMessages(pathway_annotation(file = temp_file, pathway = "KO", ko_to_kegg = FALSE))
+
+  expect_true(any(!is.na(result$description)))
+  expect_false(all(is.na(result$description)))
+})
+
 test_that("pathway_annotation works with daa_results_df input", {
   test_daa_df <- data.frame(
     feature = c("K00001", "K00002"),

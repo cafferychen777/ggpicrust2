@@ -69,6 +69,24 @@ test_that("ko2kegg_abundance suppresses progress output by default in non-intera
   expect_equal(out, character(0))
 })
 
+test_that("ko2kegg_abundance progress bar closes safely", {
+  ko_to_kegg_reference <- ggpicrust2:::load_reference_data("ko_to_kegg")
+  real_kos <- head(unique(ko_to_kegg_reference$ko_id), 3)
+  valid_data <- data.frame(
+    function. = real_kos,
+    Sample1 = c(10, 20, 30),
+    stringsAsFactors = FALSE
+  )
+
+  expect_no_error(
+    suppressWarnings(capture.output(
+      result <- ko2kegg_abundance(data = valid_data, progress = TRUE),
+      type = "output"
+    ))
+  )
+  expect_s3_class(result, "data.frame")
+})
+
 test_that("ko2kegg_abundance throws appropriate errors", {
   expect_error(ko2kegg_abundance(), "Please provide either a file or a data.frame")
   expect_error(ko2kegg_abundance(file = "test.pdf"), "File does not exist")

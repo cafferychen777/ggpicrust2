@@ -438,18 +438,24 @@ annotate_pathways <- function(data, pathway_type, ref_data) {
     features <- data[[1]]
   }
 
-  # Match features with reference data
-  # For EC pathways, try both with and without EC: prefix
+  # Match features with reference data.
   if (pathway_type == "EC") {
-    # First try direct match
     matches <- match(features, ref_data$id)
 
-    # For unmatched features, try adding EC: prefix
     unmatched <- is.na(matches)
     if (any(unmatched)) {
       features_with_prefix <- paste0("EC:", features[unmatched])
       matches_with_prefix <- match(features_with_prefix, ref_data$id)
       matches[unmatched] <- matches_with_prefix
+    }
+  } else if (pathway_type == "KO") {
+    matches <- match(features, ref_data$id)
+
+    unmatched <- is.na(matches)
+    if (any(unmatched)) {
+      features_without_prefix <- sub("^ko:", "", features[unmatched])
+      matches_without_prefix <- match(features_without_prefix, ref_data$id)
+      matches[unmatched] <- matches_without_prefix
     }
   } else {
     matches <- match(features, ref_data$id)
