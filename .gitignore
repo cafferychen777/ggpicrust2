@@ -122,3 +122,7 @@ cran_*.png
 
 # Local browser automation artifacts
 .playwright-mcp/
+
+# Local agent artifacts
+.codex/
+AGENTS.md
