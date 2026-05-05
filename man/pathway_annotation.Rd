@@ -6,6 +6,7 @@
 \usage{
 pathway_annotation(
   file = NULL,
+  data = NULL,
   pathway = NULL,
   daa_results_df = NULL,
   ko_to_kegg = FALSE,
@@ -16,7 +17,12 @@ pathway_annotation(
 \arguments{
 \item{file}{A character string, the path to the PICRUSt2 output file.}
 
-\item{pathway}{A character string, the type of pathway to annotate. Options are "KO", "EC", or "MetaCyc".}
+\item{data}{A data frame containing pathway or function abundance data.
+This is useful for annotating objects returned by functions such as
+\code{\link{ko2kegg_abundance}}, where pathway IDs may be stored as
+row names.}
+
+\item{pathway}{A character string, the type of pathway to annotate. Options are "KO", "EC", "MetaCyc", or "KEGG".}
 
 \item{daa_results_df}{A data frame, the output from `pathway_daa` function. When `ko_to_kegg = TRUE`,
 must contain columns: feature, p_values, p_adjust, and method.}
@@ -62,7 +68,7 @@ using the \code{organism} parameter.
 }
 \description{
 This function serves two main purposes:
-1. Annotating pathway information from PICRUSt2 output files.
+1. Annotating pathway information from PICRUSt2 output files or data frames.
 2. Annotating pathway information from the output of `pathway_daa` function, and converting KO abundance to KEGG pathway abundance when `ko_to_kegg` is set to TRUE.
 
 **Important**: When `ko_to_kegg = TRUE`, this function automatically filters pathways by

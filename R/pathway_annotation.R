@@ -439,7 +439,21 @@ annotate_pathways <- function(data, pathway_type, ref_data) {
   }
 
   # Match features with reference data.
-  if (pathway_type == "EC") {
+  if (pathway_type == "KEGG") {
+    matches <- match(features, ref_data$pathway)
+
+    descriptions <- rep(NA_character_, length(features))
+    valid_matches <- !is.na(matches)
+    if (any(valid_matches)) {
+      descriptions[valid_matches] <- ref_data$pathway_name[matches[valid_matches]]
+    }
+
+    data$description <- descriptions
+    data$pathway_name <- descriptions
+
+    message("Pathway annotation completed.")
+    return(data)
+  } else if (pathway_type == "EC") {
     matches <- match(features, ref_data$id)
 
     unmatched <- is.na(matches)
@@ -480,7 +494,7 @@ annotate_pathways <- function(data, pathway_type, ref_data) {
 #'
 #' @description
 #' This function serves two main purposes:
-#' 1. Annotating pathway information from PICRUSt2 output files.
+#' 1. Annotating pathway information from PICRUSt2 output files or data frames.
 #' 2. Annotating pathway information from the output of `pathway_daa` function, and converting KO abundance to KEGG pathway abundance when `ko_to_kegg` is set to TRUE.
 #'
 #' **Important**: When `ko_to_kegg = TRUE`, this function automatically filters pathways by
@@ -489,7 +503,11 @@ annotate_pathways <- function(data, pathway_type, ref_data) {
 #' diagnostic information and recommendations.
 #'
 #' @param file A character string, the path to the PICRUSt2 output file.
-#' @param pathway A character string, the type of pathway to annotate. Options are "KO", "EC", or "MetaCyc".
+#' @param data A data frame containing pathway or function abundance data.
+#'   This is useful for annotating objects returned by functions such as
+#'   \code{\link{ko2kegg_abundance}}, where pathway IDs may be stored as
+#'   row names.
+#' @param pathway A character string, the type of pathway to annotate. Options are "KO", "EC", "MetaCyc", or "KEGG".
 #' @param daa_results_df A data frame, the output from `pathway_daa` function. When `ko_to_kegg = TRUE`,
 #'   must contain columns: feature, p_values, p_adjust, and method.
 #' @param ko_to_kegg A logical, decide if convert KO abundance to KEGG pathway abundance. Default is FALSE.
@@ -545,6 +563,7 @@ annotate_pathways <- function(data, pathway_type, ref_data) {
 #' }
 #' @export
 pathway_annotation <- function(file = NULL,
+                             data = NULL,
                              pathway = NULL,
                              daa_results_df = NULL,
                              ko_to_kegg = FALSE,
@@ -552,12 +571,26 @@ pathway_annotation <- function(file = NULL,
                              p_adjust_threshold = 0.05) {
   
   # Input validation
-  if (is.null(file) && is.null(daa_results_df)) {
-    stop("Please input the picrust2 output or results of pathway_daa daa_results_df")
+  if (is.null(file) && is.null(data) && is.null(daa_results_df)) {
+    stop("Please input the picrust2 output, a data.frame, or results of pathway_daa daa_results_df")
   }
 
   if (!is.null(daa_results_df) && nrow(daa_results_df) == 0) {
     stop("Input data frame is empty")
+  }
+
+  supplied_inputs <- sum(!vapply(list(file, data, daa_results_df), is.null, logical(1)))
+  if (supplied_inputs > 1) {
+    warning(
+      "Multiple inputs provided. Using priority: data, then file, then daa_results_df.",
+      call. = FALSE
+    )
+    if (!is.null(data)) {
+      file <- NULL
+      daa_results_df <- NULL
+    } else if (!is.null(file)) {
+      daa_results_df <- NULL
+    }
   }
 
   # ko_to_kegg is only meaningful for KO-level features: the KEGG REST API
@@ -575,8 +608,8 @@ pathway_annotation <- function(file = NULL,
     ), call. = FALSE)
   }
   
-  # Process file input
-  if (!is.null(file)) {
+  # Process file or data input
+  if (!is.null(file) || !is.null(data)) {
     # File mode uses local reference data — KEGG-specific parameters have
     # no effect here. Warn so the user doesn't silently get a different
     # annotation source than they asked for.
@@ -596,8 +629,14 @@ pathway_annotation <- function(file = NULL,
       )
     }
 
-    abundance <- read_abundance_file(file)
-    abundance <- tibble::add_column(abundance, description = NA, .after = 1)
+    abundance <- if (!is.null(data)) {
+      normalize_annotation_data(data)
+    } else {
+      read_abundance_file(file)
+    }
+    if (!"description" %in% colnames(abundance)) {
+      abundance <- tibble::add_column(abundance, description = NA, .after = 1)
+    }
     ref_data <- load_reference_data(pathway)
     return(annotate_pathways(abundance, pathway, ref_data))
   }
@@ -618,6 +657,35 @@ pathway_annotation <- function(file = NULL,
       return(process_kegg_annotations(daa_results_df, organism, p_adjust_threshold))
     }
   }
+}
+
+#' Normalize data-frame input for pathway annotation
+#' @noRd
+normalize_annotation_data <- function(data) {
+  validate_dataframe(data, param_name = "data")
+  if (nrow(data) == 0) {
+    stop("Input data frame is empty")
+  }
+
+  data <- as.data.frame(data)
+  id_cols <- c("feature", "function", "function_id", "pathway", "id")
+  if (any(id_cols %in% colnames(data))) {
+    first_id_col <- id_cols[id_cols %in% colnames(data)][1]
+    if (!identical(first_id_col, colnames(data)[1])) {
+      data <- data[, c(first_id_col, setdiff(colnames(data), first_id_col)), drop = FALSE]
+    }
+    return(data)
+  }
+
+  rn <- rownames(data)
+  default_rn <- as.character(seq_len(nrow(data)))
+  if (!is.null(rn) && !identical(rn, default_rn) && !anyDuplicated(rn)) {
+    data <- data.frame(feature = rn, data, check.names = FALSE)
+    rownames(data) <- NULL
+    return(data)
+  }
+
+  data
 }
 
 #' Safely Extract Elements from a List

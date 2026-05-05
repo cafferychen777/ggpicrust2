@@ -4,28 +4,40 @@
 \alias{read_contrib_file}
 \title{Read PICRUSt2 contribution file}
 \usage{
-read_contrib_file(file = NULL, data = NULL)
+read_contrib_file(
+  file = NULL,
+  data = NULL,
+  type = c("auto", "gene_family", "pathway")
+)
 }
 \arguments{
-\item{file}{Path to the contribution file (.tsv, .txt, or .csv).}
+\item{file}{Path to the contribution file (.tsv, .txt, .csv, or gzipped variants).}
 
 \item{data}{A data.frame already loaded from the contribution file.
 If both \code{file} and \code{data} are provided, \code{data} is used.}
+
+\item{type}{Character. Contribution file level. One of \code{"auto"},
+\code{"gene_family"}, or \code{"pathway"}. Default \code{"auto"}.}
 }
 \value{
 A data.frame with columns: \code{sample}, \code{function_id},
-  \code{taxon}, \code{taxon_function_abun}, \code{norm_taxon_function_contrib},
-  and any additional columns from the original file.
+  \code{taxon}, contribution abundance columns from the original file, and
+  \code{feature_level}.
 }
 \description{
-Parses the \code{pred_metagenome_contrib.tsv} file produced by PICRUSt2's
-\code{--per_sequence_contrib} flag.
+Parses PICRUSt2 contribution files such as
+\code{pred_metagenome_contrib.tsv}. It also accepts the long contribution
+schema used by \code{path_abun_contrib.tsv}; for clarity, use
+\code{\link{read_pathway_contrib_file}} when reading pathway-level
+contribution output.
 }
 \details{
 The contribution file records how much each ASV/OTU contributes to the
-predicted abundance of each gene family in each sample. The
-\code{norm_taxon_function_contrib} column gives the proportion of a
-function's abundance attributable to each taxon.
+predicted abundance of each gene family or pathway in each sample.
+PICRUSt2 versions differ in whether they include
+\code{norm_taxon_function_contrib}; when that column is absent downstream
+aggregation can use \code{taxon_function_abun} or
+\code{taxon_rel_function_abun}.
 }
 \examples{
 \donttest{

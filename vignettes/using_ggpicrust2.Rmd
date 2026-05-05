@@ -129,13 +129,16 @@ pathway_pca(
 
 ## Taxa contribution workflow
 
-PICRUSt2 can output per-sequence contribution files that explain which taxa are driving predicted functional shifts. `ggpicrust2` now supports a full contribution workflow.
+PICRUSt2 can output contribution files that explain which taxa are driving predicted functional shifts. `ggpicrust2` supports both gene-family-level and pathway-level contribution workflows.
 
 ### Read PICRUSt2 contribution files
 
 ```{r contrib-readers, eval = FALSE}
 # For pred_metagenome_contrib.tsv
 contrib_data <- read_contrib_file("pred_metagenome_contrib.tsv")
+
+# For path_abun_contrib.tsv.gz; PICRUSt2 pathway output commonly uses MetaCyc IDs.
+path_contrib_data <- read_pathway_contrib_file("path_abun_contrib.tsv.gz")
 
 # For pred_metagenome_strat.tsv
 strat_data <- read_strat_file("pred_metagenome_strat.tsv")
@@ -158,9 +161,26 @@ head(taxa_contrib)
 `aggregate_taxa_contributions()` accepts either:
 
 - normalized contribution data from `read_contrib_file()`
+- pathway-level contribution data from `read_pathway_contrib_file()`
 - stratified abundance data from `read_strat_file()`
 
 Use `daa_results_df` or `pathway_ids` when you want to focus only on pathways that were significant in your pathway-level analysis.
+
+When you already have pathway-level contribution data and do not want to run differential abundance analysis, omit `daa_results_df` and aggregate directly. For PICRUSt2 pathway contribution output, use matching MetaCyc annotations rather than KEGG pathway annotations.
+
+```{r pathway-contrib-no-daa, eval = FALSE}
+path_taxa_contrib <- aggregate_taxa_contributions(
+  contrib_data = path_contrib_data,
+  taxonomy = your_taxonomy_table,
+  tax_level = "Genus",
+  top_n = 10
+)
+
+pathway_annotation_df <- pathway_annotation(
+  data = data.frame(function_id = unique(path_taxa_contrib$function_id)),
+  pathway = "MetaCyc"
+)
+```
 
 ### Visualize taxa-level drivers
 

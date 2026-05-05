@@ -9,6 +9,22 @@
 # refuse zero-sum columns with an actionable error that names the
 # offending sample(s).
 
+test_that("read_abundance_file reads gzipped delimited files", {
+  raf <- getFromNamespace("read_abundance_file", "ggpicrust2")
+  plain_file <- tempfile(fileext = ".tsv")
+  gz_file <- tempfile(fileext = ".tsv.gz")
+  on.exit(unlink(c(plain_file, gz_file)), add = TRUE)
+
+  writeLines(c("feature\tS1\tS2", "K00001\t1\t2"), plain_file)
+  con <- gzfile(gz_file, open = "wt")
+  writeLines(c("feature\tS1\tS2", "K00001\t1\t2"), con)
+  close(con)
+
+  plain <- raf(plain_file)
+  gzipped <- raf(gz_file)
+  expect_equal(as.data.frame(gzipped), as.data.frame(plain))
+})
+
 test_that("compute_relative_abundance matches the old apply idiom on clean input", {
   cra <- getFromNamespace("compute_relative_abundance", "ggpicrust2")
 

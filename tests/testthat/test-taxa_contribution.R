@@ -20,6 +20,28 @@ create_contrib_test_data <- function() {
   colnames(contrib_raw)[colnames(contrib_raw) == "function_id"] <- "function"
   contrib_raw$taxon_function_abun <- runif(nrow(contrib_raw))
   contrib_raw$norm_taxon_function_contrib <- runif(nrow(contrib_raw))
+  contrib_raw$taxon_rel_function_abun <- contrib_raw$taxon_function_abun / 10
+
+  path_contrib_raw <- contrib_raw
+  path_contrib_raw$`function` <- rep(c("ko00010", "ko00020", "PWY-7219"), 8)
+  path_contrib_raw$norm_taxon_function_contrib <- NULL
+
+  real_path_contrib_raw <- data.frame(
+    sample = c("100CHE6KO", "100CHE6KO", "101CHE6WT"),
+    `function` = c("1CMET2-PWY", "ANAEROFRUCAT-PWY", "ANAGLYCOLYSIS-PWY"),
+    taxon = c(
+      "20e568023c10eaac834f1c110aacea18",
+      "23fe12a325dfefcdb23447f43b6b896e",
+      "288c8176059111c4c7fdfb0cd5afce64"
+    ),
+    taxon_abun = c(26, 108, 25.5),
+    taxon_rel_abun = c(1.960784, 8.144796, 1.923077),
+    genome_function_count = c(1.007415, 0.755562, 1.007416),
+    taxon_function_abun = c(26.1928, 81.6007, 25.6891),
+    taxon_rel_function_abun = c(1.9753, 6.1539, 1.9373),
+    check.names = FALSE,
+    stringsAsFactors = FALSE
+  )
 
   # Stratified format (wide)
   strat_long <- expand.grid(
@@ -70,6 +92,8 @@ create_contrib_test_data <- function() {
 
   list(
     contrib_raw = contrib_raw,
+    path_contrib_raw = path_contrib_raw,
+    real_path_contrib_raw = real_path_contrib_raw,
     strat_wide = strat_wide,
     taxonomy_qiime2 = taxonomy_qiime2,
     taxonomy_dada2 = taxonomy_dada2,
@@ -109,6 +133,86 @@ test_that("read_contrib_file accepts already standardized function_id", {
   expect_true("function_id" %in% colnames(result))
   expect_false("function" %in% colnames(result))
   expect_equal(nrow(result), nrow(contrib_standardized))
+})
+
+test_that("read_contrib_file accepts official-style contrib data without norm column", {
+  td <- create_contrib_test_data()
+  contrib_no_norm <- td$contrib_raw
+  contrib_no_norm$norm_taxon_function_contrib <- NULL
+
+  result <- read_contrib_file(data = contrib_no_norm)
+
+  expect_s3_class(result, "data.frame")
+  expect_true(all(c("sample", "function_id", "taxon",
+                    "taxon_function_abun", "taxon_rel_function_abun") %in%
+                    colnames(result)))
+  expect_false("norm_taxon_function_contrib" %in% colnames(result))
+})
+
+test_that("read_pathway_contrib_file parses path_abun_contrib-style data", {
+  td <- create_contrib_test_data()
+
+  result <- read_pathway_contrib_file(data = td$path_contrib_raw)
+
+  expect_s3_class(result, "data.frame")
+  expect_true("function_id" %in% colnames(result))
+  expect_true(all(result$function_id %in% c("ko00010", "ko00020", "PWY-7219")))
+  expect_true(all(result$feature_level == "pathway"))
+})
+
+test_that("read_pathway_contrib_file parses real PICRUSt2 pathway schema", {
+  td <- create_contrib_test_data()
+
+  result <- read_pathway_contrib_file(data = td$real_path_contrib_raw)
+
+  expect_s3_class(result, "data.frame")
+  expect_true(all(c("sample", "function_id", "taxon", "taxon_abun",
+                    "taxon_rel_abun", "genome_function_count",
+                    "taxon_function_abun", "taxon_rel_function_abun") %in%
+                    colnames(result)))
+  expect_equal(result$function_id,
+               c("1CMET2-PWY", "ANAEROFRUCAT-PWY", "ANAGLYCOLYSIS-PWY"))
+  expect_true(all(result$feature_level == "pathway"))
+})
+
+test_that("read_pathway_contrib_file reads gzipped pathway contribution files", {
+  td <- create_contrib_test_data()
+  gz_file <- tempfile(fileext = ".tsv.gz")
+  on.exit(unlink(gz_file), add = TRUE)
+
+  con <- gzfile(gz_file, open = "wt")
+  utils::write.table(
+    td$real_path_contrib_raw,
+    file = con,
+    sep = "\t",
+    quote = FALSE,
+    row.names = FALSE
+  )
+  close(con)
+
+  result <- read_pathway_contrib_file(gz_file)
+
+  expect_equal(nrow(result), nrow(td$real_path_contrib_raw))
+  expect_equal(result$function_id,
+               c("1CMET2-PWY", "ANAEROFRUCAT-PWY", "ANAGLYCOLYSIS-PWY"))
+  expect_true(all(result$feature_level == "pathway"))
+})
+
+test_that("real pathway contribution schema aggregates and annotates MetaCyc IDs", {
+  td <- create_contrib_test_data()
+  contrib <- read_pathway_contrib_file(data = td$real_path_contrib_raw)
+
+  agg <- aggregate_taxa_contributions(contrib, top_n = 10)
+  annotation <- suppressMessages(pathway_annotation(
+    data = data.frame(function_id = unique(agg$function_id)),
+    pathway = "MetaCyc"
+  ))
+
+  expect_gt(nrow(agg), 0)
+  expect_true(all(c("sample", "function_id", "taxon_label", "contribution") %in%
+                    colnames(agg)))
+  expect_true(all(!is.na(agg$contribution)))
+  expect_true(any(!is.na(annotation$description)))
 })
 
 test_that("read_contrib_file errors on missing columns", {
@@ -243,6 +347,69 @@ test_that("aggregate_taxa_contributions works with strat file input", {
   expect_s3_class(agg, "data.frame")
   expect_true(all(c("sample", "function_id", "taxon_label", "contribution")
                   %in% colnames(agg)))
+})
+
+test_that("aggregate_taxa_contributions auto-selects absolute contribution when norm column is absent", {
+  td <- create_contrib_test_data()
+  contrib_no_norm <- read_contrib_file(data = {
+    x <- td$contrib_raw
+    x$norm_taxon_function_contrib <- NULL
+    x
+  })
+
+  agg <- aggregate_taxa_contributions(contrib_no_norm, top_n = 4)
+
+  expected_total <- sum(contrib_no_norm$taxon_function_abun)
+  expect_equal(sum(agg$contribution), expected_total)
+})
+
+test_that("aggregate_taxa_contributions supports explicit contribution column", {
+  td <- create_contrib_test_data()
+  contrib <- read_contrib_file(data = td$contrib_raw)
+
+  agg <- aggregate_taxa_contributions(
+    contrib,
+    top_n = 4,
+    contribution_col = "taxon_rel_function_abun"
+  )
+
+  expect_equal(sum(agg$contribution), sum(contrib$taxon_rel_function_abun))
+})
+
+test_that("aggregate_taxa_contributions directly filters pathway-level contribution IDs", {
+  td <- create_contrib_test_data()
+  contrib <- read_pathway_contrib_file(data = td$path_contrib_raw)
+
+  agg <- aggregate_taxa_contributions(
+    contrib,
+    pathway_ids = "ko00010",
+    top_n = 4
+  )
+
+  expect_true(all(agg$function_id == "ko00010"))
+  expect_gt(nrow(agg), 0)
+})
+
+test_that("aggregate_taxa_contributions maps KEGG pathways to KOs only for KO-level contribution data", {
+  ko_to_kegg_reference <- ggpicrust2:::load_reference_data("ko_to_kegg")
+  ko00010_kos <- head(unique(ko_to_kegg_reference$ko_id[
+    ko_to_kegg_reference$pathway_id == "ko00010"
+  ]), 2)
+  skip_if(length(ko00010_kos) < 1)
+
+  contrib <- data.frame(
+    sample = "S1",
+    `function` = ko00010_kos,
+    taxon = paste0("ASV", seq_along(ko00010_kos)),
+    taxon_function_abun = seq_along(ko00010_kos),
+    check.names = FALSE,
+    stringsAsFactors = FALSE
+  )
+  contrib <- read_contrib_file(data = contrib)
+
+  agg <- aggregate_taxa_contributions(contrib, pathway_ids = "ko00010", top_n = 10)
+
+  expect_setequal(agg$function_id, ko00010_kos)
 })
 
 test_that("aggregate_taxa_contributions with daa_results_df filters pathways", {

@@ -842,9 +842,10 @@ print(results$correlation$p_matrix)
 
 ### taxa contribution workflow
 
-The taxa contribution workflow connects PICRUSt2 per-sequence outputs
+The taxa contribution workflow connects PICRUSt2 contribution outputs
 with downstream pathway interpretation. Use `read_contrib_file()` for
-`pred_metagenome_contrib.tsv`, or `read_strat_file()` for
+`pred_metagenome_contrib.tsv`, `read_pathway_contrib_file()` for
+pathway-level `path_abun_contrib.tsv`, or `read_strat_file()` for
 `pred_metagenome_strat.tsv`, then aggregate to the taxonomic level you
 want to visualize.
 
@@ -853,6 +854,10 @@ library(ggpicrust2)
 
 # Parse PICRUSt2 per-sequence contribution output
 contrib_data <- read_contrib_file("pred_metagenome_contrib.tsv")
+
+# Or parse pathway-level contribution output without running DA analysis
+# PICRUSt2 pathway contribution files are often gzipped and use MetaCyc IDs.
+path_contrib_data <- read_pathway_contrib_file("path_abun_contrib.tsv.gz")
 
 # Optional: use pathway-level DAA results to keep only significant pathways
 data("kegg_abundance")
@@ -885,6 +890,25 @@ taxa_contribution_bar(
 # Summarize mean contribution patterns across taxa and functions
 taxa_contribution_heatmap(
   contrib_agg = taxa_contrib,
+  n_functions = 20
+)
+
+# Pathway-level contribution workflow without DA filtering
+path_taxa_contrib <- aggregate_taxa_contributions(
+  contrib_data = path_contrib_data,
+  taxonomy = your_taxonomy_table,
+  tax_level = "Genus",
+  top_n = 10
+)
+
+pathway_annotation_df <- pathway_annotation(
+  data = data.frame(function_id = unique(path_taxa_contrib$function_id)),
+  pathway = "MetaCyc"
+)
+
+taxa_contribution_heatmap(
+  contrib_agg = path_taxa_contrib,
+  annotation_data = pathway_annotation_df,
   n_functions = 20
 )
 ```

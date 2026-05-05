@@ -4,6 +4,8 @@
 ^.*\.Rproj$
 ^\.all-contributorsrc$
 ^\.cache_go_build/$
+^\.codex$
+^\.codex/
 ^\.dev_archive$
 ^\.DS_Store$
 ^\.git$
@@ -12,6 +14,7 @@
 ^\.playwright-mcp$
 ^\.Rproj\.user$
 ^apply_fix.*\.R$
+^AGENTS\.md$
 ^CLAUDE\.md$
 ^cleanup_github\.sh$
 ^cleanup\.R$

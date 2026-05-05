@@ -7,7 +7,7 @@
 read_strat_file(file = NULL, data = NULL)
 }
 \arguments{
-\item{file}{Path to the stratified file (.tsv, .txt, or .csv).}
+\item{file}{Path to the stratified file (.tsv, .txt, .csv, or gzipped variants).}
 
 \item{data}{A data.frame already loaded from the stratified file.
 If both \code{file} and \code{data} are provided, \code{data} is used.}

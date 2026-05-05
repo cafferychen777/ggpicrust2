@@ -11,7 +11,8 @@ aggregate_taxa_contributions(
   top_n = 10,
   daa_results_df = NULL,
   pathway_ids = NULL,
-  p_threshold = 0.05
+  p_threshold = 0.05,
+  contribution_col = "auto"
 )
 }
 \arguments{
@@ -37,6 +38,11 @@ Alternative to \code{daa_results_df}.}
 
 \item{p_threshold}{Numeric. Significance cutoff when using
 \code{daa_results_df}. Default 0.05.}
+
+\item{contribution_col}{Character. Column to aggregate. Use \code{"auto"}
+to select the first available column from
+\code{norm_taxon_function_contrib}, \code{taxon_function_abun},
+\code{taxon_rel_function_abun}, and \code{abundance}.}
 }
 \value{
 A tidy data.frame with columns: \code{sample}, \code{function_id},

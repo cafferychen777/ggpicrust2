@@ -6,22 +6,29 @@
 
 #' Read PICRUSt2 contribution file
 #'
-#' Parses the \code{pred_metagenome_contrib.tsv} file produced by PICRUSt2's
-#' \code{--per_sequence_contrib} flag.
+#' Parses PICRUSt2 contribution files such as
+#' \code{pred_metagenome_contrib.tsv}. It also accepts the long contribution
+#' schema used by \code{path_abun_contrib.tsv}; for clarity, use
+#' \code{\link{read_pathway_contrib_file}} when reading pathway-level
+#' contribution output.
 #'
-#' @param file Path to the contribution file (.tsv, .txt, or .csv).
+#' @param file Path to the contribution file (.tsv, .txt, .csv, or gzipped variants).
 #' @param data A data.frame already loaded from the contribution file.
 #'   If both \code{file} and \code{data} are provided, \code{data} is used.
+#' @param type Character. Contribution file level. One of \code{"auto"},
+#'   \code{"gene_family"}, or \code{"pathway"}. Default \code{"auto"}.
 #'
 #' @return A data.frame with columns: \code{sample}, \code{function_id},
-#'   \code{taxon}, \code{taxon_function_abun}, \code{norm_taxon_function_contrib},
-#'   and any additional columns from the original file.
+#'   \code{taxon}, contribution abundance columns from the original file, and
+#'   \code{feature_level}.
 #'
 #' @details
 #' The contribution file records how much each ASV/OTU contributes to the
-#' predicted abundance of each gene family in each sample. The
-#' \code{norm_taxon_function_contrib} column gives the proportion of a
-#' function's abundance attributable to each taxon.
+#' predicted abundance of each gene family or pathway in each sample.
+#' PICRUSt2 versions differ in whether they include
+#' \code{norm_taxon_function_contrib}; when that column is absent downstream
+#' aggregation can use \code{taxon_function_abun} or
+#' \code{taxon_rel_function_abun}.
 #'
 #' @examples
 #' \donttest{
@@ -39,7 +46,9 @@
 #' }
 #'
 #' @export
-read_contrib_file <- function(file = NULL, data = NULL) {
+read_contrib_file <- function(file = NULL, data = NULL,
+                              type = c("auto", "gene_family", "pathway")) {
+  type <- match.arg(type)
   if (is.null(file) && is.null(data)) {
     stop("Please provide either a file path or a data.frame.")
   }
@@ -48,44 +57,36 @@ read_contrib_file <- function(file = NULL, data = NULL) {
   }
 
   if (!is.null(data)) {
-    if (!is.data.frame(data)) stop("'data' must be a data.frame")
+    validate_dataframe(data, param_name = "data")
     contrib <- data
   } else {
     contrib <- read_abundance_file(file)
   }
 
-  # Validate required columns
-  function_col <- if ("function_id" %in% colnames(contrib)) {
-    "function_id"
-  } else if ("function" %in% colnames(contrib)) {
-    "function"
-  } else {
-    NULL
-  }
+  normalize_contrib_table(contrib, type = type)
+}
 
-  required <- c("sample", "taxon",
-                "taxon_function_abun", "norm_taxon_function_contrib")
-  missing <- setdiff(required, colnames(contrib))
-  if (is.null(function_col)) {
-    missing <- c(missing, "function")
-  }
-  if (length(missing) > 0) {
-    stop(sprintf(
-      "Missing required columns: %s. Expected PICRUSt2 contrib format.",
-      paste(missing, collapse = ", ")
-    ))
-  }
-
-  if (identical(function_col, "function")) {
-    # Rename 'function' -> 'function_id' (reserved word in R)
-    colnames(contrib)[colnames(contrib) == "function"] <- "function_id"
-  }
-
-  # Strip ko: prefix
-  contrib$function_id <- gsub("^ko:", "", contrib$function_id)
-
-  contrib <- as.data.frame(contrib)
-  contrib
+#' Read PICRUSt2 pathway-level contribution file
+#'
+#' Parses \code{path_abun_contrib.tsv} output from PICRUSt2's pathway
+#' pipeline and returns the same normalized contribution schema used by
+#' \code{\link{aggregate_taxa_contributions}}.
+#'
+#' @param file Path to the contribution file (.tsv, .txt, .csv, or gzipped variants).
+#' @param data A data.frame already loaded from the contribution file.
+#'   If both \code{file} and \code{data} are provided, \code{data} is used.
+#'
+#' @return A normalized data.frame with pathway IDs in \code{function_id}.
+#'
+#' @examples
+#' \donttest{
+#' path_contrib <- read_pathway_contrib_file("path_abun_contrib.tsv.gz")
+#' head(path_contrib)
+#' }
+#'
+#' @export
+read_pathway_contrib_file <- function(file = NULL, data = NULL) {
+  read_contrib_file(file = file, data = data, type = "pathway")
 }
 
 
@@ -94,7 +95,7 @@ read_contrib_file <- function(file = NULL, data = NULL) {
 #' Parses the \code{pred_metagenome_strat.tsv} file produced by PICRUSt2's
 #' \code{--strat_out} flag and converts the wide format to tidy long format.
 #'
-#' @param file Path to the stratified file (.tsv, .txt, or .csv).
+#' @param file Path to the stratified file (.tsv, .txt, .csv, or gzipped variants).
 #' @param data A data.frame already loaded from the stratified file.
 #'   If both \code{file} and \code{data} are provided, \code{data} is used.
 #'
@@ -130,7 +131,7 @@ read_strat_file <- function(file = NULL, data = NULL) {
   }
 
   if (!is.null(data)) {
-    if (!is.data.frame(data)) stop("'data' must be a data.frame")
+    validate_dataframe(data, param_name = "data")
     strat <- data
   } else {
     strat <- read_abundance_file(file)
@@ -141,13 +142,7 @@ read_strat_file <- function(file = NULL, data = NULL) {
     stop("Stratified file must have at least 3 columns (function, sequence, samples).")
   }
 
-  function_col <- if ("function_id" %in% colnames(strat)) {
-    "function_id"
-  } else if ("function" %in% colnames(strat)) {
-    "function"
-  } else {
-    NULL
-  }
+  function_col <- resolve_function_id_column(strat)
   taxon_col <- if ("taxon" %in% colnames(strat)) {
     "taxon"
   } else if ("sequence" %in% colnames(strat)) {
@@ -180,8 +175,7 @@ read_strat_file <- function(file = NULL, data = NULL) {
     values_to = "abundance"
   )
 
-  # Strip ko: prefix
-  strat$function_id <- gsub("^ko:", "", strat$function_id)
+  strat$function_id <- normalize_contrib_feature_ids(strat$function_id)
 
   as.data.frame(strat)
 }
@@ -209,6 +203,10 @@ read_strat_file <- function(file = NULL, data = NULL) {
 #'   Alternative to \code{daa_results_df}.
 #' @param p_threshold Numeric. Significance cutoff when using
 #'   \code{daa_results_df}. Default 0.05.
+#' @param contribution_col Character. Column to aggregate. Use \code{"auto"}
+#'   to select the first available column from
+#'   \code{norm_taxon_function_contrib}, \code{taxon_function_abun},
+#'   \code{taxon_rel_function_abun}, and \code{abundance}.
 #'
 #' @return A tidy data.frame with columns: \code{sample}, \code{function_id},
 #'   \code{taxon_label}, \code{contribution}.
@@ -250,7 +248,8 @@ aggregate_taxa_contributions <- function(contrib_data,
                                          top_n = 10,
                                          daa_results_df = NULL,
                                          pathway_ids = NULL,
-                                         p_threshold = 0.05) {
+                                         p_threshold = 0.05,
+                                         contribution_col = "auto") {
   # Validate input
   validate_dataframe(contrib_data, param_name = "contrib_data")
 
@@ -258,13 +257,12 @@ aggregate_taxa_contributions <- function(contrib_data,
     warning("Both daa_results_df and pathway_ids provided. Using daa_results_df.")
   }
 
-  # Detect input format (contrib vs strat)
-  if ("norm_taxon_function_contrib" %in% colnames(contrib_data)) {
-    contrib_col <- "norm_taxon_function_contrib"
-  } else if ("abundance" %in% colnames(contrib_data)) {
-    contrib_col <- "abundance"
-  } else {
-    stop("contrib_data must contain 'norm_taxon_function_contrib' or 'abundance' column.")
+  contrib_col <- choose_contribution_column(contrib_data, contribution_col)
+  if (!is.numeric(contrib_data[[contrib_col]])) {
+    contrib_data[[contrib_col]] <- normalize_contribution_values(
+      contrib_data[[contrib_col]],
+      contrib_col
+    )
   }
 
   # Ensure required columns exist
@@ -274,19 +272,7 @@ aggregate_taxa_contributions <- function(contrib_data,
     stop(sprintf("Missing required columns: %s", paste(missing, collapse = ", ")))
   }
 
-  # Filter to significant pathways via DAA results.
-  #
-  # `daa_results_df$feature` (or `pathway_ids`) may be either:
-  #   - pathway IDs (e.g. "ko00010"), which must be mapped back to their
-  #     constituent KOs because `contrib_data$function_id` is KO-level; or
-  #   - KO IDs (e.g. "K00001"), which match `function_id` directly and
-  #     must NOT go through the ko_to_kegg mapping, otherwise every KO
-  #     is treated as a (non-existent) pathway and the entire contrib
-  #     table is filtered away.
-  #
-  # We dispatch on ID shape rather than asking the caller, because the
-  # upstream ggpicrust2 pipeline legitimately produces DAA results at
-  # either level depending on the chosen abundance table.
+  # KEGG pathway IDs are expanded to KOs only for KO-level contribution data.
   if (!is.null(daa_results_df)) {
     sig_features <- daa_results_df$feature[daa_results_df$p_adjust < p_threshold]
     sig_features <- unique(sig_features[!is.na(sig_features)])
@@ -348,33 +334,37 @@ aggregate_taxa_contributions <- function(contrib_data,
 #'
 #' @noRd
 filter_contrib_by_features <- function(contrib_data, features) {
-  ko_pattern <- "^K\\d{5}$"
-  pathway_pattern <- "^(ko|map|ec)\\d{5}$"
+  features <- unique(as.character(features[!is.na(features)]))
+  function_ids <- as.character(contrib_data$function_id)
 
-  is_ko <- grepl(ko_pattern, features)
-  is_pathway <- grepl(pathway_pattern, features)
+  direct_matches <- intersect(function_ids, features)
+  matched_ids <- direct_matches
 
-  if (!any(is_ko | is_pathway)) {
+  unresolved <- setdiff(features, direct_matches)
+  if (length(unresolved) > 0 && is_ko_level_contrib(contrib_data, function_ids)) {
+    kegg_pathway_features <- unresolved[is_kegg_pathway_id(unresolved)]
+    if (length(kegg_pathway_features) > 0) {
+      ko_to_kegg <- load_reference_data("ko_to_kegg")
+      pathway_kos <- ko_to_kegg$ko_id[
+        ko_to_kegg$pathway_id %in% kegg_pathway_features
+      ]
+      matched_ids <- c(matched_ids, pathway_kos)
+    }
+  }
+
+  matched_ids <- unique(matched_ids)
+
+  if (length(matched_ids) == 0) {
     stop(
-      "None of the features look like KO IDs (K#####) or pathway IDs ",
-      "(ko#####/map#####/ec#####). Example: '",
-      paste(head(features, 2), collapse = "', '"),
-      "'. Check that your DAA input is KEGG-based."
+      "No contribution features matched the requested IDs. Direct matching is ",
+      "used for pathway-level contribution data; KEGG pathway IDs are expanded ",
+      "to KO IDs only when contribution data is KO-level. Requested examples: '",
+      paste(head(features, 2), collapse = "', '"), "'. Contribution examples: '",
+      paste(head(unique(function_ids), 2), collapse = "', '"), "'."
     )
   }
 
-  matched_kos <- character(0)
-  if (any(is_ko)) {
-    matched_kos <- c(matched_kos, features[is_ko])
-  }
-  if (any(is_pathway)) {
-    ko_to_kegg <- load_reference_data("ko_to_kegg")
-    pathway_kos <- ko_to_kegg$ko_id[ko_to_kegg$pathway_id %in% features[is_pathway]]
-    matched_kos <- c(matched_kos, pathway_kos)
-  }
-  matched_kos <- unique(matched_kos)
-
-  filtered <- contrib_data[contrib_data$function_id %in% matched_kos, ]
+  filtered <- contrib_data[function_ids %in% matched_ids, ]
   if (nrow(filtered) == 0) {
     stop(
       "No data remaining after filtering. Check that function IDs match ",
@@ -385,6 +375,161 @@ filter_contrib_by_features <- function(contrib_data, features) {
     )
   }
   filtered
+}
+
+#' Contribution feature-level labels
+#' @noRd
+contribution_feature_levels <- function() {
+  c(auto = "auto", gene_family = "gene_family", pathway = "pathway")
+}
+
+#' Normalize PICRUSt2 contribution table columns
+#' @noRd
+normalize_contrib_table <- function(contrib, type = contribution_feature_levels()) {
+  type <- match.arg(type)
+  contrib <- as.data.frame(contrib)
+
+  function_col <- resolve_function_id_column(contrib)
+
+  missing <- setdiff(c("sample", "taxon"), colnames(contrib))
+  if (is.null(function_col)) {
+    missing <- c(missing, "function")
+  }
+
+  if (!any(contribution_metric_candidates() %in% colnames(contrib))) {
+    missing <- c(missing, paste(contribution_metric_candidates(), collapse = " or "))
+  }
+
+  if (length(missing) > 0) {
+    stop(sprintf(
+      "Missing required columns: %s. Expected PICRUSt2 contribution format.",
+      paste(unique(missing), collapse = ", ")
+    ))
+  }
+
+  if (identical(function_col, "function")) {
+    colnames(contrib)[colnames(contrib) == "function"] <- "function_id"
+  }
+
+  contrib$function_id <- normalize_contrib_feature_ids(contrib$function_id)
+  feature_levels <- contribution_feature_levels()
+  detected_level <- detect_contrib_feature_level(contrib$function_id)
+  contrib$feature_level <- if (type == feature_levels[["auto"]]) detected_level else type
+
+  contrib
+}
+
+#' Resolve a contribution function ID column
+#' @noRd
+resolve_function_id_column <- function(data) {
+  if ("function_id" %in% colnames(data)) {
+    "function_id"
+  } else if ("function" %in% colnames(data)) {
+    "function"
+  } else {
+    NULL
+  }
+}
+
+#' Normalize contribution feature IDs without corrupting KEGG pathway IDs
+#' @noRd
+normalize_contrib_feature_ids <- function(ids) {
+  ids <- as.character(ids)
+  sub("^ko:(K\\d{5})$", "\\1", ids)
+}
+
+#' Detect whether contribution IDs represent gene families or pathways
+#' @noRd
+detect_contrib_feature_level <- function(ids) {
+  ids <- as.character(ids)
+  feature_levels <- contribution_feature_levels()
+  if (any(is_pathway_id(ids))) {
+    feature_levels[["pathway"]]
+  } else {
+    feature_levels[["gene_family"]]
+  }
+}
+
+#' Check whether contribution data is KO-level
+#' @noRd
+is_ko_level_contrib <- function(contrib_data, function_ids) {
+  if ("feature_level" %in% colnames(contrib_data)) {
+    gene_family_level <- contribution_feature_levels()[["gene_family"]]
+    return(any(contrib_data$feature_level == gene_family_level, na.rm = TRUE))
+  }
+  any(is_ko_id(function_ids))
+}
+
+#' Choose the contribution column used for aggregation
+#' @noRd
+choose_contribution_column <- function(contrib_data, contribution_col = "auto") {
+  if (!is.character(contribution_col) || length(contribution_col) != 1) {
+    stop("'contribution_col' must be a single column name or 'auto'.")
+  }
+
+  if (!identical(contribution_col, "auto")) {
+    if (!contribution_col %in% colnames(contrib_data)) {
+      stop("Column '", contribution_col, "' not found in contrib_data.")
+    }
+    return(contribution_col)
+  }
+
+  candidates <- contribution_metric_candidates()
+  available <- candidates[candidates %in% colnames(contrib_data)]
+  if (length(available) == 0) {
+    stop(
+      "contrib_data must contain one usable contribution column: ",
+      paste(candidates, collapse = ", "), "."
+    )
+  }
+
+  available[1]
+}
+
+#' Contribution metric columns in preference order
+#' @noRd
+contribution_metric_candidates <- function() {
+  c(
+    "norm_taxon_function_contrib",
+    "taxon_function_abun",
+    "taxon_rel_function_abun",
+    "abundance"
+  )
+}
+
+#' Normalize contribution metric values
+#' @noRd
+normalize_contribution_values <- function(values, contribution_col) {
+  if (is.numeric(values)) {
+    return(values)
+  }
+
+  converted <- suppressWarnings(as.numeric(values))
+  if (any(is.na(converted) & !is.na(values))) {
+    stop("Contribution column '", contribution_col, "' must be numeric.")
+  }
+  converted
+}
+
+#' Check KO identifiers
+#' @noRd
+is_ko_id <- function(ids) {
+  grepl("^K\\d{5}$", as.character(ids))
+}
+
+#' Check KEGG pathway identifiers
+#' @noRd
+is_kegg_pathway_id <- function(ids) {
+  grepl("^(ko|map)\\d{5}$", as.character(ids))
+}
+
+#' Check pathway-like identifiers supported by PICRUSt2 outputs
+#' @noRd
+is_pathway_id <- function(ids) {
+  ids <- as.character(ids)
+  is_kegg_pathway_id(ids) |
+    grepl("^(PWY|PWYG|PWY0|PWY\\d|[A-Z0-9]+-PWY)", ids) |
+    grepl("-PWY$", ids)
 }
 
 #' Parse a QIIME2-style taxonomy string

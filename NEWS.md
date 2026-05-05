@@ -1,3 +1,17 @@
+# ggpicrust2 2.5.16
+
+## New Features
+
+* Added pathway-level taxa contribution support for PICRUSt2
+  `path_abun_contrib.tsv` output via `read_pathway_contrib_file()` and
+  expanded `read_contrib_file(type = "auto")` parsing.
+* `aggregate_taxa_contributions()` now supports contribution tables that do
+  not contain `norm_taxon_function_contrib`, using available PICRUSt2
+  contribution metrics without requiring a differential abundance step.
+* `pathway_annotation()` now accepts data-frame input, including
+  rowname-based `ko2kegg_abundance()` output, and can annotate local KEGG
+  pathway IDs with `pathway = "KEGG"`.
+
 # ggpicrust2 2.5.14
 
 ## Behavior Changes

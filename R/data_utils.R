@@ -28,10 +28,13 @@ read_abundance_file <- function(file_path) {
   }
 
   file_ext <- tolower(tools::file_ext(file_path))
+  if (identical(file_ext, "gz")) {
+    file_ext <- tolower(tools::file_ext(tools::file_path_sans_ext(file_path)))
+  }
   if (!file_ext %in% c("txt", "tsv", "csv")) {
     stop(
       "Unsupported file format '.", file_ext, "'. ",
-      "Accepted formats: .tsv, .txt, .csv"
+      "Accepted formats: .tsv, .txt, .csv, .tsv.gz, .txt.gz, .csv.gz"
     )
   }
 
