@@ -12,6 +12,13 @@
   rowname-based `ko2kegg_abundance()` output, and can annotate local KEGG
   pathway IDs with `pathway = "KEGG"`.
 
+## Bug Fixes
+
+* Corrected the multi-group ALDEx2 method label from
+  `ALDEx2_Kruskal-Wallace test` to `ALDEx2_Kruskal-Wallis test`; package
+  internals still recognize the legacy spelling as an alias for
+  backward compatibility.
+
 # ggpicrust2 2.5.14
 
 ## Behavior Changes

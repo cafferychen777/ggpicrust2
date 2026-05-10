@@ -1026,6 +1026,9 @@ create_empty_gsea_result <- function(method = "unknown", full = FALSE) {
   }
 }
 
+.daa_method_aldex2_kruskal_wallis <- "ALDEx2_Kruskal-Wallis test"
+.daa_method_aliases <- c("ALDEx2_Kruskal-Wallace test" = .daa_method_aldex2_kruskal_wallis)
+
 #' Validate DAA results data frame
 #'
 #' Validates that a DAA results data frame meets requirements for visualization
@@ -1039,7 +1042,8 @@ create_empty_gsea_result <- function(method = "unknown", full = FALSE) {
 validate_daa_results <- function(daa_results_df,
                                   require_single_method = TRUE,
                                   require_single_group_pair = TRUE) {
-  if (require_single_method && length(unique(daa_results_df$method)) != 1) {
+  if (require_single_method &&
+      length(unique(canonicalize_daa_method_names(daa_results_df$method))) != 1) {
     stop("daa_results_df contains multiple methods. Filter to one method first.")
   }
   if (require_single_group_pair) {
@@ -1049,6 +1053,25 @@ validate_daa_results <- function(daa_results_df,
     }
   }
   invisible(TRUE)
+}
+
+#' Canonicalize DAA method names
+#'
+#' @param method Character vector of DAA method names
+#' @return Character vector with legacy aliases mapped to canonical names
+#' @keywords internal
+#' @noRd
+canonicalize_daa_method_names <- function(method) {
+  if (is.factor(method)) {
+    method <- as.character(method)
+  }
+  if (!is.character(method)) {
+    return(method)
+  }
+
+  aliased <- !is.na(method) & method %in% names(.daa_method_aliases)
+  method[aliased] <- unname(.daa_method_aliases[method[aliased]])
+  method
 }
 
 #' Require a column exists in a data frame

@@ -263,6 +263,23 @@ test_that("compare_daa_results() counts partial-agreement features as diffs", {
   expect_equal(out$diff_features[out$method == "m2"], "B")
 })
 
+test_that("compare_daa_results() canonicalizes the legacy ALDEx2 KW label", {
+  df <- data.frame(feature = "A",
+                   group1 = "g1", group2 = "g2",
+                   p_adjust = 0.01,
+                   stringsAsFactors = FALSE)
+
+  suppressMessages(
+    out <- compare_daa_results(
+      list(df),
+      method_names = "ALDEx2_Kruskal-Wallace test",
+      p_values_threshold = 0.05
+    )
+  )
+
+  expect_equal(out$method, "ALDEx2_Kruskal-Wallis test")
+})
+
 
 # -----------------------------------------------------------------------------
 # Issue 6: visualize_gsea() heatmap branch used to rely solely on

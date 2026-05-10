@@ -415,7 +415,7 @@ kegg_abundance <- ko2kegg_abundance("path/to/your/pred_metagenome_unstrat.tsv")
 # include_effect_size = FALSE to skip that step.
 daa_results_df <- pathway_daa(abundance = kegg_abundance, metadata = metadata, group = "Environment", daa_method = "ALDEx2", select = NULL, reference = NULL)
 
-# Filter results for ALDEx2_Welch's t test method
+# Filter results for ALDEx2_Wilcoxon rank test method
 # Please check the unique(daa_results_df$method) and choose one
 daa_sub_method_results_df <- daa_results_df[daa_results_df$method == "ALDEx2_Wilcoxon rank test", ]
 
@@ -448,7 +448,7 @@ ko_abundance <- read.delim("path/to/your/pred_metagenome_unstrat.tsv")
 # overlap) are included by default; see the section above.
 daa_results_df <- pathway_daa(abundance = ko_abundance %>% column_to_rownames("#NAME"), metadata = metadata, group = "Environment", daa_method = "ALDEx2", select = NULL, reference = NULL)
 
-# Filter results for ALDEx2_Kruskal-Wallace test method
+# Filter results for ALDEx2_Wilcoxon rank test method
 daa_sub_method_results_df <- daa_results_df[daa_results_df$method == "ALDEx2_Wilcoxon rank test", ]
 
 # Annotate pathway results without KO to KEGG conversion

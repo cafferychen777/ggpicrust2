@@ -276,9 +276,11 @@ ggpicrust2 <- function(file = NULL,
   Group_vec <- metadata[[group]]
   names(Group_vec) <- colnames(abundance)
 
-  for (i in seq_along(unique(daa_results_df$method))) {
-    method_name <- unique(daa_results_df$method)[i]
-    daa_sub_method_results_df <- daa_results_df[daa_results_df$method == method_name, ]
+  canonical_methods <- canonicalize_daa_method_names(daa_results_df$method)
+  method_names <- unique(canonical_methods)
+  for (i in seq_along(method_names)) {
+    method_name <- method_names[i]
+    daa_sub_method_results_df <- daa_results_df[canonical_methods == method_name, , drop = FALSE]
 
     combination_bar_plot <- pathway_errorbar(
       abundance = abundance,

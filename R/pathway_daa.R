@@ -647,7 +647,7 @@ perform_aldex2_analysis <- function(abundance_mat, Group, Level, length_Level, i
 
     result_df <- data.frame(
       feature = rep(rownames(results), 2),
-      method = c(rep("ALDEx2_Kruskal-Wallace test", nrow(results)),
+      method = c(rep(.daa_method_aldex2_kruskal_wallis, nrow(results)),
                  rep("ALDEx2_glm test", nrow(results))),
       p_values = c(results$kw.ep, results$glm.ep),
       p_adjust = c(results$kw.eBH, results$glm.eBH),

@@ -83,6 +83,7 @@ compare_daa_results <- function(daa_results_list, method_names, p_values_thresho
   if (p_values_threshold <= 0 || p_values_threshold > 1) {
     stop("'p_values_threshold' must be between 0 and 1")
   }
+  method_names <- canonicalize_daa_method_names(method_names)
 
   # Initialize a list to store the features obtained by each method
   features <- list()

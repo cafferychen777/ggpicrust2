@@ -117,6 +117,29 @@ test_that("validate_abundance tolerates a non-numeric ID column in data frames",
   expect_true(va(df))
 })
 
+test_that("DAA method name aliases canonicalize the legacy ALDEx2 spelling", {
+  canonicalize <- getFromNamespace("canonicalize_daa_method_names", "ggpicrust2")
+  validate_results <- getFromNamespace("validate_daa_results", "ggpicrust2")
+
+  old_name <- "ALDEx2_Kruskal-Wallace test"
+  new_name <- "ALDEx2_Kruskal-Wallis test"
+
+  expect_equal(canonicalize(old_name), new_name)
+  expect_equal(canonicalize(factor(old_name)), new_name)
+
+  mixed_alias_df <- data.frame(
+    feature = c("pathway1", "pathway2"),
+    method = c(old_name, new_name),
+    group1 = c("A", "A"),
+    group2 = c("B", "B"),
+    p_values = c(0.01, 0.02),
+    p_adjust = c(0.03, 0.04),
+    stringsAsFactors = FALSE
+  )
+
+  expect_true(validate_results(mixed_alias_df))
+})
+
 # Unit tests for summarize_abundance_by_group(), the per-feature/per-group
 # mean/sd helper that pathway_errorbar() and calculate_abundance_stats()
 # both route through. Locks down contract so future refactors do not
