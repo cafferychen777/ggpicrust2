@@ -203,14 +203,11 @@ visualize_gsea <- function(gsea_results,
       stop("GSEA results missing required columns for enrichment plot")
     }
 
-    # Create a simple enrichment plot using ggplot2
-    # In a real implementation, we would use enrichplot::gseaplot2
-    # But for simplicity, we'll create a basic version
-
-    # Sort by NES
-    gsea_results <- gsea_results[order(gsea_results$NES), ]
-
-    # Create a basic barplot of NES values
+    # Create a basic barplot of NES values.
+    # Visual ordering is handled by reorder() in the aesthetic, so there is
+    # no need to sort the data frame here. The user's sort_by parameter
+    # already determined which pathways were selected (top N); the display
+    # order within the plot is always by NES magnitude via the reorder() call.
     p <- ggplot2::ggplot(gsea_results, ggplot2::aes(x = reorder(.data$pathway_label, .data$NES), y = .data$NES, fill = .data$p.adjust)) +
       ggplot2::geom_bar(stat = "identity") +
       ggplot2::coord_flip() +

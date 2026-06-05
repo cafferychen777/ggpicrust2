@@ -4,7 +4,7 @@
 \alias{run_fgsea}
 \title{Run fgsea using the recommended fgseaMultilevel method}
 \usage{
-run_fgsea(ranked_list, gene_sets, min_size = 10, max_size = 500)
+run_fgsea(ranked_list, gene_sets, min_size = 5, max_size = 500)
 }
 \arguments{
 \item{ranked_list}{A named vector of ranking statistics}

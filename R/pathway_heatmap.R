@@ -584,22 +584,18 @@ pathway_heatmap <- function(abundance,
     }
   }
 
-  # Print the ordered sample names and group levels
+  # Log ordering summary (counts only — full name lists are too verbose)
   if (!cluster_cols) {
-    message("The Sample Names in order from left to right are:")
-    message(paste(ordered_sample_names, collapse = ", "))
-    message("The Group Levels in order from left to right are:")
-    message(paste(ordered_group_levels, collapse = ", "))
+    message(sprintf("Samples ordered by group (%d samples, %d groups)",
+                    length(ordered_sample_names), length(unique(ordered_group_levels))))
   } else {
     message("Samples ordered by hierarchical clustering (",
             clustering_method, " method, ", clustering_distance, " distance)")
-    message("Column order: ", paste(col_order, collapse = ", "))
   }
 
   if (cluster_rows) {
     message("Pathways ordered by hierarchical clustering (",
             clustering_method, " method, ", clustering_distance, " distance)")
-    message("Row order: ", paste(row_order, collapse = ", "))
   }
 
   return(p)

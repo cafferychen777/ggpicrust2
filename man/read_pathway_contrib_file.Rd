@@ -22,7 +22,15 @@ pipeline and returns the same normalized contribution schema used by
 }
 \examples{
 \donttest{
-path_contrib <- read_pathway_contrib_file("path_abun_contrib.tsv.gz")
+# From a data.frame
+path_contrib_df <- data.frame(
+  sample = rep(c("S1", "S2"), each = 2),
+  `function` = rep(c("PWY-1234", "PWY-5678"), times = 2),
+  taxon = c("ASV1", "ASV2", "ASV1", "ASV2"),
+  taxon_function_abun = c(10, 5, 12, 4),
+  check.names = FALSE
+)
+path_contrib <- read_pathway_contrib_file(data = path_contrib_df)
 head(path_contrib)
 }
 

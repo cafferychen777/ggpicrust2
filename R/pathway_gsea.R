@@ -697,7 +697,7 @@ calculate_rank_metric <- function(abundance,
 #' @keywords internal
 run_fgsea <- function(ranked_list,
                      gene_sets,
-                     min_size = 10,
+                     min_size = 5,
                      max_size = 500) {
   # Use fgseaMultilevel (default when nperm is NOT passed).
   # fgseaMultilevel uses adaptive multilevel splitting Monte Carlo,
@@ -728,7 +728,7 @@ run_fgsea <- function(ranked_list,
       stringsAsFactors = FALSE
     )
   } else {
-    results <- create_empty_gsea_result(full = TRUE)
+    results <- create_empty_gsea_result("fgsea", full = TRUE)
   }
 
   return(results)
@@ -776,15 +776,8 @@ run_limma_gsea <- function(abundance_mat,
   group_levels <- levels(factor(metadata[[group]]))
 
   if (is.null(contrast)) {
-    # Default: test the group effect (second column for intercept model)
-    # or construct a contrast for no-intercept model
-    if (ncol(design) >= 2 && grepl(group, colnames(design)[2])) {
-      # Intercept model: test second coefficient
-      contrast_coef <- 2
-    } else {
-      # Create contrast: second group vs first group
-      contrast_coef <- 2
-    }
+    # Default: test the group effect (column 2 in an intercept model)
+    contrast_coef <- 2
   } else if (is.numeric(contrast)) {
     contrast_coef <- contrast
   } else if (is.character(contrast)) {
@@ -796,7 +789,8 @@ run_limma_gsea <- function(abundance_mat,
     }
     contrast_coef <- contrast_col[1]
   } else {
-    contrast_coef <- 2
+    stop("'contrast' must be NULL, a numeric column index, or a character column name, not ",
+         class(contrast)[1], ".")
   }
 
   # Convert gene sets to index format for limma

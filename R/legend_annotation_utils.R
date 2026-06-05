@@ -77,8 +77,12 @@ get_significance_stars <- function(p_values,
   }
   
   stars <- character(length(p_values))
-  
-  for (i in seq_along(thresholds)) {
+
+  # Iterate from least to most significant threshold so that more
+  # significant assignments overwrite less significant ones.
+  # e.g. p=0.0001 matches all three thresholds (0.05, 0.01, 0.001)
+  # but should get "***" (the last overwrite), not "*" (the first).
+  for (i in rev(seq_along(thresholds))) {
     stars[p_values < thresholds[i]] <- symbols[i]
   }
   
@@ -103,8 +107,10 @@ get_significance_colors <- function(p_values,
   }
   
   result_colors <- rep(default_color, length(p_values))
-  
-  for (i in seq_along(thresholds)) {
+
+  # Same reverse-iteration logic as get_significance_stars(): process
+  # from least to most significant so the tightest matching threshold wins.
+  for (i in rev(seq_along(thresholds))) {
     result_colors[p_values < thresholds[i]] <- colors[i]
   }
   
@@ -142,12 +148,14 @@ create_legend_theme <- function(position = "top",
   
   # Validate inputs
   position <- match.arg(position, c("top", "bottom", "left", "right", "none"))
-  direction <- match.arg(direction, c("horizontal", "vertical"))
   box_just <- match.arg(box_just, c("center", "top", "bottom", "left", "right"))
-  
-  # Auto-adjust direction based on position if not explicitly set
+
+  # Auto-adjust direction based on position if not explicitly set;
+  # must check missing() BEFORE match.arg() which evaluates the formal
   if (missing(direction)) {
     direction <- ifelse(position %in% c("top", "bottom"), "horizontal", "vertical")
+  } else {
+    direction <- match.arg(direction, c("horizontal", "vertical"))
   }
   
   # Create legend theme

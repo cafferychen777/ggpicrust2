@@ -237,9 +237,10 @@ pathway_ridgeplot <- function(gsea_results,
 
    # Get direction if available
    direction <- if (!is.null(direction_col)) {
-     as.character(df[[direction_col]][i])
-   } else if (has_nes) {
-     ifelse(df$NES[i] > 0, "Up", "Down")
+     d <- as.character(df[[direction_col]][i])
+     if (is.na(d)) "Unknown" else d
+   } else if (has_nes && !is.na(df$NES[i])) {
+     if (df$NES[i] > 0) "Up" else "Down"
    } else {
      "Unknown"
    }

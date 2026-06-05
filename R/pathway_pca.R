@@ -106,7 +106,7 @@ pathway_pca <- function(abundance,
   # Input validation using unified functions
   validate_abundance(abundance, min_samples = 3)
   validate_metadata(metadata)
-  validate_group(metadata, group, min_groups = 1)
+  validate_group(metadata, group, min_groups = 2)
 
   # Align samples between abundance and metadata
   aligned <- align_samples(abundance, metadata)

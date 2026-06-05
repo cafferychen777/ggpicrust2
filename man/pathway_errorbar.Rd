@@ -52,7 +52,7 @@
 
 \item{legend_nrow}{A numeric value specifying number of rows in legend. If NULL, automatic layout is used.}
 
-\item{pvalue_format}{A character string specifying p-value format. Options: "numeric", "scientific", "smart", "stars_only", "combined". Default is "smart".}
+\item{pvalue_format}{A character string specifying p-value format. Options: "numeric", "scientific", "smart", "stars_only", "combined". Default is "numeric".}
 
 \item{pvalue_stars}{A logical parameter indicating whether to display significance stars. Default is TRUE.}
 
@@ -74,7 +74,7 @@
 
 \item{pathway_class_text_angle}{A numeric value specifying pathway class text angle in degrees. Default is 0.}
 
-\item{pathway_class_position}{A character string specifying pathway class position. Options: "left", "right", "none". Default is "left".}
+\item{pathway_class_position}{A character string specifying pathway class position. Options: "left", "right", "none". Default is "right".}
 
 \item{pathway_names_text_size}{A numeric value or "auto" for pathway names (y-axis labels) text size. Default is "auto".}
 }

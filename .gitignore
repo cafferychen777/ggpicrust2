@@ -126,3 +126,7 @@ cran_*.png
 # Local agent artifacts
 .codex/
 AGENTS.md
+
+# Personal research documents (not for public repo)
+ggpicrust2_bioinformatics_2023.pdf
+presubmission_summary.*

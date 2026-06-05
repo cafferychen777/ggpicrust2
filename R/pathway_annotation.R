@@ -254,8 +254,8 @@ process_kegg_annotations <- function(df, organism = NULL, p_adjust_threshold = 0
       result
     }, error = function(e) {
       log_message(sprintf("Error processing %s: %s", ko_id, e$message), "ERROR")
-      error_count <- error_count + 1
-      error_ids <- c(error_ids, ko_id)
+      error_count <<- error_count + 1
+      error_ids <<- c(error_ids, ko_id)
       NULL
     })
     

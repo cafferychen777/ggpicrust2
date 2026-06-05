@@ -117,6 +117,10 @@ pathway_volcano <- function(daa_results,
    stop("'daa_results' must be a data frame.")
  }
 
+ if (!is.numeric(fc_threshold) || length(fc_threshold) != 1 || fc_threshold < 0) {
+   stop("'fc_threshold' must be a single non-negative number.", call. = FALSE)
+ }
+
  # Backward compatibility: accept legacy column name
  if (fc_col == "log2_fold_change" && !fc_col %in% colnames(daa_results) &&
      "log2FoldChange" %in% colnames(daa_results)) {

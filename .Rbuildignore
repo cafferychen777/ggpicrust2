@@ -35,6 +35,7 @@
 ^ggpicrust\.R$
 ^ggpicrust2.*\.tar\.gz$
 ^GITHUB_RESPONSE.*\.md$
+^ggpicrust2_bioinformatics_2023\.pdf$
 ^ISSUE_.*\.md$
 ^ISSUE_.*\.txt$
 ^JESSICA_.*\.md$
@@ -44,6 +45,7 @@
 ^Meta$
 ^Package version$
 ^PENDING_ISSUES_PRIORITY\.md$
+^presubmission_summary\.(pdf|tex|txt)$
 ^pkgdown$
 ^README\.html$
 ^README\.knit\.md$
@@ -58,5 +60,6 @@
 ^temp_cleanup/$
 ^temp_cleanup$
 ^test_alignment\.*$
+^tests/testthat/Rplots\.pdf$
 ^vignettes/articles$
 ^vignettes/figures$

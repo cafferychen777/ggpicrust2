@@ -25,7 +25,7 @@
 #' @param legend_key_size A numeric value specifying legend key size in cm. Default is 0.8.
 #' @param legend_ncol A numeric value specifying number of columns in legend. If NULL, automatic layout is used.
 #' @param legend_nrow A numeric value specifying number of rows in legend. If NULL, automatic layout is used.
-#' @param pvalue_format A character string specifying p-value format. Options: "numeric", "scientific", "smart", "stars_only", "combined". Default is "smart".
+#' @param pvalue_format A character string specifying p-value format. Options: "numeric", "scientific", "smart", "stars_only", "combined". Default is "numeric".
 #' @param pvalue_stars A logical parameter indicating whether to display significance stars. Default is TRUE.
 #' @param pvalue_colors A logical parameter indicating whether to use color coding for significance levels. Default is FALSE.
 #' @param pvalue_size A numeric value or "auto" for p-value text size. Default is "auto".
@@ -36,7 +36,7 @@
 #' @param pathway_class_text_color A character string for pathway class text color. Use "auto" for theme-based color. Default is "black".
 #' @param pathway_class_text_face A character string for pathway class text face. Options: "plain", "bold", "italic". Default is "bold".
 #' @param pathway_class_text_angle A numeric value specifying pathway class text angle in degrees. Default is 0.
-#' @param pathway_class_position A character string specifying pathway class position. Options: "left", "right", "none". Default is "left".
+#' @param pathway_class_position A character string specifying pathway class position. Options: "left", "right", "none". Default is "right".
 #' @param pathway_names_text_size A numeric value or "auto" for pathway names (y-axis labels) text size. Default is "auto".
 #' @importFrom stats sd
 #' @return A ggplot2 (patchwork) plot showing the error bar plot of the differential abundance analysis results for the functional pathways.
@@ -395,72 +395,74 @@ pathway_errorbar <-
       )
     }
 
-    switch(
+    # Validate the order parameter up front.
+    valid_orders <- c("p_values", "name", "group", "pathway_class")
+    if (!order %in% valid_orders) {
+      stop(sprintf(
+        "'order' must be one of: %s. Got '%s'.",
+        paste(valid_orders, collapse = ", "), order
+      ))
+    }
+
+    # Compute the row permutation index. Named `sort_idx` to avoid
+    # shadowing the `order` parameter with the integer index vector
+    # returned by base::order().
+    sort_idx <- switch(
       order,
       "p_values" = {
-	        if (ko_to_kegg) {
-          # Nested sorting: first by pathway_class, then by p_adjust within each class
-          # This ensures pathway class color blocks align correctly
-          order <- order(
+        if (ko_to_kegg) {
+          order(
             daa_results_filtered_sub_df$pathway_class,
             daa_results_filtered_sub_df$p_adjust
           )
         } else {
-          order <- order(daa_results_filtered_sub_df$p_adjust)
+          order(daa_results_filtered_sub_df$p_adjust)
         }
       },
       "name" = {
-	        if (ko_to_kegg) {
-          # Nested sorting: first by pathway_class, then by feature name within each class
-          order <- order(
+        if (ko_to_kegg) {
+          order(
             daa_results_filtered_sub_df$pathway_class,
             daa_results_filtered_sub_df$feature
           )
         } else {
-          order <- order(daa_results_filtered_sub_df$feature)
+          order(daa_results_filtered_sub_df$feature)
         }
       },
       "group" = {
-	        # Track the group with the highest mean abundance per feature.
-	        # Ties are resolved by the original group-level order so ordering is
-	        # deterministic and assigns exactly one group per feature.
-	        daa_results_filtered_sub_df$pro <- NA_character_
+        # Track the group with the highest mean abundance per feature.
+        # Ties are resolved by the original group-level order so ordering is
+        # deterministic and assigns exactly one group per feature.
+        daa_results_filtered_sub_df$pro <- NA_character_
 
-	        for (i in levels(error_bar_pivot_longer_tibble_summarised$name)) {
-          # Get subset for current feature
+        for (i in levels(error_bar_pivot_longer_tibble_summarised$name)) {
           error_bar_pivot_longer_tibble_summarised_sub <-
             error_bar_pivot_longer_tibble_summarised[error_bar_pivot_longer_tibble_summarised$name == i,]
 
-          # Find group with maximum mean abundance
-	          group_means <- stats::setNames(
-	            error_bar_pivot_longer_tibble_summarised_sub$mean,
-	            as.character(error_bar_pivot_longer_tibble_summarised_sub$group)
-	          )
-	          tied_groups <- names(group_means)[group_means == max(group_means, na.rm = TRUE)]
-	          pro_group <- Group_levels[Group_levels %in% tied_groups][1]
+          group_means <- stats::setNames(
+            error_bar_pivot_longer_tibble_summarised_sub$mean,
+            as.character(error_bar_pivot_longer_tibble_summarised_sub$group)
+          )
+          tied_groups <- names(group_means)[group_means == max(group_means, na.rm = TRUE)]
+          pro_group <- Group_levels[Group_levels %in% tied_groups][1]
 
-	          # Find indices of rows matching the current feature, excluding NA values
           idx <- which(daa_results_filtered_sub_df$feature == i & !is.na(daa_results_filtered_sub_df$feature))
 
-          # Only assign values if valid indices exist
           if (length(idx) > 0) {
             daa_results_filtered_sub_df$pro[idx] <- pro_group
           }
         }
 
-	        if (ko_to_kegg) {
-          # Nested sorting: first by pathway_class, then by group and p_adjust within each class
-          order <- order(
+        if (ko_to_kegg) {
+          order(
             daa_results_filtered_sub_df$pathway_class,
-	            factor(daa_results_filtered_sub_df$pro, levels = Group_levels),
-	            daa_results_filtered_sub_df$p_adjust
-	          )
-	        } else {
-	          # Order by group and p-value
-	          order <-
-	            order(factor(daa_results_filtered_sub_df$pro, levels = Group_levels),
-	                  daa_results_filtered_sub_df$p_adjust)
-	        }
+            factor(daa_results_filtered_sub_df$pro, levels = Group_levels),
+            daa_results_filtered_sub_df$p_adjust
+          )
+        } else {
+          order(factor(daa_results_filtered_sub_df$pro, levels = Group_levels),
+                daa_results_filtered_sub_df$p_adjust)
+        }
       },
       "pathway_class" = {
         if (!"pathway_class" %in% colnames(daa_results_filtered_sub_df)) {
@@ -469,18 +471,15 @@ pathway_errorbar <-
             "Please use the 'pathway_annotation' function to annotate the 'pathway_daa' results."
           )
         }
-        order <- order(
+        order(
           daa_results_filtered_sub_df$pathway_class,
           daa_results_filtered_sub_df$p_adjust
         )
-      },
-      {
-        order <- order
       }
     )
 
     daa_results_filtered_sub_df <-
-      daa_results_filtered_sub_df[order,]
+      daa_results_filtered_sub_df[sort_idx,]
 
     # Reorder data to match daa_results_filtered_sub_df$feature order
     # Using match() instead of loop rbind() for O(n) vs O(n²) performance

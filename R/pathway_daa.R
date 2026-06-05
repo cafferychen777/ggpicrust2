@@ -556,7 +556,7 @@ pathway_daa <- function(abundance, metadata, group, daa_method = "ALDEx2",
 }
 
 # Helper function: Perform ALDEx2 analysis
-perform_aldex2_analysis <- function(abundance_mat, Group, Level, length_Level, include_effect_size = FALSE) {
+perform_aldex2_analysis <- function(abundance_mat, Group, Level, length_Level, include_effect_size = TRUE) {
   # Filter zero-abundance features (ALDEx2 requirement)
   abundance_mat <- validate_daa_input(abundance_mat, method = "ALDEx2", filter_zero = TRUE)
   abundance_mat <- round(abundance_mat)
