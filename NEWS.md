@@ -1,3 +1,51 @@
+# ggpicrust2 2.5.17
+
+## Bug Fixes
+
+* Fixed R scoping bug in `pathway_annotation()`: error counting inside
+  `tryCatch()` error handler used `<-` (local assignment) instead of `<<-`,
+  so `error_count` and `error_ids` were silently never updated when KEGG
+  API calls failed.
+* Fixed dead auto-adjust logic in `create_legend_theme()`: `missing(direction)`
+  was checked after `match.arg(direction, ...)` which always evaluates the
+
+  formal, so the auto-adjust based on legend position never executed.
+* Aligned `run_fgsea()` internal `min_size` default (was 10) with the
+  public `pathway_gsea()` API default of 5.
+* Aligned `perform_aldex2_analysis()` internal `include_effect_size` default
+  (was `FALSE`) with the public `pathway_daa()` API default of `TRUE`.
+* Fixed `run_fgsea()` empty-result path: missing method argument to
+  `create_empty_gsea_result()` produced `method = "unknown"` instead of
+  `"fgsea"`.
+* Collapsed dead contrast-selection branches in `run_limma_gsea()` where
+  both if/else paths assigned the same value; the unreachable final `else`
+  now raises an informative error for unexpected `contrast` types.
+* Fixed `pathway_errorbar()` documentation defaults for `pvalue_format`
+  (was "smart", code uses "numeric") and `pathway_class_position` (was
+  "left", code uses "right").
+* Fixed significance star/color assignment in `get_significance_stars()` and
+  `get_significance_colors()`: iteration order now goes from least to most
+  significant threshold so the tightest match wins.
+* `pathway_pca()` now correctly requires at least 2 groups (`min_groups = 2`)
+  instead of allowing single-group input that produces a degenerate PCA.
+* `pathway_ridgeplot()` now guards against `NA` values in direction and NES
+  columns instead of silently propagating them into ggplot aesthetics.
+* `pathway_volcano()` now validates that `fc_threshold` is a non-negative
+  number.
+* Corrected the multi-group ALDEx2 method label from
+  `ALDEx2_Kruskal-Wallace test` to `ALDEx2_Kruskal-Wallis test`; package
+  internals still recognize the legacy spelling as an alias for
+  backward compatibility.
+
+## Internal
+
+* Renamed `order` variable to `sort_idx` in `pathway_errorbar()` to avoid
+  shadowing the function parameter; removed unreachable default `switch()`
+  branch.
+* Removed redundant pre-sort in `visualize_gsea()` enrichment plot
+  (`reorder()` in the aesthetic handles display ordering).
+* Trimmed verbose per-sample/per-row log messages in `pathway_heatmap()`.
+
 # ggpicrust2 2.5.16
 
 ## New Features
@@ -11,13 +59,6 @@
 * `pathway_annotation()` now accepts data-frame input, including
   rowname-based `ko2kegg_abundance()` output, and can annotate local KEGG
   pathway IDs with `pathway = "KEGG"`.
-
-## Bug Fixes
-
-* Corrected the multi-group ALDEx2 method label from
-  `ALDEx2_Kruskal-Wallace test` to `ALDEx2_Kruskal-Wallis test`; package
-  internals still recognize the legacy spelling as an alias for
-  backward compatibility.
 
 # ggpicrust2 2.5.14
 
