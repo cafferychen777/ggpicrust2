@@ -117,6 +117,103 @@ test_that("validate_abundance tolerates a non-numeric ID column in data frames",
   expect_true(va(df))
 })
 
+test_that("normalize_abundance_feature_ids moves a leading ID column to row names", {
+  normalize <- getFromNamespace("normalize_abundance_feature_ids", "ggpicrust2")
+
+  df <- data.frame(
+    feature = c("K00001", "K00002", "K00003"),
+    S1 = c(10, 20, 30),
+    S2 = c(5, 15, 25),
+    stringsAsFactors = FALSE
+  )
+
+  normalized <- normalize(df, context = "unit-test abundance")
+
+  expect_equal(rownames(normalized), df$feature)
+  expect_equal(colnames(normalized), c("S1", "S2"))
+  expect_true(all(vapply(normalized, is.numeric, logical(1))))
+})
+
+test_that("normalize_abundance_feature_ids rejects duplicated leading feature IDs", {
+  normalize <- getFromNamespace("normalize_abundance_feature_ids", "ggpicrust2")
+
+  df <- data.frame(
+    feature = c("K00001", "K00001", "K00003"),
+    S1 = c(10, 20, 30),
+    S2 = c(5, 15, 25),
+    stringsAsFactors = FALSE
+  )
+
+  expect_error(
+    normalize(df, context = "unit-test abundance"),
+    "duplicated identifiers: K00001"
+  )
+})
+
+test_that("validate_abundance requires numeric sample values", {
+  va <- getFromNamespace("validate_abundance", "ggpicrust2")
+
+  bad_matrix <- matrix(
+    as.character(1:6),
+    nrow = 2,
+    dimnames = list(c("f1", "f2"), c("S1", "S2", "S3"))
+  )
+  expect_error(
+    va(bad_matrix),
+    "matrix must be numeric"
+  )
+
+  bad_df <- data.frame(
+    feature = c("f1", "f2"),
+    S1 = c(1, 2),
+    S2 = c("3", "4"),
+    stringsAsFactors = FALSE
+  )
+  expect_error(
+    va(bad_df),
+    "Non-numeric sample column\\(s\\): S2"
+  )
+})
+
+test_that("validate_abundance counts samples after excluding a leading ID column", {
+  va <- getFromNamespace("validate_abundance", "ggpicrust2")
+
+  one_sample <- data.frame(
+    feature = c("f1", "f2"),
+    S1 = c(1, 2),
+    stringsAsFactors = FALSE
+  )
+
+  expect_error(
+    va(one_sample, min_samples = 2),
+    "At least 2 samples are required, found 1"
+  )
+})
+
+test_that("validate_group requires a single metadata column name", {
+  validate_group <- getFromNamespace("validate_group", "ggpicrust2")
+  metadata <- data.frame(
+    sample = paste0("S", 1:4),
+    group = c("A", "A", "B", "B"),
+    batch = c("X", "X", "Y", "Y"),
+    stringsAsFactors = FALSE
+  )
+
+  expect_true(validate_group(metadata, "group"))
+  expect_error(
+    validate_group(metadata, c("group", "batch")),
+    "'group' must be a single non-empty character string"
+  )
+  expect_error(
+    validate_group(metadata, NA_character_),
+    "'group' must be a single non-empty character string"
+  )
+  expect_error(
+    validate_group(metadata, ""),
+    "'group' must be a single non-empty character string"
+  )
+})
+
 test_that("DAA method name aliases canonicalize the legacy ALDEx2 spelling", {
   canonicalize <- getFromNamespace("canonicalize_daa_method_names", "ggpicrust2")
   validate_results <- getFromNamespace("validate_daa_results", "ggpicrust2")

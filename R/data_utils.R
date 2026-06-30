@@ -446,20 +446,16 @@ validate_abundance <- function(abundance, min_samples = 2, require_numeric = TRU
     stop("'abundance' must be a data frame or matrix")
   }
 
-  if (ncol(abundance) < min_samples) {
-    stop(sprintf("At least %d samples are required, found %d", min_samples, ncol(abundance)))
-  }
+  sample_cols <- abundance_sample_columns(abundance, require_numeric = require_numeric)
+  n_samples <- length(sample_cols)
 
-  if (require_numeric && is.data.frame(abundance)) {
-    # Check if numeric columns exist (excluding potential ID column)
-    numeric_cols <- sapply(abundance, is.numeric)
-    if (sum(numeric_cols) == 0) {
-      stop("Abundance data must contain numeric values")
-    }
+  if (n_samples < min_samples) {
+    stop(sprintf("At least %d samples are required, found %d", min_samples, n_samples))
   }
 
   if (check_zero_columns) {
-    numeric_mat <- abundance_to_numeric_matrix(abundance)
+    numeric_mat <- abundance_to_numeric_matrix(abundance,
+                                               sample_cols = sample_cols)
     if (!is.null(numeric_mat)) {
       col_totals <- colSums(numeric_mat, na.rm = FALSE)
       bad <- which(!is.finite(col_totals) | col_totals == 0)
@@ -477,6 +473,85 @@ validate_abundance <- function(abundance, min_samples = 2, require_numeric = TRU
   TRUE
 }
 
+#' Identify abundance sample columns
+#'
+#' A data.frame may carry one leading feature-ID column (for example a
+#' PICRUSt2 '#NAME' column). Every remaining column is a sample and must be
+#' numeric when require_numeric is TRUE. Matrices have no separate ID column,
+#' so the whole matrix must be numeric.
+#' @noRd
+abundance_sample_columns <- function(abundance, require_numeric = TRUE) {
+  if (is.matrix(abundance)) {
+    if (require_numeric && !is.numeric(abundance)) {
+      stop("Abundance matrix must be numeric. All sample values must be numeric.",
+           call. = FALSE)
+    }
+    return(seq_len(ncol(abundance)))
+  }
+
+  sample_cols <- seq_len(ncol(abundance))
+  if (ncol(abundance) > 1 && !is.numeric(abundance[[1]])) {
+    sample_cols <- sample_cols[-1]
+  }
+  if (length(sample_cols) == 0) {
+    stop("Abundance data must contain at least one numeric sample column.",
+         call. = FALSE)
+  }
+
+  if (require_numeric) {
+    non_numeric <- sample_cols[!vapply(abundance[sample_cols], is.numeric, logical(1))]
+    if (length(non_numeric) > 0) {
+      stop(
+        "Abundance sample columns must be numeric. Non-numeric sample column(s): ",
+        paste(column_labels(abundance, non_numeric), collapse = ", "),
+        call. = FALSE
+      )
+    }
+  }
+
+  sample_cols
+}
+
+#' Normalize a leading feature-ID column into row names
+#'
+#' Many PICRUSt2-style tables are data frames with feature identifiers in
+#' the first column (for example '#NAME') and samples in all remaining
+#' columns. Validation can recognize that shape, but downstream calls to
+#' align_samples() or as.matrix() need the IDs in row names before the ID
+#' column is dropped from the sample matrix.
+#' @noRd
+normalize_abundance_feature_ids <- function(abundance, context = "abundance") {
+  if (!is.data.frame(abundance) || ncol(abundance) <= 1 ||
+      is.numeric(abundance[[1]])) {
+    return(abundance)
+  }
+
+  abundance <- as.data.frame(abundance)
+  id_column <- colnames(abundance)[1]
+  if (is.null(id_column) || !nzchar(id_column)) {
+    id_column <- "first column"
+  }
+
+  feature_ids <- validate_nonempty_character_column(
+    abundance[[1]],
+    id_column,
+    context
+  )
+
+  if (anyDuplicated(feature_ids)) {
+    duplicated_ids <- unique(feature_ids[duplicated(feature_ids)])
+    stop(sprintf(
+      "%s feature ID column '%s' contains duplicated identifiers: %s.",
+      context,
+      id_column,
+      paste(utils::head(duplicated_ids, 5), collapse = ", ")
+    ), call. = FALSE)
+  }
+
+  rownames(abundance) <- feature_ids
+  abundance[, -1, drop = FALSE]
+}
+
 #' Extract the numeric sample-by-feature matrix from abundance input
 #'
 #' `validate_abundance()` accepts either a matrix or a data.frame that may
@@ -486,15 +561,18 @@ validate_abundance <- function(abundance, min_samples = 2, require_numeric = TRU
 #' Returns NULL when no numeric columns exist (the caller has already
 #' errored via `require_numeric` when appropriate).
 #' @noRd
-abundance_to_numeric_matrix <- function(abundance) {
+abundance_to_numeric_matrix <- function(abundance, sample_cols = NULL) {
   if (is.matrix(abundance)) {
     if (!is.numeric(abundance)) return(NULL)
     return(abundance)
   }
   # data.frame
-  numeric_cols <- vapply(abundance, is.numeric, logical(1))
+  if (is.null(sample_cols)) {
+    sample_cols <- abundance_sample_columns(abundance, require_numeric = FALSE)
+  }
+  numeric_cols <- vapply(abundance[sample_cols], is.numeric, logical(1))
   if (!any(numeric_cols)) return(NULL)
-  as.matrix(abundance[, numeric_cols, drop = FALSE])
+  as.matrix(abundance[, sample_cols[numeric_cols], drop = FALSE])
 }
 
 #' Return human-readable column labels for a set of positions
@@ -632,6 +710,73 @@ summarize_abundance_by_group <- function(relative_abundance, group_vector) {
   )
 }
 
+#' Validate a group vector used for abundance summaries
+#'
+#' @param group_vector Group labels aligned to sample columns.
+#' @param context Label used in error messages.
+#' @param sample_ids Optional sample identifiers aligned to group_vector.
+#' @param required_groups Optional group labels that must be present.
+#' @param min_groups Minimum number of non-missing groups required.
+#' @return Character vector of validated group labels.
+#' @noRd
+validate_group_vector_for_summary <- function(group_vector,
+                                              context = "Group",
+                                              sample_ids = NULL,
+                                              required_groups = NULL,
+                                              min_groups = 1) {
+  group_chr <- as.character(group_vector)
+  invalid <- is.na(group_chr) | !nzchar(trimws(group_chr))
+
+  if (any(invalid)) {
+    labels <- if (!is.null(sample_ids) && length(sample_ids) == length(group_chr)) {
+      as.character(sample_ids)[invalid]
+    } else {
+      as.character(which(invalid))
+    }
+    stop(
+      context,
+      " must contain non-missing, non-empty group labels for every sample. ",
+      "Affected sample(s): ",
+      paste(utils::head(labels, 5), collapse = ", "),
+      if (sum(invalid) > 5) ", ..." else "",
+      ".",
+      call. = FALSE
+    )
+  }
+
+  unique_groups <- unique(group_chr)
+  if (length(unique_groups) < min_groups) {
+    stop(
+      context,
+      " must contain at least ",
+      min_groups,
+      " group(s); found ",
+      length(unique_groups),
+      ".",
+      call. = FALSE
+    )
+  }
+
+  if (!is.null(required_groups)) {
+    required_groups <- as.character(required_groups)
+    required_groups <- required_groups[!is.na(required_groups) & nzchar(required_groups)]
+    missing_groups <- setdiff(required_groups, unique_groups)
+    if (length(missing_groups) > 0) {
+      stop(
+        context,
+        " does not contain sample(s) for required DAA group(s): ",
+        paste(missing_groups, collapse = ", "),
+        ". Available group labels: ",
+        paste(unique_groups, collapse = ", "),
+        ".",
+        call. = FALSE
+      )
+    }
+  }
+
+  group_chr
+}
+
 #' Validate Metadata
 #'
 #' Validates that metadata is in the correct format.
@@ -671,6 +816,12 @@ validate_metadata <- function(metadata, required_cols = NULL) {
 #' @return TRUE if valid, otherwise stops with error
 #' @noRd
 validate_group <- function(metadata, group, min_groups = 2, min_per_group = 1) {
+  if (!is.character(group) || length(group) != 1 ||
+      is.na(group) || !nzchar(group)) {
+    stop("'group' must be a single non-empty character string.",
+         call. = FALSE)
+  }
+
   if (!group %in% colnames(metadata)) {
     stop(sprintf("Group column '%s' not found in metadata. Available columns: %s",
                  group, paste(colnames(metadata), collapse = ", ")))
@@ -695,6 +846,66 @@ validate_group <- function(metadata, group, min_groups = 2, min_per_group = 1) {
   }
 
   TRUE
+}
+
+#' Add an internal metadata column with a collision-free syntactic name
+#'
+#' Several backend packages build model formulas from metadata column names.
+#' User-supplied data frames can legally contain non-syntactic names such as
+#' "treatment group", so formula-based backends should model against an
+#' internal column name while preserving the user's original labels in output.
+#'
+#' @noRd
+add_internal_metadata_column <- function(metadata, values,
+                                         prefix = ".ggpicrust2_group") {
+  metadata <- as.data.frame(metadata)
+  if (length(values) != nrow(metadata)) {
+    stop("Internal metadata column length does not match metadata rows.",
+         call. = FALSE)
+  }
+
+  candidate <- prefix
+  suffix <- 1L
+  while (candidate %in% colnames(metadata)) {
+    candidate <- paste0(prefix, "_", suffix)
+    suffix <- suffix + 1L
+  }
+
+  metadata[[candidate]] <- values
+  list(metadata = metadata, column = candidate)
+}
+
+#' Prepare a metadata group column for formula-based backends
+#'
+#' @noRd
+prepare_model_group_column <- function(metadata, group, values) {
+  metadata <- as.data.frame(metadata)
+  if (identical(make.names(group), group)) {
+    metadata[[group]] <- values
+    return(list(metadata = metadata, column = group))
+  }
+
+  add_internal_metadata_column(metadata, values)
+}
+
+#' Build a one-sided formula from literal column names
+#'
+#' @noRd
+build_one_sided_formula <- function(variables) {
+  if (!is.character(variables) || length(variables) == 0 ||
+      anyNA(variables) || any(!nzchar(variables))) {
+    stop("Formula variables must be non-empty character column names.",
+         call. = FALSE)
+  }
+
+  terms <- lapply(variables, as.name)
+  rhs <- if (length(terms) == 1) {
+    terms[[1]]
+  } else {
+    Reduce(function(left, right) call("+", left, right), terms)
+  }
+
+  stats::as.formula(call("~", rhs))
 }
 
 # =============================================================================
@@ -739,6 +950,90 @@ validate_numeric_matrix <- function(mat, check_negative = TRUE,
   }
 
   TRUE
+}
+
+#' Validate a count-like non-negative finite matrix
+#'
+#' @param mat Numeric matrix to validate
+#' @param context Short name used in error messages
+#' @param check_duplicates Check for duplicate column names
+#' @return TRUE if valid, otherwise stops with error
+#' @noRd
+validate_nonnegative_finite_matrix <- function(mat, context = "abundance",
+                                               check_duplicates = TRUE) {
+  if (!is.matrix(mat)) {
+    mat <- as.matrix(mat)
+  }
+
+  if (!is.numeric(mat)) {
+    stop(context, " must be numeric.", call. = FALSE)
+  }
+
+  if (anyNA(mat)) {
+    stop(context, " must not contain missing values (NA).",
+         call. = FALSE)
+  }
+
+  non_finite <- !is.finite(mat)
+  if (any(non_finite)) {
+    bad_cols <- which(colSums(non_finite) > 0)
+    stop(
+      context,
+      " must contain only finite values. Non-finite values found in sample column(s): ",
+      paste(column_labels(mat, bad_cols), collapse = ", "),
+      ".",
+      call. = FALSE
+    )
+  }
+
+  negative <- mat < 0
+  if (any(negative)) {
+    bad_cols <- which(colSums(negative) > 0)
+    stop(
+      context,
+      " must contain non-negative values. Negative values found in sample column(s): ",
+      paste(column_labels(mat, bad_cols), collapse = ", "),
+      ".",
+      call. = FALSE
+    )
+  }
+
+  if (check_duplicates && !is.null(colnames(mat)) &&
+      anyDuplicated(colnames(mat))) {
+    stop("Duplicate column names found in ", context, ".", call. = FALSE)
+  }
+
+  TRUE
+}
+
+#' Prepare integer counts for count-based DAA backends
+#'
+#' @noRd
+prepare_integer_counts <- function(mat, method, tolerance = sqrt(.Machine$double.eps)) {
+  if (!is.matrix(mat)) {
+    mat <- as.matrix(mat)
+  }
+  validate_nonnegative_finite_matrix(
+    mat,
+    context = paste(method, "abundance"),
+    check_duplicates = FALSE
+  )
+
+  rounded <- round(mat)
+  non_integer <- abs(mat - rounded) > tolerance
+  if (any(non_integer)) {
+    warning(
+      method,
+      " requires or assumes count-like integer input; ",
+      sum(non_integer),
+      " non-integer abundance value(s) were rounded before analysis. ",
+      "For normalized, relative, or continuous abundance data, consider a method ",
+      "that does not require integer counts.",
+      call. = FALSE
+    )
+  }
+
+  rounded
 }
 
 #' Validate Zero Abundance Issues
@@ -836,10 +1131,11 @@ validate_feature_ids <- function(ids, type = "auto") {
 #' @return If filter_zero=FALSE: TRUE. If filter_zero=TRUE: filtered matrix.
 #' @noRd
 validate_daa_input <- function(mat, method = NULL, min_features = 2, filter_zero = FALSE) {
-  # Matrix-quality gate: numeric, no negatives, no duplicated sample names.
-  # NA values only warn (some upstream pipelines emit them legitimately) so
-  # downstream methods can still fail explicitly if they cannot tolerate NAs.
-  validate_numeric_matrix(mat)
+  # Matrix-quality gate: DAA backends require finite, non-missing,
+  # non-negative abundance/count values. Reject invalid cells once here rather
+  # than letting each backend fail differently or propagate partial statistics.
+  validate_nonnegative_finite_matrix(mat, context = "DAA abundance")
+  validate_feature_rownames(mat, "DAA abundance")
 
   # Basic zero checks
   result <- validate_zero_abundance(mat)
@@ -901,10 +1197,12 @@ require_package <- function(pkg, purpose = NULL, bioc = TRUE) {
 #' @return TRUE if valid, otherwise stops with error
 #' @noRd
 validate_choice <- function(value, choices, param_name = "value") {
-  if (!value %in% choices) {
-    stop(sprintf("%s must be one of: %s", param_name, paste(choices, collapse = ", ")))
+  if (!is.character(value) || length(value) != 1 ||
+      is.na(value) || !nzchar(value) || !value %in% choices) {
+    stop(sprintf("'%s' must be one of: %s", param_name, paste(choices, collapse = ", ")),
+         call. = FALSE)
   }
-  TRUE
+  invisible(TRUE)
 }
 
 #' Normalize a scalar logical flag
@@ -926,6 +1224,269 @@ normalize_logical_flag <- function(value, param_name) {
   }
 
   stop(sprintf("'%s' must be TRUE or FALSE.", param_name), call. = FALSE)
+}
+
+#' Validate a p-value or FDR threshold
+#'
+#' @noRd
+validate_probability_threshold <- function(value, param_name = "p_threshold",
+                                           allow_zero = FALSE) {
+  if (!is.numeric(value) || length(value) != 1 ||
+      is.na(value) || !is.finite(value)) {
+    stop(sprintf("'%s' must be a single finite numeric value.", param_name),
+         call. = FALSE)
+  }
+
+  lower_ok <- if (allow_zero) value >= 0 else value > 0
+  if (!lower_ok || value > 1) {
+    bounds <- if (allow_zero) "[0, 1]" else "(0, 1]"
+    stop(sprintf("'%s' must be in the range %s.", param_name, bounds),
+         call. = FALSE)
+  }
+
+  invisible(TRUE)
+}
+
+#' Validate probability-valued result columns
+#'
+#' @noRd
+validate_probability_values <- function(values, column_name,
+                                        context = "data",
+                                        allow_na = TRUE) {
+  if (!is.numeric(values)) {
+    stop(sprintf("Column '%s' in %s must be numeric.", column_name, context),
+         call. = FALSE)
+  }
+
+  bad <- is.nan(values) |
+    (!allow_na & is.na(values)) |
+    (!is.na(values) & (!is.finite(values) | values < 0 | values > 1))
+
+  if (any(bad)) {
+    stop(sprintf(
+      "Column '%s' in %s must contain finite values between 0 and 1%s.",
+      column_name,
+      context,
+      if (allow_na) " or NA" else ""
+    ), call. = FALSE)
+  }
+
+  invisible(TRUE)
+}
+
+#' Validate a p-value adjustment method
+#'
+#' @noRd
+validate_p_adjust_method <- function(value, param_name = "p_adjust_method") {
+  if (!is.character(value) || length(value) != 1 ||
+      is.na(value) || !value %in% stats::p.adjust.methods) {
+    stop(
+      sprintf("'%s' must be one of: %s.",
+              param_name,
+              paste(stats::p.adjust.methods, collapse = ", ")),
+      call. = FALSE
+    )
+  }
+
+  invisible(TRUE)
+}
+
+#' Validate finite numeric result columns
+#'
+#' @noRd
+validate_finite_numeric_values <- function(values, column_name,
+                                           context = "data",
+                                           allow_na = TRUE) {
+  if (!is.numeric(values)) {
+    stop(sprintf("Column '%s' in %s must be numeric.", column_name, context),
+         call. = FALSE)
+  }
+
+  bad <- is.nan(values) |
+    (!allow_na & is.na(values)) |
+    (!is.na(values) & !is.finite(values))
+
+  if (any(bad)) {
+    stop(sprintf(
+      "Column '%s' in %s must contain finite numeric values%s.",
+      column_name,
+      context,
+      if (allow_na) " or NA" else ""
+    ), call. = FALSE)
+  }
+
+  invisible(TRUE)
+}
+
+#' Validate and align backend result values by feature identifier
+#'
+#' @noRd
+validate_and_align_backend_result_values <- function(values,
+                                                     output_ids,
+                                                     feature_ids,
+                                                     value_name,
+                                                     context = "backend result",
+                                                     value_type = c("finite_numeric", "probability"),
+                                                     allow_na = TRUE) {
+  value_type <- match.arg(value_type)
+
+  if (is.matrix(values) || is.data.frame(values) || length(dim(values)) > 1) {
+    stop(sprintf(
+      "Column '%s' in %s must be a one-dimensional vector.",
+      value_name,
+      context
+    ), call. = FALSE)
+  }
+
+  feature_ids <- validate_nonempty_character_column(
+    feature_ids,
+    "expected feature identifiers",
+    context
+  )
+  if (length(feature_ids) == 0) {
+    stop(sprintf("%s must define at least one expected feature identifier.",
+                 context), call. = FALSE)
+  }
+  if (anyDuplicated(feature_ids)) {
+    duplicated_ids <- unique(feature_ids[duplicated(feature_ids)])
+    stop(sprintf(
+      "%s expected feature identifiers contain duplicates: %s.",
+      context,
+      paste(utils::head(duplicated_ids, 5), collapse = ", ")
+    ), call. = FALSE)
+  }
+
+  output_ids <- validate_nonempty_character_column(
+    output_ids,
+    "backend feature identifiers",
+    context
+  )
+  if (length(output_ids) == 0) {
+    stop(sprintf("%s backend output must include feature identifiers.",
+                 context), call. = FALSE)
+  }
+  if (anyDuplicated(output_ids)) {
+    duplicated_ids <- unique(output_ids[duplicated(output_ids)])
+    stop(sprintf(
+      "%s backend output contains duplicated feature identifiers: %s.",
+      context,
+      paste(utils::head(duplicated_ids, 5), collapse = ", ")
+    ), call. = FALSE)
+  }
+
+  if (length(values) != length(output_ids)) {
+    stop(sprintf(
+      "Column '%s' in %s has length %d, but %d backend feature identifier(s) were provided.",
+      value_name,
+      context,
+      length(values),
+      length(output_ids)
+    ), call. = FALSE)
+  }
+
+  missing_ids <- setdiff(feature_ids, output_ids)
+  unexpected_ids <- setdiff(output_ids, feature_ids)
+  if (length(missing_ids) > 0 || length(unexpected_ids) > 0) {
+    stop(
+      context,
+      " backend feature identifiers do not match expected feature identifiers",
+      if (length(missing_ids) > 0) paste0(
+        ". Missing: ",
+        paste(utils::head(missing_ids, 5), collapse = ", "),
+        if (length(missing_ids) > 5) ", ..." else ""
+      ) else "",
+      if (length(unexpected_ids) > 0) paste0(
+        ". Unexpected: ",
+        paste(utils::head(unexpected_ids, 5), collapse = ", "),
+        if (length(unexpected_ids) > 5) ", ..." else ""
+      ) else "",
+      ".",
+      call. = FALSE
+    )
+  }
+
+  aligned <- as.vector(values)[match(feature_ids, output_ids)]
+
+  if (identical(value_type, "probability")) {
+    validate_probability_values(aligned, value_name, context,
+                                allow_na = allow_na)
+  } else {
+    validate_finite_numeric_values(aligned, value_name, context,
+                                   allow_na = allow_na)
+  }
+
+  unname(aligned)
+}
+
+#' Validate non-empty character-like result columns
+#'
+#' @noRd
+validate_nonempty_character_column <- function(values, column_name, context = "data") {
+  values_chr <- as.character(values)
+  bad <- is.na(values_chr) | !nzchar(trimws(values_chr))
+  if (any(bad)) {
+    stop(sprintf(
+      "Column '%s' in %s must contain non-empty values without NA.",
+      column_name,
+      context
+    ), call. = FALSE)
+  }
+  values_chr
+}
+
+#' Validate feature identifiers stored in row names
+#'
+#' @noRd
+validate_feature_rownames <- function(x, context = "abundance") {
+  rn <- rownames(x)
+  if (is.null(rn)) {
+    stop(sprintf(
+      "%s must have feature identifiers in row names.",
+      context
+    ), call. = FALSE)
+  }
+
+  rn_chr <- validate_nonempty_character_column(rn, "rownames", context)
+  default_rn <- as.character(seq_len(nrow(x)))
+  if (identical(rn_chr, default_rn)) {
+    stop(sprintf(
+      "%s appears to have default row names. Put feature identifiers in row names or provide a PICRUSt2-style '#NAME' column.",
+      context
+    ), call. = FALSE)
+  }
+
+  if (anyDuplicated(rn_chr)) {
+    duplicated_ids <- unique(rn_chr[duplicated(rn_chr)])
+    stop(sprintf(
+      "%s row names contain duplicated feature identifiers: %s.",
+      context,
+      paste(utils::head(duplicated_ids, 5), collapse = ", ")
+    ), call. = FALSE)
+  }
+
+  invisible(TRUE)
+}
+
+#' Validate a count-like display/filter parameter
+#'
+#' @noRd
+validate_count_parameter <- function(value, param_name, allow_zero = FALSE) {
+  if (!is.numeric(value) || length(value) != 1 ||
+      is.na(value) || !is.finite(value) || value != as.integer(value)) {
+    stop(sprintf("'%s' must be a single finite integer.", param_name),
+         call. = FALSE)
+  }
+
+  lower_ok <- if (allow_zero) value >= 0 else value > 0
+  if (!lower_ok) {
+    stop(sprintf(
+      "'%s' must be %s.",
+      param_name,
+      if (allow_zero) "non-negative" else "positive"
+    ), call. = FALSE)
+  }
+
+  invisible(TRUE)
 }
 
 #' Validate Data Frame Input
@@ -1042,6 +1603,29 @@ create_empty_gsea_result <- function(method = "unknown", full = FALSE) {
 validate_daa_results <- function(daa_results_df,
                                   require_single_method = TRUE,
                                   require_single_group_pair = TRUE) {
+  required_cols <- c("feature", "group1", "group2")
+  if (require_single_method) {
+    required_cols <- c(required_cols, "method")
+  }
+  validate_dataframe(daa_results_df,
+                     required_cols = required_cols,
+                     param_name = "daa_results_df")
+
+  feature_chr <- validate_nonempty_character_column(daa_results_df$feature,
+                                                    "feature",
+                                                    "daa_results_df")
+  validate_nonempty_character_column(daa_results_df$group1,
+                                     "group1",
+                                     "daa_results_df")
+  validate_nonempty_character_column(daa_results_df$group2,
+                                     "group2",
+                                     "daa_results_df")
+  if (require_single_method) {
+    validate_nonempty_character_column(daa_results_df$method,
+                                       "method",
+                                       "daa_results_df")
+  }
+
   if (require_single_method &&
       length(unique(canonicalize_daa_method_names(daa_results_df$method))) != 1) {
     stop("daa_results_df contains multiple methods. Filter to one method first.")
@@ -1052,6 +1636,16 @@ validate_daa_results <- function(daa_results_df,
       stop("daa_results_df contains multiple group pairs. Filter to one pair first.")
     }
   }
+
+  if (require_single_method && require_single_group_pair &&
+      anyDuplicated(feature_chr)) {
+    duplicated_features <- unique(feature_chr[duplicated(feature_chr)])
+    stop("daa_results_df contains duplicated feature identifiers within the selected method/group pair: ",
+         paste(utils::head(duplicated_features, 5), collapse = ", "),
+         ". Filter or deduplicate the DAA results before plotting.",
+         call. = FALSE)
+  }
+
   invisible(TRUE)
 }
 
