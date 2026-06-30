@@ -936,6 +936,33 @@ test_that("taxa_contribution_heatmap rejects conflicting annotation labels", {
   )
 })
 
+test_that("taxa_contribution_heatmap validates clustering methods and distances", {
+  agg <- data.frame(
+    sample = c("S1", "S1", "S2", "S2"),
+    function_id = c("K00001", "K00002", "K00001", "K00002"),
+    taxon_label = c("Taxon1", "Taxon2", "Taxon1", "Taxon2"),
+    contribution = c(1, 2, 3, 4),
+    stringsAsFactors = FALSE
+  )
+
+  expect_error(
+    taxa_contribution_heatmap(
+      agg,
+      cluster_rows = TRUE,
+      clustering_method = "ward.D2",
+      clustering_distance = "manhattan"
+    ),
+    "Ward clustering methods.*euclidean"
+  )
+  expect_error(
+    taxa_contribution_heatmap(
+      agg,
+      clustering_distance = "correlation"
+    ),
+    "'clustering_distance' must be one of"
+  )
+})
+
 test_that("taxa_contribution_heatmap with clustering returns patchwork", {
   skip_if_not_installed("ggdendro")
 

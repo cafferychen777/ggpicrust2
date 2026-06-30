@@ -31,9 +31,9 @@ for replacing function IDs with readable descriptions.}
 
 \item{cluster_cols}{Logical. Cluster columns (functions)? Default TRUE.}
 
-\item{clustering_method}{Character. Method for \code{hclust}. Default \code{"complete"}.}
+\item{clustering_method}{Character. Method for \code{hclust}. Default \code{"complete"}. Ward methods require \code{clustering_distance = "euclidean"}.}
 
-\item{clustering_distance}{Character. Distance metric. Default \code{"euclidean"}.}
+\item{clustering_distance}{Character. Distance metric. Default \code{"euclidean"}. Supported values are \code{"euclidean"}, \code{"maximum"}, \code{"manhattan"}, \code{"canberra"}, \code{"binary"}, and \code{"minkowski"}.}
 
 \item{low_color}{Character. Color for low values. Default \code{"#f7f7f7"}.}
 

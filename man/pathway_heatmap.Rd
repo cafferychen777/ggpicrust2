@@ -46,9 +46,9 @@ heatmap. If NULL or not provided, a default color set is used for the facet stri
 
 \item{cluster_cols}{A logical value indicating whether to cluster columns (samples). Default is FALSE.}
 
-\item{clustering_method}{A character string specifying the clustering method. Options: "complete", "average", "single", "ward.D", "ward.D2", "mcquitty", "median", "centroid". Default is "complete".}
+\item{clustering_method}{A character string specifying the clustering method. Options: "complete", "average", "single", "ward.D", "ward.D2", "mcquitty", "median", "centroid". Default is "complete". Ward methods require \code{clustering_distance = "euclidean"}.}
 
-\item{clustering_distance}{A character string specifying the distance metric. Options: "euclidean", "maximum", "manhattan", "canberra", "binary", "minkowski", "correlation", "spearman". Default is "euclidean".}
+\item{clustering_distance}{A character string specifying the distance metric. Options: "euclidean", "maximum", "manhattan", "canberra", "binary", "minkowski", "correlation", "spearman". Default is "euclidean". Use "average" or "complete" linkage for correlation or rank-based distances.}
 
 \item{dendro_line_size}{A numeric value specifying the line width of dendrogram branches. Default is 0.5.}
 
@@ -122,7 +122,7 @@ pathway_heatmap(
   metadata = metadata_example,
   group = "group",
   cluster_cols = TRUE,
-  clustering_method = "ward.D2",
+  clustering_method = "average",
   clustering_distance = "correlation"
 )
 
@@ -196,7 +196,7 @@ pathway_heatmap(
   metadata = metadata,
   group = "Environment",
   cluster_rows = TRUE,
-  clustering_method = "ward.D2",
+  clustering_method = "average",
   clustering_distance = "correlation",
   colors = custom_colors,
   low_color = "#2166ac",  # Custom blue for low values
@@ -246,7 +246,7 @@ pathway_heatmap(
   group = "Environment",              # Primary: Pro-survival vs others
   secondary_groups = "Group",         # Secondary: Broad Institute vs Jackson Labs
   cluster_rows = TRUE,
-  clustering_method = "ward.D2",
+  clustering_method = "average",
   clustering_distance = "correlation"
 )
 }

@@ -269,8 +269,8 @@ taxa_contribution_bar <- function(contrib_agg,
 #' @param n_functions Integer. Number of functions to include. Default 20.
 #' @param cluster_rows Logical. Cluster rows (taxa)? Default TRUE.
 #' @param cluster_cols Logical. Cluster columns (functions)? Default TRUE.
-#' @param clustering_method Character. Method for \code{hclust}. Default \code{"complete"}.
-#' @param clustering_distance Character. Distance metric. Default \code{"euclidean"}.
+#' @param clustering_method Character. Method for \code{hclust}. Default \code{"complete"}. Ward methods require \code{clustering_distance = "euclidean"}.
+#' @param clustering_distance Character. Distance metric. Default \code{"euclidean"}. Supported values are \code{"euclidean"}, \code{"maximum"}, \code{"manhattan"}, \code{"canberra"}, \code{"binary"}, and \code{"minkowski"}.
 #' @param low_color Character. Color for low values. Default \code{"#f7f7f7"}.
 #' @param high_color Character. Color for high values. Default \code{"#ca0020"}.
 #' @param font_size Numeric. Base font size. Default 12.
@@ -324,6 +324,11 @@ taxa_contribution_heatmap <- function(contrib_agg,
                                "contrib_agg")
   validate_count_parameter(n_functions, "n_functions")
   validate_contribution_values(contrib_agg$contribution, "contribution")
+  validate_hclust_parameters(
+    clustering_method,
+    clustering_distance,
+    allow_correlation = FALSE
+  )
 
   # Select top functions by total contribution
   func_totals <- stats::aggregate(

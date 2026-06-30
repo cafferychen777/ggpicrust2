@@ -35,8 +35,8 @@
 #' @param high_color A character string specifying the color for high values in the heatmap gradient. Default is "#ca0020" (red).
 #' @param cluster_rows A logical value indicating whether to cluster rows (pathways). Default is FALSE.
 #' @param cluster_cols A logical value indicating whether to cluster columns (samples). Default is FALSE.
-#' @param clustering_method A character string specifying the clustering method. Options: "complete", "average", "single", "ward.D", "ward.D2", "mcquitty", "median", "centroid". Default is "complete".
-#' @param clustering_distance A character string specifying the distance metric. Options: "euclidean", "maximum", "manhattan", "canberra", "binary", "minkowski", "correlation", "spearman". Default is "euclidean".
+#' @param clustering_method A character string specifying the clustering method. Options: "complete", "average", "single", "ward.D", "ward.D2", "mcquitty", "median", "centroid". Default is "complete". Ward methods require \code{clustering_distance = "euclidean"}.
+#' @param clustering_distance A character string specifying the distance metric. Options: "euclidean", "maximum", "manhattan", "canberra", "binary", "minkowski", "correlation", "spearman". Default is "euclidean". Use "average" or "complete" linkage for correlation or rank-based distances.
 #' @param dendro_line_size A numeric value specifying the line width of dendrogram branches. Default is 0.5.
 #' @param dendro_labels A logical value indicating whether to show dendrogram labels. Default is FALSE.
 #' @param facet_by \strong{[Deprecated]} A character string specifying an additional grouping variable for creating faceted heatmaps.
@@ -101,7 +101,7 @@
 #'   metadata = metadata_example,
 #'   group = "group",
 #'   cluster_cols = TRUE,
-#'   clustering_method = "ward.D2",
+#'   clustering_method = "average",
 #'   clustering_distance = "correlation"
 #' )
 #'
@@ -175,7 +175,7 @@
 #'   metadata = metadata,
 #'   group = "Environment",
 #'   cluster_rows = TRUE,
-#'   clustering_method = "ward.D2",
+#'   clustering_method = "average",
 #'   clustering_distance = "correlation",
 #'   colors = custom_colors,
 #'   low_color = "#2166ac",  # Custom blue for low values
@@ -225,7 +225,7 @@
 #'   group = "Environment",              # Primary: Pro-survival vs others
 #'   secondary_groups = "Group",         # Secondary: Broad Institute vs Jackson Labs
 #'   cluster_rows = TRUE,
-#'   clustering_method = "ward.D2",
+#'   clustering_method = "average",
 #'   clustering_distance = "correlation"
 #' )
 #' }
@@ -382,6 +382,11 @@ pathway_heatmap <- function(abundance,
   )
   validate_abundance(abundance, min_samples = 2, check_zero_columns = FALSE)
   validate_metadata(metadata)
+  validate_hclust_parameters(
+    clustering_method,
+    clustering_distance,
+    allow_correlation = TRUE
+  )
 
   # Ensure abundance is a matrix with names
   abundance <- as.matrix(abundance)

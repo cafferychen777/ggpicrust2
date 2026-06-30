@@ -2,6 +2,12 @@
 
 ## Bug Fixes
 
+* `pathway_heatmap()` and `taxa_contribution_heatmap()` now validate
+  hierarchical clustering method/distance combinations. Ward linkage methods
+  (`"ward.D"` and `"ward.D2"`) now require Euclidean distance because Ward
+  clustering has a within-cluster variance interpretation in Euclidean space;
+  correlation or rank-based distances should be paired with linkages such as
+  `"average"` or `"complete"`.
 * Count-like controls such as `n_pathways`, `top_n`, and
   `correlation_permutations` now reject values larger than R's integer range
   without emitting coercion warnings. `visualize_gsea()` also applies the same

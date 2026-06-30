@@ -217,6 +217,48 @@ test_that("pathway_heatmap handles constant rows with correlation clustering", {
   expect_s3_class(p_spearman, "ggplot")
 })
 
+test_that("pathway_heatmap validates Ward linkage distance semantics", {
+  td <- create_heatmap_test_data()
+
+  expect_error(
+    pathway_heatmap(
+      abundance = td$abundance,
+      metadata = td$metadata,
+      group = "group",
+      cluster_rows = TRUE,
+      clustering_method = "ward.D2",
+      clustering_distance = "correlation"
+    ),
+    "Ward clustering methods.*euclidean"
+  )
+
+  expect_message(
+    p_correlation <- pathway_heatmap(
+      abundance = td$abundance,
+      metadata = td$metadata,
+      group = "group",
+      cluster_rows = TRUE,
+      clustering_method = "average",
+      clustering_distance = "correlation"
+    ),
+    "Pathways ordered by hierarchical clustering"
+  )
+  expect_s3_class(p_correlation, "ggplot")
+
+  expect_message(
+    p_ward <- pathway_heatmap(
+      abundance = td$abundance,
+      metadata = td$metadata,
+      group = "group",
+      cluster_rows = TRUE,
+      clustering_method = "ward.D2",
+      clustering_distance = "euclidean"
+    ),
+    "Pathways ordered by hierarchical clustering"
+  )
+  expect_s3_class(p_ward, "ggplot")
+})
+
 test_that("pathway_heatmap handles zero-variance sample profiles with correlation column clustering", {
   abundance <- matrix(
     c(

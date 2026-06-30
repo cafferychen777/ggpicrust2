@@ -1230,6 +1230,40 @@ validate_choice <- function(value, choices, param_name = "value") {
   invisible(TRUE)
 }
 
+#' Validate hierarchical clustering method and distance parameters
+#'
+#' @noRd
+validate_hclust_parameters <- function(clustering_method,
+                                       clustering_distance,
+                                       allow_correlation = FALSE) {
+  method_choices <- c(
+    "complete", "average", "single", "ward.D", "ward.D2",
+    "mcquitty", "median", "centroid"
+  )
+  distance_choices <- c(
+    "euclidean", "maximum", "manhattan", "canberra", "binary", "minkowski"
+  )
+  if (isTRUE(allow_correlation)) {
+    distance_choices <- c(distance_choices, "correlation", "spearman")
+  }
+
+  validate_choice(clustering_method, method_choices, "clustering_method")
+  validate_choice(clustering_distance, distance_choices, "clustering_distance")
+
+  if (clustering_method %in% c("ward.D", "ward.D2") &&
+      !identical(clustering_distance, "euclidean")) {
+    stop(
+      "Ward clustering methods ('ward.D' and 'ward.D2') require ",
+      "clustering_distance = 'euclidean'. Ward linkage minimizes ",
+      "within-cluster variance in Euclidean space; use a linkage such as ",
+      "'average' or 'complete' with correlation or rank-based distances.",
+      call. = FALSE
+    )
+  }
+
+  invisible(TRUE)
+}
+
 #' Normalize a scalar logical flag
 #'
 #' Public APIs historically accepted both logical TRUE/FALSE and the string
