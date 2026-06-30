@@ -7,17 +7,25 @@
 #'
 #' @param abundance A data frame or matrix containing predicted functional 
 #'        pathway abundance, with pathways/features as rows and samples as 
-#'        columns. The column names should match the sample names in metadata.
+#'        columns. Data frames may also provide a leading non-numeric feature
+#'        ID column (for example \code{#NAME}, \code{feature}, or
+#'        \code{pathway}); it is converted to row names before sample alignment
+#'        or Group length validation. The column names should match the sample
+#'        names in metadata.
 #' @param daa_results_df A data frame containing differential abundance 
 #'        analysis results from pathway_daa function. Must contain columns: 
-#'        feature, group1, group2, p_adjust.
+#'        feature, group1, group2, p_adjust. Within the selected method and
+#'        group pair, feature identifiers must be unique.
 #' @param Group A vector containing group assignments for each sample in the
 #'        same order as the columns in abundance matrix. Alternatively, if
 #'        metadata is provided, this should match the order of samples in metadata.
+#'        Values must be non-missing and non-empty after alignment, and must
+#'        include the selected DAA result's \code{group1} and \code{group2}
+#'        labels.
 #' @param ko_to_kegg Logical value indicating whether to use KO to KEGG 
 #'        conversion. Default is FALSE.
 #' @param p_values_threshold Numeric value for p-value threshold to filter 
-#'        significant features. Default is 0.05.
+#'        significant features. Default is 0.05. Must be in the range (0, 1].
 #' @param select Character vector of specific features to include. If NULL, 
 #'        all significant features are included.
 #' @param max_features Maximum number of features to include in the table.
@@ -107,6 +115,10 @@ pathway_errorbar_table <- function(abundance,
   if (!is.matrix(abundance) && !is.data.frame(abundance)) {
     stop("'abundance' must be a matrix or data frame")
   }
+  abundance <- normalize_abundance_feature_ids(
+    abundance,
+    context = "pathway_errorbar_table() abundance"
+  )
 
   if (!is.data.frame(daa_results_df)) {
     stop("'daa_results_df' must be a data frame")
@@ -139,6 +151,31 @@ pathway_errorbar_table <- function(abundance,
                              sample_col = sample_col, verbose = FALSE)
     abundance <- aligned$abundance
     Group <- aligned$metadata[[".pet_group"]]
+  } else if (!is.null(names(Group)) &&
+             length(names(Group)) == length(Group) &&
+             all(!is.na(names(Group))) &&
+             any(nzchar(names(Group)))) {
+    if (is.null(colnames(abundance))) {
+      stop("Group has sample names, but abundance has no column names to align against.",
+           call. = FALSE)
+    }
+    group_names <- names(Group)
+    if (any(!nzchar(group_names))) {
+      stop("Group names must be non-empty sample identifiers.", call. = FALSE)
+    }
+    if (anyDuplicated(group_names)) {
+      duplicated_names <- unique(group_names[duplicated(group_names)])
+      stop("Group names contain duplicated sample identifiers: ",
+           paste(utils::head(duplicated_names, 5), collapse = ", "),
+           call. = FALSE)
+    }
+    missing_group_samples <- setdiff(colnames(abundance), group_names)
+    if (length(missing_group_samples) > 0) {
+      stop("Group names do not cover abundance sample(s): ",
+           paste(utils::head(missing_group_samples, 5), collapse = ", "),
+           call. = FALSE)
+    }
+    Group <- Group[colnames(abundance)]
   }
 
   required_cols <- c("feature", "group1", "group2", "p_adjust")
@@ -147,6 +184,10 @@ pathway_errorbar_table <- function(abundance,
     stop("Missing required columns in daa_results_df: ",
          paste(missing_cols, collapse = ", "))
   }
+  validate_probability_threshold(p_values_threshold, "p_values_threshold")
+  validate_probability_values(daa_results_df$p_adjust,
+                              "p_adjust",
+                              "daa_results_df")
 
   if (length(Group) != ncol(abundance)) {
     stop("Length of Group (", length(Group),
@@ -198,6 +239,13 @@ pathway_errorbar_table <- function(abundance,
   # results instead of failing fast.
   group1_name <- daa_results_filtered_sub_df$group1[1]
   group2_name <- daa_results_filtered_sub_df$group2[1]
+  Group <- validate_group_vector_for_summary(
+    Group,
+    context = "Group",
+    sample_ids = colnames(abundance),
+    required_groups = c(group1_name, group2_name),
+    min_groups = 2
+  )
   
   # Calculate abundance statistics using the helper function.
   # Group is already confirmed (above) to be in the same order as

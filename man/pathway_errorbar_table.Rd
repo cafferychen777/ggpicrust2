@@ -19,21 +19,29 @@ pathway_errorbar_table(
 \arguments{
 \item{abundance}{A data frame or matrix containing predicted functional 
 pathway abundance, with pathways/features as rows and samples as 
-columns. The column names should match the sample names in metadata.}
+columns. Data frames may also provide a leading non-numeric feature
+ID column (for example \code{#NAME}, \code{feature}, or
+\code{pathway}); it is converted to row names before sample alignment
+or Group length validation. The column names should match the sample
+names in metadata.}
 
 \item{daa_results_df}{A data frame containing differential abundance 
 analysis results from pathway_daa function. Must contain columns: 
-feature, group1, group2, p_adjust.}
+feature, group1, group2, p_adjust. Within the selected method and
+group pair, feature identifiers must be unique.}
 
 \item{Group}{A vector containing group assignments for each sample in the
 same order as the columns in abundance matrix. Alternatively, if
-metadata is provided, this should match the order of samples in metadata.}
+metadata is provided, this should match the order of samples in metadata.
+Values must be non-missing and non-empty after alignment, and must
+include the selected DAA result's \code{group1} and \code{group2}
+labels.}
 
 \item{ko_to_kegg}{Logical value indicating whether to use KO to KEGG 
 conversion. Default is FALSE.}
 
 \item{p_values_threshold}{Numeric value for p-value threshold to filter 
-significant features. Default is 0.05.}
+significant features. Default is 0.05. Must be in the range (0, 1].}
 
 \item{select}{Character vector of specific features to include. If NULL, 
 all significant features are included.}

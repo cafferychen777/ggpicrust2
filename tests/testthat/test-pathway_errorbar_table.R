@@ -89,6 +89,37 @@ test_that("pathway_errorbar_table honors an explicit sample_col", {
   expect_true("feature" %in% colnames(res))
 })
 
+test_that("pathway_errorbar_table aligns named Group vector to abundance columns", {
+  abundance <- matrix(
+    c(1, 1, 9, 9,
+      9, 9, 1, 1),
+    nrow = 2,
+    byrow = TRUE,
+    dimnames = list(c("f1", "f2"), paste0("S", 1:4))
+  )
+  group <- c(S1 = "A", S2 = "A", S3 = "B", S4 = "B")
+  group_reordered <- group[rev(names(group))]
+
+  daa_results_df <- data.frame(
+    feature = c("f1", "f2"),
+    method = "method",
+    group1 = "A",
+    group2 = "B",
+    p_adjust = c(0.01, 0.02),
+    stringsAsFactors = FALSE
+  )
+
+  res <- pathway_errorbar_table(
+    abundance = abundance,
+    daa_results_df = daa_results_df,
+    Group = group_reordered,
+    p_values_threshold = 0.05
+  )
+
+  expect_gt(res$log2_fold_change[res$feature == "f1"], 0)
+  expect_lt(res$log2_fold_change[res$feature == "f2"], 0)
+})
+
 test_that("pathway_errorbar_table rejects multi-contrast input instead of silently truncating", {
   # Regression: the previous implementation derived the two group names via
   #   group1_name <- unique(daa_results_filtered_sub_df$group1)[1]
@@ -133,5 +164,100 @@ test_that("pathway_errorbar_table rejects multi-contrast input instead of silent
       p_values_threshold = 0.05
     ),
     regexp = "multiple group pairs"
+  )
+})
+
+test_that("pathway_errorbar_table rejects duplicated features in one DAA contrast", {
+  abundance <- matrix(
+    c(10, 20, 30, 40,
+      15, 25, 35, 45),
+    nrow = 2,
+    byrow = TRUE,
+    dimnames = list(c("p1", "p2"), paste0("S", 1:4))
+  )
+  Group <- c("A", "A", "B", "B")
+  daa_results_df <- data.frame(
+    feature = c("p1", "p1", "p2"),
+    method = "DESeq2",
+    group1 = "A",
+    group2 = "B",
+    p_adjust = c(0.01, 0.02, 0.03),
+    stringsAsFactors = FALSE
+  )
+
+  expect_error(
+    pathway_errorbar_table(
+      abundance = abundance,
+      daa_results_df = daa_results_df,
+      Group = Group,
+      p_values_threshold = 0.05
+    ),
+    "duplicated feature"
+  )
+})
+
+test_that("pathway_errorbar_table rejects missing or incompatible Group labels", {
+  abundance <- matrix(
+    c(1, 1, 9, 9,
+      9, 9, 1, 1),
+    nrow = 2,
+    byrow = TRUE,
+    dimnames = list(c("f1", "f2"), paste0("S", 1:4))
+  )
+  daa_results_df <- data.frame(
+    feature = c("f1", "f2"),
+    method = "method",
+    group1 = "A",
+    group2 = "B",
+    p_adjust = c(0.01, 0.02),
+    stringsAsFactors = FALSE
+  )
+
+  expect_error(
+    pathway_errorbar_table(
+      abundance = abundance,
+      daa_results_df = daa_results_df,
+      Group = c("A", NA, "B", "B"),
+      p_values_threshold = 0.05
+    ),
+    "non-missing, non-empty group labels"
+  )
+
+  expect_error(
+    pathway_errorbar_table(
+      abundance = abundance,
+      daa_results_df = daa_results_df,
+      Group = c("X", "X", "Y", "Y"),
+      p_values_threshold = 0.05
+    ),
+    "required DAA group"
+  )
+})
+
+test_that("pathway_errorbar_table rejects significant DAA features missing from abundance", {
+  abundance <- matrix(
+    c(1, 1, 9, 9,
+      9, 9, 1, 1),
+    nrow = 2,
+    byrow = TRUE,
+    dimnames = list(c("f1", "f2"), paste0("S", 1:4))
+  )
+  daa_results_df <- data.frame(
+    feature = c("f1", "missing_feature"),
+    method = "method",
+    group1 = "A",
+    group2 = "B",
+    p_adjust = c(0.01, 0.02),
+    stringsAsFactors = FALSE
+  )
+
+  expect_error(
+    pathway_errorbar_table(
+      abundance = abundance,
+      daa_results_df = daa_results_df,
+      Group = c("A", "A", "B", "B"),
+      p_values_threshold = 0.05
+    ),
+    "missing from abundance row names: missing_feature"
   )
 })

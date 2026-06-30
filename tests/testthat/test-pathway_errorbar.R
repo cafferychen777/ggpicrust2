@@ -89,6 +89,22 @@ test_that("pathway_errorbar handles missing annotations", {
   expect_s3_class(p, "patchwork")
 })
 
+test_that("pathway_errorbar rejects duplicated features in one DAA contrast", {
+  td <- create_errorbar_test_data(n_features = 3, p_adjust = c(0.01, 0.02, 0.03))
+  td$daa_results_df$feature[2] <- td$daa_results_df$feature[1]
+
+  expect_error(
+    pathway_errorbar(
+      abundance = td$abundance,
+      daa_results_df = td$daa_results_df,
+      Group = td$Group,
+      p_values_threshold = 0.05,
+      x_lab = "pathway_name"
+    ),
+    "duplicated feature"
+  )
+})
+
 test_that("pathway_errorbar handles too many features", {
   td <- create_errorbar_test_data(n_features = 31)
 
@@ -132,7 +148,7 @@ test_that("pathway_errorbar handles different ordering options", {
     expect_s3_class(p, "patchwork")
   }
 
-  # Invalid order type (function lacks upfront validation; crashes downstream)
+  # Invalid order values fail with a clear parameter error before sorting.
   expect_error(
     pathway_errorbar(
       abundance = td$abundance,
@@ -140,7 +156,28 @@ test_that("pathway_errorbar handles different ordering options", {
       Group = td$Group,
       order = "invalid_order",
       x_lab = "pathway_name"
-    )
+    ),
+    "'order' must be one of"
+  )
+  expect_error(
+    pathway_errorbar(
+      abundance = td$abundance,
+      daa_results_df = td$daa_results_df,
+      Group = td$Group,
+      order = c("group", "name"),
+      x_lab = "pathway_name"
+    ),
+    "'order' must be one of"
+  )
+  expect_error(
+    pathway_errorbar(
+      abundance = td$abundance,
+      daa_results_df = td$daa_results_df,
+      Group = td$Group,
+      order = NA_character_,
+      x_lab = "pathway_name"
+    ),
+    "'order' must be one of"
   )
 })
 
@@ -218,6 +255,7 @@ test_that("pathway_errorbar handles p_value_bar parameter correctly", {
 
 test_that("pathway_errorbar_table function works correctly", {
   td <- create_errorbar_test_data(n_features = 3, p_adjust = c(0.01, 0.02, 0.03))
+  td$abundance <- round(td$abundance)
 
   metadata <- data.frame(
     sample = colnames(td$abundance),
@@ -386,6 +424,83 @@ test_that("pathway_errorbar falls back to mean-ratio log2_fold_change when the c
   # Every feature should get a non-NA fallback log2_fold_change value.
   expect_true("log2_fold_change" %in% colnames(p$data))
   expect_false(any(is.na(p$data$log2_fold_change)))
+})
+
+test_that("pathway_errorbar rejects duplicated names in Group vector", {
+  td <- create_errorbar_test_data(n_features = 2, p_adjust = c(0.01, 0.02))
+  names(td$Group)[2] <- names(td$Group)[1]
+
+  expect_error(
+    pathway_errorbar(
+      abundance = td$abundance,
+      daa_results_df = td$daa_results_df,
+      Group = td$Group,
+      x_lab = "pathway_name",
+      p_value_bar = FALSE
+    ),
+    "duplicated sample"
+  )
+})
+
+test_that("pathway_errorbar rejects missing or incompatible Group labels", {
+  td <- create_errorbar_test_data(n_features = 2, p_adjust = c(0.01, 0.02))
+
+  missing_group <- td$Group
+  missing_group[1] <- NA
+  expect_error(
+    pathway_errorbar(
+      abundance = td$abundance,
+      daa_results_df = td$daa_results_df,
+      Group = missing_group,
+      x_lab = "pathway_name",
+      p_value_bar = FALSE
+    ),
+    "non-missing, non-empty group labels"
+  )
+
+  wrong_labels <- as.character(td$Group)
+  names(wrong_labels) <- names(td$Group)
+  wrong_labels[] <- rep(c("X", "Y"), each = length(wrong_labels) / 2)
+  expect_error(
+    pathway_errorbar(
+      abundance = td$abundance,
+      daa_results_df = td$daa_results_df,
+      Group = wrong_labels,
+      x_lab = "pathway_name",
+      p_value_bar = FALSE
+    ),
+    "required DAA group"
+  )
+})
+
+test_that("pathway_errorbar rejects displayed DAA features missing from abundance", {
+  td <- create_errorbar_test_data(n_features = 3, p_adjust = c(0.01, 0.02, 0.03))
+  td$daa_results_df$feature[2] <- "missing_pathway"
+
+  expect_error(
+    pathway_errorbar(
+      abundance = td$abundance,
+      daa_results_df = td$daa_results_df,
+      Group = td$Group,
+      x_lab = "pathway_name"
+    ),
+    "missing from abundance row names: missing_pathway"
+  )
+})
+
+test_that("pathway_errorbar rejects invalid displayed method-native log2_fold_change", {
+  td <- create_errorbar_test_data(n_features = 3, p_adjust = c(0.01, 0.02, 0.03))
+  td$daa_results_df$log2_fold_change <- c(0.5, Inf, -0.25)
+
+  expect_error(
+    pathway_errorbar(
+      abundance = td$abundance,
+      daa_results_df = td$daa_results_df,
+      Group = td$Group,
+      x_lab = "pathway_name"
+    ),
+    "log2_fold_change.*finite numeric"
+  )
 })
 
 # Regression: several theme() calls used `legend.position = "non"` (typo).
