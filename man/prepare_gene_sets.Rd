@@ -7,13 +7,14 @@
 prepare_gene_sets(pathway_type = "KEGG", organism = "ko", go_category = "all")
 }
 \arguments{
-\item{pathway_type}{A character string specifying the pathway type: "KEGG", "MetaCyc", or "GO"}
+\item{pathway_type}{A single character string specifying the pathway type:
+"KEGG", "MetaCyc", or "GO"}
 
 \item{organism}{Deprecated and has no effect; gene sets are KO-based
 for both KEGG and GO. See \code{\link{pathway_gsea}} for details.
 Retained for signature compatibility only.}
 
-\item{go_category}{A character string specifying the GO category to use.
+\item{go_category}{A single character string specifying the GO category to use.
 "all" (default) uses all categories. Valid values are determined by
 the reference data; see \code{table(ko_to_go_reference$category)}.}
 }

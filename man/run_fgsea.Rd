@@ -4,16 +4,26 @@
 \alias{run_fgsea}
 \title{Run fgsea using the recommended fgseaMultilevel method}
 \usage{
-run_fgsea(ranked_list, gene_sets, min_size = 5, max_size = 500)
+run_fgsea(
+  ranked_list,
+  gene_sets,
+  min_size = 5,
+  max_size = 500,
+  p_adjust_method = "BH"
+)
 }
 \arguments{
-\item{ranked_list}{A named vector of ranking statistics}
+\item{ranked_list}{A named vector of ranking statistics. Names define the
+feature universe and must be non-empty and unique; values must be finite
+and contain at least two distinct statistics.}
 
 \item{gene_sets}{A list of pathway gene sets}
 
 \item{min_size}{An integer specifying the minimum gene set size}
 
 \item{max_size}{An integer specifying the maximum gene set size}
+
+\item{p_adjust_method}{P-value adjustment method applied to fgsea raw p-values.}
 }
 \value{
 A data frame of fgsea results

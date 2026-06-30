@@ -21,24 +21,38 @@ pathway_gsea(
   seed = 42,
   go_category = "all",
   organism = "ko",
-  p.adjust = NULL
+  p.adjust = NULL,
+  comparison = NULL
 )
 }
 \arguments{
-\item{abundance}{A data frame containing gene/enzyme abundance data, with features as rows and samples as columns.
+\item{abundance}{A data frame containing gene/enzyme abundance data, with
+feature IDs in row names and samples as columns. Data frames may also
+provide a leading non-numeric feature ID column (for example \code{#NAME},
+\code{feature}, or \code{pathway}); it is converted to row names
+automatically. Values must be finite, non-missing, and
+non-negative count-like abundances; negative or non-finite values are
+rejected rather than being coerced to zero.
 For KEGG analysis: features should be KO IDs (e.g., K00001).
 For MetaCyc analysis: features should be EC numbers (e.g., EC:1.1.1.1 or 1.1.1.1), NOT pathway IDs.
+MetaCyc pathway-like identifiers are rejected because GSEA requires
+gene/enzyme-level input; use \code{\link{pathway_daa}} for pathway-level
+MetaCyc abundance tables.
 For GO analysis: features should be KO IDs that will be mapped to GO terms.
 NOTE: This function requires gene-level data, not pathway-level abundances.
 For pathway abundance analysis, use \code{\link{pathway_daa}} instead}
 
-\item{metadata}{A data frame containing sample metadata}
+\item{metadata}{A data frame containing sample metadata. After sample
+alignment, all retained samples must have non-missing, non-empty values in
+the grouping column.}
 
-\item{group}{A character string specifying the column name in metadata that contains the grouping variable}
+\item{group}{A character string specifying the column name in metadata that
+contains the grouping variable}
 
-\item{pathway_type}{A character string specifying the pathway type: "KEGG", "MetaCyc", or "GO"}
+\item{pathway_type}{A single character string specifying the pathway type:
+"KEGG", "MetaCyc", or "GO"}
 
-\item{method}{A character string specifying the GSEA method:
+\item{method}{A single character string specifying the GSEA method:
 \itemize{
   \item \code{"camera"}: Competitive gene set test using limma's camera function (recommended).
         Accounts for inter-gene correlations and provides more reliable p-values.
@@ -50,17 +64,30 @@ For pathway abundance analysis, use \code{\link{pathway_daa}} instead}
 }}
 
 \item{covariates}{A character vector specifying column names in metadata to use as covariates
-for adjustment. Only used when method is "camera" or "fry". Default is NULL (no covariates).
+for adjustment. Only supported when method is "camera" or "fry"; supplying
+covariates with preranked methods is an error because those methods use a
+precomputed rank vector rather than a design matrix. Default is NULL (no covariates).
+Covariate values must be complete for all aligned samples; rows with
+missing model variables are rejected rather than being silently dropped
+by \code{model.matrix()}. The resulting design matrix must also be finite
+and full rank; constant or fully confounded covariates are rejected.
 Example: \code{covariates = c("age", "sex", "BMI")}}
 
-\item{contrast}{For multi-group comparisons with "camera" or "fry" methods, specify the contrast
-to test. Can be a character string naming a group level, or a numeric vector of contrast weights.
-Default is NULL (automatic: compares second group to first).}
+\item{contrast}{For "camera" or "fry" methods, specify the coefficient
+or contrast to test. Supplying \code{contrast} with preranked methods is
+an error; use \code{comparison} instead. Default \code{NULL} automatically tests the single
+non-reference group coefficient in two-group designs. Multi-group designs
+must specify this explicitly. A character value must exactly match a
+design column name or a non-reference group level; substring matching is
+not used. A numeric scalar is treated as a design-column index, and a
+numeric vector must have length equal to the number of design columns.
+Named numeric vectors are matched and reordered by design column names;
+unnamed numeric vectors are interpreted in design column order.}
 
 \item{inter.gene.cor}{Numeric value specifying the inter-gene correlation for camera method.
 Default is 0.01. Use NA to estimate correlation from data for each gene set.}
 
-\item{rank_method}{A character string specifying the ranking statistic for preranked methods
+\item{rank_method}{A single character string specifying the ranking statistic for preranked methods
 (fgsea, GSEA, clusterProfiler): "signal2noise", "t_test", "log2_ratio", or "diff_abundance"}
 
 \item{nperm}{An integer specifying the number of permutations (for clusterProfiler method only).
@@ -74,7 +101,7 @@ The fgsea method uses adaptive multilevel splitting and does not require a fixed
 
 \item{seed}{An integer specifying the random seed for reproducibility}
 
-\item{go_category}{A character string specifying GO category to use.
+\item{go_category}{A single character string specifying GO category to use.
 "all" (default) uses all categories present in the reference data.
 Valid categories are determined by the reference data (currently MF and CC).
 See \code{table(ko_to_go_reference$category)} for available categories.}
@@ -88,6 +115,17 @@ compatibility; passing any value other than the default
 future release.}
 
 \item{p.adjust}{Deprecated. Use \code{p_adjust_method} instead.}
+
+\item{comparison}{For preranked methods only (\code{"fgsea"},
+\code{"GSEA"}, or \code{"clusterProfiler"}), an optional length-2
+character vector \code{c(group1, group2)} defining the ranking direction.
+Ranking statistics are calculated as group1 versus group2: positive
+\code{signal2noise}, \code{t_test}, \code{diff_abundance}, and
+\code{log2_ratio} values indicate higher abundance in \code{group1}
+(for \code{log2_ratio}, \code{log2(group1 / group2)}). If \code{NULL},
+exactly two aligned group levels must be present and their factor-level
+order is used. Multi-group preranked analyses must specify
+\code{comparison} explicitly.}
 }
 \value{
 A data frame containing GSEA results with columns:
@@ -100,7 +138,13 @@ A data frame containing GSEA results with columns:
     \item \code{p.adjust}: Adjusted p-value (FDR)
     \item \code{method}: The method used for analysis
   }
-  For fgsea/clusterProfiler methods, additional columns include ES, NES, and leading_edge.
+  For fgsea/clusterProfiler methods, additional columns include ES, NES,
+  leading_edge, group1, and group2. Positive ES/NES values are in the
+  \code{group1} versus \code{group2} direction. For camera/fry methods,
+  limma does not return NES; ggpicrust2 retains a legacy \code{NES} column
+  containing a signed \code{-log10(pvalue)} score for visualization
+  compatibility and labels it with \code{score_type} and
+  \code{score_label}.
 }
 \description{
 This function performs Gene Set Enrichment Analysis (GSEA) on PICRUSt2 predicted functional data
@@ -126,6 +170,10 @@ The \code{fry} method is a fast alternative that:
 The preranked methods (\code{fgsea}, \code{GSEA}) are included for compatibility but
 users should be aware that Wu et al. (2012) demonstrated these can produce "spectacularly
 wrong p-values" even with low inter-gene correlations.
+For these methods, positive ES/NES values indicate gene-set enrichment near
+the top of the ranked list. With \code{comparison = c(group1, group2)}, the
+top of the list corresponds to features higher in \code{group1}; reverse
+\code{comparison} to reverse the biological direction.
 
 \strong{Covariate Adjustment:}
 

@@ -27,7 +27,8 @@ run_limma_gsea(
 
 \item{covariates}{A character vector of covariate column names (optional)}
 
-\item{contrast}{Contrast specification for multi-group comparisons (optional)}
+\item{contrast}{Contrast specification for camera/fry. See
+\code{\link{pathway_gsea}} for the public contract.}
 
 \item{gene_sets}{A named list of gene sets (pathway -> gene IDs)}
 

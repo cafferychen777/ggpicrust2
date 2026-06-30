@@ -4,7 +4,13 @@
 \alias{calculate_rank_metric}
 \title{Calculate rank metric for GSEA}
 \usage{
-calculate_rank_metric(abundance, metadata, group, method = "signal2noise")
+calculate_rank_metric(
+  abundance,
+  metadata,
+  group,
+  method = "signal2noise",
+  comparison = NULL
+)
 }
 \arguments{
 \item{abundance}{A matrix of abundance data}
@@ -14,11 +20,23 @@ calculate_rank_metric(abundance, metadata, group, method = "signal2noise")
 \item{group}{A character string specifying the grouping variable}
 
 \item{method}{A character string specifying the ranking method}
+
+\item{comparison}{Optional length-2 character vector \code{c(group1, group2)}
+defining the ranking direction for preranked GSEA. Positive values indicate
+higher abundance in \code{group1}. If \code{NULL}, exactly two aligned
+group levels must be present and factor-level order is used.}
 }
 \value{
 A named vector of ranking statistics
 }
 \description{
 Calculate rank metric for GSEA
+}
+\details{
+The abundance matrix must carry explicit, unique feature row
+  names. The returned ranking vector is validated for unique feature names,
+  finite numeric statistics, and at least two distinct values; a fully tied
+  ranking is not meaningful for preranked GSEA because enrichment would then
+  depend on arbitrary input order.
 }
 \keyword{internal}
