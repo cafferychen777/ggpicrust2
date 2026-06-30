@@ -37,6 +37,33 @@ test_that("ggpicrust2 returns all expected fields", {
   expect_true(all(c("plot", "results") %in% names(result[[1]])))
 })
 
+test_that("ggpicrust2 validates p_values_threshold at the wrapper boundary", {
+  abundance <- data.frame(
+    id = c("K00001", "K00002"),
+    S1 = c(10, 20),
+    S2 = c(11, 21),
+    S3 = c(12, 22),
+    S4 = c(13, 23),
+    check.names = FALSE
+  )
+  metadata <- data.frame(
+    sample = paste0("S", 1:4),
+    Environment = c("A", "A", "B", "B"),
+    stringsAsFactors = FALSE
+  )
+
+  expect_error(
+    ggpicrust2(
+      data = abundance,
+      metadata = metadata,
+      group = "Environment",
+      pathway = "KO",
+      p_values_threshold = 0
+    ),
+    "range"
+  )
+})
+
 test_that("ggpicrust2 aligns Group vector to abundance sample order before plotting", {
   captured_group <- NULL
 
@@ -98,6 +125,169 @@ test_that("ggpicrust2 aligns Group vector to abundance sample order before plott
   expect_type(result, "list")
   expect_equal(names(captured_group), c("S_B", "S_A"))
   expect_equal(unname(captured_group), c("B", "A"))
+})
+
+test_that("ggpicrust2 preserves rownamed abundance input without dropping the first sample", {
+  seen <- NULL
+  mock_abundance <- data.frame(
+    S1 = c(10, 20),
+    S2 = c(11, 21),
+    S3 = c(30, 40),
+    S4 = c(31, 41),
+    row.names = c("K00001", "K00002"),
+    check.names = FALSE
+  )
+  metadata <- data.frame(
+    sample = paste0("S", 1:4),
+    Environment = c("A", "A", "B", "B"),
+    stringsAsFactors = FALSE
+  )
+
+  mock_pathway_daa <- function(abundance, metadata, group, daa_method, select = NULL,
+                               p_adjust_method, reference, .pre_aligned = FALSE,
+                               .sample_col = NULL) {
+    seen <<- list(cols = colnames(abundance), rows = rownames(abundance))
+    data.frame(
+      feature = rownames(abundance)[1],
+      method = "mock_method",
+      p_values = 0.01,
+      adj_method = "BH",
+      p_adjust = 0.01,
+      group1 = "A",
+      group2 = "B",
+      stringsAsFactors = FALSE
+    )
+  }
+
+  mock_pathway_annotation <- function(pathway, ko_to_kegg, daa_results_df, p_adjust_threshold) {
+    daa_results_df$description <- daa_results_df$feature
+    daa_results_df
+  }
+
+  mock_pathway_errorbar <- function(...) NULL
+
+  result <- testthat::with_mocked_bindings(
+    ggpicrust2(
+      data = mock_abundance,
+      metadata = metadata,
+      group = "Environment",
+      pathway = "KO",
+      daa_method = "ALDEx2",
+      ko_to_kegg = FALSE
+    ),
+    pathway_daa = mock_pathway_daa,
+    pathway_annotation = mock_pathway_annotation,
+    pathway_errorbar = mock_pathway_errorbar
+  )
+
+  expect_type(result, "list")
+  expect_equal(seen$cols, paste0("S", 1:4))
+  expect_equal(seen$rows, rownames(mock_abundance))
+  expect_equal(colnames(result$abundance), paste0("S", 1:4))
+  expect_equal(rownames(result$abundance), rownames(mock_abundance))
+})
+
+test_that("ggpicrust2 allows Lefser results through the wrapper", {
+  # Regression: ggpicrust2() rejected daa_method = "Lefser" with the stale
+  # claim that Lefser did not output p-values. pathway_daa() now returns
+  # all-feature Kruskal-Wallis p-values and adjusted p-values for Lefser,
+  # and pathway_errorbar() can compute its display log2FC fallback when
+  # no method-native log2_fold_change column is present.
+  captured_method <- NULL
+  captured_plot_method <- NULL
+
+  abundance <- data.frame(
+    feature = c("K00001", "K00002", "K00003"),
+    S1 = c(10, 20, 30),
+    S2 = c(11, 21, 31),
+    S3 = c(30, 10, 20),
+    S4 = c(31, 11, 21),
+    check.names = FALSE
+  )
+  metadata <- data.frame(
+    sample = paste0("S", 1:4),
+    Environment = c("A", "A", "B", "B"),
+    stringsAsFactors = FALSE
+  )
+
+  mock_pathway_daa <- function(abundance, metadata, group, daa_method,
+                               p_adjust_method, reference,
+                               .pre_aligned = FALSE,
+                               .sample_col = NULL) {
+    captured_method <<- daa_method
+    expect_true(.pre_aligned)
+    data.frame(
+      feature = rownames(abundance)[1],
+      method = "Lefser",
+      group1 = "A",
+      group2 = "B",
+      p_values = 0.01,
+      p_adjust = 0.02,
+      adj_method = p_adjust_method,
+      lda_score = 2.5,
+      stringsAsFactors = FALSE
+    )
+  }
+
+  mock_pathway_annotation <- function(pathway, ko_to_kegg, daa_results_df,
+                                      p_adjust_threshold) {
+    daa_results_df$description <- daa_results_df$feature
+    daa_results_df
+  }
+
+  mock_pathway_errorbar <- function(abundance, daa_results_df, Group,
+                                    ko_to_kegg, p_value_bar, order,
+                                    colors, select, x_lab,
+                                    p_values_threshold) {
+    captured_plot_method <<- unique(daa_results_df$method)
+    NULL
+  }
+
+  result <- testthat::with_mocked_bindings(
+    ggpicrust2(
+      data = abundance,
+      metadata = metadata,
+      group = "Environment",
+      pathway = "KO",
+      daa_method = "Lefser",
+      ko_to_kegg = FALSE
+    ),
+    pathway_daa = mock_pathway_daa,
+    pathway_annotation = mock_pathway_annotation,
+    pathway_errorbar = mock_pathway_errorbar
+  )
+
+  expect_type(result, "list")
+  expect_equal(captured_method, "Lefser")
+  expect_equal(captured_plot_method, "Lefser")
+  expect_equal(result$daa_results_df$method, "Lefser")
+})
+
+test_that("ggpicrust2 rejects abundance data without explicit feature IDs", {
+  abundance <- data.frame(
+    S1 = c(10, 20),
+    S2 = c(11, 21),
+    S3 = c(30, 40),
+    S4 = c(31, 41),
+    check.names = FALSE
+  )
+  metadata <- data.frame(
+    sample = paste0("S", 1:4),
+    Environment = c("A", "A", "B", "B"),
+    stringsAsFactors = FALSE
+  )
+
+  expect_error(
+    ggpicrust2(
+      data = abundance,
+      metadata = metadata,
+      group = "Environment",
+      pathway = "KO",
+      daa_method = "ALDEx2",
+      ko_to_kegg = FALSE
+    ),
+    "default row names"
+  )
 })
 
 test_that("ggpicrust2 rejects inconsistent ko_to_kegg / pathway combinations", {

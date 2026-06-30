@@ -1,7 +1,13 @@
 #' This function integrates pathway name/description annotations, ten of the most advanced differential abundance (DA) methods, and visualization of DA results.
 #'
 #' @param file A character string representing the file path of the input file containing KO abundance data in picrust2 export format. The input file should have KO identifiers in the first column and sample identifiers in the first row. The remaining cells should contain the abundance values for each KO-sample pair.
-#' @param data An optional data.frame containing KO abundance data in the same format as the input file. If provided, the function will use this data instead of reading from the file. By default, this parameter is set to NULL.
+#' @param data An optional data.frame or matrix containing KO/pathway abundance
+#' data. Data frames may use the same format as the input file, with feature
+#' identifiers in the first non-numeric column and samples in the remaining
+#' columns. Already-normalized matrix/data.frame inputs with feature identifiers
+#' in row names and samples in columns are also accepted. If provided, the
+#' function will use this data instead of reading from the file. By default,
+#' this parameter is set to NULL.
 #' @param metadata A tibble, consisting of sample information
 #' @param group A character, name of the group
 #' @param pathway A character, consisting of "EC", "KO", "MetaCyc"
@@ -13,6 +19,7 @@
 #' - "metagenomeSeq": Fit logistic regression models to test for differential abundance between groups using metagenomeSeq
 #' - "LinDA": Linear models for differential abundance analysis of microbiome compositional data
 #' - "Maaslin2": Multivariate Association with Linear Models (MaAsLin2) for differential abundance analysis
+#' - "Lefser": Linear discriminant analysis effect size using the lefser package
 #' @param ko_to_kegg Logical or logical-like string controlling conversion of
 #'   KO abundance to KEGG pathway abundance.
 #' @param filter_for_prokaryotes Logical. If TRUE (default), filters out KEGG pathways
@@ -35,7 +42,8 @@
 #' @param colors A vector consisting of colors number
 #' @param p_values_threshold A numeric value specifying the threshold for statistical
 #'   significance of differential abundance. Pathways with adjusted p-values below this
-#'   threshold will be displayed in the plot. Default is 0.05.
+#'   threshold will be displayed in the plot. Default is 0.05. Must be in the
+#'   range (0, 1].
 #'
 #' @return A list containing:
 #' \itemize{
@@ -159,6 +167,8 @@ ggpicrust2 <- function(file = NULL,
   }
   ko_to_kegg <- normalize_logical_flag(ko_to_kegg, "ko_to_kegg")
   filter_for_prokaryotes <- normalize_logical_flag(filter_for_prokaryotes, "filter_for_prokaryotes")
+  validate_p_adjust_method(p_adjust_method)
+  validate_probability_threshold(p_values_threshold, "p_values_threshold")
 
   # Input validation
   if (is.null(file) && is.null(data)) {
@@ -187,15 +197,6 @@ ggpicrust2 <- function(file = NULL,
     }
   }
 
-  # Validate daa_method early. Lefser returns LDA effect sizes, not
-  # p-values per pathway, so it cannot drive the downstream
-  # pathway_errorbar() step that ggpicrust2() produces. Accept the
-  # historical misspelling "Lefse" for backward compatibility but
-  # forward it through as an error with the canonical name.
-  if (daa_method %in% c("Lefser", "Lefse")) {
-    stop("The 'Lefser' method is not suitable for ggpicrust2() as it does not output p-values.")
-  }
-
   # `ko_to_kegg = TRUE` aggregates KO abundances into KEGG pathways, so it is
   # only meaningful when the input is KO abundance (pathway = "KO"). Pairing it
   # with EC/MetaCyc produces an empty matrix and a cryptic downstream error.
@@ -221,10 +222,18 @@ ggpicrust2 <- function(file = NULL,
       data
     }
     abundance <- as.data.frame(abundance)
-    abundance <- clean_ko_abundance(abundance)
-    rownames(abundance) <- abundance[, 1]
-    abundance <- abundance[, -1]
+    if (ncol(abundance) > 1 && !is.numeric(abundance[[1]])) {
+      abundance <- clean_ko_abundance(abundance)
+    } else if (!is.null(rownames(abundance))) {
+      rownames(abundance) <- gsub("^ko:", "", rownames(abundance))
+    }
+    abundance <- normalize_abundance_feature_ids(
+      abundance,
+      context = "ggpicrust2() abundance"
+    )
   }
+
+  validate_feature_rownames(abundance, "ggpicrust2() abundance")
 
   # Align once at the wrapper boundary. Both DAA and plotting consume this
   # same sample order, so pathway_daa() is called with an explicit
@@ -253,6 +262,11 @@ ggpicrust2 <- function(file = NULL,
     .pre_aligned = TRUE,
     .sample_col = aligned$sample_col
   )
+  if ("p_adjust" %in% colnames(daa_results_df)) {
+    validate_probability_values(daa_results_df$p_adjust,
+                                "p_adjust",
+                                "daa_results_df")
+  }
 
   # Check for significant biomarkers
   num_significant <- sum(daa_results_df$p_adjust < p_values_threshold, na.rm = TRUE)

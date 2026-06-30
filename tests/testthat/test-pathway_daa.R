@@ -65,6 +65,36 @@ test_that("pathway_daa validates inputs correctly", {
   )
 })
 
+test_that("pathway_daa rejects invalid reference levels instead of silently falling back", {
+  td <- create_daa_test_data(n_samples = 6)
+
+  expect_error(
+    pathway_daa(td$abundance, td$metadata, "group",
+                daa_method = "ALDEx2", p_adjust_method = "bogus"),
+    "'p_adjust_method' must be one of"
+  )
+
+  expect_error(
+    pathway_daa(td$abundance, td$metadata, "group",
+                daa_method = "ALDEx2", reference = "missing"),
+    "Reference level 'missing' was not found"
+  )
+  expect_error(
+    pathway_daa(td$abundance, td$metadata, "group",
+                daa_method = "ALDEx2", reference = ""),
+    "'reference' must be NULL or a single non-empty character string"
+  )
+
+  td_three <- create_daa_test_data(n_samples = 9, n_groups = 3)
+  selected_samples <- td_three$metadata$sample[td_three$metadata$group != "control"]
+  expect_error(
+    pathway_daa(td_three$abundance, td_three$metadata, "group",
+                daa_method = "ALDEx2", reference = "control",
+                select = selected_samples),
+    "Reference level 'control' was not found"
+  )
+})
+
 test_that("pathway_daa core methods produce expected results", {
   n_samples <- 10
   n_features <- 3
@@ -137,6 +167,66 @@ test_that("pathway_daa extended methods run when explicitly enabled", {
 
     expect_true(is.data.frame(result))
     expect_true(all(c("feature", "method", "p_values") %in% colnames(result)))
+  }
+})
+
+test_that("formula-based DAA methods handle non-syntactic group columns", {
+  method_pkg <- c(
+    "DESeq2" = "DESeq2",
+    "metagenomeSeq" = "metagenomeSeq",
+    "LinDA" = "MicrobiomeStat",
+    "Maaslin2" = "Maaslin2"
+  )
+  installed_methods <- names(method_pkg)[vapply(
+    method_pkg,
+    requireNamespace,
+    quietly = TRUE,
+    FUN.VALUE = logical(1)
+  )]
+  skip_if(length(installed_methods) == 0,
+          "No formula-based DAA backend packages are installed.")
+
+  set.seed(123)
+  n_features <- 12
+  n_samples <- 8
+  abundance <- matrix(
+    rpois(n_features * n_samples, lambda = 40) + 1,
+    nrow = n_features,
+    dimnames = list(paste0("p", seq_len(n_features)),
+                    paste0("S", seq_len(n_samples)))
+  )
+  abundance[seq_len(3), 5:8] <- abundance[seq_len(3), 5:8] + 30
+  abundance <- as.data.frame(abundance)
+
+  metadata <- data.frame(
+    sample = colnames(abundance),
+    check.names = FALSE,
+    stringsAsFactors = FALSE
+  )
+  metadata[["treatment group"]] <- rep(
+    c("baseline group", "treated group"),
+    each = n_samples / 2
+  )
+  metadata[[".ggpicrust2_group"]] <- "preexisting column"
+
+  for (method in installed_methods) {
+    captured <- capture.output({
+      result <- suppressWarnings(suppressMessages(pathway_daa(
+        abundance,
+        metadata,
+        "treatment group",
+        daa_method = method,
+        reference = "baseline group"
+      )))
+    }, type = "output")
+    ignore <- captured
+
+    expect_s3_class(result, "data.frame")
+    expect_equal(nrow(result), n_features)
+    expect_true(all(result$group1 == "baseline group"))
+    expect_true(all(result$group2 == "treated group"))
+    expect_true(all(is.na(result$p_values) |
+                      (result$p_values >= 0 & result$p_values <= 1)))
   }
 })
 
@@ -296,6 +386,69 @@ test_that("DESeq2 handles multi-group input", {
   expect_setequal(unique(res$group2), c("treatment", "other"))
 })
 
+test_that("DESeq2 preserves method-native adjusted p-values", {
+  skip_if_not_installed("DESeq2")
+
+  set.seed(202)
+  n_features <- 8
+  n_samples <- 12
+  abundance <- as.data.frame(matrix(
+    rpois(n_features * n_samples, lambda = 40),
+    nrow = n_features,
+    dimnames = list(paste0("p", seq_len(n_features)),
+                    paste0("S", seq_len(n_samples)))
+  ))
+  metadata <- data.frame(
+    sample = colnames(abundance),
+    group = rep(c("control", "treatment"), each = n_samples / 2),
+    stringsAsFactors = FALSE
+  )
+
+  captured <- capture.output({
+    res <- suppressWarnings(
+      pathway_daa(
+        abundance,
+        metadata,
+        "group",
+        daa_method = "DESeq2",
+        p_adjust_method = "bonferroni"
+      )
+    )
+  }, type = "output")
+  ignore <- captured
+
+  expect_true("p_adjust" %in% colnames(res))
+  expect_true(all(res$adj_method == "bonferroni (method-specific)"))
+  expect_true(all(is.na(res$p_adjust) | (res$p_adjust >= 0 & res$p_adjust <= 1)))
+})
+
+test_that("DESeq2 scientific diagnostic warnings reach the caller", {
+  skip_if_not_installed("DESeq2")
+
+  abundance <- matrix(
+    rep(c(10, 20, 30, 40, 50), 6),
+    nrow = 5,
+    dimnames = list(paste0("f", 1:5), paste0("S", 1:6))
+  )
+  metadata <- data.frame(
+    sample = colnames(abundance),
+    group = rep(c("A", "B"), each = 3),
+    stringsAsFactors = FALSE
+  )
+
+  expect_warning(
+    result <- suppressMessages(pathway_daa(
+      abundance,
+      metadata,
+      "group",
+      daa_method = "DESeq2"
+    )),
+    "all genes have equal values for all samples"
+  )
+  expect_s3_class(result, "data.frame")
+  expect_equal(nrow(result), nrow(abundance))
+})
+
 test_that("Maaslin2 multi-group produces one row per (feature, contrast)", {
   skip_if_not_installed("Maaslin2")
 
@@ -326,6 +479,8 @@ test_that("Maaslin2 multi-group produces one row per (feature, contrast)", {
   expect_equal(nrow(res), n_features * 2)
   expect_true(all(res$group1 == "A"))
   expect_setequal(unique(res$group2), c("B", "C"))
+  expect_true("p_adjust" %in% colnames(res))
+  expect_true(all(res$adj_method == "BH (method-specific)"))
 
   # Features preserved after Maaslin2's hyphen-to-dot renaming round-trip.
   expect_true(all(res$feature %in% rownames(abundance)))
@@ -365,6 +520,48 @@ test_that("metagenomeSeq works with non-default sample column name", {
   expect_s3_class(res, "data.frame")
   expect_true(all(c("feature", "method", "p_values") %in% colnames(res)))
   expect_equal(nrow(res), n_features)
+  expect_true("log2_fold_change" %in% colnames(res))
+  expect_true(all(is.finite(res$log2_fold_change)))
+})
+
+test_that("metagenomeSeq extracts feature-aligned log fold changes", {
+  skip_if_not_installed("metagenomeSeq")
+
+  set.seed(99)
+  n_features <- 20
+  n_samples <- 12
+  abundance <- matrix(
+    rpois(n_features * n_samples, lambda = 40),
+    nrow = n_features,
+    dimnames = list(
+      c("f_up", "f_down", paste0("f", sprintf("%02d", 3:n_features))),
+      paste0("S", seq_len(n_samples))
+    )
+  )
+  abundance["f_up", 1:6] <- c(10, 11, 12, 13, 14, 15)
+  abundance["f_up", 7:12] <- c(120, 125, 130, 135, 140, 145)
+  abundance["f_down", 1:6] <- c(140, 135, 130, 125, 120, 115)
+  abundance["f_down", 7:12] <- c(15, 14, 13, 12, 11, 10)
+  metadata <- data.frame(
+    sample = colnames(abundance),
+    group = rep(c("A", "B"), each = n_samples / 2),
+    stringsAsFactors = FALSE
+  )
+
+  res <- suppressWarnings(suppressMessages(
+    pathway_daa(
+      abundance,
+      metadata,
+      "group",
+      daa_method = "metagenomeSeq",
+      reference = "A"
+    )
+  ))
+
+  expect_equal(nrow(res), n_features)
+  expect_true(all(is.finite(res$log2_fold_change)))
+  expect_gt(res$log2_fold_change[res$feature == "f_up"], 0)
+  expect_lt(res$log2_fold_change[res$feature == "f_down"], 0)
 })
 
 test_that("metagenomeSeq survives degenerate cumNormStat input", {
@@ -374,8 +571,9 @@ test_that("metagenomeSeq survives degenerate cumNormStat input", {
   # metagenomeSeq::cumNormStatFast() returns NaN for this shape because the
   # per-sample quantile search has nothing to stabilize on, and the package
   # then aborts with the cryptic "missing value where TRUE/FALSE needed".
-  # We pre-compute the normalization factor with a fallback to p = 0.5,
-  # which is metagenomeSeq's own documented default.
+  # We keep the existing p = 0.5 fallback for this degenerate search path,
+  # but it must be visible to callers as a warning rather than a silent
+  # normalization change.
   abundance <- data.frame(
     S1 = c(10, 20, 30), S2 = c(15, 25, 35),
     S3 = c(30, 40, 50), S4 = c(35, 45, 55),
@@ -387,16 +585,42 @@ test_that("metagenomeSeq survives degenerate cumNormStat input", {
     stringsAsFactors = FALSE
   )
 
-  captured <- capture.output({
-    res <- suppressWarnings(
-      pathway_daa(abundance, metadata, "group", daa_method = "metagenomeSeq")
-    )
-  }, type = "output")
-  ignore <- captured
+  res <- NULL
+  expect_warning(
+    res <- pathway_daa(
+      abundance,
+      metadata,
+      "group",
+      daa_method = "metagenomeSeq"
+    ),
+    "could not estimate a stable metagenomeSeq CSS normalization quantile"
+  )
 
   expect_s3_class(res, "data.frame")
   expect_equal(nrow(res), nrow(abundance))
   expect_true(all(c("feature", "method", "p_values") %in% colnames(res)))
+})
+
+test_that("metagenomeSeq fails when CSS normalization is undefined for sparse samples", {
+  skip_if_not_installed("metagenomeSeq")
+
+  abundance <- data.frame(
+    S1 = c(10, 0, 0),
+    S2 = c(12, 0, 0),
+    S3 = c(0, 10, 0),
+    S4 = c(0, 11, 0),
+    row.names = paste0("p", 1:3)
+  )
+  metadata <- data.frame(
+    sample = paste0("S", 1:4),
+    group = c("A", "A", "B", "B"),
+    stringsAsFactors = FALSE
+  )
+
+  expect_error(
+    pathway_daa(abundance, metadata, "group", daa_method = "metagenomeSeq"),
+    "requires at least two positive features in every sample"
+  )
 })
 
 test_that("pathway_daa rejects negative abundance values", {
@@ -415,7 +639,54 @@ test_that("pathway_daa rejects negative abundance values", {
   )
   expect_error(
     pathway_daa(abundance, metadata, "group", daa_method = "ALDEx2"),
-    "Negative values found"
+    "non-negative values"
+  )
+})
+
+test_that("validate_daa_input rejects missing and non-finite abundance values", {
+  validate_daa <- getFromNamespace("validate_daa_input", "ggpicrust2")
+  mat <- matrix(
+    c(1, 2, 3, 4, 5, 6, 7, 8),
+    nrow = 2,
+    dimnames = list(c("p1", "p2"), paste0("S", 1:4))
+  )
+
+  mat_missing <- mat
+  mat_missing[1, 2] <- NA_real_
+  expect_error(
+    validate_daa(mat_missing),
+    "must not contain missing values"
+  )
+
+  mat_infinite <- mat
+  mat_infinite[2, 3] <- Inf
+  expect_error(
+    validate_daa(mat_infinite),
+    "must contain only finite values"
+  )
+})
+
+test_that("pathway_daa warns when count-based methods round non-integer abundance", {
+  skip_if_not_installed("edgeR")
+
+  abundance <- data.frame(
+    S1 = c(10.2, 20.7, 30.1),
+    S2 = c(11.4, 21.2, 31.8),
+    S3 = c(40.5, 15.3, 25.1),
+    S4 = c(41.6, 16.9, 26.4),
+    row.names = paste0("p", 1:3)
+  )
+  metadata <- data.frame(
+    sample = paste0("S", 1:4),
+    group = c("A", "A", "B", "B"),
+    stringsAsFactors = FALSE
+  )
+
+  expect_warning(
+    suppressMessages(
+      pathway_daa(abundance, metadata, "group", daa_method = "edgeR")
+    ),
+    "non-integer abundance value\\(s\\) were rounded"
   )
 })
 
@@ -503,6 +774,218 @@ test_that("pathway_daa handles p-value adjustment correctly", {
   expect_true(all(result$p_adjust >= 0 & result$p_adjust <= 1))
 })
 
+test_that("wrapper-computed DAA p-values are adjusted within each contrast", {
+  result <- data.frame(
+    feature = rep(c("p1", "p2"), 2),
+    method = "edgeR",
+    group1 = "A",
+    group2 = rep(c("B", "C"), each = 2),
+    p_values = c(0.01, 0.02, 0.01, 0.90),
+    stringsAsFactors = FALSE
+  )
+
+  adjusted <- ggpicrust2:::adjust_daa_p_values(result, "bonferroni")
+
+  expect_equal(
+    adjusted$p_adjust[adjusted$group2 == "B"],
+    stats::p.adjust(c(0.01, 0.02), method = "bonferroni")
+  )
+  expect_equal(
+    adjusted$p_adjust[adjusted$group2 == "C"],
+    stats::p.adjust(c(0.01, 0.90), method = "bonferroni")
+  )
+  expect_equal(adjusted$adj_method, rep("bonferroni", nrow(adjusted)))
+})
+
+test_that("DAA p-value adjustment validates raw p-values before adjustment", {
+  result <- data.frame(
+    feature = "p1",
+    method = "edgeR",
+    group1 = "A",
+    group2 = "B",
+    p_values = 1.2,
+    stringsAsFactors = FALSE
+  )
+
+  expect_error(
+    ggpicrust2:::adjust_daa_p_values(result, "BH"),
+    "Column 'p_values' in DAA result must contain finite values between 0 and 1 or NA"
+  )
+})
+
+test_that("DAA p-value adjustment validates method-specific adjusted p-values", {
+  result <- data.frame(
+    feature = "p1",
+    method = "DESeq2",
+    group1 = "A",
+    group2 = "B",
+    p_values = 0.2,
+    p_adjust = 1.5,
+    stringsAsFactors = FALSE
+  )
+  attr(result, "adj_method") <- "BH (method-specific)"
+
+  expect_error(
+    ggpicrust2:::adjust_daa_p_values(result, "BH"),
+    "Column 'p_adjust' in DAA result must contain finite values between 0 and 1 or NA"
+  )
+})
+
+test_that("DAA p-value adjustment preserves valid missing p-values", {
+  result <- data.frame(
+    feature = c("p1", "p2", "p3"),
+    method = "limma voom",
+    group1 = "A",
+    group2 = "B",
+    p_values = c(NA_real_, 0.01, 0.02),
+    stringsAsFactors = FALSE
+  )
+
+  adjusted <- ggpicrust2:::adjust_daa_p_values(result, "BH")
+
+  expect_equal(adjusted$p_adjust, c(NA_real_, 0.02, 0.02))
+  expect_equal(adjusted$adj_method, rep("BH", nrow(adjusted)))
+})
+
+test_that("backend result values are aligned and validated by feature IDs", {
+  align_values <- getFromNamespace(
+    "validate_and_align_backend_result_values",
+    "ggpicrust2"
+  )
+
+  aligned <- align_values(
+    values = c(0.3, 0.2, 0.1),
+    output_ids = c("f3", "f2", "f1"),
+    feature_ids = c("f1", "f2", "f3"),
+    value_name = "pvalue",
+    context = "synthetic backend",
+    value_type = "probability",
+    allow_na = FALSE
+  )
+  expect_equal(aligned, c(0.1, 0.2, 0.3))
+
+  expect_error(
+    align_values(
+      values = c(0.3, 0.2, 0.1),
+      output_ids = c("f3", "fX", "f1"),
+      feature_ids = c("f1", "f2", "f3"),
+      value_name = "pvalue",
+      context = "synthetic backend",
+      value_type = "probability",
+      allow_na = FALSE
+    ),
+    "backend feature identifiers do not match"
+  )
+  expect_error(
+    align_values(
+      values = c(0.3, 1.2, 0.1),
+      output_ids = c("f3", "f2", "f1"),
+      feature_ids = c("f1", "f2", "f3"),
+      value_name = "pvalue",
+      context = "synthetic backend",
+      value_type = "probability",
+      allow_na = FALSE
+    ),
+    "between 0 and 1"
+  )
+  expect_error(
+    align_values(
+      values = c(3, Inf, 1),
+      output_ids = c("f3", "f2", "f1"),
+      feature_ids = c("f1", "f2", "f3"),
+      value_name = "logFC",
+      context = "synthetic backend",
+      value_type = "finite_numeric",
+      allow_na = FALSE
+    ),
+    "finite numeric"
+  )
+})
+
+test_that("limma voom backend output is aligned by feature row names", {
+  skip_if_not_installed("limma")
+  skip_if_not_installed("edgeR")
+
+  td <- create_daa_test_data(n_samples = 6)
+  feature_ids <- rownames(td$abundance)
+  backend_ids <- rev(feature_ids)
+  backend_p <- setNames(seq_along(backend_ids) / 10, backend_ids)
+  backend_lfc <- setNames(seq_along(backend_ids) * 10, backend_ids)
+
+  testthat::local_mocked_bindings(
+    eBayes = function(fit, ...) {
+      coef_names <- colnames(fit$coefficients)
+      p_mat <- matrix(
+        0.9,
+        nrow = length(backend_ids),
+        ncol = length(coef_names),
+        dimnames = list(backend_ids, coef_names)
+      )
+      coef_mat <- matrix(
+        0,
+        nrow = length(backend_ids),
+        ncol = length(coef_names),
+        dimnames = list(backend_ids, coef_names)
+      )
+      p_mat[, 2] <- unname(backend_p[backend_ids])
+      coef_mat[, 2] <- unname(backend_lfc[backend_ids])
+      fit$p.value <- p_mat
+      fit$coefficients <- coef_mat
+      fit
+    },
+    .package = "limma"
+  )
+
+  res <- suppressWarnings(suppressMessages(
+    pathway_daa(
+      td$abundance,
+      td$metadata,
+      "group",
+      daa_method = "limma voom"
+    )
+  ))
+
+  expect_equal(res$feature, feature_ids)
+  expect_equal(res$p_values, unname(backend_p[feature_ids]))
+  expect_equal(res$log2_fold_change, unname(backend_lfc[feature_ids]))
+})
+
+test_that("edgeR backend output is aligned by exactTest row names", {
+  skip_if_not_installed("edgeR")
+
+  td <- create_daa_test_data(n_samples = 6)
+  feature_ids <- rownames(td$abundance)
+  backend_ids <- rev(feature_ids)
+  backend_p <- setNames(seq_along(backend_ids) / 10, backend_ids)
+  backend_lfc <- setNames(seq_along(backend_ids) * 10, backend_ids)
+  fake_table <- data.frame(
+    logFC = unname(backend_lfc[backend_ids]),
+    logCPM = seq_along(backend_ids),
+    PValue = unname(backend_p[backend_ids]),
+    row.names = backend_ids
+  )
+
+  testthat::local_mocked_bindings(
+    exactTest = function(...) {
+      list(table = fake_table)
+    },
+    .package = "edgeR"
+  )
+
+  res <- suppressWarnings(suppressMessages(
+    pathway_daa(
+      td$abundance,
+      td$metadata,
+      "group",
+      daa_method = "edgeR"
+    )
+  ))
+
+  expect_equal(res$feature, feature_ids)
+  expect_equal(res$p_values, unname(backend_p[feature_ids]))
+  expect_equal(res$log2_fold_change, unname(backend_lfc[feature_ids]))
+})
+
 test_that("pathway_daa include_abundance_stats parameter works correctly", {
   td <- create_daa_test_data(n_samples = 4)
 
@@ -565,6 +1048,67 @@ test_that("ALDEx2 returns effect size columns by default", {
   expect_false(any(effect_cols %in% colnames(result_opt_out)))
 })
 
+test_that("ALDEx2 effect-size output is aligned and validated by feature", {
+  validate_effects <- getFromNamespace(
+    "validate_and_align_aldex2_effect_results",
+    "ggpicrust2"
+  )
+  effect_results <- data.frame(
+    effect = c(2, 1),
+    diff.btw = c(20, 10),
+    rab.all = c(200, 100),
+    overlap = c(0.2, 0.1),
+    row.names = c("feature2", "feature1")
+  )
+
+  aligned <- validate_effects(
+    effect_results,
+    c("feature1", "feature2")
+  )
+  expect_equal(rownames(aligned), c("feature1", "feature2"))
+  expect_equal(aligned$diff.btw, c(10, 20))
+
+  expect_error(
+    validate_effects(
+      effect_results[, setdiff(colnames(effect_results), "effect")],
+      c("feature1", "feature2")
+    ),
+    "missing required column.*effect"
+  )
+  invalid_overlap <- effect_results
+  invalid_overlap$overlap[1] <- 1.5
+  expect_error(
+    validate_effects(invalid_overlap, c("feature1", "feature2")),
+    "overlap.*between 0 and 1"
+  )
+})
+
+test_that("ALDEx2 requested effect-size failures stop the analysis", {
+  skip_if_not_installed("ALDEx2")
+
+  td <- create_daa_test_data(n_samples = 4)
+  local_mocked_bindings(
+    aldex.effect = function(...) {
+      stop("synthetic effect failure")
+    },
+    .package = "ALDEx2"
+  )
+
+  expect_error(
+    pathway_daa(
+      td$abundance,
+      td$metadata,
+      "group",
+      daa_method = "ALDEx2",
+      include_effect_size = TRUE
+    ),
+    paste0(
+      "effect-size calculation failed while .*include_effect_size = TRUE.*",
+      "synthetic effect failure"
+    )
+  )
+})
+
 test_that("include_abundance_stats does not collide with method-native log2FC", {
   td <- create_daa_test_data(n_samples = 4)
 
@@ -584,41 +1128,159 @@ test_that("include_abundance_stats does not collide with method-native log2FC", 
   expect_equal(result$log2_fold_change, result$diff_btw)
 })
 
-test_that("format_linda_output handles malformed LinDA outputs robustly", {
-  malformed_output <- list(
+test_that("include_abundance_stats fails when backend features cannot be summarized", {
+  skip_if_not_installed("limma")
+
+  td <- create_daa_test_data(n_samples = 4)
+  testthat::local_mocked_bindings(
+    perform_limma_voom_analysis = function(...) {
+      data.frame(
+        feature = "feature_not_in_abundance",
+        method = "limma voom",
+        group1 = "control",
+        group2 = "treatment",
+        p_values = 0.5,
+        stringsAsFactors = FALSE
+      )
+    }
+  )
+
+  expect_error(
+    pathway_daa(
+      td$abundance,
+      td$metadata,
+      "group",
+      daa_method = "limma voom",
+      include_abundance_stats = TRUE
+    ),
+    "Failed to calculate abundance statistics.*missing from abundance row names"
+  )
+})
+
+test_that("pathway_daa ALDEx2 honors user-specified reference", {
+  # Regression: ALDEx2 received `as.numeric(Group)` from the raw factor order,
+  # so `reference` changed neither group labels nor the direction of the
+  # CLR-space `diff.btw`/`log2_fold_change` effect size.
+  skip_if_not_installed("ALDEx2")
+
+  counts <- matrix(c(
+    100, 100, 100, 100, 300, 300, 300, 300,
+    300, 300, 300, 300, 100, 100, 100, 100,
+    50, 50, 50, 50, 50, 50, 50, 50,
+    80, 80, 80, 80, 80, 80, 80, 80
+  ), nrow = 4, byrow = TRUE)
+  rownames(counts) <- paste0("f", seq_len(nrow(counts)))
+  colnames(counts) <- paste0("S", seq_len(ncol(counts)))
+  meta <- data.frame(
+    sample = colnames(counts),
+    Env = c(rep("control", 4), rep("treatment", 4)),
+    stringsAsFactors = FALSE
+  )
+
+  set.seed(24)
+  a_ctrl <- suppressMessages(suppressWarnings(
+    pathway_daa(abundance = counts, metadata = meta, group = "Env",
+                daa_method = "ALDEx2", reference = "control")
+  ))
+  set.seed(24)
+  a_trt <- suppressMessages(suppressWarnings(
+    pathway_daa(abundance = counts, metadata = meta, group = "Env",
+                daa_method = "ALDEx2", reference = "treatment")
+  ))
+
+  expect_true(all(a_ctrl$group1 == "control"))
+  expect_true(all(a_ctrl$group2 == "treatment"))
+  expect_true(all(a_trt$group1 == "treatment"))
+  expect_true(all(a_trt$group2 == "control"))
+
+  ctrl_welch <- a_ctrl[a_ctrl$method == "ALDEx2_Welch's t test", ]
+  trt_welch <- a_trt[a_trt$method == "ALDEx2_Welch's t test", ]
+  ord_ctrl <- order(ctrl_welch$feature)
+  ord_trt <- order(trt_welch$feature)
+  expect_equal(
+    ctrl_welch$log2_fold_change[ord_ctrl],
+    -trt_welch$log2_fold_change[ord_trt],
+    tolerance = 0.05
+  )
+  expect_true(ctrl_welch$log2_fold_change[ctrl_welch$feature == "f1"] > 0)
+  expect_true(trt_welch$log2_fold_change[trt_welch$feature == "f1"] < 0)
+  expect_true(ctrl_welch$log2_fold_change[ctrl_welch$feature == "f2"] < 0)
+  expect_true(trt_welch$log2_fold_change[trt_welch$feature == "f2"] > 0)
+  expect_equal(ctrl_welch$log2_fold_change, ctrl_welch$diff_btw)
+})
+
+test_that("format_linda_output rejects malformed LinDA outputs", {
+  malformed_shape <- list(
     groupB = data.frame(
       pvalue = I(matrix(c(0.01, 0.02, 0.03, 0.04, 0.05, 0.06), nrow = 3)),
+      padj = c(0.02, 0.03, 0.04),
       log2FoldChange = c(1.2, 0.8, 0.5),
       row.names = c("path1", "path2", "path3")
-    ),
+    )
+  )
+  missing_column <- list(
     groupC = data.frame(
       some_other_col = c(1, 2),
       row.names = c("path4", "path5")
     )
   )
-
-  result <- suppressWarnings(
-    ggpicrust2:::format_linda_output(
-      linda_output = malformed_output,
-      group = "group",
-      reference = "A",
-      Level = c("A", "B", "C")
+  invalid_probability <- list(
+    groupB = data.frame(
+      pvalue = c(0.01, 1.2),
+      padj = c(0.02, 0.5),
+      log2FoldChange = c(1.2, 0.8),
+      row.names = c("path1", "path2")
     )
   )
 
-  expect_s3_class(result, "data.frame")
-  expect_equal(nrow(result), 5)
-  expect_true(all(c("feature", "method", "group1", "group2", "p_values", "log2_fold_change") %in% colnames(result)))
+  expect_error(
+    ggpicrust2:::format_linda_output(
+      linda_output = malformed_shape,
+      group = "group",
+      reference = "A",
+      Level = c("A", "B", "C")
+    ),
+    "pvalue.*invalid length or shape"
+  )
+  expect_error(
+    ggpicrust2:::format_linda_output(
+      linda_output = missing_column,
+      group = "group",
+      reference = "A",
+      Level = c("A", "B", "C")
+    ),
+    "missing required column 'pvalue'"
+  )
+  expect_error(
+    ggpicrust2:::format_linda_output(
+      linda_output = invalid_probability,
+      group = "group",
+      reference = "A",
+      Level = c("A", "B")
+    ),
+    "between 0 and 1"
+  )
+})
 
-  group_b_rows <- result$group2 == "B"
-  expect_true(any(group_b_rows))
-  expect_true(all(is.na(result$p_values[group_b_rows])))
-  expect_true(all(!is.na(result$log2_fold_change[group_b_rows])))
+test_that("format_linda_output preserves LinDA adjusted p-values", {
+  linda_output <- list(
+    groupB = data.frame(
+      pvalue = c(0.01, 0.2),
+      padj = c(0.02, 0.2),
+      log2FoldChange = c(1.5, -0.3),
+      row.names = c("path1", "path2")
+    )
+  )
 
-  group_c_rows <- result$group2 == "C"
-  expect_true(any(group_c_rows))
-  expect_true(all(is.na(result$p_values[group_c_rows])))
-  expect_true(all(is.na(result$log2_fold_change[group_c_rows])))
+  result <- ggpicrust2:::format_linda_output(
+    linda_output = linda_output,
+    group = "group",
+    reference = "A",
+    Level = c("A", "B")
+  )
+
+  expect_true("p_adjust" %in% colnames(result))
+  expect_equal(result$p_adjust, c(0.02, 0.2))
 })
 
 test_that("pathway_daa Lefser fails fast for multi-group input", {
@@ -633,6 +1295,189 @@ test_that("pathway_daa Lefser fails fast for multi-group input", {
       daa_method = "Lefser"
     ),
     "requires exactly 2 groups"
+  )
+})
+
+test_that("pathway_daa Lefser honors reference and tests relative abundance", {
+  skip_if_not_installed("lefser")
+
+  abundance <- data.frame(
+    S1 = c(900, 100),
+    S2 = c(800, 200),
+    S3 = c(90000, 10000),
+    S4 = c(80000, 20000),
+    row.names = c("f1", "f2")
+  )
+  metadata <- data.frame(
+    sample = paste0("S", 1:4),
+    Env = c("control", "control", "treatment", "treatment"),
+    stringsAsFactors = FALSE
+  )
+
+  res <- suppressMessages(suppressWarnings(
+    pathway_daa(
+      abundance = abundance,
+      metadata = metadata,
+      group = "Env",
+      daa_method = "Lefser",
+      reference = "treatment"
+    )
+  ))
+
+  rel_abundance <- sweep(as.matrix(abundance), 2, colSums(abundance), "/") * 1e6
+  group_vector <- factor(metadata$Env, levels = c("treatment", "control"))
+  expected_p <- apply(rel_abundance, 1, function(feature_values) {
+    stats::kruskal.test(feature_values ~ group_vector)$p.value
+  })
+
+  expect_true(all(res$group1 == "treatment"))
+  expect_true(all(res$group2 == "control"))
+  expect_equal(
+    res$p_values[match(rownames(rel_abundance), res$feature)],
+    unname(expected_p),
+    tolerance = 1e-12
+  )
+  expect_equal(unname(expected_p), c(1, 1), tolerance = 1e-12)
+})
+
+test_that("pathway_daa preserves a leading feature ID column before sample alignment", {
+  skip_if_not_installed("limma")
+
+  abundance <- data.frame(
+    feature = c("F_A", "F_B", "F_C", "F_D", "F_E"),
+    S1 = c(10, 1, 1, 2, 3),
+    S2 = c(11, 1, 1, 2, 3),
+    S3 = c(1, 10, 1, 2, 3),
+    S4 = c(1, 11, 1, 2, 3),
+    check.names = FALSE
+  )
+  metadata <- data.frame(
+    sample = paste0("S", 1:4),
+    Env = c("A", "A", "B", "B"),
+    stringsAsFactors = FALSE
+  )
+
+  res <- suppressWarnings(pathway_daa(
+    abundance = abundance,
+    metadata = metadata,
+    group = "Env",
+    daa_method = "limma voom"
+  ))
+
+  expect_setequal(res$feature, abundance$feature)
+  expect_false(any(res$feature %in% as.character(seq_len(nrow(abundance)))))
+})
+
+test_that("pathway_daa requires explicit unique feature identifiers", {
+  skip_if_not_installed("limma")
+
+  metadata <- data.frame(
+    sample = paste0("S", 1:4),
+    Env = c("A", "A", "B", "B"),
+    stringsAsFactors = FALSE
+  )
+
+  no_feature_ids <- data.frame(
+    S1 = c(10, 20, 30),
+    S2 = c(11, 21, 31),
+    S3 = c(30, 10, 20),
+    S4 = c(31, 11, 21),
+    check.names = FALSE
+  )
+  expect_error(
+    pathway_daa(
+      abundance = no_feature_ids,
+      metadata = metadata,
+      group = "Env",
+      daa_method = "limma voom"
+    ),
+    "feature identifiers|row names"
+  )
+
+  duplicated_feature_ids <- matrix(
+    c(
+      10, 11, 30, 31,
+      20, 21, 10, 11,
+      30, 31, 20, 21
+    ),
+    nrow = 3,
+    byrow = TRUE,
+    dimnames = list(c("F1", "F1", "F3"), paste0("S", 1:4))
+  )
+  expect_error(
+    pathway_daa(
+      abundance = duplicated_feature_ids,
+      metadata = metadata,
+      group = "Env",
+      daa_method = "limma voom"
+    ),
+    "duplicated feature identifiers"
+  )
+})
+
+test_that("perform_lefser_analysis surfaces backend errors instead of dropping LDA scores", {
+  skip_if_not_installed("lefser")
+
+  abundance <- matrix(
+    c(1, 2, 3, 4,
+      4, 3, 2, 1),
+    nrow = 2,
+    byrow = TRUE,
+    dimnames = list(c("f1", "f2"), paste0("S", 1:4))
+  )
+  metadata <- data.frame(
+    sample = paste0("S", 1:4),
+    Env = rep("A", 4),
+    stringsAsFactors = FALSE
+  )
+
+  expect_error(
+    ggpicrust2:::perform_lefser_analysis(
+      abundance_mat = abundance,
+      metadata = metadata,
+      group = "Env",
+      reference = "A",
+      Level = c("A", "B")
+    ),
+    "Lefser analysis failed"
+  )
+})
+
+test_that("calculate_lefser_kruskal_p_value fails instead of returning p=1 for invalid tests", {
+  calc <- ggpicrust2:::calculate_lefser_kruskal_p_value
+
+  expect_equal(
+    calc(
+      feature_values = c(5, 5, 5, 5),
+      group_vector = factor(c("A", "A", "B", "B")),
+      feature_id = "constant_feature"
+    ),
+    1
+  )
+
+  expect_error(
+    calc(
+      feature_values = c(1, 2, 3),
+      group_vector = factor(c("A", "A", "B", "B")),
+      feature_id = "bad_length"
+    ),
+    "bad_length.*length"
+  )
+  expect_error(
+    calc(
+      feature_values = c(1, 2, Inf, 4),
+      group_vector = factor(c("A", "A", "B", "B")),
+      feature_id = "bad_value"
+    ),
+    "bad_value.*finite"
+  )
+  expect_error(
+    calc(
+      feature_values = c(1, 2, 3, 4),
+      group_vector = factor(c("A", "A", NA, NA)),
+      feature_id = "bad_group"
+    ),
+    "bad_group"
   )
 })
 
@@ -671,6 +1516,34 @@ test_that("pathway_daa LinDA honors user-specified reference", {
   expect_true(all(r_trt$group2 == "control"))
   # Flipping the reference must flip the sign of log2 fold change.
   expect_equal(r_ctrl$log2_fold_change, -r_trt$log2_fold_change, tolerance = 1e-6)
+})
+
+test_that("perform_linda_analysis surfaces backend errors instead of returning empty results", {
+  skip_if_not_installed("MicrobiomeStat")
+
+  abundance <- matrix(
+    rpois(12 * 4, lambda = 20),
+    nrow = 12,
+    dimnames = list(paste0("f", 1:12), paste0("S", 1:4))
+  )
+  metadata <- data.frame(
+    sample = paste0("S", 1:4),
+    Env = rep("A", 4),
+    stringsAsFactors = FALSE
+  )
+
+  expect_error(
+    ggpicrust2:::perform_linda_analysis(
+      abundance = abundance,
+      metadata = metadata,
+      group = "Env",
+      reference = "A",
+      Level = c("A", "B"),
+      length_Level = 2,
+      p_adjust_method = "BH"
+    ),
+    "LinDA analysis failed"
+  )
 })
 
 test_that("pathway_daa Maaslin2 honors user-specified reference in 2-group case", {
@@ -713,6 +1586,45 @@ test_that("pathway_daa Maaslin2 honors user-specified reference in 2-group case"
   expect_equal(m_ctrl$log2_fold_change[ord_ctrl],
                -m_trt$log2_fold_change[ord_trt],
                tolerance = 1e-6)
+})
+
+test_that("Maaslin2 feature IDs are mapped through make.names without ambiguity", {
+  prepare_map <- getFromNamespace("prepare_maaslin2_feature_mapping", "ggpicrust2")
+  validate_results <- getFromNamespace("validate_maaslin2_results", "ggpicrust2")
+
+  expect_error(
+    prepare_map(c("path-a", "path.a", "path b")),
+    "make.names\\(\\).*ambiguous"
+  )
+
+  feature_map <- prepare_map(c("path-a", "path b"))
+  expect_equal(names(feature_map), c("path.a", "path.b"))
+
+  maaslin2_results <- data.frame(
+    feature = c("path.a", "path.b"),
+    metadata = c("Env", "Env"),
+    value = c("B", "B"),
+    coef = c(1.2, -0.5),
+    pval = c(0.01, 0.20),
+    qval = c(0.02, 0.20),
+    stringsAsFactors = FALSE
+  )
+  validated <- validate_results(maaslin2_results, "Env", feature_map)
+  expect_equal(validated$feature, c("path-a", "path b"))
+
+  bad_feature <- maaslin2_results
+  bad_feature$feature[1] <- "unexpected"
+  expect_error(
+    validate_results(bad_feature, "Env", feature_map),
+    "do not match the sanitized"
+  )
+
+  bad_p <- maaslin2_results
+  bad_p$pval[1] <- 1.2
+  expect_error(
+    validate_results(bad_p, "Env", feature_map),
+    "between 0 and 1"
+  )
 })
 
 test_that("pathway_daa edgeR honors user-specified reference", {
@@ -833,10 +1745,11 @@ test_that("pathway_daa metagenomeSeq emits one block per non-reference level for
   expect_true(all(res_refB$group1 == "B"))
   expect_setequal(unique(res_refB$group2), c("A", "C"))
 
-  # p_values and log2_fold_change columns must both be present across the
-  # full output even if individual MRcoefs() calls fall back to NA.
+  # p_values and feature-aligned log2_fold_change columns must both be
+  # present across the full output.
   expect_true("p_values" %in% colnames(res))
   expect_true("log2_fold_change" %in% colnames(res))
+  expect_true(all(is.finite(res$log2_fold_change)))
 })
 
 test_that("pathway_daa re-validates group count after align/select", {
@@ -844,7 +1757,7 @@ test_that("pathway_daa re-validates group count after align/select", {
   # align_samples() or a narrow `select =` filter removes every sample
   # of a level, the single-group leftover could propagate into backends
   # with a confusing downstream error.
-  td <- create_daa_test_data(n_samples = 6, n_groups = 2)
+  td <- create_daa_test_data(n_samples = 8, n_groups = 2)
 
   expect_error(
     pathway_daa(
@@ -855,6 +1768,80 @@ test_that("pathway_daa re-validates group count after align/select", {
       select = td$metadata$sample[td$metadata$group == "control"]
     ),
     "at least 2 groups with samples"
+  )
+})
+
+test_that("pathway_daa re-validates sample count and uniqueness after select", {
+  # Regression: select= was applied after the aligned sample-count check.
+  # A caller could start with a valid dataset, select fewer than four
+  # samples, and still reach backend fitting.
+  td <- create_daa_test_data(n_samples = 6, n_groups = 2)
+
+  expect_error(
+    pathway_daa(
+      abundance = td$abundance,
+      metadata = td$metadata,
+      group = "group",
+      daa_method = "ALDEx2",
+      select = c("sample1", "sample2", "sample4")
+    ),
+    "At least 4 samples required for DAA after `select` filtering"
+  )
+
+  expect_error(
+    pathway_daa(
+      abundance = td$abundance,
+      metadata = td$metadata,
+      group = "group",
+      daa_method = "ALDEx2",
+      select = c("sample1", "sample1", "sample4", "sample5")
+    ),
+    "'select' must contain unique sample names"
+  )
+})
+
+test_that("pathway_daa rejects missing groups and singleton groups after alignment/select", {
+  td <- create_daa_test_data(n_samples = 6, n_groups = 2)
+
+  metadata_missing <- td$metadata
+  metadata_missing$group[2] <- NA
+  expect_error(
+    pathway_daa(
+      abundance = td$abundance,
+      metadata = metadata_missing,
+      group = "group",
+      daa_method = "ALDEx2"
+    ),
+    "contains missing or empty values"
+  )
+
+  td_unbalanced <- create_daa_test_data(n_samples = 6, n_groups = 2)
+  td_unbalanced$metadata$group <- c("control", "control", "control",
+                                    "treatment", "treatment", "other")
+  expect_error(
+    pathway_daa(
+      abundance = td_unbalanced$abundance,
+      metadata = td_unbalanced$metadata,
+      group = "group",
+      daa_method = "ALDEx2"
+    ),
+    "at least 2 samples per group"
+  )
+
+  td_three <- create_daa_test_data(n_samples = 9, n_groups = 3)
+  selected <- c(
+    td_three$metadata$sample[td_three$metadata$group == "control"],
+    td_three$metadata$sample[td_three$metadata$group == "treatment"][1]
+  )
+  expect_error(
+    pathway_daa(
+      abundance = td_three$abundance,
+      metadata = td_three$metadata,
+      group = "group",
+      daa_method = "ALDEx2",
+      select = selected
+    ),
+    "at least 2 samples per group"
   )
 })
 
@@ -893,6 +1880,44 @@ test_that("pathway_daa rejects unsupported daa_method with a typo suggestion", {
       daa_method = "totally_unknown"
     ),
     "Unsupported daa_method"
+  )
+})
+
+test_that("pathway_daa rejects backend arguments passed through dots", {
+  # Regression: pathway_daa() documented `...` as backend passthrough, but
+  # never forwarded those arguments. That is especially dangerous for
+  # formula/fixed-effect/covariate arguments because users may believe the
+  # DAA model was adjusted when it was not.
+  td <- create_daa_test_data(n_samples = 6, n_groups = 2)
+
+  expect_error(
+    pathway_daa(
+      abundance = td$abundance,
+      metadata = td$metadata,
+      group = "group",
+      daa_method = "ALDEx2",
+      formula = ~ group + batch
+    ),
+    "does not currently pass arguments in `...`"
+  )
+
+  expect_error(
+    pathway_daa(
+      abundance = td$abundance,
+      metadata = td$metadata,
+      group = "group",
+      daa_method = "ALDEx2",
+      select = NULL,
+      p_adjust_method = "BH",
+      reference = NULL,
+      include_abundance_stats = FALSE,
+      include_effect_size = TRUE,
+      p.adjust = NULL,
+      .pre_aligned = FALSE,
+      .sample_col = NULL,
+      "unused"
+    ),
+    "Unsupported argument\\(s\\): ..1"
   )
 })
 

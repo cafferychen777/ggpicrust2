@@ -23,14 +23,22 @@ pathway_daa(
 \arguments{
 \item{abundance}{A data frame or matrix containing predicted functional pathway abundance,
 with pathways/features as rows and samples as columns.
+Data frames may also provide a leading non-numeric feature ID column
+(for example \code{#NAME}, \code{feature}, or \code{pathway}); it is
+converted to row names before sample alignment.
+Feature identifiers must be explicit, non-empty, and unique.
 The column names should match the sample names in metadata.
-Values should be counts or abundance measurements.}
+Values should be finite, non-missing, non-negative counts or abundance
+measurements. Count-based backends that require or assume integer
+counts (ALDEx2, DESeq2, edgeR, and metagenomeSeq) round non-integer
+values with a warning before fitting.}
 
 \item{metadata}{A data frame or tibble containing sample information.
 Must include a 'sample' column with sample identifiers matching the column names in abundance data.}
 
 \item{group}{Character string specifying the column name in metadata that contains group information
-for differential abundance analysis.}
+for differential abundance analysis. Group values must be non-missing
+and non-empty for all aligned/selected samples.}
 
 \item{daa_method}{Character string specifying the method for differential abundance analysis.
 Available choices are:
@@ -46,8 +54,10 @@ Available choices are:
 }
 Default is "ALDEx2".}
 
-\item{select}{Vector of sample names to include in the analysis.
-If NULL (default), all samples are included.}
+\item{select}{Character vector of unique sample names to include in the
+analysis. If NULL (default), all samples are included. The selected
+dataset must still contain at least four samples, at least two
+groups, and at least two samples per group.}
 
 \item{p_adjust_method}{Character string specifying the method for p-value adjustment.
 Choices are:
@@ -61,7 +71,9 @@ Choices are:
 }}
 
 \item{reference}{Character string specifying the reference level for the group comparison.
-If NULL (default), the first level is used as reference.}
+If NULL (default), the first level is used as reference. When supplied,
+it must exactly match one observed group level after sample alignment
+and any \code{select} filtering.}
 
 \item{include_abundance_stats}{Logical value indicating whether to include
 abundance statistics (mean relative abundance and standard deviation
@@ -78,7 +90,9 @@ When TRUE, adds \code{effect_size}, \code{diff_btw},
 aligning ALDEx2 output with the other DAA methods that return log2
 fold changes by default. Only applicable for two-group comparisons
 with the ALDEx2 method; ignored otherwise. Default is TRUE; set to
-FALSE to skip the extra \code{aldex.effect()} computation.}
+FALSE to skip the extra \code{aldex.effect()} computation. For a
+two-group analysis, failure to compute or validate the requested
+effect-size output stops the analysis.}
 
 \item{p.adjust}{Deprecated. Use \code{p_adjust_method} instead.}
 
@@ -89,7 +103,10 @@ sample order.}
 \item{.sample_col}{Internal character. Sample identifier column used when
 \code{.pre_aligned = TRUE}.}
 
-\item{...}{Additional arguments passed to the specific DAA method}
+\item{...}{Reserved for future backend-specific parameters. Additional
+arguments are currently rejected rather than silently ignored, because
+ignored model/covariate arguments can make the fitted analysis differ
+from the analysis the user intended.}
 }
 \value{
 A data frame containing the differential abundance analysis results. The structure of the results
@@ -106,6 +123,13 @@ the following columns:
   \item \code{p_adjust}: Adjusted p-values
   \item \code{adj_method}: Method used for p-value adjustment
 }
+Method-native adjusted p-values are preserved when the backend provides
+them directly (ALDEx2 \code{eBH}, DESeq2 \code{padj}, LinDA \code{padj},
+and Maaslin2 \code{qval}). Other methods are adjusted by
+\code{pathway_daa()} using \code{stats::p.adjust()} and
+\code{p_adjust_method}. For wrapper-computed adjustments, p-values are
+adjusted within each method and pairwise comparison when \code{method},
+\code{group1}, and \code{group2} columns are available.
 
 Methods that fit a model on the abundance data (DESeq2, edgeR, limma voom,
 LinDA, Maaslin2, metagenomeSeq) return a \code{log2_fold_change} column
@@ -128,7 +152,9 @@ are included:
 }
 A \code{log2_fold_change} column from relative abundance is only added when
 the DAA method does not already provide one, to avoid conflating model-based
-and ratio-based effect sizes.
+and ratio-based effect sizes. If the requested abundance statistics cannot
+be calculated for every returned feature/group pair, the function fails
+instead of returning a partially annotated result table.
 }
 \description{
 Performs differential abundance analysis on predicted functional pathway data using various statistical methods.

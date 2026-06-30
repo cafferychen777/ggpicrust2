@@ -27,7 +27,13 @@ ggpicrust2(
 \arguments{
 \item{file}{A character string representing the file path of the input file containing KO abundance data in picrust2 export format. The input file should have KO identifiers in the first column and sample identifiers in the first row. The remaining cells should contain the abundance values for each KO-sample pair.}
 
-\item{data}{An optional data.frame containing KO abundance data in the same format as the input file. If provided, the function will use this data instead of reading from the file. By default, this parameter is set to NULL.}
+\item{data}{An optional data.frame or matrix containing KO/pathway abundance
+data. Data frames may use the same format as the input file, with feature
+identifiers in the first non-numeric column and samples in the remaining
+columns. Already-normalized matrix/data.frame inputs with feature identifiers
+in row names and samples in columns are also accepted. If provided, the
+function will use this data instead of reading from the file. By default,
+this parameter is set to NULL.}
 
 \item{metadata}{A tibble, consisting of sample information}
 
@@ -42,7 +48,8 @@ ggpicrust2(
 - "limma voom": Limma-voom framework for the analysis of RNA-seq data
 - "metagenomeSeq": Fit logistic regression models to test for differential abundance between groups using metagenomeSeq
 - "LinDA": Linear models for differential abundance analysis of microbiome compositional data
-- "Maaslin2": Multivariate Association with Linear Models (MaAsLin2) for differential abundance analysis}
+- "Maaslin2": Multivariate Association with Linear Models (MaAsLin2) for differential abundance analysis
+- "Lefser": Linear discriminant analysis effect size using the lefser package}
 
 \item{ko_to_kegg}{Logical or logical-like string controlling conversion of
 KO abundance to KEGG pathway abundance.}
@@ -68,7 +75,8 @@ default is "BH".}
 
 \item{p_values_threshold}{A numeric value specifying the threshold for statistical
 significance of differential abundance. Pathways with adjusted p-values below this
-threshold will be displayed in the plot. Default is 0.05.}
+threshold will be displayed in the plot. Default is 0.05. Must be in the
+range (0, 1].}
 
 \item{p.adjust}{a character specifying the method for p-value adjustment, default is "BH", choices are:
 - "BH": Benjamini-Hochberg correction
