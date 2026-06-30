@@ -832,12 +832,18 @@ colnames(metagenome2) <- paste0("sample", 1:10)
 metagenomes <- list(metagenome1, metagenome2)
 # Define names
 names <- c("metagenome1", "metagenome2")
-# Call the function
-results <- compare_metagenome_results(metagenomes, names)
+# Compare the same biological samples with paired inference
+results <- compare_metagenome_results(
+  metagenomes,
+  names,
+  daa_method = "paired Wilcoxon",
+  correlation_permutations = 999
+)
 # Print the correlation matrix
 print(results$correlation$cor_matrix)
-# Print the p-value matrix
+# Print raw and multiplicity-adjusted permutation p-values
 print(results$correlation$p_matrix)
+print(results$correlation$p_adjust_matrix)
 ```
 
 ### taxa contribution workflow

@@ -10,42 +10,73 @@ compare_metagenome_results(
   daa_method = "ALDEx2",
   p_adjust_method = "BH",
   reference = NULL,
-  p.adjust = NULL
+  p.adjust = NULL,
+  correlation_permutations = 999,
+  correlation_seed = 123,
+  correlation_p_adjust_method = "BH"
 )
 }
 \arguments{
-\item{metagenomes}{A list of metagenomes matrices with rows as KOs and columns as samples.
+\item{metagenomes}{A list of metagenome matrices with rows as KOs and columns
+as samples. Each matrix must have unique, non-empty feature row names and
+sample column names, and finite non-negative numeric abundance values.
 Each matrix in the list should correspond to a different metagenome.}
 
-\item{names}{A vector of names for the metagenomes in the same order as in the `metagenomes` list.}
+\item{names}{A unique, non-empty character vector of names for the
+metagenomes in the same order as in the `metagenomes` list.}
 
-\item{daa_method}{A character specifying the method for differential abundance analysis (DAA).
-Possible choices are: "ALDEx2", "DESeq2", "edgeR", "limma voom", "metagenomeSeq", "LinDA",
-"Maaslin2", and "Lefser". The default is "ALDEx2".}
+\item{daa_method}{Character. Paired differential abundance method.
+Choices are \code{"ALDEx2"} (paired ALDEx2 t and Wilcoxon tests) or
+\code{"paired Wilcoxon"} (paired Wilcoxon signed-rank tests on
+sample-wise relative abundances). Methods that model the metagenomes as
+independent groups are not supported because all matrices represent the
+same aligned biological samples.}
 
 \item{p_adjust_method}{A character specifying the method for p-value adjustment.
 Possible choices are: "BH" (Benjamini-Hochberg), "holm", "bonferroni", "hochberg", "fdr", and "none".
 The default is "BH".}
 
-\item{reference}{A character specifying the reference group level for DAA.
-This parameter is used when there are more than two groups. The default is NULL.}
+\item{reference}{Optional metagenome name used as the first group in
+pairwise DAA comparisons. Other metagenome pairs are still compared.}
 
 \item{p.adjust}{Deprecated. Use \code{p_adjust_method} instead.}
+
+\item{correlation_permutations}{Non-negative integer. Number of joint
+sample-label permutations used to test the median per-feature Spearman
+correlation. Use 0 to skip correlation p-values. Default 999.}
+
+\item{correlation_seed}{Non-negative integer used to generate correlation
+permutations reproducibly. The caller's random-number state is restored.}
+
+\item{correlation_p_adjust_method}{P-value adjustment method for the unique
+off-diagonal metagenome correlation tests. Default \code{"BH"}.}
 }
 \value{
 A list containing three elements:
 \itemize{
-\item "daa": a data frame of results from the `pathway_daa` function
-containing the differential abundance analysis results.
-\item "correlation": a list with two elements: "cor_matrix" and "p_matrix", which are
-matrices of per-feature median Spearman correlation coefficients and their
-corresponding p-values, respectively, between every pair of metagenomes.
+\item "daa": paired differential abundance results for every metagenome pair.
+\item "correlation": a list containing \code{cor_matrix},
+\code{p_matrix}, \code{p_adjust_matrix}, and \code{n_features_matrix}.
+Correlations are medians of finite per-feature Spearman correlations.
+P-values use joint sample-label permutation and are adjusted across unique
+off-diagonal metagenome pairs. Diagonal p-values are \code{NA}.
 \item "heatmap": a ComplexHeatmap object visualizing the correlation matrix.
 Use \code{print()} or \code{draw()} to display it.
 }
 }
 \description{
 Compare Metagenome Results
+}
+\details{
+Metagenome matrices are aligned to the same feature and sample identifiers.
+Because each matrix measures the same biological samples, DAA must retain
+this pairing. Independent-group DAA methods would treat repeated
+measurements as independent replicates and are therefore rejected.
+
+Correlation inference permutes the sample columns of one metagenome jointly
+across all features. This preserves within-metagenome feature dependence
+while breaking only the cross-metagenome sample correspondence. Monte Carlo
+p-values use the plus-one correction \code{(b + 1) / (B + 1)}.
 }
 \examples{
 \donttest{
@@ -66,10 +97,25 @@ metagenomes <- list(metagenome1, metagenome2)
 # Define names
 names <- c("metagenome1", "metagenome2")
 # Call the function
-results <- compare_metagenome_results(metagenomes, names, daa_method = "LinDA")
+results <- compare_metagenome_results(
+  metagenomes,
+  names,
+  daa_method = "paired Wilcoxon",
+  correlation_permutations = 99
+)
 # Print the correlation matrix
 print(results$correlation$cor_matrix)
 # Display the heatmap
 print(results$heatmap)
 }
+}
+\references{
+Fernandes AD, Macklaim JM, Linn TG, Reid G, Gloor GB. Unifying the
+analysis of high-throughput sequencing datasets: characterizing RNA-seq,
+16S rRNA gene sequencing and selective growth experiments by compositional
+data analysis. Microbiome. 2014;2:15.
+
+Phipson B, Smyth GK. Permutation P-values Should Never Be Zero:
+Calculating Exact P-values When Permutations Are Randomly Drawn.
+Statistical Applications in Genetics and Molecular Biology. 2010;9(1).
 }

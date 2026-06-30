@@ -9,7 +9,7 @@
 \item{method_names}{A character vector of names for each method used.}
 
 \item{p_values_threshold}{A numeric value representing the threshold for the p-values. Features with p-values less than this
-threshold are considered statistically significant. Default is 0.05.}
+threshold are considered statistically significant. Default is 0.05. Must be in the range (0, 1].}
 }
 \value{
 A data frame with the comparison results. The data frame has the following columns:
@@ -26,6 +26,18 @@ A data frame with the comparison results. The data frame has the following colum
 This function compares the consistency and inconsistency of statistically significant features obtained
 using different methods in `pathway_daa` from the `ggpicrust2` package. It creates a report showing the number of common and
 different features identified by each method, and the features themselves.
+}
+\details{
+For multi-group DAA output, each discovery is compared as a
+\code{feature + group-pair} unit. The group pair is treated as unordered for
+this set-level comparison, because the function compares whether methods
+identified a significant difference, not the effect-size direction. This
+prevents the same feature from being counted as method-consistent when
+different methods found it in different pairwise contrasts, while still
+treating \code{A vs B} and \code{B vs A} as the same biological comparison.
+If all significant discoveries share one group pair, the printed feature
+lists use feature IDs only for backward-readable output; otherwise feature
+lists include the canonical contrast as \code{feature [group1 vs group2]}.
 }
 \examples{
 # Minimal DAA-like results from three methods (no external dependencies required)
