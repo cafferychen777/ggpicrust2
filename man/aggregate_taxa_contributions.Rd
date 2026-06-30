@@ -27,8 +27,8 @@ QIIME2 format (semicolon-delimited taxonomy strings) or DADA2 format
 \code{"Kingdom"}, \code{"Phylum"}, \code{"Class"}, \code{"Order"},
 \code{"Family"}, \code{"Genus"}, \code{"Species"}. Default \code{"Genus"}.}
 
-\item{top_n}{Integer. Number of top taxa to keep; remaining are lumped as
-"Other". Default 10.}
+\item{top_n}{Integer. Number of top taxa to keep by total contribution;
+remaining are lumped as "Other". Default 10.}
 
 \item{daa_results_df}{Optional data.frame from \code{\link{pathway_daa}},
 used to filter contributions to significant pathways.}
@@ -37,7 +37,7 @@ used to filter contributions to significant pathways.}
 Alternative to \code{daa_results_df}.}
 
 \item{p_threshold}{Numeric. Significance cutoff when using
-\code{daa_results_df}. Default 0.05.}
+\code{daa_results_df}. Default 0.05. Must be in the range (0, 1].}
 
 \item{contribution_col}{Character. Column to aggregate. Use \code{"auto"}
 to select the first available column from
@@ -68,6 +68,11 @@ Taxonomy can be provided in two formats:
     semicolon-delimited strings (e.g., "k__Bacteria;p__Firmicutes;...")
   \item DADA2: Separate columns for each rank (\code{Kingdom}, \code{Phylum}, etc.)
 }
+Contribution table identifier columns (\code{sample}, \code{function_id},
+and \code{taxon}) and requested pathway/function IDs must be non-empty and
+non-missing, because R's aggregation functions otherwise omit missing keys
+without preserving contribution totals. Contribution tables must not mix
+gene-family-level and pathway-level identifiers in the same aggregation.
 }
 \examples{
 \donttest{

@@ -26,7 +26,9 @@ taxa_contribution_bar(
 \item{group}{Character. Column name in \code{metadata} for grouping samples.}
 
 \item{function_ids}{Optional character vector of function IDs to plot.
-If NULL (default), the top \code{n_functions} by variance are shown.}
+If NULL (default), the top \code{n_functions} by between-sample variance
+in total contribution are shown. Single-sample inputs are ranked by total
+contribution because variance is undefined.}
 
 \item{n_functions}{Integer. Number of functions to show when
 \code{function_ids} is NULL. Default 6.}
@@ -51,6 +53,16 @@ A \code{ggplot2} object.
 \description{
 Creates a stacked bar plot showing taxa contributions to predicted
 functional abundances, faceted by function or sample group.
+}
+\details{
+The \code{sample}, \code{function_id}, and \code{taxon_label} columns must
+contain non-empty values without \code{NA}. These columns define plotting and
+aggregation groups, so missing identifiers would otherwise be dropped by R
+aggregation or shown as unlabeled categories.
+When \code{show_percentage = TRUE}, every plotted sample/function
+combination must have a positive total contribution. Relative percentages
+are undefined for zero-total combinations; use \code{show_percentage = FALSE}
+to display absolute zero contributions.
 }
 \examples{
 \donttest{

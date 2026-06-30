@@ -24,6 +24,8 @@ Parses the \code{pred_metagenome_strat.tsv} file produced by PICRUSt2's
 The stratified file has function IDs in the first column, sequence/taxon
 IDs in the second column, and sample abundances in the remaining columns
 (wide format). This function pivots to long format for downstream analysis.
+Function IDs, taxon IDs, and sample column names must be non-empty; sample
+column names must also be unique.
 }
 \examples{
 \donttest{

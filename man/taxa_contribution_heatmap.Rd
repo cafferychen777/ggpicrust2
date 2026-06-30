@@ -52,6 +52,18 @@ A \code{ggplot2} or \code{patchwork} object.
 Creates a heatmap showing mean taxa contributions across pathways/functions,
 with optional clustering and pathway annotations.
 }
+\details{
+The \code{sample}, \code{function_id}, and \code{taxon_label} columns must
+contain non-empty values without \code{NA}. These columns define plotting and
+aggregation groups, so missing identifiers would otherwise be dropped by R
+aggregation or shown as unlabeled categories.
+PICRUSt2 contribution outputs are sparse; combinations absent from
+\code{contrib_agg} are treated as zero when computing mean contribution
+across samples.
+If \code{annotation_data} contains multiple non-empty labels for the same
+plotted function ID, the function errors instead of silently choosing one
+label. Repeated rows with the same ID and same label are allowed.
+}
 \examples{
 \donttest{
 agg <- data.frame(

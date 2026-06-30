@@ -29,6 +29,13 @@
 #' \code{norm_taxon_function_contrib}; when that column is absent downstream
 #' aggregation can use \code{taxon_function_abun} or
 #' \code{taxon_rel_function_abun}.
+#' Contribution tables must describe one feature level at a time. Mixed
+#' gene-family identifiers such as KOs/ECs and pathway identifiers are rejected,
+#' because direct pathway matching and KEGG pathway-to-KO expansion have
+#' different biological meanings.
+#' Identifier columns (\code{sample}, \code{function_id}/\code{function}, and
+#' \code{taxon}) must contain non-empty values without \code{NA}; otherwise
+#' downstream aggregation would silently drop or mislabel contributions.
 #'
 #' @examples
 #' \donttest{
@@ -114,6 +121,8 @@ read_pathway_contrib_file <- function(file = NULL, data = NULL) {
 #' The stratified file has function IDs in the first column, sequence/taxon
 #' IDs in the second column, and sample abundances in the remaining columns
 #' (wide format). This function pivots to long format for downstream analysis.
+#' Function IDs, taxon IDs, and sample column names must be non-empty; sample
+#' column names must also be unique.
 #'
 #' @examples
 #' \donttest{
@@ -174,7 +183,9 @@ read_strat_file <- function(file = NULL, data = NULL) {
   }
 
   # Pivot sample columns to long format
-  sample_cols <- setdiff(colnames(strat), c("function_id", "taxon"))
+  sample_cols <- colnames(strat)[!(colnames(strat) %in% c("function_id", "taxon"))]
+  validate_contrib_key_columns(strat, c("function_id", "taxon"), "stratified file")
+  validate_strat_sample_columns(sample_cols)
   id_cols <- c("function_id", "taxon")
   strat <- tidyr::pivot_longer(
     strat,
@@ -184,6 +195,8 @@ read_strat_file <- function(file = NULL, data = NULL) {
   )
 
   strat$function_id <- normalize_contrib_feature_ids(strat$function_id)
+  validate_contrib_key_columns(strat, c("sample", "function_id", "taxon"),
+                               "stratified file")
 
   as.data.frame(strat)
 }
@@ -203,14 +216,14 @@ read_strat_file <- function(file = NULL, data = NULL) {
 #' @param tax_level Character. Taxonomic rank for aggregation. One of
 #'   \code{"Kingdom"}, \code{"Phylum"}, \code{"Class"}, \code{"Order"},
 #'   \code{"Family"}, \code{"Genus"}, \code{"Species"}. Default \code{"Genus"}.
-#' @param top_n Integer. Number of top taxa to keep; remaining are lumped as
-#'   "Other". Default 10.
+#' @param top_n Integer. Number of top taxa to keep by total contribution;
+#'   remaining are lumped as "Other". Default 10.
 #' @param daa_results_df Optional data.frame from \code{\link{pathway_daa}},
 #'   used to filter contributions to significant pathways.
 #' @param pathway_ids Optional character vector of pathway IDs to filter.
 #'   Alternative to \code{daa_results_df}.
 #' @param p_threshold Numeric. Significance cutoff when using
-#'   \code{daa_results_df}. Default 0.05.
+#'   \code{daa_results_df}. Default 0.05. Must be in the range (0, 1].
 #' @param contribution_col Character. Column to aggregate. Use \code{"auto"}
 #'   to select the first available column from
 #'   \code{norm_taxon_function_contrib}, \code{taxon_function_abun},
@@ -234,6 +247,11 @@ read_strat_file <- function(file = NULL, data = NULL) {
 #'     semicolon-delimited strings (e.g., "k__Bacteria;p__Firmicutes;...")
 #'   \item DADA2: Separate columns for each rank (\code{Kingdom}, \code{Phylum}, etc.)
 #' }
+#' Contribution table identifier columns (\code{sample}, \code{function_id},
+#' and \code{taxon}) and requested pathway/function IDs must be non-empty and
+#' non-missing, because R's aggregation functions otherwise omit missing keys
+#' without preserving contribution totals. Contribution tables must not mix
+#' gene-family-level and pathway-level identifiers in the same aggregation.
 #'
 #' @examples
 #' \donttest{
@@ -260,6 +278,8 @@ aggregate_taxa_contributions <- function(contrib_data,
                                          contribution_col = "auto") {
   # Validate input
   validate_dataframe(contrib_data, param_name = "contrib_data")
+  validate_count_parameter(top_n, "top_n")
+  validate_probability_threshold(p_threshold, "p_threshold")
 
   if (!is.null(daa_results_df) && !is.null(pathway_ids)) {
     warning("Both daa_results_df and pathway_ids provided. Using daa_results_df.")
@@ -272,6 +292,7 @@ aggregate_taxa_contributions <- function(contrib_data,
       contrib_col
     )
   }
+  validate_contribution_values(contrib_data[[contrib_col]], contrib_col)
 
   # Ensure required columns exist
   required <- c("sample", "function_id", "taxon", contrib_col)
@@ -279,10 +300,25 @@ aggregate_taxa_contributions <- function(contrib_data,
   if (length(missing) > 0) {
     stop(sprintf("Missing required columns: %s", paste(missing, collapse = ", ")))
   }
+  validate_contrib_key_columns(contrib_data,
+                               c("sample", "function_id", "taxon"),
+                               "contrib_data")
+  validate_contrib_feature_level_column(contrib_data, "contrib_data")
 
   # KEGG pathway IDs are expanded to KOs only for KO-level contribution data.
   if (!is.null(daa_results_df)) {
-    sig_features <- daa_results_df$feature[daa_results_df$p_adjust < p_threshold]
+    validate_dataframe(daa_results_df,
+                       required_cols = c("feature", "p_adjust"),
+                       param_name = "daa_results_df")
+    validate_probability_values(daa_results_df$p_adjust,
+                                "p_adjust",
+                                "daa_results_df")
+    daa_features <- validate_nonempty_character_column(
+      daa_results_df$feature,
+      "feature",
+      "daa_results_df"
+    )
+    sig_features <- daa_features[daa_results_df$p_adjust < p_threshold]
     sig_features <- unique(sig_features[!is.na(sig_features)])
     if (length(sig_features) == 0) {
       stop("No significant features found at p_threshold = ", p_threshold)
@@ -311,10 +347,15 @@ aggregate_taxa_contributions <- function(contrib_data,
   )
   colnames(agg)[colnames(agg) == contrib_col] <- "contribution"
 
-  # Rank taxa and keep top_n
-  taxa_means <- stats::aggregate(contribution ~ taxon_label, data = agg, FUN = mean)
-  taxa_means <- taxa_means[order(-taxa_means$contribution), ]
-  top_taxa <- utils::head(taxa_means$taxon_label, top_n)
+  # Rank taxa by total contribution mass, not by mean over rows where the
+  # taxon happens to appear. PICRUSt2 contribution tables are sparse in
+  # practice (zero-contribution taxon/function/sample combinations are often
+  # absent), so a mean over observed rows can over-rank a taxon with one
+  # large contribution and under-rank a taxon that explains more total
+  # functional abundance across samples/functions.
+  taxa_totals <- stats::aggregate(contribution ~ taxon_label, data = agg, FUN = sum)
+  taxa_totals <- taxa_totals[order(-taxa_totals$contribution), ]
+  top_taxa <- utils::head(taxa_totals$taxon_label, top_n)
 
   agg$taxon_label <- ifelse(agg$taxon_label %in% top_taxa, agg$taxon_label, "Other")
 
@@ -342,7 +383,11 @@ aggregate_taxa_contributions <- function(contrib_data,
 #'
 #' @noRd
 filter_contrib_by_features <- function(contrib_data, features) {
-  features <- unique(as.character(features[!is.na(features)]))
+  features <- unique(validate_nonempty_character_column(
+    features,
+    "features",
+    "feature filter"
+  ))
   function_ids <- as.character(contrib_data$function_id)
 
   direct_matches <- intersect(function_ids, features)
@@ -420,11 +465,47 @@ normalize_contrib_table <- function(contrib, type = contribution_feature_levels(
   }
 
   contrib$function_id <- normalize_contrib_feature_ids(contrib$function_id)
-  feature_levels <- contribution_feature_levels()
-  detected_level <- detect_contrib_feature_level(contrib$function_id)
-  contrib$feature_level <- if (type == feature_levels[["auto"]]) detected_level else type
+  validate_contrib_key_columns(contrib,
+                               c("sample", "function_id", "taxon"),
+                               "contribution file")
+  contrib$feature_level <- resolve_contrib_feature_level(
+    contrib$function_id,
+    requested_level = type,
+    context = "contribution file"
+  )
 
   contrib
+}
+
+#' Validate contribution table identifier columns
+#' @noRd
+validate_contrib_key_columns <- function(data, columns, context = "contrib_data") {
+  for (column in columns) {
+    validate_nonempty_character_column(data[[column]], column, context)
+  }
+  invisible(TRUE)
+}
+
+#' Validate sample columns in wide stratified contribution input
+#' @noRd
+validate_strat_sample_columns <- function(sample_cols) {
+  sample_cols <- as.character(sample_cols)
+  if (length(sample_cols) == 0) {
+    stop("Stratified file must contain at least one sample column.",
+         call. = FALSE)
+  }
+  bad <- is.na(sample_cols) | !nzchar(trimws(sample_cols))
+  if (any(bad)) {
+    stop("Stratified file sample column names must be non-empty.",
+         call. = FALSE)
+  }
+  if (anyDuplicated(sample_cols)) {
+    duplicated_samples <- unique(sample_cols[duplicated(sample_cols)])
+    stop("Stratified file sample column names are duplicated: ",
+         paste(utils::head(duplicated_samples, 5), collapse = ", "),
+         call. = FALSE)
+  }
+  invisible(TRUE)
 }
 
 #' Resolve a contribution function ID column
@@ -449,13 +530,128 @@ normalize_contrib_feature_ids <- function(ids) {
 #' Detect whether contribution IDs represent gene families or pathways
 #' @noRd
 detect_contrib_feature_level <- function(ids) {
+  resolve_contrib_feature_level(ids, requested_level = "auto")
+}
+
+#' Resolve and validate a contribution feature level
+#' @noRd
+resolve_contrib_feature_level <- function(ids,
+                                          requested_level = "auto",
+                                          context = "contrib_data") {
+  requested_level <- match.arg(requested_level, contribution_feature_levels())
   ids <- as.character(ids)
   feature_levels <- contribution_feature_levels()
-  if (any(is_pathway_id(ids))) {
-    feature_levels[["pathway"]]
-  } else {
-    feature_levels[["gene_family"]]
+  pathway_like <- is_pathway_id(ids)
+  gene_family_like <- is_gene_family_id(ids)
+
+  if (requested_level == feature_levels[["auto"]]) {
+    if (any(pathway_like) && any(!pathway_like)) {
+      stop_mixed_contrib_feature_levels(ids, pathway_like, !pathway_like, context)
+    }
+    if (any(pathway_like)) {
+      return(feature_levels[["pathway"]])
+    }
+    return(feature_levels[["gene_family"]])
   }
+
+  if (requested_level == feature_levels[["gene_family"]]) {
+    if (any(pathway_like)) {
+      stop_feature_level_conflict(
+        ids[pathway_like],
+        requested_level,
+        "pathway",
+        context
+      )
+    }
+    return(feature_levels[["gene_family"]])
+  }
+
+  if (any(gene_family_like)) {
+    stop_feature_level_conflict(
+      ids[gene_family_like],
+      requested_level,
+      "gene-family",
+      context
+    )
+  }
+  feature_levels[["pathway"]]
+}
+
+#' Validate an optional contribution feature_level column
+#' @noRd
+validate_contrib_feature_level_column <- function(contrib_data,
+                                                  context = "contrib_data") {
+  ids <- as.character(contrib_data$function_id)
+  if (!"feature_level" %in% colnames(contrib_data)) {
+    resolve_contrib_feature_level(ids, requested_level = "auto",
+                                  context = context)
+    return(invisible(TRUE))
+  }
+
+  levels <- as.character(contrib_data$feature_level)
+  bad <- is.na(levels) | !nzchar(trimws(levels))
+  if (any(bad)) {
+    stop("Column 'feature_level' in ", context,
+         " must contain non-empty values.", call. = FALSE)
+  }
+
+  allowed <- contribution_feature_levels()[c("gene_family", "pathway")]
+  invalid <- unique(levels[!levels %in% allowed])
+  if (length(invalid) > 0) {
+    stop("Column 'feature_level' in ", context,
+         " must contain only 'gene_family' or 'pathway'. Invalid values: ",
+         paste(utils::head(invalid, 5), collapse = ", "), ".",
+         call. = FALSE)
+  }
+
+  unique_levels <- unique(levels)
+  if (length(unique_levels) > 1) {
+    stop(context,
+         " mixes contribution feature levels in column 'feature_level': ",
+         paste(unique_levels, collapse = ", "),
+         ". Aggregate one PICRUSt2 output level at a time.",
+         call. = FALSE)
+  }
+
+  resolve_contrib_feature_level(ids,
+                                requested_level = unique_levels[1],
+                                context = context)
+  invisible(TRUE)
+}
+
+#' Stop on mixed contribution feature levels
+#' @noRd
+stop_mixed_contrib_feature_levels <- function(ids, pathway_like,
+                                              gene_family_like, context) {
+  pathway_examples <- unique(ids[pathway_like])
+  gene_family_examples <- unique(ids[gene_family_like])
+  stop(
+    context,
+    " mixes pathway-level and gene-family-level identifiers in 'function_id'. ",
+    "Aggregate one PICRUSt2 output level at a time. Pathway examples: '",
+    paste(utils::head(pathway_examples, 3), collapse = "', '"),
+    "'; gene-family examples: '",
+    paste(utils::head(gene_family_examples, 3), collapse = "', '"), "'.",
+    call. = FALSE
+  )
+}
+
+#' Stop on explicit contribution feature-level conflicts
+#' @noRd
+stop_feature_level_conflict <- function(ids, requested_level, detected_label,
+                                        context) {
+  examples <- unique(as.character(ids))
+  stop(
+    context,
+    " was declared as '",
+    requested_level,
+    "' but contains ",
+    detected_label,
+    "-level identifiers in 'function_id': '",
+    paste(utils::head(examples, 3), collapse = "', '"),
+    "'. Use the matching reader or aggregate one PICRUSt2 output level at a time.",
+    call. = FALSE
+  )
 }
 
 #' Check whether contribution data is KO-level
@@ -463,9 +659,14 @@ detect_contrib_feature_level <- function(ids) {
 is_ko_level_contrib <- function(contrib_data, function_ids) {
   if ("feature_level" %in% colnames(contrib_data)) {
     gene_family_level <- contribution_feature_levels()[["gene_family"]]
-    return(any(contrib_data$feature_level == gene_family_level, na.rm = TRUE))
+    validate_contrib_feature_level_column(contrib_data, "contrib_data")
+    return(identical(unique(as.character(contrib_data$feature_level)),
+                     gene_family_level))
   }
-  any(is_ko_id(function_ids))
+  identical(
+    resolve_contrib_feature_level(function_ids, requested_level = "auto"),
+    contribution_feature_levels()[["gene_family"]]
+  )
 }
 
 #' Choose the contribution column used for aggregation
@@ -519,10 +720,46 @@ normalize_contribution_values <- function(values, contribution_col) {
   converted
 }
 
+#' Validate contribution metric values
+#' @noRd
+validate_contribution_values <- function(values, contribution_col) {
+  if (!is.numeric(values)) {
+    stop("Contribution column '", contribution_col, "' must be numeric.",
+         call. = FALSE)
+  }
+
+  bad <- is.na(values) | !is.finite(values) | values < 0
+  if (any(bad)) {
+    stop(
+      "Contribution column '", contribution_col,
+      "' must contain only finite non-negative values. ",
+      "Choose a different contribution_col if this PICRUSt2 output column ",
+      "contains missing or invalid values.",
+      call. = FALSE
+    )
+  }
+
+  invisible(TRUE)
+}
+
 #' Check KO identifiers
 #' @noRd
 is_ko_id <- function(ids) {
   grepl("^K\\d{5}$", as.character(ids))
+}
+
+#' Check EC identifiers
+#' @noRd
+is_ec_id <- function(ids) {
+  grepl("^(EC[:_])?\\d+\\.(\\d+|-)\\.(\\d+|-)\\.(\\d+|-)$",
+        as.character(ids))
+}
+
+#' Check gene-family identifiers supported by PICRUSt2 outputs
+#' @noRd
+is_gene_family_id <- function(ids) {
+  ids <- as.character(ids)
+  is_ko_id(ids) | is_ec_id(ids)
 }
 
 #' Check KEGG pathway identifiers

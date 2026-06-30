@@ -38,6 +38,13 @@ PICRUSt2 versions differ in whether they include
 \code{norm_taxon_function_contrib}; when that column is absent downstream
 aggregation can use \code{taxon_function_abun} or
 \code{taxon_rel_function_abun}.
+Contribution tables must describe one feature level at a time. Mixed
+gene-family identifiers such as KOs/ECs and pathway identifiers are rejected,
+because direct pathway matching and KEGG pathway-to-KO expansion have
+different biological meanings.
+Identifier columns (\code{sample}, \code{function_id}/\code{function}, and
+\code{taxon}) must contain non-empty values without \code{NA}; otherwise
+downstream aggregation would silently drop or mislabel contributions.
 }
 \examples{
 \donttest{

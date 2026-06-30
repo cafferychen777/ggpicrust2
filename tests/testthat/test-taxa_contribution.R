@@ -149,6 +149,27 @@ test_that("read_contrib_file accepts official-style contrib data without norm co
   expect_false("norm_taxon_function_contrib" %in% colnames(result))
 })
 
+test_that("read_contrib_file rejects mixed gene-family and pathway identifiers", {
+  td <- create_contrib_test_data()
+  mixed_contrib <- td$contrib_raw
+  mixed_contrib$`function`[1] <- "ko00010"
+
+  expect_error(
+    read_contrib_file(data = mixed_contrib),
+    "mixes pathway-level and gene-family-level"
+  )
+
+  expect_error(
+    read_contrib_file(data = td$contrib_raw, type = "pathway"),
+    "declared as 'pathway'.*gene-family-level"
+  )
+
+  expect_error(
+    read_contrib_file(data = td$path_contrib_raw, type = "gene_family"),
+    "declared as 'gene_family'.*pathway-level"
+  )
+})
+
 test_that("read_pathway_contrib_file parses path_abun_contrib-style data", {
   td <- create_contrib_test_data()
 
@@ -220,6 +241,31 @@ test_that("read_contrib_file errors on missing columns", {
   expect_error(read_contrib_file(data = bad_df), "Missing required columns")
 })
 
+test_that("read_contrib_file rejects missing contribution keys", {
+  td <- create_contrib_test_data()
+
+  bad_sample <- td$contrib_raw
+  bad_sample$sample[1] <- NA_character_
+  expect_error(
+    read_contrib_file(data = bad_sample),
+    "sample.*non-empty"
+  )
+
+  bad_function <- td$contrib_raw
+  bad_function$`function`[1] <- ""
+  expect_error(
+    read_contrib_file(data = bad_function),
+    "function_id.*non-empty"
+  )
+
+  bad_taxon <- td$contrib_raw
+  bad_taxon$taxon[1] <- "  "
+  expect_error(
+    read_contrib_file(data = bad_taxon),
+    "taxon.*non-empty"
+  )
+})
+
 test_that("read_contrib_file requires file or data", {
   expect_error(read_contrib_file(), "Please provide either")
 })
@@ -261,6 +307,48 @@ test_that("read_strat_file accepts already standardized column names", {
 test_that("read_strat_file errors on too few columns", {
   bad_df <- data.frame(`function` = "K00001", check.names = FALSE)
   expect_error(read_strat_file(data = bad_df), "at least 3 columns")
+})
+
+test_that("read_strat_file rejects missing keys and invalid sample columns", {
+  td <- create_contrib_test_data()
+
+  bad_function <- td$strat_wide
+  bad_function$`function`[1] <- NA_character_
+  expect_error(
+    read_strat_file(data = bad_function),
+    "function_id.*non-empty"
+  )
+
+  bad_taxon <- td$strat_wide
+  bad_taxon$sequence[1] <- ""
+  expect_error(
+    read_strat_file(data = bad_taxon),
+    "taxon.*non-empty"
+  )
+
+  duplicate_samples <- data.frame(
+    `function` = "K00001",
+    sequence = "ASV1",
+    S1 = 1,
+    S1 = 2,
+    check.names = FALSE
+  )
+  expect_error(
+    read_strat_file(data = duplicate_samples),
+    "sample column names are duplicated"
+  )
+
+  empty_sample <- data.frame(
+    `function` = "K00001",
+    sequence = "ASV1",
+    S1 = 1,
+    check.names = FALSE
+  )
+  colnames(empty_sample)[3] <- ""
+  expect_error(
+    read_strat_file(data = empty_sample),
+    "sample column names must be non-empty"
+  )
 })
 
 
@@ -339,6 +427,27 @@ test_that("aggregate_taxa_contributions creates 'Other' category with top_n", {
   expect_lte(length(unique(agg$taxon_label)), 3)
 })
 
+test_that("aggregate_taxa_contributions ranks top taxa by total contribution", {
+  contrib <- data.frame(
+    sample = c("S1", "S1", "S2", "S2", "S1"),
+    function_id = c("K00001", "K00002", "K00001", "K00002", "K00001"),
+    taxon = c("Common", "Common", "Common", "Common", "Rare"),
+    taxon_function_abun = c(4, 4, 4, 4, 10),
+    stringsAsFactors = FALSE
+  )
+
+  agg <- aggregate_taxa_contributions(
+    contrib,
+    top_n = 1,
+    contribution_col = "taxon_function_abun"
+  )
+
+  expect_true("Common" %in% agg$taxon_label)
+  expect_false("Rare" %in% agg$taxon_label)
+  expect_true("Other" %in% agg$taxon_label)
+  expect_equal(sum(agg$contribution), sum(contrib$taxon_function_abun))
+})
+
 test_that("aggregate_taxa_contributions works with strat file input", {
   td <- create_contrib_test_data()
   strat <- read_strat_file(data = td$strat_wide)
@@ -376,6 +485,73 @@ test_that("aggregate_taxa_contributions supports explicit contribution column", 
   expect_equal(sum(agg$contribution), sum(contrib$taxon_rel_function_abun))
 })
 
+test_that("aggregate_taxa_contributions validates p-values and contribution values", {
+  td <- create_contrib_test_data()
+  contrib <- read_contrib_file(data = td$contrib_raw)
+
+  expect_error(
+    aggregate_taxa_contributions(contrib, top_n = 0),
+    "top_n.*positive"
+  )
+
+  daa_missing <- data.frame(feature = "K00001", stringsAsFactors = FALSE)
+  expect_error(
+    aggregate_taxa_contributions(contrib, daa_results_df = daa_missing),
+    "Missing required columns"
+  )
+
+  daa_bad <- data.frame(
+    feature = "K00001",
+    p_adjust = 1.2,
+    stringsAsFactors = FALSE
+  )
+  expect_error(
+    aggregate_taxa_contributions(contrib, daa_results_df = daa_bad),
+    "between 0 and 1"
+  )
+  expect_error(
+    aggregate_taxa_contributions(contrib, daa_results_df = daa_bad,
+                                 p_threshold = 0),
+    "range"
+  )
+
+  contrib_na <- contrib
+  contrib_na$norm_taxon_function_contrib[1] <- NA_real_
+  expect_error(
+    aggregate_taxa_contributions(contrib_na),
+    "finite non-negative"
+  )
+
+  contrib_neg <- contrib
+  contrib_neg$norm_taxon_function_contrib[1] <- -0.1
+  expect_error(
+    aggregate_taxa_contributions(contrib_neg),
+    "finite non-negative"
+  )
+
+  contrib_bad_key <- contrib
+  contrib_bad_key$sample[1] <- NA_character_
+  expect_error(
+    aggregate_taxa_contributions(contrib_bad_key),
+    "sample.*non-empty"
+  )
+
+  daa_bad_feature <- data.frame(
+    feature = NA_character_,
+    p_adjust = 0.01,
+    stringsAsFactors = FALSE
+  )
+  expect_error(
+    aggregate_taxa_contributions(contrib, daa_results_df = daa_bad_feature),
+    "feature.*non-empty"
+  )
+
+  expect_error(
+    aggregate_taxa_contributions(contrib, pathway_ids = ""),
+    "features.*non-empty"
+  )
+})
+
 test_that("aggregate_taxa_contributions directly filters pathway-level contribution IDs", {
   td <- create_contrib_test_data()
   contrib <- read_pathway_contrib_file(data = td$path_contrib_raw)
@@ -410,6 +586,27 @@ test_that("aggregate_taxa_contributions maps KEGG pathways to KOs only for KO-le
   agg <- aggregate_taxa_contributions(contrib, pathway_ids = "ko00010", top_n = 10)
 
   expect_setequal(agg$function_id, ko00010_kos)
+})
+
+test_that("aggregate_taxa_contributions rejects mixed contribution feature levels", {
+  contrib <- data.frame(
+    sample = c("S1", "S1"),
+    function_id = c("K00001", "ko00010"),
+    taxon = c("ASV1", "ASV2"),
+    taxon_function_abun = c(1, 2),
+    stringsAsFactors = FALSE
+  )
+
+  expect_error(
+    aggregate_taxa_contributions(contrib),
+    "mixes pathway-level and gene-family-level"
+  )
+
+  contrib$feature_level <- c("gene_family", "pathway")
+  expect_error(
+    aggregate_taxa_contributions(contrib),
+    "mixes contribution feature levels"
+  )
 })
 
 test_that("aggregate_taxa_contributions with daa_results_df filters pathways", {
@@ -452,6 +649,55 @@ test_that("taxa_contribution_bar returns ggplot", {
   expect_s3_class(p, "ggplot")
 })
 
+test_that("taxa contribution visualizations validate contribution values and counts", {
+  td <- create_contrib_test_data()
+  contrib <- read_contrib_file(data = td$contrib_raw)
+  agg <- aggregate_taxa_contributions(contrib, top_n = 4)
+
+  expect_error(
+    taxa_contribution_bar(agg, td$metadata, group = "group",
+                          n_functions = 0),
+    "n_functions.*positive"
+  )
+  expect_error(
+    taxa_contribution_heatmap(agg, n_functions = 0),
+    "n_functions.*positive"
+  )
+
+  agg_bad <- agg
+  agg_bad$contribution[1] <- NA_real_
+  expect_error(
+    taxa_contribution_bar(agg_bad, td$metadata, group = "group"),
+    "finite non-negative"
+  )
+  expect_error(
+    taxa_contribution_heatmap(agg_bad),
+    "finite non-negative"
+  )
+
+  agg_bad_key <- agg
+  agg_bad_key$taxon_label[1] <- NA_character_
+  expect_error(
+    taxa_contribution_bar(agg_bad_key, td$metadata, group = "group"),
+    "taxon_label.*non-empty"
+  )
+  expect_error(
+    taxa_contribution_heatmap(agg_bad_key),
+    "taxon_label.*non-empty"
+  )
+
+  expect_error(
+    taxa_contribution_bar(agg, td$metadata, group = "group",
+                          function_ids = ""),
+    "function_ids.*non-empty"
+  )
+  expect_error(
+    taxa_contribution_bar(agg, td$metadata, group = "group",
+                          function_ids = "not-present"),
+    "No contribution rows match"
+  )
+})
+
 test_that("taxa_contribution_bar accepts facet_by = 'group'", {
   td <- create_contrib_test_data()
   contrib <- read_contrib_file(data = td$contrib_raw)
@@ -472,6 +718,61 @@ test_that("taxa_contribution_bar supports metadata with a single group", {
   expect_s3_class(p, "ggplot")
 })
 
+test_that("taxa_contribution_bar ranks default functions by sample-level variance", {
+  agg <- data.frame(
+    sample = c("S1", "S1", "S2", "S2", "S1", "S2", "S2"),
+    function_id = c(
+      "F_variable", "F_variable", "F_variable", "F_variable",
+      "F_constant", "F_constant", "F_constant"
+    ),
+    taxon_label = c("Taxon1", "Taxon2", "Taxon1", "Taxon2",
+                    "Taxon1", "Taxon1", "Taxon2"),
+    contribution = c(5, 5, 6, 6, 20, 10, 10),
+    stringsAsFactors = FALSE
+  )
+  metadata <- data.frame(
+    sample = c("S1", "S2"),
+    group = c("A", "B"),
+    stringsAsFactors = FALSE
+  )
+
+  p <- taxa_contribution_bar(
+    agg,
+    metadata,
+    group = "group",
+    n_functions = 1,
+    show_percentage = FALSE
+  )
+
+  expect_setequal(unique(p$data$function_id), "F_variable")
+})
+
+test_that("taxa_contribution_bar rejects zero-total percentage denominators", {
+  agg <- data.frame(
+    sample = c("S1", "S1"),
+    function_id = c("K00001", "K00001"),
+    taxon_label = c("Taxon1", "Taxon2"),
+    contribution = c(0, 0),
+    stringsAsFactors = FALSE
+  )
+  metadata <- data.frame(
+    sample = "S1",
+    group = "A",
+    stringsAsFactors = FALSE
+  )
+
+  expect_error(
+    taxa_contribution_bar(agg, metadata, group = "group",
+                          show_percentage = TRUE),
+    "total contribution <= 0"
+  )
+
+  p <- taxa_contribution_bar(agg, metadata, group = "group",
+                             show_percentage = FALSE)
+  expect_s3_class(p, "ggplot")
+  expect_equal(sum(p$data$contribution), 0)
+})
+
 
 # ---- taxa_contribution_heatmap ----
 
@@ -482,6 +783,33 @@ test_that("taxa_contribution_heatmap returns ggplot", {
 
   p <- taxa_contribution_heatmap(agg, cluster_rows = FALSE, cluster_cols = FALSE)
   expect_s3_class(p, "ggplot")
+})
+
+test_that("taxa_contribution_heatmap treats absent sparse contributions as zero", {
+  agg <- data.frame(
+    sample = c("S1", "S1", "S2"),
+    function_id = c("K00001", "K00001", "K00001"),
+    taxon_label = c("Rare", "Common", "Common"),
+    contribution = c(10, 4, 4),
+    stringsAsFactors = FALSE
+  )
+
+  p <- taxa_contribution_heatmap(
+    agg,
+    n_functions = 1,
+    cluster_rows = FALSE,
+    cluster_cols = FALSE
+  )
+
+  plot_df <- p$data
+  expect_equal(
+    plot_df$value[as.character(plot_df$taxon) == "Rare"],
+    5
+  )
+  expect_equal(
+    plot_df$value[as.character(plot_df$taxon) == "Common"],
+    4
+  )
 })
 
 test_that("taxa_contribution_heatmap relabels columns using pathway_annotation output", {
@@ -510,6 +838,45 @@ test_that("taxa_contribution_heatmap relabels columns using pathway_annotation o
   func_levels <- levels(p$data$func)
   # At least one of the labels should be the pathway_annotation description.
   expect_true(any(c("alpha desc", "beta desc", "gamma desc") %in% func_levels))
+})
+
+test_that("taxa_contribution_heatmap rejects conflicting annotation labels", {
+  agg <- data.frame(
+    sample = c("S1", "S1", "S2", "S2"),
+    function_id = c("K00001", "K00002", "K00001", "K00002"),
+    taxon_label = c("Taxon1", "Taxon1", "Taxon2", "Taxon2"),
+    contribution = c(1, 2, 3, 4),
+    stringsAsFactors = FALSE
+  )
+
+  same_label_annotation <- data.frame(
+    feature = c("K00001", "K00001"),
+    description = c("shared label", "shared label"),
+    stringsAsFactors = FALSE
+  )
+  p <- taxa_contribution_heatmap(
+    agg,
+    annotation_data = same_label_annotation,
+    cluster_rows = FALSE,
+    cluster_cols = FALSE
+  )
+  expect_s3_class(p, "ggplot")
+  expect_true("shared label" %in% levels(p$data$func))
+
+  conflicting_annotation <- data.frame(
+    feature = c("K00001", "K00001"),
+    description = c("first label", "second label"),
+    stringsAsFactors = FALSE
+  )
+  expect_error(
+    taxa_contribution_heatmap(
+      agg,
+      annotation_data = conflicting_annotation,
+      cluster_rows = FALSE,
+      cluster_cols = FALSE
+    ),
+    "multiple labels"
+  )
 })
 
 test_that("taxa_contribution_heatmap with clustering returns patchwork", {
