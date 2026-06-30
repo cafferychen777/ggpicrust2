@@ -2,10 +2,43 @@
 
 ## Bug Fixes
 
+* `pathway_annotation()` now normalizes logical-like `ko_to_kegg` strings,
+  preventing `ko_to_kegg = "TRUE"` from silently taking the local-reference
+  branch instead of the requested KEGG annotation branch.
+* `pathway_gsea(method = "camera"|"fry")` now rejects non-finite or
+  rank-deficient design matrices before limma is called. Constant covariates
+  or covariates perfectly confounded with the group variable now fail with an
+  actionable error instead of entering an unestimable camera/fry contrast.
+* `pathway_gsea(method = "camera"|"fry")` now builds limma design formulas
+  from literal metadata column names, so non-syntactic group or covariate
+  names such as `"treatment group"` and `"age years"` work without requiring
+  users to rename their metadata.
 * Fixed R scoping bug in `pathway_annotation()`: error counting inside
   `tryCatch()` error handler used `<-` (local assignment) instead of `<<-`,
   so `error_count` and `error_ids` were silently never updated when KEGG
   API calls failed.
+* Fixed row-specific KEGG annotation merge-back in `pathway_annotation()`
+  when the same feature appears in multiple DAA rows. Non-significant rows
+  with the same feature ID as a significant row now keep `NA` annotation
+  fields instead of inheriting annotations by feature-name matching.
+* `ko2kegg_abundance()` now rejects duplicated KO identifiers after cleaning
+  optional `ko:` prefixes. Duplicate KO rows previously entered pathway
+  aggregation as repeated evidence and could distort both upper-half mean and
+  legacy sum abundances.
+* `ko2kegg_abundance()` now rejects missing or non-finite KO abundance values
+  before pathway aggregation. The previous upper-half mean path could silently
+  drop missing KO values during sorting, changing the number of KOs
+  contributing to a pathway abundance.
+* `visualize_gsea()` now rejects missing, empty, or duplicate `pathway_id`
+  values in the selected rows for every plot type, preventing low-level
+  duplicate row-name errors in heatmaps and ambiguous multi-method/contrast
+  visualizations. Missing or empty pathway labels now fall back to
+  `pathway_id` row-wise.
+* `pathway_ridgeplot()` now calculates fold changes using explicit
+  group-level semantics. Two-group inputs use factor-level order, while
+  multi-group inputs must supply `comparison = c(group1, group2)`, preventing
+  sample-column order from silently changing the log2 fold-change direction
+  or plotting a comparison that does not match the GSEA contrast.
 * Fixed dead auto-adjust logic in `create_legend_theme()`: `missing(direction)`
   was checked after `match.arg(direction, ...)` which always evaluates the
 
@@ -14,12 +47,231 @@
   public `pathway_gsea()` API default of 5.
 * Aligned `perform_aldex2_analysis()` internal `include_effect_size` default
   (was `FALSE`) with the public `pathway_daa()` API default of `TRUE`.
+* Two-group ALDEx2 analyses now stop if explicitly requested
+  `aldex.effect()` output fails or is malformed, instead of warning and
+  returning p-value-only rows without the documented effect-size columns.
+  Effect rows are matched to test rows by feature identifier and the required
+  finite `effect`, `diff.btw`, `rab.all`, and probability-valued `overlap`
+  columns are validated before use.
+* Paired ALDEx2 results from `compare_metagenome_results()` now use the same
+  feature-ID alignment and effect-output validation. Previously, a reordered
+  `aldex.effect()` table could attach one feature's effect size and fold change
+  to another feature's p-values by row position.
 * Fixed `run_fgsea()` empty-result path: missing method argument to
   `create_empty_gsea_result()` produced `method = "unknown"` instead of
   `"fgsea"`.
 * Collapsed dead contrast-selection branches in `run_limma_gsea()` where
   both if/else paths assigned the same value; the unreachable final `else`
   now raises an informative error for unexpected `contrast` types.
+* Fixed `pathway_gsea(method = "camera"|"fry")` contrast resolution:
+  multi-group designs now require an explicit contrast, character contrasts
+  must exactly match a design column or non-reference group level, and
+  numeric contrasts are validated against the design matrix. This prevents
+  substring matching from silently testing the wrong coefficient.
+  Named numeric contrast vectors are now matched to design column names before
+  being passed to limma, preventing out-of-order named vectors from silently
+  testing the wrong coefficient combination.
+* Fixed `pathway_daa(daa_method = "ALDEx2", reference = ...)`: ALDEx2
+  condition levels are now releveled before converting them to numeric
+  conditions, so `diff_btw`/`log2_fold_change` direction and `group1`/`group2`
+  labels honor the requested reference level.
+* Fixed `pathway_daa(daa_method = "Lefser", reference = ...)`: Lefser now
+  relevels the grouping factor before analysis, converts counts to lefser's
+  expected relative-abundance assay with `lefser::relativeAb()`, and reports
+  all-feature Kruskal-Wallis p-values from that same relative-abundance
+  scale. Previously raw-count library-size differences could drive the
+  reported p-values and the user-supplied reference was ignored.
+  Actual Lefser backend errors now fail the call instead of returning a table
+  with missing LDA scores.
+* The top-level `ggpicrust2()` wrapper no longer rejects
+  `daa_method = "Lefser"` with the stale claim that Lefser does not output
+  p-values. `pathway_daa()` now owns Lefser validation and supplies
+  p-values/adjusted p-values, while `pathway_errorbar()` supplies the
+  display-only log2 fold-change fallback when no method-native log2 fold
+  change is returned.
+* `pathway_daa(daa_method = "Lefser")` now fails clearly if a per-feature
+  Kruskal-Wallis p-value cannot be computed on the Lefser relative-abundance
+  scale, instead of silently converting the failed test to `p = 1`.
+* `pathway_daa(daa_method = "LinDA")` now surfaces backend errors as
+  errors instead of returning an empty DAA table, so method failures cannot
+  be mistaken for "no differential features".
+* `pathway_daa()` now validates `reference` once after sample alignment and
+  `select` filtering. Invalid, empty, or filtered-out reference levels now
+  fail with an actionable error instead of silently falling back to the first
+  observed group level.
+* `pathway_daa(select = ...)` now requires unique, non-empty sample names and
+  rechecks that at least four samples remain after filtering, preventing
+  duplicated or undersized selected sample sets from reaching backend fitting.
+* `pathway_daa()` now rejects missing/empty group labels and requires at
+  least two samples per retained group after sample alignment and `select`
+  filtering. This avoids fitting DAA models or tests on singleton groups
+  where within-group variation cannot be assessed.
+* `pathway_daa()` now rejects missing, non-finite, or negative abundance
+  values through shared DAA input validation before backend fitting. Invalid
+  abundance cells no longer reach different DAA backends with backend-specific
+  low-level failures or partial statistics.
+* `pathway_daa()` now preserves method-native adjusted p-values for DESeq2
+  (`padj` from `results()`), LinDA (`padj`), and Maaslin2 (`qval`) instead
+  of discarding them and recomputing a generic wrapper-level adjustment.
+  The requested `p_adjust_method` is forwarded to those backends where
+  supported.
+* `pathway_daa(daa_method = "DESeq2")` no longer suppresses all backend
+  warnings. DESeq2 diagnostics such as identical values across every sample
+  now reach the caller instead of being hidden while a result table is
+  returned.
+* `pathway_daa(daa_method = "DESeq2"|"limma voom"|"edgeR")` now validates
+  backend feature identifiers and aligns p-values, adjusted p-values, and
+  log fold changes by feature ID before constructing the result table. A
+  reordered, incomplete, or malformed backend result now fails clearly
+  instead of attaching statistics to features by row position.
+* `pathway_daa(daa_method = "metagenomeSeq")` no longer silently replaces
+  all CSS normalization-quantile failures with `p = 0.5`. Samples with only
+  one positive feature now fail with an actionable error, matching
+  metagenomeSeq's own `cumNormStatFast()` requirement, while the existing
+  degenerate-search fallback to `p = 0.5` now emits a warning.
+* `pathway_daa(daa_method = "Maaslin2")` now mirrors MaAsLin2's
+  `make.names()` feature-name sanitization when mapping results back to
+  original feature IDs, rejects ambiguous sanitized feature IDs before model
+  fitting, and validates MaAsLin2 result columns before returning them.
+* `pathway_daa()` now validates raw and adjusted p-value columns at the DAA
+  wrapper boundary, including method-specific adjusted p-values supplied by
+  individual backends, so malformed probability columns fail instead of
+  propagating into downstream summaries.
+* `pathway_daa(daa_method = "DESeq2"|"metagenomeSeq"|"LinDA"|"Maaslin2")`
+  now models against an internal syntactic metadata column, so valid
+  user-supplied group columns with names such as `"treatment group"` work
+  without forcing users to rename their metadata. Output `group1` and
+  `group2` labels continue to use the original group levels.
+* `pathway_daa(daa_method = "LinDA")` now validates the documented
+  MicrobiomeStat::linda output columns consumed by ggpicrust2
+  (`pvalue`, `padj`, and `log2FoldChange`) and fails on missing, malformed,
+  non-finite, or out-of-range values instead of filling them with `NA`.
+* Wrapper-computed DAA adjusted p-values are now calculated within each
+  method/contrast (`method`, `group1`, `group2`) instead of across all
+  pairwise contrasts at once, matching the per-contrast result semantics of
+  DESeq2, limma, and edgeR-style outputs.
+* Count-based DAA backends that require or assume integer counts (ALDEx2,
+  DESeq2, edgeR, and metagenomeSeq) now warn when non-integer abundance
+  values are rounded before fitting, replacing previously silent data
+  mutation.
+* `pathway_daa()` now requires explicit, non-empty, unique feature identifiers
+  in abundance row names (or a leading feature-ID column that is normalized to
+  row names). Missing IDs fail before backend fitting, and duplicated IDs no
+  longer propagate into ambiguous DAA result rows or downstream annotation
+  merges.
+* `pathway_daa()` now rejects additional arguments supplied through `...`
+  instead of silently ignoring them. The previous documentation claimed these
+  arguments were passed to backend DAA methods, which could mislead users into
+  believing formula, fixed-effect, or covariate-adjustment arguments had been
+  applied when the fitted model was actually unchanged.
+* `pathway_gsea()` now validates `min_size`, `max_size`, `nperm`, `seed`,
+  `p_adjust_method`, and `inter.gene.cor` at the API boundary, including
+  rejecting impossible gene-set size ranges before downstream limma/fgsea/
+  clusterProfiler calls.
+* `pathway_gsea()` now revalidates group structure and complete design
+  variables after sample alignment. Missing group labels or camera/fry
+  covariates now fail before ranking/model fitting, preventing
+  `model.matrix()` from dropping samples and preventing preranked methods
+  from silently using a different sample set. This validation is also applied
+  when preranked methods use an explicit `comparison = c(group1, group2)`, so
+  missing aligned group labels are not silently dropped from the ranked list.
+* `pathway_gsea(method = "camera"|"fry")` now passes raw non-negative counts
+  directly to `limma::voom()`. The previous pre-voom `+0.5` pseudocount
+  changed library sizes and could distort voom's mean-variance trend.
+  A failed voom transformation now stops the analysis instead of silently
+  switching to a log2 transform with unit weights, which discarded voom's
+  observation-level mean-variance weights while still reporting camera/fry
+  results.
+* Camera/fry GSEA output now explicitly labels its legacy `NES` compatibility
+  column as `score_type = "signed_log10_pvalue"` with
+  `score_label = "Signed -log10(p-value)"`. limma camera/fry do not estimate
+  a true normalized enrichment score, and `visualize_gsea()` now uses the
+  explicit score label for axes and legends to avoid misinterpretation.
+* `pathway_gsea(method = "fgsea"|"GSEA"|"clusterProfiler")` now accepts
+  `comparison = c(group1, group2)` to define preranked GSEA ranking
+  direction explicitly. Positive ranking statistics and positive ES/NES now
+  map to features higher in `group1`; multi-group preranked analyses must
+  specify `comparison` instead of relying on implicit factor-level order.
+* `pathway_gsea()` now rejects design-only arguments that cannot be honored
+  by preranked GSEA methods. Supplying `covariates` to `fgsea`, `GSEA`, or
+  `clusterProfiler`, or supplying `contrast` to a preranked method, now fails
+  with instructions to use limma-based `camera`/`fry` or the preranked
+  `comparison` argument instead of silently running an unadjusted analysis.
+* `pathway_gsea(method = "fgsea")` now honors the requested
+  `p_adjust_method` by recomputing adjusted p-values from fgsea raw
+  p-values. Previously the fgsea branch always returned fgsea's built-in
+  BH-adjusted `padj` values even when callers requested another correction.
+* Preranked GSEA ranking vectors are now validated before fgsea or
+  clusterProfiler execution. Ranking statistics must be a named numeric vector
+  with unique feature names, finite non-missing values, and at least two
+  distinct statistics. This prevents all-tied rankings (for example all-zero
+  group differences) from producing enrichment results driven by arbitrary
+  input order rather than biological signal.
+* `pathway_gsea(method = "GSEA"|"clusterProfiler")` now returns a standard
+  empty GSEA result schema when no gene sets overlap the ranked feature list
+  after size filtering, instead of returning a partial data frame missing
+  columns such as `leading_edge` and `method`.
+* `pathway_gsea()` now requires a numeric abundance matrix with explicit,
+  non-duplicated feature row names (or a leading non-numeric feature-ID
+  column) before gene-set matching, so malformed input fails at the API
+  boundary instead of producing empty or low-level GSEA errors.
+* `pathway_gsea()` and its internal preranked/limma GSEA helpers now reject
+  negative, missing, or non-finite count-like abundance values instead of
+  replacing them with zero, preventing silent changes to ranking statistics
+  and voom's mean-variance model.
+* `pathway_gsea(pathway_type = "MetaCyc")` now rejects pathway-level MetaCyc
+  identifiers in the abundance row names. MetaCyc GSEA requires EC-level input
+  for EC-to-pathway gene sets; pathway-level MetaCyc abundance tables should be
+  analyzed with `pathway_daa()` instead of being treated as empty enrichment
+  evidence.
+* `pathway_gsea()`, `prepare_gene_sets()`, `run_fgsea()`, and
+  `run_limma_gsea()` now validate scalar method/pathway/ranking choices and
+  named gene-set lists before enrichment testing. Missing, empty, or duplicated
+  gene-set names are rejected because those names become `pathway_id` values;
+  this prevents downstream R/limma name repair from silently changing pathway
+  identifiers such as `set1` into `set1.1`.
+* Shared choice-parameter validation now requires a single non-missing
+  supported value. This gives clear errors for invalid `plot_type`, `sort_by`,
+  `order`, method, and pathway choices instead of low-level R condition-length
+  errors when callers pass vectors or `NA`.
+* Added shared validation for `p_adjust_method` across DAA/GSEA-facing
+  entry points using R's `stats::p.adjust.methods`, so unsupported
+  adjustment names fail even when a backend returns method-specific adjusted
+  p-values.
+* Shared abundance validation now requires numeric matrix input and numeric
+  sample columns in data frames, while treating a leading non-numeric feature
+  ID column as metadata rather than a sample. This prevents malformed
+  abundance tables from reaching low-level `colSums()`, `rowMeans()`,
+  `scale()`, or backend model-fitting calls with misleading errors.
+* Abundance-consuming entry points now normalize a leading non-numeric feature
+  ID column into row names before sample alignment and matrix conversion. This
+  prevents feature/pathway IDs from being dropped or replaced by default row
+  numbers in `pathway_daa()`, `pathway_gsea()`, heatmaps, PCA, ridge plots, and
+  error-bar summaries.
+* `ggpicrust2(data = ..., ko_to_kegg = FALSE)` now preserves abundance inputs
+  that already store feature IDs in row names. The wrapper no longer
+  unconditionally treats the first sample column as an ID column, preventing
+  the first sample from being dropped and abundance values from becoming
+  feature labels.
+* `pathway_heatmap()` now handles zero-variance rows or sample profiles when
+  row/column clustering uses correlation or Spearman distance, instead of
+  sending `NA` distances to `hclust()`.
+* `pathway_heatmap()` now accepts finite transformed inputs with negative
+  values or zero-sum sample columns, while explicitly rejecting missing or
+  non-finite values before z-score scaling.
+* `pathway_heatmap()` now revalidates primary and secondary grouping variables
+  after sample alignment and rejects missing aligned group labels, preventing
+  extra metadata rows from making an otherwise invalid heatmap grouping appear
+  valid.
+* `ko2kegg_abundance(method = "abundance")` now matches PICRUSt2's
+  unstructured pathway upper-half indexing for even numbers of matched KOs
+  (`floor(n / 2) + 1` in R). The previous `ceiling(n / 2)` start included
+  one lower-half KO for even pathway sizes and could underestimate pathway
+  abundance.
+* Clarified `ko2kegg_abundance()` documentation: the default method is an
+  offline KO-to-KEGG aggregation approximation based on PICRUSt2's
+  unstructured pathway rule, not the full PICRUSt2 pathway pipeline with
+  MinPath and structured MetaCyc pathway inference.
 * Fixed `pathway_errorbar()` documentation defaults for `pvalue_format`
   (was "smart", code uses "numeric") and `pathway_class_position` (was
   "left", code uses "right").
@@ -28,10 +280,151 @@
   significant threshold so the tightest match wins.
 * `pathway_pca()` now correctly requires at least 2 groups (`min_groups = 2`)
   instead of allowing single-group input that produces a degenerate PCA.
+* `pathway_pca()` now rejects missing or empty group labels after sample
+  alignment. Previously a metadata table could retain ungrouped samples in
+  the PCA coordinates as long as the non-missing labels still contained two
+  groups, making color and marginal-density interpretation incomplete.
+* `pathway_pca()` now draws confidence ellipses only for groups with at least
+  four samples, matching ggplot2's `stat_ellipse()` implementation. Smaller
+  groups remain in the PCA scatter plot and trigger an
+  explicit warning instead of relying on ggplot2's low-level
+  "Too few points to calculate an ellipse" message.
+* `pathway_pca()` no longer rejects finite zero-sum sample columns and no
+  longer drops samples whose values are constant across pathways. In
+  `prcomp(t(abundance))`, samples are observations and pathways are variables;
+  only zero-variance pathways are removed before scaling.
 * `pathway_ridgeplot()` now guards against `NA` values in direction and NES
   columns instead of silently propagating them into ggplot aesthetics.
+* `pathway_ridgeplot()` now aligns metadata to abundance columns by sample ID
+  before calculating displayed gene/KO log2 fold changes, validates GSEA
+  p-value/FDR/NES columns and display parameters, and ranks `sort_by = "NES"`
+  by absolute effect size.
+* `pathway_ridgeplot()` now rejects missing, empty, or duplicated
+  `pathway_id` values and invalid `pathway_type` values before reference
+  mapping. Missing or empty `pathway_name` labels now fall back to
+  `pathway_id` instead of causing low-level string-length errors.
+* `visualize_gsea()` now validates required GSEA statistic columns before
+  plotting, including finite NES values, probability-valued p-values/FDRs,
+  and positive integer gene set sizes.
+* `gsea_pathway_annotation()` now rejects missing or empty `pathway_id`
+  values and invalid `pathway_type` values at the API boundary, preventing
+  annotated GSEA tables with blank or `NA` pathway labels.
+* `visualize_gsea(plot_type = "network"|"heatmap")` now parses missing or
+  empty `leading_edge` values as empty sets, preventing missing leading-edge
+  annotations from creating false pathway similarity edges.
+* `visualize_gsea(plot_type = "heatmap")` now recognizes abundance input with
+  a leading non-numeric feature-ID column, validates the aligned abundance
+  matrix, rejects missing group annotations, and fails clearly when non-empty
+  leading-edge genes do not match abundance row names instead of drawing an
+  all-zero heatmap.
+* `import_MicrobiomeAnalyst_daa_results()` now parses MicrobiomeAnalyst result
+  columns by semantic names such as `Pvalues`, `FDR`, `Statistics`, and `log2FC`
+  instead of assuming a fixed four-column order. Feature IDs may come from a
+  feature/name column or from row names, preventing method-specific DE outputs
+  from being silently misread as p-values/FDR values. Imported feature IDs,
+  p-values, FDR values, optional statistics/fold changes, method labels, and
+  group labels are validated before returning a ggpicrust2-style DAA table.
+* P-value annotation helpers now validate probability values, significance
+  thresholds, star symbols, and colors. `pathway_errorbar()` validates its
+  p-value display parameters at the API boundary.
 * `pathway_volcano()` now validates that `fc_threshold` is a non-negative
   number.
+* `pathway_volcano()` and `compare_gsea_daa()` now validate probability-valued
+  p-value/FDR columns and p-value thresholds, and keep zero adjusted p-values
+  finite in scatter/volcano log-scale displays.
+* `compare_gsea_daa(plot_type = "scatter")` now rejects duplicated pathway
+  effect-size rows before merging GSEA and DAA results, preventing many-to-many
+  joins from inflating plotted associations. Pathway identifiers must also be
+  non-empty.
+* `compare_gsea_daa(plot_type = "scatter")` now requires explicit GSEA and
+  DAA group-direction columns and aligns DAA `log2_fold_change` values to the
+  GSEA-positive NES direction before plotting. This prevents default
+  two-group analyses from showing an artificial sign reversal between
+  preranked GSEA (`group1` vs `group2`) and DAA (`group2/group1`) effects.
+* `compare_gsea_daa(plot_type = "venn"|"upset")` now rejects direction-aware
+  inputs that contain multiple or incompatible `group1`/`group2` pairs,
+  preventing pathways from different biological contrasts from being counted
+  as method agreement.
+* `compare_daa_results()` now compares multi-group DAA discoveries as
+  feature/group-pair units rather than feature IDs alone, preventing agreement
+  from being overstated when different methods flag the same feature in
+  different pairwise contrasts. Group pairs are canonicalized as unordered for
+  this set-level comparison, so `A vs B` and `B vs A` are treated as the same
+  biological comparison while `A vs B` and `A vs C` remain distinct. Method
+  labels and feature/group identifiers are validated for unambiguous output.
+* `compare_metagenome_results()` now drops undefined per-feature Spearman
+  correlations before summarizing and fails with a clear error when all shared
+  features are constant across aligned samples, instead of surfacing a
+  low-level `wilcox.test()` error.
+* `compare_metagenome_results()` now preserves the paired-sample design during
+  differential abundance analysis. The function uses paired ALDEx2 tests by
+  default and also supports paired Wilcoxon signed-rank tests on relative
+  abundance. Independent-group backends are rejected because treating repeated
+  quantifications of the same samples as independent replicates produces
+  pseudoreplication.
+* Correlation p-values in `compare_metagenome_results()` now use joint
+  sample-label permutations of the median per-feature Spearman correlation,
+  preserving dependence among features while breaking cross-metagenome sample
+  correspondence. Diagonal p-values are `NA`, Monte Carlo p-values use the
+  plus-one correction, and a multiplicity-adjusted `p_adjust_matrix` plus the
+  contributing-feature counts are returned.
+* `compare_metagenome_results()` now validates metagenome labels, feature row
+  names, sample column names, and finite non-negative matrix values before
+  intersecting matrices. Duplicate feature/sample IDs now fail instead of
+  creating ambiguous by-name alignments.
+* `compare_daa_results()`, `pathway_errorbar()`, `pathway_errorbar_table()`,
+  `pathway_annotation()`, and the top-level `ggpicrust2()` wrapper now use
+  shared validation for adjusted p-value columns and significance thresholds
+  before filtering significant features.
+* `pathway_errorbar_table()` now aligns named `Group` vectors to abundance
+  sample columns when metadata is not provided, matching `pathway_errorbar()`
+  behavior and preventing order-dependent mean/log2 fold-change errors.
+  Both functions now reject duplicated sample names in `Group`.
+* `pathway_errorbar()` and `pathway_errorbar_table()` now reject duplicated
+  feature IDs within a selected DAA method/group pair before merging abundance
+  statistics back to annotations, preventing duplicated plot/table rows from
+  many-to-one DAA result inputs.
+* `pathway_errorbar()` and `pathway_errorbar_table()` now reject missing,
+  empty, or incompatible `Group` labels before calculating group means and
+  standard deviations. Previously samples with `NA` group labels could be
+  silently dropped from plotted/table abundance summaries, and mismatched
+  group labels could produce summaries unrelated to the DAA contrast.
+* `read_contrib_file()`, `read_strat_file()`, and
+  `aggregate_taxa_contributions()` now validate contribution identifier keys
+  (`sample`, `function_id`, and `taxon`) before aggregation. Missing or empty
+  IDs, duplicated wide-format stratified sample columns, and invalid requested
+  pathway/function IDs now fail fast instead of being silently dropped or
+  mislabeled by downstream aggregation.
+* `read_contrib_file()` and `aggregate_taxa_contributions()` now reject
+  contribution tables that mix gene-family-level identifiers (such as KOs/ECs)
+  with pathway-level identifiers in the same `function_id` column. This avoids
+  silently treating direct pathway contributions and KEGG pathway-to-KO
+  expansions as one comparable biological unit.
+* `aggregate_taxa_contributions()` now validates DAA adjusted p-values,
+  significance thresholds, `top_n`, and contribution metric values. Missing,
+  infinite, or negative contribution values now fail fast instead of being
+  silently dropped or propagated into taxa contribution summaries.
+* `aggregate_taxa_contributions()` now ranks `top_n` taxa by total
+  contribution mass instead of mean contribution over observed rows, avoiding
+  over-selection of sparsely observed taxa with a single high contribution.
+* `taxa_contribution_bar()` and `taxa_contribution_heatmap()` now validate
+  contribution values, identifier keys, requested `function_ids`, and
+  `n_functions` before plotting.
+* `taxa_contribution_bar(show_percentage = TRUE)` now rejects zero-total
+  sample/function combinations instead of displaying undefined relative
+  contributions as all-zero percentage bars.
+* `taxa_contribution_heatmap()` now treats absent sparse contribution
+  combinations as zero when computing sample means, matching PICRUSt2's
+  sparse contribution outputs and avoiding inflated mean heatmap intensities
+  for taxa observed in only a subset of samples.
+* `taxa_contribution_heatmap(annotation_data = ...)` now rejects conflicting
+  labels for the same plotted function ID instead of silently choosing the
+  first duplicate annotation label.
+* `taxa_contribution_bar()` now ranks default `n_functions` by between-sample
+  variance in total function contribution, after summing taxa and filling
+  absent sparse sample/function combinations with zero. This prevents taxon
+  composition heterogeneity within a function from being mistaken for
+  between-sample functional variation.
 * Corrected the multi-group ALDEx2 method label from
   `ALDEx2_Kruskal-Wallace test` to `ALDEx2_Kruskal-Wallis test`; package
   internals still recognize the legacy spelling as an alias for
@@ -100,6 +493,10 @@
   method-native log2 fold change is kept and the relative-abundance ratio
   is not recomputed, so model-based and ratio-based effect sizes are never
   conflated under the same column name.
+* `pathway_daa(include_abundance_stats = TRUE)` now fails if the requested
+  abundance summaries cannot be calculated for the returned feature/group
+  pairs, instead of warning and returning a result table that omits the
+  user-requested summary columns.
 * `pathway_daa(select = ...)` now reorders metadata rows to match the
   reordered abundance columns. Previously the `select` branch reordered
   abundance but only filtered metadata with `%in%`, leaving group labels
@@ -119,6 +516,12 @@
   `metadata$sample`; sample-column autodetection from `align_samples()`
   is honored so metadata with a non-default sample identifier (e.g.
   `SampleID`) works end-to-end.
+* `pathway_daa(daa_method = "metagenomeSeq")` now extracts p-values and
+  log-fold changes from the complete `fitFeatureModel()` result using feature
+  identifiers. The previous code called `MRcoefs()`, a top-table display
+  helper that can return sorted or partial feature tables and currently fails
+  on `fitFeatureModelResults` in supported metagenomeSeq versions; ggpicrust2
+  then returned all-`NA` `log2_fold_change` values with only a warning.
 * `pathway_daa(daa_method = "metagenomeSeq")` with three or more groups
   now emits one row-block per (reference, non-reference) contrast --
   `(k - 1) * n_features` rows total -- matching the shape returned by
@@ -241,6 +644,12 @@
   report the same model-based estimate. The mean-ratio fallback still
   runs when no `log2_fold_change` column is supplied (ALDEx2 with
   `include_effect_size = FALSE`, Lefser, or custom DAA frames).
+* `pathway_errorbar()` and `pathway_errorbar_table()` now require every
+  displayed significant DAA feature to be present in the abundance row names.
+  The previous intersection-based subsetting could silently drop significant
+  DAA rows from abundance summaries or leave plot panels describing different
+  feature sets. `pathway_errorbar()` also validates displayed method-native
+  `log2_fold_change` values, so non-finite effect sizes fail before plotting.
 * `pathway_errorbar_table()` no longer derives its two group names via
   `unique(daa_results_filtered_sub_df$group1)[1]` /
   `unique(daa_results_filtered_sub_df$group2)[1]`. The surrounding
@@ -267,19 +676,6 @@
 
 ## Internal
 
-* `compare_metagenome_results()` no longer emits "cannot compute exact
-  p-value with ties" warnings from the per-metagenome-pair Wilcoxon
-  test. The test now passes `exact = FALSE` explicitly, forcing the
-  normal approximation instead of letting `stats::wilcox.test()` first
-  try (and fail on ties) to compute an exact p-value. Ties are endemic
-  to Spearman correlations -- any pair of features with the same rank
-  pattern yields identical coefficients -- so the previous default
-  produced warnings that were purely an internal implementation
-  detail and drowned out the user-facing "samples dropped by
-  cross-metagenome intersection" warning that the function's recent
-  by-name alignment now emits. The numerical p-value is unchanged in
-  the tied case, and the typical n (feature count, usually thousands)
-  puts the normal approximation well within its accurate regime.
 * Documented the intentional duplicate `align_samples()` call in
   `ggpicrust2()` and `pathway_daa()`. The wrapper must pre-align
   abundance/metadata before Step 4 builds `Group_vec` by positional
@@ -882,10 +1278,10 @@ including edge cases where no statistically significant pathways are found.
   - Prevents errors when processing MetaCyc pathway data with missing annotations
 
 * Enhanced pathway_pca function to handle zero variance data:
-  - Automatically detects and filters out columns (samples) with zero variance
   - Automatically detects and filters out rows (pathways) with zero variance
-  - Updates metadata to match remaining samples after filtering
-  - Provides informative warnings about removed samples/pathways
+  - Keeps sample profiles as PCA observations, including samples with zero
+    variance across pathways
+  - Provides informative warnings about removed pathways
   - Improves error handling with clear diagnostic messages
 
 * Fixed file extension handling in ko2kegg_abundance function:
