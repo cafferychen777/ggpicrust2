@@ -300,6 +300,24 @@ test_that("summarize_abundance_by_group errors on length mismatch", {
   expect_error(sbg(M, c("A", "B")), regexp = "length")
 })
 
+test_that("validate_count_parameter rejects invalid counts without coercion warnings", {
+  validate_count <- getFromNamespace("validate_count_parameter", "ggpicrust2")
+
+  expect_error(
+    expect_warning(validate_count(1e20, "n_pathways"), NA),
+    "n_pathways.*single finite integer"
+  )
+  expect_error(
+    validate_count(1.5, "n_pathways"),
+    "n_pathways.*single finite integer"
+  )
+  expect_error(
+    validate_count(0, "n_pathways"),
+    "n_pathways.*positive"
+  )
+  expect_true(validate_count(0, "n_pathways", allow_zero = TRUE))
+})
+
 test_that("align_samples is idempotent on already-aligned inputs", {
   # Contract: ggpicrust2() pre-aligns inputs at its top, then calls
   # pathway_daa(), which independently re-aligns. Both sites use the

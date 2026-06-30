@@ -1497,8 +1497,13 @@ validate_feature_rownames <- function(x, context = "abundance") {
 #' @noRd
 validate_count_parameter <- function(value, param_name, allow_zero = FALSE) {
   if (!is.numeric(value) || length(value) != 1 ||
-      is.na(value) || !is.finite(value) || value != as.integer(value)) {
-    stop(sprintf("'%s' must be a single finite integer.", param_name),
+      is.na(value) || !is.finite(value) ||
+      value > .Machine$integer.max || value != floor(value)) {
+    stop(sprintf(
+      "'%s' must be a single finite integer no larger than %d.",
+      param_name,
+      .Machine$integer.max
+    ),
          call. = FALSE)
   }
 

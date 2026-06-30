@@ -445,6 +445,18 @@ test_that("compare_metagenome_results validates correlation inference controls",
     "correlation_permutations.*non-negative"
   )
   expect_error(
+    expect_warning(
+      compare_metagenome_results(
+        list(m1, m2),
+        names = c("m1", "m2"),
+        daa_method = "paired Wilcoxon",
+        correlation_permutations = 1e20
+      ),
+      NA
+    ),
+    "correlation_permutations.*single finite integer"
+  )
+  expect_error(
     compare_metagenome_results(
       list(m1, m2),
       names = c("m1", "m2"),

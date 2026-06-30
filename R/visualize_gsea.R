@@ -447,7 +447,9 @@ validate_gsea_visualization_values <- function(gsea_results, required_cols) {
   if ("size" %in% required_cols) {
     validate_finite_numeric_values(gsea_results$size, "size", "gsea_results",
                                    allow_na = FALSE)
-    bad_size <- gsea_results$size <= 0 | gsea_results$size != as.integer(gsea_results$size)
+    bad_size <- gsea_results$size <= 0 |
+      gsea_results$size > .Machine$integer.max |
+      gsea_results$size != floor(gsea_results$size)
     if (any(bad_size)) {
       stop("Column 'size' in gsea_results must contain positive integer values.",
            call. = FALSE)

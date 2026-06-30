@@ -2,6 +2,10 @@
 
 ## Bug Fixes
 
+* Count-like controls such as `n_pathways`, `top_n`, and
+  `correlation_permutations` now reject values larger than R's integer range
+  without emitting coercion warnings. `visualize_gsea()` also applies the same
+  no-coercion integer check to GSEA `size` values before plotting.
 * `pathway_annotation()` now normalizes logical-like `ko_to_kegg` strings,
   preventing `ko_to_kegg = "TRUE"` from silently taking the local-reference
   branch instead of the requested KEGG annotation branch.

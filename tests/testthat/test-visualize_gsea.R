@@ -300,9 +300,20 @@ test_that("visualize_gsea validates GSEA statistic columns before plotting", {
     "positive integer"
   )
 
+  huge_size <- gsea_results
+  huge_size$size[1] <- 1e20
+  expect_error(
+    expect_warning(visualize_gsea(huge_size, plot_type = "dotplot"), NA),
+    "positive integer"
+  )
+
   expect_error(
     visualize_gsea(gsea_results, n_pathways = 0),
     "n_pathways"
+  )
+  expect_error(
+    expect_warning(visualize_gsea(gsea_results, n_pathways = 1e20), NA),
+    "n_pathways.*single finite integer"
   )
 })
 
