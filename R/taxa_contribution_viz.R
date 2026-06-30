@@ -78,6 +78,7 @@ taxa_contribution_bar <- function(contrib_agg,
   validate_metadata(metadata)
   validate_group(metadata, group, min_groups = 1)
   validate_count_parameter(n_functions, "n_functions")
+  function_ids_requested <- !is.null(function_ids)
   if (!is.null(function_ids)) {
     function_ids <- unique(validate_nonempty_character_column(
       function_ids,
@@ -136,6 +137,17 @@ taxa_contribution_bar <- function(contrib_agg,
     func_var <- func_var[order(-func_var$contribution), ]
     function_ids <- utils::head(func_var$function_id, n_functions)
   }
+  if (function_ids_requested) {
+    missing_function_ids <- setdiff(function_ids, unique(contrib_agg$function_id))
+    if (length(missing_function_ids) > 0) {
+      stop(
+        "No contribution rows match the requested function_ids after sample ",
+        "alignment: ",
+        paste(utils::head(missing_function_ids, 5), collapse = ", "),
+        call. = FALSE
+      )
+    }
+  }
   contrib_agg <- contrib_agg[contrib_agg$function_id %in% function_ids, ]
   if (nrow(contrib_agg) == 0) {
     stop("No contribution rows match the requested function_ids.",
@@ -156,11 +168,26 @@ taxa_contribution_bar <- function(contrib_agg,
 
   # Normalize to percentage if requested
   if (show_percentage) {
-    sample_function_totals <- stats::aggregate(
+    observed_totals <- stats::aggregate(
       contribution ~ sample + function_id,
       data = contrib_agg,
       FUN = sum
     )
+    complete_totals <- expand.grid(
+      sample = common_samples,
+      function_id = function_ids,
+      stringsAsFactors = FALSE
+    )
+    sample_function_totals <- merge(
+      complete_totals,
+      observed_totals,
+      by = c("sample", "function_id"),
+      all.x = TRUE,
+      sort = FALSE
+    )
+    sample_function_totals$contribution[
+      is.na(sample_function_totals$contribution)
+    ] <- 0
     zero_totals <- sample_function_totals$contribution <= 0
     if (any(zero_totals)) {
       zero_examples <- paste(

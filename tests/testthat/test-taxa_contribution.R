@@ -710,6 +710,13 @@ test_that("taxa contribution visualizations validate contribution values and cou
                           function_ids = "not-present"),
     "No contribution rows match"
   )
+  expect_error(
+    taxa_contribution_bar(agg, td$metadata, group = "group",
+                          function_ids = c(unique(agg$function_id)[1],
+                                           "not-present"),
+                          show_percentage = FALSE),
+    "not-present"
+  )
 })
 
 test_that("taxa_contribution_bar accepts facet_by = 'group'", {
@@ -785,6 +792,42 @@ test_that("taxa_contribution_bar rejects zero-total percentage denominators", {
                              show_percentage = FALSE)
   expect_s3_class(p, "ggplot")
   expect_equal(sum(p$data$contribution), 0)
+})
+
+test_that("taxa_contribution_bar treats absent sample/function rows as zero denominators", {
+  agg <- data.frame(
+    sample = c("S1", "S2"),
+    function_id = c("K00001", "K00002"),
+    taxon_label = c("Taxon1", "Taxon1"),
+    contribution = c(10, 5),
+    stringsAsFactors = FALSE
+  )
+  metadata <- data.frame(
+    sample = c("S1", "S2"),
+    group = c("A", "B"),
+    stringsAsFactors = FALSE
+  )
+
+  expect_error(
+    taxa_contribution_bar(
+      agg,
+      metadata,
+      group = "group",
+      function_ids = "K00001",
+      show_percentage = TRUE
+    ),
+    "S2/K00001"
+  )
+
+  p <- taxa_contribution_bar(
+    agg,
+    metadata,
+    group = "group",
+    function_ids = "K00001",
+    show_percentage = FALSE
+  )
+  expect_s3_class(p, "ggplot")
+  expect_equal(unique(p$data$sample), "S1")
 })
 
 

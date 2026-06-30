@@ -6,6 +6,12 @@
   `correlation_permutations` now reject values larger than R's integer range
   without emitting coercion warnings. `visualize_gsea()` also applies the same
   no-coercion integer check to GSEA `size` values before plotting.
+* `taxa_contribution_bar(show_percentage = TRUE)` now treats absent
+  sample/function rows as zero-total combinations when validating percentage
+  denominators, instead of silently dropping those sample/function bars from
+  the plot. Explicit `function_ids` are also checked after sample alignment so
+  partially missing requests fail with the missing IDs instead of being
+  silently reduced to the matching subset.
 * `pathway_annotation()` now normalizes logical-like `ko_to_kegg` strings,
   preventing `ko_to_kegg = "TRUE"` from silently taking the local-reference
   branch instead of the requested KEGG annotation branch.
