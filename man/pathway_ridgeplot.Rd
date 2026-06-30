@@ -9,6 +9,7 @@ pathway_ridgeplot(
   abundance,
   metadata,
   group,
+  comparison = NULL,
   pathway_reference = NULL,
   pathway_type = "KEGG",
   n_pathways = 10,
@@ -26,11 +27,21 @@ pathway_ridgeplot(
 Must contain pathway_id column and either NES or direction column.}
 
 \item{abundance}{A data frame or matrix containing the original abundance data
-(genes/KOs as rows, samples as columns) used in the GSEA analysis.}
+(genes/KOs as rows, samples as columns) used in the GSEA analysis. Data
+frames may also provide a leading non-numeric feature ID column (for
+example \code{#NAME}, \code{feature}, or \code{pathway}); it is converted
+to row names before sample alignment.}
 
 \item{metadata}{A data frame containing sample metadata with group information.}
 
 \item{group}{Character string specifying the column name in metadata for grouping.}
+
+\item{comparison}{Optional character vector of length 2 specifying
+\code{c(group1, group2)} for fold-change calculation. The ridge plot
+displays \code{log2(group2 / group1)}. If NULL, the data must contain
+exactly two group levels and their factor-level order is used. For
+multi-group metadata, specify \code{comparison} explicitly so the plot
+matches the GSEA contrast being interpreted.}
 
 \item{pathway_reference}{A data frame containing pathway-to-gene mappings.
 Must have columns: pathway_id (or go_id for GO) and a column containing
@@ -78,6 +89,13 @@ for genes within each enriched pathway. This visualization helps to:
   \item Identify pathways with consistent vs. heterogeneous gene expression
   \item Compare the magnitude of changes across pathways
 }
+
+Fold changes are calculated as \code{log2(group2 / group1)}, where
+\code{group1} and \code{group2} come from \code{comparison} or, for a
+two-group dataset, from the factor-level order of \code{group}.
+GSEA \code{pathway_id} values must be non-empty and unique. Missing or
+empty \code{pathway_name} values are displayed as their corresponding
+\code{pathway_id}.
 
 The plot requires the \code{ggridges} package to be installed.
 }

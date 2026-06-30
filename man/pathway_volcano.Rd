@@ -40,7 +40,7 @@ Default is 1 (2-fold change). Pathways with |log2FC| > fc_threshold are consider
 biologically significant.}
 
 \item{p_threshold}{Numeric. P-value threshold for statistical significance.
-Default is 0.05.}
+Default is 0.05. Must be in the range (0, 1].}
 
 \item{label_top_n}{Integer. Number of top significant pathways to label.
 Default is 10. Set to 0 to disable labels.}

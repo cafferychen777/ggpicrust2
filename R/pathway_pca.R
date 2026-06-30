@@ -7,6 +7,9 @@
 #'
 #' @param abundance A numeric matrix or data frame containing pathway abundance data.
 #'        Rows represent pathways, columns represent samples.
+#'        Data frames may also provide a leading non-numeric feature ID column
+#'        (for example \code{#NAME}, \code{feature}, or \code{pathway}); it is
+#'        converted to row names before sample alignment.
 #'        Column names must match the sample names in metadata.
 #'        Values must be numeric and cannot contain missing values (NA).
 #'
@@ -17,6 +20,9 @@
 #'
 #' @param group A character string specifying the column name in metadata that contains
 #'        group information for samples (e.g., "treatment", "condition", "group").
+#'        Every sample retained after abundance/metadata alignment must have a
+#'        non-missing, non-empty group label, and at least two groups must
+#'        remain.
 #'
 #' @param colors Optional. A character vector of colors for different groups.
 #'        Length must match the number of unique groups.
@@ -34,8 +40,13 @@
 #'
 #' @details
 #' The function automatically aligns samples between abundance data and metadata,
-#' supporting various sample identifier formats. Samples and pathways with zero
-#' variance are filtered before PCA.
+#' supporting various sample identifier formats. Pathways with zero variance
+#' across samples are filtered before PCA because they are variables in
+#' \code{prcomp(t(abundance))} and cannot be scaled. Sample profiles are kept
+#' as observations, even if a sample has zero variance across pathways. PCA
+#' confidence ellipses are drawn only for groups with at least four samples;
+#' smaller groups remain in the scatter plot but are skipped for ellipse
+#' estimation.
 #'
 #' @examples
 #' # Create example abundance data
@@ -104,9 +115,14 @@ pathway_pca <- function(abundance,
                         colors = NULL,
                         show_marginal = TRUE) {
   # Input validation using unified functions
-  validate_abundance(abundance, min_samples = 3)
+  abundance <- normalize_abundance_feature_ids(
+    abundance,
+    context = "pathway_pca() abundance"
+  )
+  validate_abundance(abundance, min_samples = 3, check_zero_columns = FALSE)
   validate_metadata(metadata)
   validate_group(metadata, group, min_groups = 2)
+  show_marginal <- normalize_logical_flag(show_marginal, "show_marginal")
 
   # Align samples between abundance and metadata
   aligned <- align_samples(abundance, metadata)
@@ -124,17 +140,11 @@ pathway_pca <- function(abundance,
   if (any(is.na(abundance))) {
     stop("Abundance matrix contains missing values (NA). PCA requires complete data.")
   }
+  if (any(!is.finite(abundance))) {
+    stop("Abundance matrix contains non-finite values. PCA requires finite data.")
+  }
   if (nrow(abundance) < 2) {
     stop("PCA requires at least 2 pathways (rows)")
-  }
-
-  # Filter out samples with zero variance
-  sample_var <- apply(abundance, 2, var)
-  zero_var_samples <- sample_var == 0
-  if (any(zero_var_samples)) {
-    warning(paste("Removing", sum(zero_var_samples), "sample(s) with zero variance"))
-    abundance <- abundance[, !zero_var_samples, drop = FALSE]
-    metadata <- metadata[!zero_var_samples, , drop = FALSE]
   }
 
   # Filter out pathways with zero variance
@@ -153,10 +163,13 @@ pathway_pca <- function(abundance,
     stop("After filtering, less than 3 samples remain. PCA requires at least 3 samples.")
   }
 
-  # Convert group to factor if needed
-  if (!is.factor(metadata[[group]])) {
-    metadata[[group]] <- factor(metadata[[group]])
-  }
+  group_values <- validate_group_vector_for_summary(
+    metadata[[group]],
+    context = paste0("metadata column '", group, "'"),
+    sample_ids = colnames(abundance),
+    min_groups = 2
+  )
+  metadata[[group]] <- droplevels(factor(group_values))
 
   # Validate colors if provided
   if (!is.null(colors)) {
@@ -181,7 +194,7 @@ pathway_pca <- function(abundance,
     stats::prcomp(t(abundance), center = TRUE, scale = TRUE)
   }, error = function(e) {
     if (grepl("cannot rescale a constant/zero column", e$message)) {
-      stop("PCA failed: Some samples or pathways have zero variance. ",
+      stop("PCA failed: Some pathways have zero variance. ",
            "This has been checked earlier, but there might still be near-zero variance columns. ",
            "Consider using a more stringent filtering or transforming your data.")
     } else {
@@ -215,13 +228,23 @@ pathway_pca <- function(abundance,
     stop("The length of colors vector must match the number of levels in Group")
   }
 
+  ellipse_counts <- table(pca$Group)
+  ellipse_groups <- names(ellipse_counts)[ellipse_counts >= 4]
+  skipped_ellipse_groups <- names(ellipse_counts)[ellipse_counts < 4]
+  if (length(skipped_ellipse_groups) > 0) {
+    warning(
+      "Skipping PCA confidence ellipse(s) for group(s) with fewer than 4 samples: ",
+      paste(paste0(skipped_ellipse_groups, "=", ellipse_counts[skipped_ellipse_groups]),
+            collapse = ", "),
+      ". ggplot2::stat_ellipse() requires at least 4 points for a two-dimensional ellipse.",
+      call. = FALSE
+    )
+  }
 
   # Create a ggplot object for the PCA scatter plot
   Fig1a.taxa.pca <- ggplot2::ggplot(pca,ggplot2::aes(PC1,PC2))+
     ggplot2::geom_point(size=4,ggplot2::aes(color=Group),show.legend = T)+
     ggplot2::scale_color_manual(values=colors)+
-    ggplot2::stat_ellipse(ggplot2::aes(color = Group),fill="white",geom = "polygon",
-                 level=0.95,alpha = 0.01,show.legend = F)+
     ggplot2::labs(x=paste0("PC1(",round(pca_proportion[1],1),"%)"),y=paste0("PC2(",round(pca_proportion[2],1),"%)"),color = group)+
     ggplot2::theme_classic()+
     ggplot2::theme(axis.line=ggplot2::element_line(colour = "black"),
@@ -234,6 +257,20 @@ pathway_pca <- function(abundance,
           legend.title = ggplot2::element_text(size = 16, face = "bold"))+
     ggplot2::geom_vline(xintercept = 0, linetype = "dashed", color = "black") +
     ggplot2::geom_hline(yintercept = 0, linetype = "dashed", color = "black")
+
+  if (length(ellipse_groups) > 0) {
+    ellipse_data <- pca[pca$Group %in% ellipse_groups, , drop = FALSE]
+    Fig1a.taxa.pca <- Fig1a.taxa.pca +
+      ggplot2::stat_ellipse(
+        data = ellipse_data,
+        ggplot2::aes(color = Group),
+        fill = "white",
+        geom = "polygon",
+        level = 0.95,
+        alpha = 0.01,
+        show.legend = FALSE
+      )
+  }
 
   # Marginal density for PC1.
   #

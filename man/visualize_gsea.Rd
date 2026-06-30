@@ -30,7 +30,7 @@ visualize_gsea(
 
 \item{colors}{A vector of colors for the visualization}
 
-\item{abundance}{A data frame containing the original abundance data (required for heatmap visualization)}
+\item{abundance}{A data frame containing the original abundance data (required for heatmap visualization). Data frames may also provide a leading non-numeric feature ID column (for example \code{#NAME}, \code{feature}, or \code{pathway}); it is converted to row names before sample alignment.}
 
 \item{metadata}{A data frame containing sample metadata (required for heatmap visualization)}
 
@@ -45,11 +45,22 @@ If NULL (default), the function will automatically use 'pathway_name' if availab
 This allows for custom labeling when using annotated GSEA results.}
 
 \item{scale}{Optional palette/scale for customizing colors. Accepts: (1) a character vector of colors,
-(2) a function that returns colors given an integer (e.g., viridisLite::viridis), or
-(3) a ggplot2 scale object (e.g., ggplot2::scale_fill_gradientn(...)).
-When NULL, defaults keep current behavior. Applies to: enrichment_plot (fill, continuous),
-dotplot (color, continuous), barplot (fill, discrete Positive/Negative), network (color, diverging around 0),
-heatmap (main heatmap col; row annotation stays default unless overridden in heatmap_params).}
+  (2) a function that returns colors given an integer (e.g., viridisLite::viridis), or
+  (3) a ggplot2 scale object (e.g., ggplot2::scale_fill_gradientn(...)).
+  When NULL, defaults keep current behavior. Applies to: enrichment_plot (fill, continuous),
+  dotplot (color, continuous), barplot (fill, discrete Positive/Negative), network (color, diverging around 0),
+  heatmap (main heatmap col; row annotation stays default unless overridden in heatmap_params).
+
+For every \code{plot_type}, the selected rows after sorting and
+\code{n_pathways} filtering must contain non-empty, unique
+\code{pathway_id} values so that each displayed pathway maps to exactly
+one GSEA result row.
+
+Results from \code{pathway_gsea(method = "camera")} and
+\code{pathway_gsea(method = "fry")} include a legacy \code{NES} column for
+visualization compatibility, but limma does not estimate a true normalized
+enrichment score for these methods. When \code{score_label} is present,
+axis and legend labels use it instead of labeling the value as NES.}
 }
 \value{
 A ggplot2 object or ComplexHeatmap object

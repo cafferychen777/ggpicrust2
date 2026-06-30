@@ -1,3 +1,35 @@
+gsea_score_label <- function(gsea_results) {
+  if ("score_label" %in% colnames(gsea_results)) {
+    score_labels <- unique(as.character(gsea_results$score_label))
+    score_labels <- score_labels[!is.na(score_labels) & nzchar(score_labels)]
+    if (length(score_labels) == 1) {
+      return(score_labels)
+    }
+    if (length(score_labels) > 1) {
+      stop("gsea_results contains multiple score labels: ",
+           paste(score_labels, collapse = ", "),
+           ". Filter to one GSEA method or score type before plotting NES-based visualizations.",
+           call. = FALSE)
+    }
+  }
+
+  if ("score_type" %in% colnames(gsea_results)) {
+    score_types <- unique(as.character(gsea_results$score_type))
+    score_types <- score_types[!is.na(score_types) & nzchar(score_types)]
+    if (length(score_types) > 1) {
+      stop("gsea_results contains multiple score types: ",
+           paste(score_types, collapse = ", "),
+           ". Filter to one GSEA method or score type before plotting NES-based visualizations.",
+           call. = FALSE)
+    }
+    if (length(score_types) == 1 && score_types == "signed_log10_pvalue") {
+      return("Signed -log10(p-value)")
+    }
+  }
+
+  "Normalized Enrichment Score (NES)"
+}
+
 #' Visualize GSEA results
 #'
 #' This function creates various visualizations for Gene Set Enrichment Analysis (GSEA) results.
@@ -9,7 +41,7 @@
 #' @param n_pathways An integer specifying the number of pathways to display
 #' @param sort_by A character string specifying the sorting criterion: "NES", "pvalue", or "p.adjust"
 #' @param colors A vector of colors for the visualization
-#' @param abundance A data frame containing the original abundance data (required for heatmap visualization)
+#' @param abundance A data frame containing the original abundance data (required for heatmap visualization). Data frames may also provide a leading non-numeric feature ID column (for example \code{#NAME}, \code{feature}, or \code{pathway}); it is converted to row names before sample alignment.
 #' @param metadata A data frame containing sample metadata (required for heatmap visualization)
 #' @param group A character string specifying the column name in metadata that contains the grouping variable (required for heatmap visualization)
 #' @param network_params A list of parameters for network visualization
@@ -23,6 +55,17 @@
 #'   When NULL, defaults keep current behavior. Applies to: enrichment_plot (fill, continuous),
 #'   dotplot (color, continuous), barplot (fill, discrete Positive/Negative), network (color, diverging around 0),
 #'   heatmap (main heatmap col; row annotation stays default unless overridden in heatmap_params).
+#'
+#' For every \code{plot_type}, the selected rows after sorting and
+#' \code{n_pathways} filtering must contain non-empty, unique
+#' \code{pathway_id} values so that each displayed pathway maps to exactly
+#' one GSEA result row.
+#'
+#' Results from \code{pathway_gsea(method = "camera")} and
+#' \code{pathway_gsea(method = "fry")} include a legacy \code{NES} column for
+#' visualization compatibility, but limma does not estimate a true normalized
+#' enrichment score for these methods. When \code{score_label} is present,
+#' axis and legend labels use it instead of labeling the value as NES.
 
 #'
 #' @return A ggplot2 object or ComplexHeatmap object
@@ -95,20 +138,44 @@ visualize_gsea <- function(gsea_results,
   validate_dataframe(gsea_results, param_name = "gsea_results")
   validate_choice(plot_type, c("enrichment_plot", "dotplot", "barplot", "network", "heatmap"), "plot_type")
   validate_choice(sort_by, c("NES", "pvalue", "p.adjust"), "sort_by")
-  validate_dataframe(gsea_results, required_cols = sort_by, param_name = "gsea_results")
+
+  required_plot_cols <- switch(
+    plot_type,
+    enrichment_plot = c("pathway_id", "NES", "pvalue", "p.adjust"),
+    dotplot = c("pathway_id", "NES", "p.adjust", "size"),
+    barplot = c("pathway_id", "NES"),
+    network = c("pathway_id", "NES", "pvalue", "p.adjust", "size", "leading_edge"),
+    heatmap = c("pathway_id", "NES", "leading_edge")
+  )
+  required_cols <- unique(c(sort_by, required_plot_cols))
+  validate_dataframe(gsea_results, required_cols = required_cols,
+                     param_name = "gsea_results")
+  validate_gsea_visualization_values(gsea_results, required_cols)
+  score_label <- if ("NES" %in% required_cols) {
+    gsea_score_label(gsea_results)
+  } else {
+    "Normalized Enrichment Score (NES)"
+  }
 
   if (!is.null(colors) && !is.character(colors)) {
     stop("colors must be NULL or a character vector")
   }
-  if (!is.null(pathway_label_column) && !is.character(pathway_label_column)) {
-    stop("pathway_label_column must be NULL or a character string")
+  if (!is.null(pathway_label_column) &&
+      (!is.character(pathway_label_column) ||
+       length(pathway_label_column) != 1 ||
+       is.na(pathway_label_column) ||
+       !nzchar(trimws(pathway_label_column)))) {
+    stop("pathway_label_column must be NULL or a single non-empty character string",
+         call. = FALSE)
   }
-  if (!is.numeric(n_pathways) || length(n_pathways) != 1 || is.na(n_pathways)) {
-    stop("n_pathways must be a single numeric value")
-  }
-
-  # Convert to integer if it's not already
+  validate_count_parameter(n_pathways, "n_pathways")
   n_pathways <- as.integer(n_pathways)
+
+  gsea_results$pathway_id <- validate_nonempty_character_column(
+    gsea_results$pathway_id,
+    "pathway_id",
+    "gsea_results"
+  )
 
   # Note: enrichment_plot / dotplot / barplot are built entirely with
   # ggplot2 (see the branches below); they do not call into enrichplot
@@ -119,21 +186,11 @@ visualize_gsea <- function(gsea_results,
     require_package("igraph", "network plots")
     require_package("ggraph", "network plots")
     require_package("tidygraph", "network plots")
-    validate_dataframe(
-      gsea_results,
-      required_cols = c("pathway_id", "NES", "pvalue", "p.adjust", "size", "leading_edge"),
-      param_name = "gsea_results"
-    )
   }
 
   if (plot_type == "heatmap") {
     require_package("ComplexHeatmap", "heatmap plots")
     require_package("circlize", "heatmap plots")
-    validate_dataframe(
-      gsea_results,
-      required_cols = c("pathway_id", "NES", "leading_edge"),
-      param_name = "gsea_results"
-    )
 
     # Check if required parameters are provided
     if (is.null(abundance) || is.null(metadata) || is.null(group)) {
@@ -166,8 +223,12 @@ visualize_gsea <- function(gsea_results,
     }
   }
 
-  # Create a standardized pathway_label column for consistent use throughout the function
-  gsea_results$pathway_label <- gsea_results[[pathway_label_col]]
+  # Create a standardized pathway_label column for consistent use throughout
+  # the function. Missing labels fall back row-wise to the stable pathway ID.
+  pathway_labels <- as.character(gsea_results[[pathway_label_col]])
+  missing_labels <- is.na(pathway_labels) | !nzchar(trimws(pathway_labels))
+  pathway_labels[missing_labels] <- gsea_results$pathway_id[missing_labels]
+  gsea_results$pathway_label <- pathway_labels
 
   # Sort results based on the specified criterion
   if (sort_by == "NES") {
@@ -178,11 +239,6 @@ visualize_gsea <- function(gsea_results,
     gsea_results <- gsea_results[order(gsea_results$p.adjust), ]
   }
 
-  # Handle boundary conditions for n_pathways
-  if (n_pathways <= 0) {
-    return(create_empty_plot(plot_type))
-  }
-
   # Check if we have any results after filtering
   if (nrow(gsea_results) == 0) {
     return(create_empty_plot(plot_type))
@@ -191,6 +247,17 @@ visualize_gsea <- function(gsea_results,
   # Limit to top n_pathways
   if (nrow(gsea_results) > n_pathways) {
     gsea_results <- head(gsea_results, n_pathways)
+  }
+
+  duplicated_pathways <- unique(gsea_results$pathway_id[duplicated(gsea_results$pathway_id)])
+  if (length(duplicated_pathways) > 0) {
+    stop(
+      "visualize_gsea() requires one row per pathway_id after sorting and n_pathways filtering. ",
+      "Duplicate pathway_id values: ",
+      paste(utils::head(duplicated_pathways, 5), collapse = ", "),
+      ". Filter to one GSEA method/contrast or deduplicate pathways before plotting.",
+      call. = FALSE
+    )
   }
 
   # Create visualization based on plot_type
@@ -219,7 +286,7 @@ visualize_gsea <- function(gsea_results,
       ggplot2::labs(
         title = "GSEA Enrichment Results",
         x = "Pathway",
-        y = "Normalized Enrichment Score (NES)",
+        y = score_label,
         fill = "Adjusted p-value"
       ) +
       ggplot2::theme_minimal() +
@@ -244,7 +311,7 @@ visualize_gsea <- function(gsea_results,
       } +
       ggplot2::labs(
         title = "GSEA Results",
-        x = "Normalized Enrichment Score (NES)",
+        x = score_label,
         y = "Pathway",
         color = "Adjusted p-value",
         size = "Gene Set Size"
@@ -275,7 +342,7 @@ visualize_gsea <- function(gsea_results,
       ggplot2::labs(
         title = "GSEA Results",
         x = "Pathway",
-        y = "Normalized Enrichment Score (NES)",
+        y = score_label,
         fill = "Direction"
       ) +
       ggplot2::theme_minimal() +
@@ -316,7 +383,6 @@ visualize_gsea <- function(gsea_results,
 	      stop("network_params$similarity_cutoff must be a single numeric value between 0 and 1",
 	           call. = FALSE)
 	    }
-
     # Create network plot
     p <- create_network_plot(
       gsea_results = gsea_results,
@@ -363,6 +429,57 @@ visualize_gsea <- function(gsea_results,
   }
 
   return(p)
+}
+
+validate_gsea_visualization_values <- function(gsea_results, required_cols) {
+  if ("NES" %in% required_cols) {
+    validate_finite_numeric_values(gsea_results$NES, "NES", "gsea_results",
+                                   allow_na = FALSE)
+  }
+  if ("pvalue" %in% required_cols) {
+    validate_probability_values(gsea_results$pvalue, "pvalue", "gsea_results",
+                                allow_na = FALSE)
+  }
+  if ("p.adjust" %in% required_cols) {
+    validate_probability_values(gsea_results$p.adjust, "p.adjust", "gsea_results",
+                                allow_na = FALSE)
+  }
+  if ("size" %in% required_cols) {
+    validate_finite_numeric_values(gsea_results$size, "size", "gsea_results",
+                                   allow_na = FALSE)
+    bad_size <- gsea_results$size <= 0 | gsea_results$size != as.integer(gsea_results$size)
+    if (any(bad_size)) {
+      stop("Column 'size' in gsea_results must contain positive integer values.",
+           call. = FALSE)
+    }
+  }
+  if ("leading_edge" %in% required_cols) {
+    if (is.factor(gsea_results$leading_edge)) {
+      gsea_results$leading_edge <- as.character(gsea_results$leading_edge)
+    }
+    if (!is.character(gsea_results$leading_edge) &&
+        !all(is.na(gsea_results$leading_edge))) {
+      stop("Column 'leading_edge' in gsea_results must be a character vector or NA.",
+           call. = FALSE)
+    }
+  }
+
+  invisible(TRUE)
+}
+
+parse_leading_edges <- function(leading_edge) {
+  if (is.factor(leading_edge)) {
+    leading_edge <- as.character(leading_edge)
+  }
+  leading_edge <- as.character(leading_edge)
+
+  lapply(leading_edge, function(x) {
+    if (length(x) != 1 || is.na(x) || !nzchar(trimws(x))) {
+      return(character(0))
+    }
+    genes <- trimws(strsplit(x, ";", fixed = TRUE)[[1]])
+    unique(genes[nzchar(genes) & !is.na(genes)])
+  })
 }
 
 #' Create empty plot for edge cases
@@ -500,9 +617,16 @@ create_network_plot <- function(gsea_results,
                                edge_width_by = "similarity",
                                scale = NULL) {
   # Note: Input validation (packages, n_pathways, nrow) is done in visualize_gsea()
+  node_color_label <- if (identical(node_color_by, "NES")) {
+    gsea_score_label(gsea_results)
+  } else {
+    node_color_by
+  }
 
-  # Extract leading edge genes
-  leading_edges <- strsplit(gsea_results$leading_edge, ";")
+  # Extract leading edge genes. Missing values are unknown, not a literal shared
+  # gene token; parse them as empty sets so they cannot create false network
+  # similarities between pathways with missing leading-edge information.
+  leading_edges <- parse_leading_edges(gsea_results$leading_edge)
   names(leading_edges) <- gsea_results$pathway_id
 
   # Calculate pathway similarity
@@ -613,8 +737,8 @@ create_network_plot <- function(gsea_results,
     ggraph::scale_edge_alpha(range = c(0.1, 0.8)) +
     # apply user-provided diverging scale for node color if available (fallback to default)
     {
-      sc <- .build_continuous_scale(aes = "color", scale = scale, diverging = TRUE, midpoint = 0, name = node_color_by)
-      if (is.null(sc)) ggplot2::scale_color_gradient2(low = "blue", mid = "white", high = "red", midpoint = 0, name = node_color_by) else sc
+      sc <- .build_continuous_scale(aes = "color", scale = scale, diverging = TRUE, midpoint = 0, name = node_color_label)
+      if (is.null(sc)) ggplot2::scale_color_gradient2(low = "blue", mid = "white", high = "red", midpoint = 0, name = node_color_label) else sc
     } +
     ggplot2::scale_size(range = c(2, 8), name = "Gene Set Size") +
     ggraph::theme_graph() +
@@ -652,9 +776,15 @@ create_heatmap_plot <- function(gsea_results,
                                annotation_colors = NULL,
                                col_fun = NULL) {
   # Note: Input validation (packages, n_pathways, nrow) is done in visualize_gsea()
+  score_label <- gsea_score_label(gsea_results)
+
+  abundance <- normalize_abundance_feature_ids(
+    abundance,
+    context = "visualize_gsea() heatmap abundance"
+  )
 
   # Extract leading edge genes
-  leading_edges <- lapply(strsplit(gsea_results$leading_edge, ";"), function(x) x[x != ""])
+  leading_edges <- parse_leading_edges(gsea_results$leading_edge)
   names(leading_edges) <- gsea_results$pathway_id
 
   # Check if any leading edges are empty
@@ -678,8 +808,15 @@ create_heatmap_plot <- function(gsea_results,
   # package matches abundance to metadata.
   aligned <- align_samples(abundance, metadata, verbose = FALSE)
   abundance <- as.matrix(aligned$abundance)
+  validate_numeric_matrix(abundance, check_negative = FALSE)
+  validate_finite_numeric_values(as.vector(abundance), "abundance", "abundance",
+                                 allow_na = FALSE)
   metadata <- aligned$metadata
   validate_group(metadata, group, min_groups = 1)
+  if (any(is.na(metadata[[group]]))) {
+    stop("Group column '", group, "' contains NA values after sample alignment.",
+         call. = FALSE)
+  }
 
   # Create heatmap data matrix
   # For each pathway, calculate the average expression of leading edge genes
@@ -687,16 +824,38 @@ create_heatmap_plot <- function(gsea_results,
   rownames(heatmap_data) <- names(leading_edges)
   colnames(heatmap_data) <- colnames(abundance)
 
+  matched_gene_counts <- integer(length(leading_edges))
+  names(matched_gene_counts) <- names(leading_edges)
+
   for (i in seq_along(leading_edges)) {
     genes <- leading_edges[[i]]
 
     # Ensure all genes are in abundance data
     genes <- genes[genes %in% rownames(abundance)]
+    matched_gene_counts[i] <- length(genes)
 
     if (length(genes) > 0) {
       # Calculate average abundance
       heatmap_data[i, ] <- colMeans(abundance[genes, , drop = FALSE])
     }
+  }
+
+  nonempty_sets <- lengths(leading_edges) > 0
+  if (any(nonempty_sets) && all(matched_gene_counts[nonempty_sets] == 0)) {
+    stop(
+      "None of the non-empty leading-edge genes were found in abundance row names. ",
+      "Check that abundance row names use the same gene/KO identifiers as gsea_results$leading_edge.",
+      call. = FALSE
+    )
+  }
+
+  missing_sets <- names(matched_gene_counts)[nonempty_sets & matched_gene_counts == 0]
+  if (length(missing_sets) > 0) {
+    warning(
+      length(missing_sets), " pathway(s) had non-empty leading edges but no matching abundance rows: ",
+      paste(head(missing_sets, 5), collapse = ", "),
+      call. = FALSE
+    )
   }
 
   # Scale data. Constant rows produce NA after t(scale(t(.))); coerce
@@ -725,17 +884,36 @@ create_heatmap_plot <- function(gsea_results,
   # Ensure row annotation matches heatmap rows
   row_annotation <- row_annotation[rownames(heatmap_data), , drop = FALSE]
 
-  # Create row annotation object
+  # Create row annotation object. Use a generic annotation name when the score
+  # is not a true normalized enrichment score, but keep the legend title
+  # explicit through the annotation label.
   # Use symmetric breaks centered at 0 to ensure colorRamp2 gets
   # strictly increasing values even when all NES are same sign
   nes_abs_max <- max(abs(row_annotation$NES), 0.1)
-  ra <- ComplexHeatmap::rowAnnotation(
-    NES = row_annotation$NES,
-    col = list(NES = circlize::colorRamp2(
+  score_annotation_name <- if (identical(score_label, "Normalized Enrichment Score (NES)")) {
+    "NES"
+  } else {
+    "Score"
+  }
+  score_values <- stats::setNames(list(row_annotation$NES), score_annotation_name)
+  score_colors <- stats::setNames(
+    list(circlize::colorRamp2(
       c(-nes_abs_max, 0, nes_abs_max),
       c("blue", "white", "red")
     )),
+    score_annotation_name
+  )
+  legend_params <- stats::setNames(
+    list(list(title = score_label)),
+    score_annotation_name
+  )
+  ra <- do.call(
+    ComplexHeatmap::rowAnnotation,
+    c(score_values, list(
+    col = score_colors,
+    annotation_legend_param = legend_params,
     show_legend = TRUE
+    ))
   )
 
   # Create heatmap

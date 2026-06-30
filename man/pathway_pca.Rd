@@ -9,6 +9,9 @@ pathway_pca(abundance, metadata, group, colors = NULL, show_marginal = TRUE)
 \arguments{
 \item{abundance}{A numeric matrix or data frame containing pathway abundance data.
 Rows represent pathways, columns represent samples.
+Data frames may also provide a leading non-numeric feature ID column
+(for example \code{#NAME}, \code{feature}, or \code{pathway}); it is
+converted to row names before sample alignment.
 Column names must match the sample names in metadata.
 Values must be numeric and cannot contain missing values (NA).}
 
@@ -18,7 +21,10 @@ Sample identifiers are auto-detected from columns named sample_name, Sample_ID,
 SampleID, etc., or from rownames.}
 
 \item{group}{A character string specifying the column name in metadata that contains
-group information for samples (e.g., "treatment", "condition", "group").}
+group information for samples (e.g., "treatment", "condition", "group").
+Every sample retained after abundance/metadata alignment must have a
+non-missing, non-empty group label, and at least two groups must
+remain.}
 
 \item{colors}{Optional. A character vector of colors for different groups.
 Length must match the number of unique groups.
@@ -43,8 +49,13 @@ across different groups.
 }
 \details{
 The function automatically aligns samples between abundance data and metadata,
-supporting various sample identifier formats. Samples and pathways with zero
-variance are filtered before PCA.
+supporting various sample identifier formats. Pathways with zero variance
+across samples are filtered before PCA because they are variables in
+\code{prcomp(t(abundance))} and cannot be scaled. Sample profiles are kept
+as observations, even if a sample has zero variance across pathways. PCA
+confidence ellipses are drawn only for groups with at least four samples;
+smaller groups remain in the scatter plot but are skipped for ellipse
+estimation.
 }
 \examples{
 # Create example abundance data

@@ -16,7 +16,7 @@
 #'   Default is 1 (2-fold change). Pathways with |log2FC| > fc_threshold are considered
 #'   biologically significant.
 #' @param p_threshold Numeric. P-value threshold for statistical significance.
-#'   Default is 0.05.
+#'   Default is 0.05. Must be in the range (0, 1].
 #' @param label_top_n Integer. Number of top significant pathways to label.
 #'   Default is 10. Set to 0 to disable labels.
 #' @param point_size Numeric. Size of points in the plot. Default is 2.
@@ -117,9 +117,11 @@ pathway_volcano <- function(daa_results,
    stop("'daa_results' must be a data frame.")
  }
 
- if (!is.numeric(fc_threshold) || length(fc_threshold) != 1 || fc_threshold < 0) {
-   stop("'fc_threshold' must be a single non-negative number.", call. = FALSE)
+ if (!is.numeric(fc_threshold) || length(fc_threshold) != 1 ||
+     is.na(fc_threshold) || !is.finite(fc_threshold) || fc_threshold < 0) {
+   stop("'fc_threshold' must be a single finite non-negative number.", call. = FALSE)
  }
+ validate_probability_threshold(p_threshold, "p_threshold")
 
  # Backward compatibility: accept legacy column name
  if (fc_col == "log2_fold_change" && !fc_col %in% colnames(daa_results) &&
@@ -129,6 +131,8 @@ pathway_volcano <- function(daa_results,
 
  require_column(daa_results, fc_col, "daa_results")
  require_column(daa_results, p_col, "daa_results")
+ validate_finite_numeric_values(daa_results[[fc_col]], fc_col, "daa_results")
+ validate_probability_values(daa_results[[p_col]], p_col, "daa_results")
 
  if (!is.null(label_col) && !label_col %in% colnames(daa_results)) {
    warning(paste0("Column '", label_col, "' not found. Labels will not be shown."))
@@ -143,10 +147,6 @@ pathway_volcano <- function(daa_results,
 
  if (nrow(df) == 0) {
    stop("No valid data rows after removing NA values.")
- }
-
- if (any(df[[p_col]] < 0, na.rm = TRUE)) {
-   stop("P-value column contains negative values.")
  }
 
  # Add significance categories and -log10(p). Clamp exact zero p-values to

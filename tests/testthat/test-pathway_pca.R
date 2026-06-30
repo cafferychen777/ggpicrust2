@@ -29,7 +29,7 @@ test_that("pathway_pca works with custom colors", {
 })
 
 test_that("pathway_pca works with multiple groups", {
-  data <- create_pca_test_data(n_groups = 3)
+  data <- create_pca_test_data(n_samples = 12, n_groups = 3)
   result <- pathway_pca(data$abundance, data$metadata, "group")
   expect_s3_class(result, "ggplot")
 })
@@ -49,6 +49,110 @@ test_that("pathway_pca validates inputs", {
   # NA values
   data$abundance[1,1] <- NA
   expect_error(pathway_pca(data$abundance, data$metadata, "group"), "NA|missing")
+})
+
+test_that("pathway_pca accepts finite zero-sum sample columns", {
+  abundance <- matrix(
+    c(
+      -1, 1, 2, 4,
+       0, 2, 3, 5,
+       1, 3, 4, 6
+    ),
+    nrow = 3,
+    byrow = TRUE,
+    dimnames = list(paste0("Pathway", 1:3), paste0("Sample", 1:4))
+  )
+  metadata <- data.frame(
+    sample_name = colnames(abundance),
+    group = c("A", "A", "B", "B"),
+    stringsAsFactors = FALSE
+  )
+
+  expect_warning(
+    p <- pathway_pca(abundance, metadata, "group", show_marginal = FALSE),
+    "Skipping PCA confidence ellipse"
+  )
+  expect_s3_class(p, "ggplot")
+})
+
+test_that("pathway_pca keeps zero-variance sample profiles as observations", {
+  abundance <- matrix(
+    c(
+      5, 5, 1, 2, 3,
+      5, 5, 2, 3, 4,
+      5, 5, 3, 4, 5
+    ),
+    nrow = 3,
+    byrow = TRUE,
+    dimnames = list(paste0("Pathway", 1:3), paste0("Sample", 1:5))
+  )
+  metadata <- data.frame(
+    sample_name = colnames(abundance),
+    group = c("A", "A", "B", "B", "B"),
+    stringsAsFactors = FALSE
+  )
+
+  expect_warning(
+    p <- pathway_pca(abundance, metadata, "group", show_marginal = FALSE),
+    "fewer than 4 samples: A=2, B=3"
+  )
+  expect_s3_class(p, "ggplot")
+  expect_equal(nrow(p$data), ncol(abundance))
+  expect_setequal(as.character(p$data$Group), c("A", "B"))
+})
+
+test_that("pathway_pca skips confidence ellipses for groups with fewer than four samples", {
+  abundance <- matrix(
+    c(
+      1, 2, 3, 4, 5, 6,
+      2, 4, 6, 8, 10, 13,
+      1, 3, 5, 7, 9, 8
+    ),
+    nrow = 3,
+    byrow = TRUE,
+    dimnames = list(paste0("Pathway", 1:3), paste0("Sample", 1:6))
+  )
+  metadata <- data.frame(
+    sample_name = colnames(abundance),
+    group = c("A", "A", "B", "B", "B", "B"),
+    stringsAsFactors = FALSE
+  )
+
+  expect_warning(
+    p <- pathway_pca(abundance, metadata, "group", show_marginal = FALSE),
+    "fewer than 4 samples: A=2"
+  )
+  expect_s3_class(p, "ggplot")
+  ellipse_layers <- vapply(
+    p$layers,
+    function(layer) inherits(layer$stat, "StatEllipse"),
+    logical(1)
+  )
+  expect_equal(sum(ellipse_layers), 1)
+  expect_true(all(as.character(p$layers[[which(ellipse_layers)]]$data$Group) == "B"))
+})
+
+test_that("pathway_pca rejects missing group labels after sample alignment", {
+  abundance <- matrix(
+    c(
+      1, 2, 3, 4,
+      2, 3, 4, 5,
+      3, 4, 5, 6
+    ),
+    nrow = 3,
+    byrow = TRUE,
+    dimnames = list(paste0("Pathway", 1:3), paste0("Sample", 1:4))
+  )
+  metadata <- data.frame(
+    sample_name = colnames(abundance),
+    group = c("A", "A", "B", NA),
+    stringsAsFactors = FALSE
+  )
+
+  expect_error(
+    pathway_pca(abundance, metadata, "group", show_marginal = FALSE),
+    "non-missing, non-empty group labels.*Sample4"
+  )
 })
 
 test_that("pathway_pca throws error with wrong color count", {

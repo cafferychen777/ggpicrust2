@@ -32,6 +32,72 @@ test_that("pathway_heatmap basic functionality works", {
   expect_s3_class(p, "ggplot")
 })
 
+test_that("pathway_heatmap preserves a leading feature ID column", {
+  abundance <- data.frame(
+    feature = c("PathA", "PathB", "PathC"),
+    S1 = c(10, 5, 8),
+    S2 = c(20, 15, 18),
+    S3 = c(30, 25, 28),
+    S4 = c(40, 35, 38),
+    check.names = FALSE
+  )
+  metadata <- data.frame(
+    sample = paste0("S", 1:4),
+    group = c("A", "A", "B", "B"),
+    stringsAsFactors = FALSE
+  )
+
+  p <- pathway_heatmap(
+    abundance = abundance,
+    metadata = metadata,
+    group = "group"
+  )
+
+  expect_s3_class(p, "ggplot")
+  expect_setequal(as.character(unique(p$data$rowname)), abundance$feature)
+  expect_false(any(grepl("^Pathway[0-9]+$", as.character(unique(p$data$rowname)))))
+})
+
+test_that("pathway_heatmap accepts finite transformed zero-sum sample columns", {
+  abundance <- matrix(
+    c(
+      -1, 1, 2, 4,
+       0, 2, 3, 5,
+       1, 3, 4, 6
+    ),
+    nrow = 3,
+    byrow = TRUE,
+    dimnames = list(paste0("Pathway", 1:3), paste0("S", 1:4))
+  )
+  metadata <- data.frame(
+    sample = colnames(abundance),
+    group = c("A", "A", "B", "B"),
+    stringsAsFactors = FALSE
+  )
+
+  p <- pathway_heatmap(abundance, metadata, "group")
+  expect_s3_class(p, "ggplot")
+  expect_setequal(as.character(unique(p$data$Sample)), colnames(abundance))
+})
+
+test_that("pathway_heatmap rejects missing and non-finite abundance values", {
+  td <- create_heatmap_test_data()
+
+  abundance_na <- td$abundance
+  abundance_na[1, 1] <- NA_real_
+  expect_error(
+    pathway_heatmap(abundance_na, td$metadata, "group"),
+    "missing values"
+  )
+
+  abundance_inf <- td$abundance
+  abundance_inf[1, 1] <- Inf
+  expect_error(
+    pathway_heatmap(abundance_inf, td$metadata, "group"),
+    "non-finite values"
+  )
+})
+
 test_that("pathway_heatmap supports secondary_groups", {
   td <- create_heatmap_test_data()
   p <- pathway_heatmap(
@@ -41,6 +107,44 @@ test_that("pathway_heatmap supports secondary_groups", {
     secondary_groups = "batch"
   )
   expect_s3_class(p, "ggplot")
+})
+
+test_that("pathway_heatmap revalidates grouping variables after sample alignment", {
+  abundance <- matrix(
+    seq_len(3 * 4),
+    nrow = 3,
+    dimnames = list(paste0("Pathway", 1:3), paste0("S", 1:4))
+  )
+
+  metadata_secondary_collapses <- data.frame(
+    sample = paste0("S", 1:5),
+    group = c("A", "A", "B", "B", "B"),
+    batch = c("X", "X", "X", "X", "Y"),
+    stringsAsFactors = FALSE
+  )
+  expect_error(
+    pathway_heatmap(
+      abundance = abundance,
+      metadata = metadata_secondary_collapses,
+      group = "group",
+      secondary_groups = "batch"
+    ),
+    "At least 2 groups are required"
+  )
+
+  metadata_group_na <- data.frame(
+    sample = paste0("S", 1:4),
+    group = c("A", "A", "B", NA),
+    stringsAsFactors = FALSE
+  )
+  expect_error(
+    pathway_heatmap(
+      abundance = abundance,
+      metadata = metadata_group_na,
+      group = "group"
+    ),
+    "contains NA values after sample alignment"
+  )
 })
 
 test_that("pathway_heatmap warns for deprecated facet_by", {
@@ -69,4 +173,76 @@ test_that("pathway_heatmap fails fast when sample IDs do not match", {
     ),
     "Cannot find matching sample identifiers"
   )
+})
+
+test_that("pathway_heatmap handles constant rows with correlation clustering", {
+  abundance <- matrix(
+    c(
+      1, 1, 1, 1,
+      2, 3, 4, 5,
+      5, 4, 3, 2
+    ),
+    nrow = 3,
+    byrow = TRUE,
+    dimnames = list(c("constant", "up", "down"), paste0("S", 1:4))
+  )
+  metadata <- data.frame(
+    sample = paste0("S", 1:4),
+    group = c("A", "A", "B", "B"),
+    stringsAsFactors = FALSE
+  )
+
+  expect_message(
+    p <- pathway_heatmap(
+      abundance = abundance,
+      metadata = metadata,
+      group = "group",
+      cluster_rows = TRUE,
+      clustering_distance = "correlation"
+    ),
+    "Undefined pearson correlation"
+  )
+  expect_s3_class(p, "ggplot")
+
+  expect_message(
+    p_spearman <- pathway_heatmap(
+      abundance = abundance,
+      metadata = metadata,
+      group = "group",
+      cluster_rows = TRUE,
+      clustering_distance = "spearman"
+    ),
+    "Undefined spearman correlation"
+  )
+  expect_s3_class(p_spearman, "ggplot")
+})
+
+test_that("pathway_heatmap handles zero-variance sample profiles with correlation column clustering", {
+  abundance <- matrix(
+    c(
+      1, 1, 1, 1,
+      1, 1, 1, 1,
+      1, 1, 1, 1
+    ),
+    nrow = 3,
+    byrow = TRUE,
+    dimnames = list(paste0("Pathway", 1:3), paste0("S", 1:4))
+  )
+  metadata <- data.frame(
+    sample = paste0("S", 1:4),
+    group = c("A", "A", "B", "B"),
+    stringsAsFactors = FALSE
+  )
+
+  expect_message(
+    p <- pathway_heatmap(
+      abundance = abundance,
+      metadata = metadata,
+      group = "group",
+      cluster_cols = TRUE,
+      clustering_distance = "correlation"
+    ),
+    "Undefined pearson correlation"
+  )
+  expect_s3_class(p, "ggplot")
 })

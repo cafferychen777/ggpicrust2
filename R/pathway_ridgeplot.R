@@ -7,9 +7,18 @@
 #' @param gsea_results A data frame containing GSEA results from \code{\link{pathway_gsea}}.
 #'   Must contain pathway_id column and either NES or direction column.
 #' @param abundance A data frame or matrix containing the original abundance data
-#'   (genes/KOs as rows, samples as columns) used in the GSEA analysis.
+#'   (genes/KOs as rows, samples as columns) used in the GSEA analysis. Data
+#'   frames may also provide a leading non-numeric feature ID column (for
+#'   example \code{#NAME}, \code{feature}, or \code{pathway}); it is converted
+#'   to row names before sample alignment.
 #' @param metadata A data frame containing sample metadata with group information.
 #' @param group Character string specifying the column name in metadata for grouping.
+#' @param comparison Optional character vector of length 2 specifying
+#'   \code{c(group1, group2)} for fold-change calculation. The ridge plot
+#'   displays \code{log2(group2 / group1)}. If NULL, the data must contain
+#'   exactly two group levels and their factor-level order is used. For
+#'   multi-group metadata, specify \code{comparison} explicitly so the plot
+#'   matches the GSEA contrast being interpreted.
 #' @param pathway_reference A data frame containing pathway-to-gene mappings.
 #'   Must have columns: pathway_id (or go_id for GO) and a column containing
 #'   gene/KO members (semicolon-separated). If NULL, attempts to use built-in
@@ -41,6 +50,13 @@
 #'   \item Identify pathways with consistent vs. heterogeneous gene expression
 #'   \item Compare the magnitude of changes across pathways
 #' }
+#'
+#' Fold changes are calculated as \code{log2(group2 / group1)}, where
+#' \code{group1} and \code{group2} come from \code{comparison} or, for a
+#' two-group dataset, from the factor-level order of \code{group}.
+#' GSEA \code{pathway_id} values must be non-empty and unique. Missing or
+#' empty \code{pathway_name} values are displayed as their corresponding
+#' \code{pathway_id}.
 #'
 #' The plot requires the \code{ggridges} package to be installed.
 #'
@@ -87,6 +103,7 @@ pathway_ridgeplot <- function(gsea_results,
                                abundance,
                                metadata,
                                group,
+                               comparison = NULL,
                                pathway_reference = NULL,
                                pathway_type = "KEGG",
                                n_pathways = 10,
@@ -99,55 +116,121 @@ pathway_ridgeplot <- function(gsea_results,
                                alpha = 0.7) {
 
   # Check for ggridges package
- if (!requireNamespace("ggridges", quietly = TRUE)) {
-   stop("Package 'ggridges' is required for ridge plots. ",
-        "Please install it with: install.packages('ggridges')")
- }
+  if (!requireNamespace("ggridges", quietly = TRUE)) {
+    stop("Package 'ggridges' is required for ridge plots. ",
+         "Please install it with: install.packages('ggridges')")
+  }
 
- # Input validation
- if (!is.data.frame(gsea_results)) {
-   stop("'gsea_results' must be a data frame.")
- }
+  # Input validation
+  if (!is.data.frame(gsea_results)) {
+    stop("'gsea_results' must be a data frame.")
+  }
 
- if (!is.data.frame(abundance) && !is.matrix(abundance)) {
-   stop("'abundance' must be a data frame or matrix.")
- }
+  if (!is.data.frame(abundance) && !is.matrix(abundance)) {
+    stop("'abundance' must be a data frame or matrix.")
+  }
 
- require_column(metadata, group, "metadata")
+  abundance <- normalize_abundance_feature_ids(
+    abundance,
+    context = "pathway_ridgeplot() abundance"
+  )
+  validate_metadata(metadata)
+  validate_abundance(abundance, min_samples = 2)
+  validate_count_parameter(n_pathways, "n_pathways")
+  validate_choice(sort_by, c("NES", "pvalue", "p.adjust"), "sort_by")
+  valid_pathway_types <- c("KEGG", "GO", "MetaCyc")
+  if (!is.character(pathway_type) || length(pathway_type) != 1 ||
+      is.na(pathway_type) || !pathway_type %in% valid_pathway_types) {
+    stop("pathway_type must be one of: ",
+         paste(valid_pathway_types, collapse = ", "),
+         call. = FALSE)
+  }
+  show_direction <- normalize_logical_flag(show_direction, "show_direction")
+  validate_probability_threshold(alpha, "alpha", allow_zero = TRUE)
+  if (!is.numeric(scale_height) || length(scale_height) != 1 ||
+      is.na(scale_height) || !is.finite(scale_height) || scale_height <= 0) {
+    stop("'scale_height' must be a single positive finite numeric value.",
+         call. = FALSE)
+  }
 
- # Convert abundance to matrix if needed
- if (is.data.frame(abundance)) {
-   abundance <- as.matrix(abundance)
- }
+  # Convert abundance to matrix if needed
+  if (is.data.frame(abundance)) {
+    abundance <- as.matrix(abundance)
+  }
+  if (is.null(rownames(abundance))) {
+    stop("'abundance' must have row names matching the gene/KO identifiers in pathway_reference.",
+         call. = FALSE)
+  }
+  validate_numeric_matrix(abundance)
+  validate_finite_numeric_values(as.vector(abundance), "abundance", "abundance",
+                                 allow_na = FALSE)
 
- # Validate required columns (pathway_gsea() output format)
- require_column(gsea_results, "pathway_id", "gsea_results")
+  # Align samples before calculating group means. The fold-change displayed in
+  # the ridge plot is group2/group1 across abundance columns, so metadata rows
+  # must be in the same sample order as the abundance matrix columns.
+  aligned <- align_samples(abundance, metadata, verbose = FALSE)
+  abundance <- as.matrix(aligned$abundance)
+  metadata <- aligned$metadata
+  validate_group(metadata, group, min_groups = 2)
+  if (any(is.na(metadata[[group]]))) {
+    stop("Group column '", group, "' contains NA values after sample alignment.",
+         call. = FALSE)
+  }
 
- # pathway_name is optional, fallback to pathway_id
- pathway_name_col <- if ("pathway_name" %in% colnames(gsea_results)) "pathway_name" else "pathway_id"
+  # Validate required columns (pathway_gsea() output format)
+  require_column(gsea_results, "pathway_id", "gsea_results")
+  gsea_results$pathway_id <- validate_nonempty_character_column(
+    gsea_results$pathway_id,
+    "pathway_id",
+    "gsea_results"
+  )
+  if (anyDuplicated(gsea_results$pathway_id)) {
+    duplicated_pathways <- unique(gsea_results$pathway_id[duplicated(gsea_results$pathway_id)])
+    stop("gsea_results contains duplicate pathway_id values: ",
+         paste(utils::head(duplicated_pathways, 5), collapse = ", "),
+         ". Subset to one result row per pathway before plotting.",
+         call. = FALSE)
+  }
+  require_column(gsea_results, sort_by, "gsea_results")
+  if ("pvalue" %in% colnames(gsea_results)) {
+    validate_probability_values(gsea_results$pvalue, "pvalue", "gsea_results")
+  }
+  if ("p.adjust" %in% colnames(gsea_results)) {
+    validate_probability_values(gsea_results$p.adjust, "p.adjust", "gsea_results")
+  }
 
- # direction is optional, can be derived from NES
- has_nes <- "NES" %in% colnames(gsea_results)
- direction_col <- if ("direction" %in% colnames(gsea_results)) "direction" else NULL
+  # pathway_name is optional, fallback row-wise to pathway_id
+  if ("pathway_name" %in% colnames(gsea_results)) {
+    pathway_labels <- as.character(gsea_results$pathway_name)
+    missing_labels <- is.na(pathway_labels) | !nzchar(trimws(pathway_labels))
+    pathway_labels[missing_labels] <- gsea_results$pathway_id[missing_labels]
+    gsea_results$.ridge_pathway_label <- pathway_labels
+  } else {
+    gsea_results$.ridge_pathway_label <- gsea_results$pathway_id
+  }
+  pathway_name_col <- ".ridge_pathway_label"
 
- # Sort and select top pathways
- sort_col <- if (sort_by %in% colnames(gsea_results)) {
-   sort_by
- } else if ("pvalue" %in% colnames(gsea_results)) {
-   "pvalue"
- } else {
-   stop("Cannot find sorting column in gsea_results.")
- }
+  # direction is optional, can be derived from NES
+  has_nes <- "NES" %in% colnames(gsea_results)
+  if (has_nes) {
+    validate_finite_numeric_values(gsea_results$NES, "NES", "gsea_results")
+  }
+  direction_col <- if ("direction" %in% colnames(gsea_results)) "direction" else NULL
 
- # Filter and sort
- df <- gsea_results
- df <- df[!is.na(df[[sort_col]]), ]
- df <- df[order(df[[sort_col]]), ]
- df <- head(df, n_pathways)
+  # Filter and sort. P-values/FDRs sort ascending; NES sorts by absolute effect
+  # size so the top list can include both enriched and depleted pathways.
+  df <- gsea_results
+  df <- df[!is.na(df[[sort_by]]), ]
+  if (sort_by == "NES") {
+    df <- df[order(abs(df[[sort_by]]), decreasing = TRUE), ]
+  } else {
+    df <- df[order(df[[sort_by]]), ]
+  }
+  df <- head(df, n_pathways)
 
- if (nrow(df) == 0) {
-   stop("No pathways to display after filtering.")
- }
+  if (nrow(df) == 0) {
+    stop("No pathways to display after filtering.")
+  }
 
  # Get pathway-gene mappings
  if (is.null(pathway_reference)) {
@@ -168,18 +251,52 @@ pathway_ridgeplot <- function(gsea_results,
    }
  }
 
- # Calculate fold changes between groups
- group_vec <- metadata[[group]]
- group_levels <- unique(group_vec)
-
- if (length(group_levels) != 2) {
-   warning("Ridge plot works best with 2 groups. Using first two groups.")
-   group_levels <- group_levels[1:2]
+ # Calculate fold changes between groups. The comparison must be tied to
+ # group labels, not to the first groups encountered in sample order; otherwise
+ # simply reordering abundance columns can flip the x-axis interpretation.
+ group_factor <- droplevels(factor(metadata[[group]]))
+ observed_levels <- levels(group_factor)
+ if (is.null(comparison)) {
+   if (length(observed_levels) != 2) {
+     stop(
+       "pathway_ridgeplot() requires 'comparison = c(group1, group2)' ",
+       "when metadata contains ", length(observed_levels), " group levels. ",
+       "The ridge plot displays log2(group2 / group1), so the comparison ",
+       "must match the GSEA contrast being interpreted.",
+       call. = FALSE
+     )
+   }
+   group_levels <- observed_levels
+ } else {
+   comparison <- validate_nonempty_character_column(
+     comparison,
+     "comparison",
+     "pathway_ridgeplot()"
+   )
+   if (length(comparison) != 2) {
+     stop("'comparison' must be NULL or a character vector of length 2: c(group1, group2).",
+          call. = FALSE)
+   }
+   if (anyDuplicated(comparison)) {
+     stop("'comparison' must contain two distinct group labels.",
+          call. = FALSE)
+   }
+   missing_groups <- setdiff(comparison, observed_levels)
+   if (length(missing_groups) > 0) {
+     stop(
+       "'comparison' group(s) not found in metadata after sample alignment: ",
+       paste(missing_groups, collapse = ", "),
+       ". Available groups: ", paste(observed_levels, collapse = ", "),
+       call. = FALSE
+     )
+   }
+   group_levels <- comparison
  }
+ group_vec <- as.character(group_factor)
 
  # Calculate mean abundance per group
- samples_g1 <- which(group_vec == group_levels[1])
- samples_g2 <- which(group_vec == group_levels[2])
+ samples_g1 <- which(as.character(group_vec) == group_levels[1])
+ samples_g2 <- which(as.character(group_vec) == group_levels[2])
 
  mean_g1 <- rowMeans(abundance[, samples_g1, drop = FALSE], na.rm = TRUE)
  mean_g2 <- rowMeans(abundance[, samples_g2, drop = FALSE], na.rm = TRUE)
@@ -202,7 +319,7 @@ pathway_ridgeplot <- function(gsea_results,
  if (is.null(gene_col)) {
    # Fallback: try to find any column with semicolon-separated values
    for (col in colnames(pathway_reference)) {
-     if (any(grepl(";", pathway_reference[[col]], fixed = TRUE))) {
+     if (any(grepl(";", as.character(pathway_reference[[col]]), fixed = TRUE))) {
        gene_col <- col
        break
      }
@@ -266,6 +383,7 @@ pathway_ridgeplot <- function(gsea_results,
        ridge_data_list[[i]] <- data.frame(
          pathway = pname,
          pathway_id = pid,
+         gene_id = names(fc_values),
          direction = direction,
          log2fc = fc_values,
          stringsAsFactors = FALSE
@@ -293,6 +411,32 @@ pathway_ridgeplot <- function(gsea_results,
    if (nchar(x) > 50) paste0(substr(x, 1, 47), "...") else x
  })
  ridge_data$pathway <- factor(ridge_data$pathway, levels = rev(pathway_order))
+
+ if (show_direction) {
+   if (!is.character(colors) || is.null(names(colors))) {
+     stop("'colors' must be a named character vector when show_direction = TRUE.",
+          call. = FALSE)
+   }
+   invalid_colors <- vapply(colors, function(x) {
+     !tryCatch(is.matrix(grDevices::col2rgb(x)), error = function(e) FALSE)
+   }, logical(1))
+   if (any(invalid_colors)) {
+     stop("Invalid color value(s) in 'colors': ",
+          paste(names(colors)[invalid_colors], collapse = ", "),
+          call. = FALSE)
+   }
+   missing_directions <- setdiff(unique(as.character(ridge_data$direction)),
+                                 names(colors))
+   if (length(missing_directions) > 0) {
+     if (all(missing_directions == "Unknown")) {
+       colors <- c(colors, Unknown = "#737373")
+     } else {
+       stop("'colors' is missing value(s) for direction(s): ",
+            paste(missing_directions, collapse = ", "),
+            call. = FALSE)
+     }
+   }
+ }
 
  # Create ridge plot
  p <- ggplot2::ggplot(ridge_data, ggplot2::aes(x = .data$log2fc, y = .data$pathway))

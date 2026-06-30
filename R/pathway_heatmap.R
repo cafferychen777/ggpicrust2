@@ -8,15 +8,22 @@
 #'
 #' @name pathway_heatmap
 #' @param abundance A matrix or data frame of pathway abundance data, where columns
-#'   correspond to samples and rows correspond to pathways. Must contain at least
+#'   correspond to samples and rows correspond to pathways. Data frames may also
+#'   provide a leading non-numeric feature ID column (for example \code{#NAME},
+#'   \code{feature}, or \code{pathway}); it is converted to row names before
+#'   sample alignment. Values must be finite numeric values and may contain
+#'   negative or zero-sum transformed sample profiles. Must contain at least
 #'   two samples.
 #' @param metadata A data frame of metadata, where each row corresponds to a sample
-#'   and each column corresponds to a metadata variable.
+#'   and each column corresponds to a metadata variable. Grouping variables must
+#'   be complete and contain at least two levels among the samples that align to
+#'   the abundance columns.
 #' @param group A character string specifying the column name in the metadata data frame
 #'   that contains the primary group variable. Must contain at least two groups.
 #' @param secondary_groups A character vector specifying additional grouping variables
 #'   for creating nested faceted heatmaps. If NULL, only the primary group will be used.
-#'   These variables will be used as secondary levels in the faceting hierarchy.
+#'   These variables will be used as secondary levels in the faceting hierarchy
+#'   and must also remain complete with at least two levels after sample alignment.
 #' @param colors A vector of colors used for the background of the facet labels in the
 #'   heatmap. If NULL or not provided, a default color set is used for the facet strips.
 #' @param font_size A numeric value specifying the font size for the heatmap.
@@ -304,6 +311,46 @@ create_dendrogram <- function(hclust_obj, dendro_line_size = 0.5, dendro_labels 
   
   return(p)
 }
+
+#' Compute correlation distance with zero-variance safeguards
+#'
+#' @param values Numeric matrix with items in rows and variables in columns
+#' @param method Correlation method passed to stats::cor
+#' @param item_label Human-readable item label for messages
+#' @return A dist object equal to 1 - correlation
+#' @keywords internal
+compute_correlation_distance <- function(values, method = "pearson", item_label = "items") {
+  cor_matrix <- suppressWarnings(stats::cor(t(values), method = method))
+
+  undefined <- !is.finite(cor_matrix)
+  if (any(undefined)) {
+    cor_matrix[undefined] <- 0
+    for (i in seq_len(nrow(values))) {
+      for (j in seq_len(nrow(values))) {
+        if (undefined[i, j] && isTRUE(all.equal(values[i, ], values[j, ],
+                                               check.attributes = FALSE))) {
+          cor_matrix[i, j] <- 1
+        }
+      }
+    }
+    diag(cor_matrix) <- 1
+    message(sprintf(
+      "Undefined %s correlation(s) involving zero-variance %s were treated as neutral distance for clustering.",
+      method, item_label
+    ))
+  }
+
+  dist_obj <- stats::as.dist(1 - cor_matrix)
+  if (any(!is.finite(dist_obj))) {
+    stop(sprintf(
+      "Cannot compute %s correlation distance for %s: non-finite distances remain after zero-variance handling.",
+      method, item_label
+    ), call. = FALSE)
+  }
+
+  dist_obj
+}
+
 pathway_heatmap <- function(abundance,
                             metadata,
                             group,
@@ -329,11 +376,26 @@ pathway_heatmap <- function(abundance,
                             colorbar_height = 9,
                             colorbar_breaks = NULL) {
   # Input validation using unified functions
-  validate_abundance(abundance, min_samples = 2)
+  abundance <- normalize_abundance_feature_ids(
+    abundance,
+    context = "pathway_heatmap() abundance"
+  )
+  validate_abundance(abundance, min_samples = 2, check_zero_columns = FALSE)
   validate_metadata(metadata)
 
   # Ensure abundance is a matrix with names
   abundance <- as.matrix(abundance)
+  if (!is.numeric(abundance)) {
+    stop("Abundance data must contain only numeric values", call. = FALSE)
+  }
+  if (anyNA(abundance)) {
+    stop("Abundance matrix contains missing values (NA). Heatmap requires complete data.",
+         call. = FALSE)
+  }
+  if (any(!is.finite(abundance))) {
+    stop("Abundance matrix contains non-finite values. Heatmap requires finite data.",
+         call. = FALSE)
+  }
   if (nrow(abundance) < 1) stop("At least one pathway is required")
   if (is.null(colnames(abundance))) colnames(abundance) <- paste0("Sample", seq_len(ncol(abundance)))
   if (is.null(rownames(abundance))) rownames(abundance) <- paste0("Pathway", seq_len(nrow(abundance)))
@@ -375,8 +437,17 @@ pathway_heatmap <- function(abundance,
   metadata <- aligned$metadata
   metadata$sample_name <- colnames(abundance)
 
-  # Validate group column
-  validate_group(metadata, group, min_groups = 2)
+  # Validate grouping columns after sample alignment. Pre-alignment metadata may
+  # contain extra samples that provide additional levels; the plotted heatmap
+  # only reflects aligned samples, so grouping validity must be checked here.
+  for (grp in all_groups) {
+    validate_group(metadata, grp, min_groups = 2)
+    if (any(is.na(metadata[[grp]]))) {
+      stop("Grouping column '", grp,
+           "' contains NA values after sample alignment.",
+           call. = FALSE)
+    }
+  }
 
   # Perform z-score normalization. A constant (zero-variance) row has
   # sd = 0, so `scale()` divides by zero and returns NA for every sample.
@@ -410,12 +481,14 @@ pathway_heatmap <- function(abundance,
     # Calculate distance matrix for rows
     if (clustering_distance == "correlation") {
       # Handle correlation distance specially
-      cor_matrix <- cor(t(z_abundance))
-      row_dist <- as.dist(1 - cor_matrix)
+      row_dist <- compute_correlation_distance(z_abundance,
+                                               method = "pearson",
+                                               item_label = "pathways")
     } else if (clustering_distance == "spearman") {
       # Handle spearman correlation distance specially
-      cor_matrix <- cor(t(z_abundance), method = "spearman")
-      row_dist <- as.dist(1 - cor_matrix)
+      row_dist <- compute_correlation_distance(z_abundance,
+                                               method = "spearman",
+                                               item_label = "pathways")
     } else {
       row_dist <- dist(z_abundance, method = clustering_distance)
     }
@@ -438,12 +511,14 @@ pathway_heatmap <- function(abundance,
     # Calculate distance matrix for columns
     if (clustering_distance == "correlation") {
       # Handle correlation distance specially
-      cor_matrix <- cor(z_abundance)
-      col_dist <- as.dist(1 - cor_matrix)
+      col_dist <- compute_correlation_distance(t(z_abundance),
+                                               method = "pearson",
+                                               item_label = "samples")
     } else if (clustering_distance == "spearman") {
       # Handle spearman correlation distance specially
-      cor_matrix <- cor(z_abundance, method = "spearman")
-      col_dist <- as.dist(1 - cor_matrix)
+      col_dist <- compute_correlation_distance(t(z_abundance),
+                                               method = "spearman",
+                                               item_label = "samples")
     } else {
       col_dist <- dist(t(z_abundance), method = clustering_distance)
     }

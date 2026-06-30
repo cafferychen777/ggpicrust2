@@ -5,18 +5,25 @@
 \title{Create pathway heatmap with support for multiple grouping variables}
 \arguments{
 \item{abundance}{A matrix or data frame of pathway abundance data, where columns
-correspond to samples and rows correspond to pathways. Must contain at least
+correspond to samples and rows correspond to pathways. Data frames may also
+provide a leading non-numeric feature ID column (for example \code{#NAME},
+\code{feature}, or \code{pathway}); it is converted to row names before
+sample alignment. Values must be finite numeric values and may contain
+negative or zero-sum transformed sample profiles. Must contain at least
 two samples.}
 
 \item{metadata}{A data frame of metadata, where each row corresponds to a sample
-and each column corresponds to a metadata variable.}
+and each column corresponds to a metadata variable. Grouping variables must
+be complete and contain at least two levels among the samples that align to
+the abundance columns.}
 
 \item{group}{A character string specifying the column name in the metadata data frame
 that contains the primary group variable. Must contain at least two groups.}
 
 \item{secondary_groups}{A character vector specifying additional grouping variables
 for creating nested faceted heatmaps. If NULL, only the primary group will be used.
-These variables will be used as secondary levels in the faceting hierarchy.}
+These variables will be used as secondary levels in the faceting hierarchy
+and must also remain complete with at least two levels after sample alignment.}
 
 \item{colors}{A vector of colors used for the background of the facet labels in the
 heatmap. If NULL or not provided, a default color set is used for the facet strips.}

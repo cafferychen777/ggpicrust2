@@ -7,6 +7,32 @@
 #' @name legend_annotation_utils
 NULL
 
+validate_significance_inputs <- function(p_values,
+                                         thresholds,
+                                         labels,
+                                         label_name = "symbols") {
+  validate_probability_values(p_values, "p_values", "p_values")
+  if (!is.numeric(thresholds) || anyNA(thresholds) ||
+      any(!is.finite(thresholds)) ||
+      any(thresholds <= 0 | thresholds > 1)) {
+    stop("thresholds must contain finite numeric values in the range (0, 1].",
+         call. = FALSE)
+  }
+  if (anyDuplicated(thresholds)) {
+    stop("thresholds must not contain duplicate values.", call. = FALSE)
+  }
+  if (!is.character(labels) || anyNA(labels)) {
+    stop(label_name, " must be a character vector without NA values.",
+         call. = FALSE)
+  }
+  if (length(thresholds) != length(labels)) {
+    stop("thresholds and ", label_name, " must have the same length",
+         call. = FALSE)
+  }
+
+  invisible(TRUE)
+}
+
 #' Smart P-value Formatting
 #'
 #' @param p_values Numeric vector of p-values
@@ -22,12 +48,9 @@ format_pvalue_smart <- function(p_values,
                                thresholds = c(0.001, 0.01, 0.05),
                                star_symbols = c("***", "**", "*")) {
   
-  # Input validation
-  if (!is.numeric(p_values)) {
-    stop("p_values must be numeric")
-  }
-  
   format <- match.arg(format, c("numeric", "scientific", "smart", "stars_only", "combined"))
+  validate_significance_inputs(p_values, thresholds, star_symbols,
+                               label_name = "star_symbols")
   
   # Base formatting
   formatted <- switch(format,
@@ -71,10 +94,8 @@ format_pvalue_smart <- function(p_values,
 get_significance_stars <- function(p_values, 
                                  thresholds = c(0.001, 0.01, 0.05),
                                  symbols = c("***", "**", "*")) {
-  
-  if (length(thresholds) != length(symbols)) {
-    stop("thresholds and symbols must have the same length")
-  }
+  validate_significance_inputs(p_values, thresholds, symbols,
+                               label_name = "symbols")
   
   stars <- character(length(p_values))
 
@@ -83,7 +104,7 @@ get_significance_stars <- function(p_values,
   # e.g. p=0.0001 matches all three thresholds (0.05, 0.01, 0.001)
   # but should get "***" (the last overwrite), not "*" (the first).
   for (i in rev(seq_along(thresholds))) {
-    stars[p_values < thresholds[i]] <- symbols[i]
+    stars[!is.na(p_values) & p_values < thresholds[i]] <- symbols[i]
   }
   
   return(stars)
@@ -101,9 +122,18 @@ get_significance_colors <- function(p_values,
                                   thresholds = c(0.001, 0.01, 0.05),
                                   colors = c("#d73027", "#fc8d59", "#fee08b"),
                                   default_color = "#999999") {
-  
-  if (length(thresholds) != length(colors)) {
-    stop("thresholds and colors must have the same length")
+  validate_significance_inputs(p_values, thresholds, colors,
+                               label_name = "colors")
+  if (!is.character(default_color) || length(default_color) != 1 ||
+      is.na(default_color)) {
+    stop("default_color must be a single character value.", call. = FALSE)
+  }
+  invalid_colors <- vapply(c(colors, default_color), function(x) {
+    !tryCatch(is.matrix(grDevices::col2rgb(x)), error = function(e) FALSE)
+  }, logical(1))
+  if (any(invalid_colors)) {
+    stop("colors and default_color must be valid R color values.",
+         call. = FALSE)
   }
   
   result_colors <- rep(default_color, length(p_values))
@@ -111,7 +141,7 @@ get_significance_colors <- function(p_values,
   # Same reverse-iteration logic as get_significance_stars(): process
   # from least to most significant so the tightest matching threshold wins.
   for (i in rev(seq_along(thresholds))) {
-    result_colors[p_values < thresholds[i]] <- colors[i]
+    result_colors[!is.na(p_values) & p_values < thresholds[i]] <- colors[i]
   }
   
   return(result_colors)

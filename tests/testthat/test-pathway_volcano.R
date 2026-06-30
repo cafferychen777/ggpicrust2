@@ -103,7 +103,37 @@ test_that("pathway_volcano rejects negative p-values", {
     stringsAsFactors = FALSE
   )
 
-  expect_error(pathway_volcano(daa_results), "negative")
+  expect_error(pathway_volcano(daa_results), "between 0 and 1")
+})
+
+test_that("pathway_volcano rejects invalid p-values and thresholds", {
+  daa_results <- data.frame(
+    feature = "ko00001",
+    pathway_name = "Pathway 1",
+    log2_fold_change = 2,
+    p_adjust = 1.2,
+    stringsAsFactors = FALSE
+  )
+
+  expect_error(pathway_volcano(daa_results), "between 0 and 1")
+
+  daa_results$p_adjust <- 0.01
+  expect_error(pathway_volcano(daa_results, p_threshold = 0), "range")
+  expect_error(pathway_volcano(daa_results, p_threshold = 1.1), "range")
+})
+
+test_that("pathway_volcano rejects non-finite fold changes", {
+  daa_results <- data.frame(
+    feature = "ko00001",
+    pathway_name = "Pathway 1",
+    log2_fold_change = Inf,
+    p_adjust = 0.01,
+    stringsAsFactors = FALSE
+  )
+
+  expect_error(pathway_volcano(daa_results), "finite numeric")
+  expect_error(pathway_volcano(daa_results, fc_threshold = NA_real_),
+               "finite non-negative")
 })
 
 test_that("pathway_volcano works with real DAA workflow", {
