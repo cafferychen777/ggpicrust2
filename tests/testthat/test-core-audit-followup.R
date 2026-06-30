@@ -23,6 +23,21 @@ create_followup_errorbar_test_data <- function(n_features = 5, p_adjust = NULL) 
   list(abundance = abundance, daa_results_df = daa_results_df, Group = group)
 }
 
+test_that("validate_p_adjust_method follows stats p.adjust methods", {
+  validate_p_adjust_method <- getFromNamespace("validate_p_adjust_method", "ggpicrust2")
+
+  expect_invisible(validate_p_adjust_method("BH"))
+  expect_invisible(validate_p_adjust_method("none"))
+  expect_error(
+    validate_p_adjust_method("bogus"),
+    "'p_adjust_method' must be one of"
+  )
+  expect_error(
+    validate_p_adjust_method(c("BH", "holm")),
+    "'p_adjust_method' must be one of"
+  )
+})
+
 test_that("import_MicrobiomeAnalyst_daa_results defaults and validates shape", {
   daa <- data.frame(
     feature = c("p1", "p2"),
@@ -37,16 +52,57 @@ test_that("import_MicrobiomeAnalyst_daa_results defaults and validates shape", {
   expect_equal(imported$group2, c("treatment", "treatment"))
   expect_false(anyNA(names(imported)))
 
-  too_short <- daa[, 1:3]
+  missing_adjusted_p <- daa[, c("feature", "p_values"), drop = FALSE]
   expect_error(
-    import_MicrobiomeAnalyst_daa_results(data = too_short),
-    "at least four columns"
+    import_MicrobiomeAnalyst_daa_results(data = missing_adjusted_p),
+    "p_adjust"
   )
 
   extra_col <- cbind(daa, extra = 1)
   imported_extra <- import_MicrobiomeAnalyst_daa_results(data = extra_col)
   expect_false(anyNA(names(imported_extra)))
   expect_true("extra" %in% names(imported_extra))
+})
+
+test_that("import_MicrobiomeAnalyst_daa_results validates imported statistics", {
+  daa <- data.frame(
+    feature = c("p1", "p2"),
+    p_values = c("0.01", "0.02"),
+    p_adjust = c("0.03", "0.04"),
+    Statistics = c("1.2", "-0.5"),
+    stringsAsFactors = FALSE
+  )
+
+  imported <- import_MicrobiomeAnalyst_daa_results(data = daa)
+  expect_type(imported$p_values, "double")
+  expect_type(imported$p_adjust, "double")
+  expect_type(imported$Statistics, "double")
+
+  bad_p <- daa
+  bad_p$p_adjust[1] <- "1.5"
+  expect_error(
+    import_MicrobiomeAnalyst_daa_results(data = bad_p),
+    "between 0 and 1"
+  )
+
+  bad_stat <- daa
+  bad_stat$Statistics[1] <- "not_numeric"
+  expect_error(
+    import_MicrobiomeAnalyst_daa_results(data = bad_stat),
+    "numeric-like"
+  )
+
+  duplicate_feature <- daa
+  duplicate_feature$feature[2] <- "p1"
+  expect_error(
+    import_MicrobiomeAnalyst_daa_results(data = duplicate_feature),
+    "duplicated"
+  )
+
+  expect_error(
+    import_MicrobiomeAnalyst_daa_results(data = daa, group_levels = "control"),
+    "at least two"
+  )
 })
 
 test_that("import_MicrobiomeAnalyst_daa_results warns that data wins over file_path", {
@@ -66,6 +122,62 @@ test_that("import_MicrobiomeAnalyst_daa_results warns that data wins over file_p
     "Using data and ignoring file_path"
   )
   expect_equal(imported$feature, "p1")
+})
+
+test_that("import_MicrobiomeAnalyst_daa_results uses semantic column names", {
+  # MicrobiomeAnalystR writes method-specific DE tables such as
+  # feature/log2FC/Pvalues/FDR. Positional parsing used to treat log2FC as
+  # p_values and Pvalues as p_adjust whenever log2FC happened to be in [0, 1].
+  daa <- data.frame(
+    feature = c("ko00001", "ko00002"),
+    log2FC = c(0.25, -0.5),
+    Pvalues = c(0.001, 0.002),
+    FDR = c(0.03, 0.04),
+    stringsAsFactors = FALSE,
+    check.names = FALSE
+  )
+
+  imported <- import_MicrobiomeAnalyst_daa_results(data = daa)
+
+  expect_equal(imported$feature, daa$feature)
+  expect_equal(imported$p_values, daa$Pvalues)
+  expect_equal(imported$p_adjust, daa$FDR)
+  expect_equal(imported$log2_fold_change, daa$log2FC)
+  expect_false("Statistics" %in% names(imported))
+})
+
+test_that("import_MicrobiomeAnalyst_daa_results accepts rowname feature exports", {
+  daa <- data.frame(
+    Pvalues = c("0.01", "0.02"),
+    FDR = c("0.03", "0.04"),
+    Statistics = c("2.5", "-1.2"),
+    row.names = c("ko00001", "ko00002"),
+    stringsAsFactors = FALSE,
+    check.names = FALSE
+  )
+
+  imported <- import_MicrobiomeAnalyst_daa_results(data = daa)
+
+  expect_equal(imported$feature, c("ko00001", "ko00002"))
+  expect_equal(imported$p_values, c(0.01, 0.02))
+  expect_equal(imported$p_adjust, c(0.03, 0.04))
+  expect_equal(imported$Statistics, c(2.5, -1.2))
+})
+
+test_that("import_MicrobiomeAnalyst_daa_results rejects ambiguous semantic columns", {
+  daa <- data.frame(
+    feature = "ko00001",
+    Pvalues = 0.01,
+    p_values = 0.02,
+    FDR = 0.03,
+    stringsAsFactors = FALSE,
+    check.names = FALSE
+  )
+
+  expect_error(
+    import_MicrobiomeAnalyst_daa_results(data = daa),
+    "Ambiguous.*p_values"
+  )
 })
 
 test_that("pathway_errorbar order='group' resolves tied groups deterministically", {
@@ -121,7 +233,31 @@ test_that("pathway_errorbar normalizes logical flags and rejects invalid p_adjus
   td$daa_results_df$p_adjust[1] <- -0.1
   expect_error(
     pathway_errorbar(td$abundance, td$daa_results_df, td$Group, x_lab = "pathway_name"),
-    "non-negative"
+    "between 0 and 1"
+  )
+
+  td$daa_results_df$p_adjust[1] <- 1.2
+  expect_error(
+    pathway_errorbar(td$abundance, td$daa_results_df, td$Group, x_lab = "pathway_name"),
+    "between 0 and 1"
+  )
+  expect_error(
+    pathway_errorbar(td$abundance, td$daa_results_df, td$Group,
+                     x_lab = "pathway_name", p_values_threshold = 0),
+    "range"
+  )
+  expect_error(
+    pathway_errorbar(td$abundance, td$daa_results_df, td$Group,
+                     x_lab = "pathway_name",
+                     pvalue_thresholds = c(-0.01, 0.05),
+                     pvalue_star_symbols = c("*", "**")),
+    "thresholds"
+  )
+  expect_error(
+    pathway_errorbar(td$abundance, td$daa_results_df, td$Group,
+                     x_lab = "pathway_name",
+                     pvalue_format = "not_a_format"),
+    "should be one of"
   )
 })
 
@@ -136,6 +272,27 @@ test_that("pathway_errorbar_table gives ko_to_kegg an explicit contract", {
       ko_to_kegg = TRUE
     ),
     "pathway_class"
+  )
+
+  td$daa_results_df$p_adjust[1] <- 1.2
+  expect_error(
+    pathway_errorbar_table(
+      abundance = td$abundance,
+      daa_results_df = td$daa_results_df,
+      Group = td$Group
+    ),
+    "between 0 and 1"
+  )
+
+  td$daa_results_df$p_adjust[1] <- 0.01
+  expect_error(
+    pathway_errorbar_table(
+      abundance = td$abundance,
+      daa_results_df = td$daa_results_df,
+      Group = td$Group,
+      p_values_threshold = 0
+    ),
+    "range"
   )
 
   td$daa_results_df$pathway_class <- c("Metabolism", "Metabolism")

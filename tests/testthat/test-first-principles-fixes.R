@@ -217,6 +217,103 @@ test_that("compare_gsea_daa() counts significant pathways with set semantics", {
   expect_equal(res$results$daa_only, "ko00030")
 })
 
+test_that("compare_gsea_daa() validates p-value inputs and keeps zero p-values plottable", {
+  gsea <- data.frame(
+    pathway_id = c("ko00010", "ko00020"),
+    NES = c(1.5, -1.2),
+    p.adjust = c(0, 0.2),
+    group1 = c("Treatment", "Treatment"),
+    group2 = c("Control", "Control"),
+    stringsAsFactors = FALSE
+  )
+  daa <- data.frame(
+    feature = c("ko00010", "ko00020"),
+    log2_fold_change = c(2, -2),
+    p_adjust = c(0.02, 0.5),
+    group1 = c("Control", "Control"),
+    group2 = c("Treatment", "Treatment"),
+    stringsAsFactors = FALSE
+  )
+
+  res <- compare_gsea_daa(gsea, daa, plot_type = "scatter")
+  expect_true(all(is.finite(res$plot$data$gsea_neg_log10_p_adjust)))
+
+  expect_error(
+    compare_gsea_daa(gsea, daa, p_threshold = 0),
+    "range"
+  )
+
+  gsea_bad <- gsea
+  gsea_bad$p.adjust[1] <- 1.2
+  expect_error(
+    compare_gsea_daa(gsea_bad, daa),
+    "between 0 and 1"
+  )
+})
+
+test_that("compare_gsea_daa('scatter') rejects duplicate effect-size rows", {
+  gsea_dup <- data.frame(
+    pathway_id = c("ko00010", "ko00010"),
+    NES = c(1.5, 1.8),
+    p.adjust = c(0.01, 0.02),
+    group1 = c("Treatment", "Treatment"),
+    group2 = c("Control", "Control"),
+    stringsAsFactors = FALSE
+  )
+  daa <- data.frame(
+    feature = "ko00010",
+    log2_fold_change = 2,
+    p_adjust = 0.02,
+    group1 = "Control",
+    group2 = "Treatment",
+    stringsAsFactors = FALSE
+  )
+
+  expect_error(
+    compare_gsea_daa(gsea_dup, daa, plot_type = "scatter"),
+    "one effect-size row per pathway|Duplicate pathway_id"
+  )
+
+  gsea <- gsea_dup[1, , drop = FALSE]
+  daa_dup <- data.frame(
+    feature = c("ko00010", "ko00010"),
+    log2_fold_change = c(2, 3),
+    p_adjust = c(0.02, 0.03),
+    group1 = c("Control", "Control"),
+    group2 = c("Treatment", "Treatment"),
+    stringsAsFactors = FALSE
+  )
+  expect_error(
+    compare_gsea_daa(gsea, daa_dup, plot_type = "scatter"),
+    "one effect-size row per pathway|Duplicate feature"
+  )
+})
+
+test_that("compare_gsea_daa() rejects missing pathway identifiers", {
+  gsea <- data.frame(
+    pathway_id = c("ko00010", NA_character_),
+    p.adjust = c(0.01, 0.2),
+    stringsAsFactors = FALSE
+  )
+  daa <- data.frame(
+    feature = c("ko00010", "ko00020"),
+    p_adjust = c(0.02, 0.5),
+    stringsAsFactors = FALSE
+  )
+
+  expect_error(
+    compare_gsea_daa(gsea, daa, plot_type = "venn"),
+    "pathway_id.*non-empty"
+  )
+
+  daa$feature[2] <- ""
+  gsea$pathway_id[2] <- "ko00020"
+  expect_error(
+    compare_gsea_daa(gsea, daa, plot_type = "venn"),
+    "feature.*non-empty"
+  )
+})
+
 
 # -----------------------------------------------------------------------------
 # Issue 5: compare_daa_results() used to double-filter diff_features so
@@ -263,6 +360,34 @@ test_that("compare_daa_results() counts partial-agreement features as diffs", {
   expect_equal(out$diff_features[out$method == "m2"], "B")
 })
 
+test_that("compare_daa_results() validates adjusted p-values and threshold", {
+  valid <- data.frame(
+    feature = c("A", "B"),
+    group1 = "g1",
+    group2 = "g2",
+    p_adjust = c(0.01, 0.2),
+    stringsAsFactors = FALSE
+  )
+
+  missing_p <- valid[, setdiff(names(valid), "p_adjust"), drop = FALSE]
+  expect_error(
+    compare_daa_results(list(missing_p), "m1"),
+    "Missing required columns"
+  )
+
+  invalid_p <- valid
+  invalid_p$p_adjust[1] <- 1.2
+  expect_error(
+    compare_daa_results(list(invalid_p), "m1"),
+    "between 0 and 1"
+  )
+
+  expect_error(
+    compare_daa_results(list(valid), "m1", p_values_threshold = NA_real_),
+    "single finite numeric"
+  )
+})
+
 test_that("compare_daa_results() canonicalizes the legacy ALDEx2 KW label", {
   df <- data.frame(feature = "A",
                    group1 = "g1", group2 = "g2",
@@ -280,6 +405,86 @@ test_that("compare_daa_results() canonicalizes the legacy ALDEx2 KW label", {
   expect_equal(out$method, "ALDEx2_Kruskal-Wallis test")
 })
 
+test_that("compare_daa_results() compares feature/group-pair units", {
+  m1 <- data.frame(
+    feature = "A",
+    group1 = "g1",
+    group2 = "g2",
+    p_adjust = 0.01,
+    stringsAsFactors = FALSE
+  )
+  m2 <- data.frame(
+    feature = "A",
+    group1 = "g2",
+    group2 = "g3",
+    p_adjust = 0.01,
+    stringsAsFactors = FALSE
+  )
+
+  suppressMessages(
+    out <- compare_daa_results(
+      list(m1, m2),
+      method_names = c("m1", "m2"),
+      p_values_threshold = 0.05
+    )
+  )
+
+  expect_equal(unique(out$num_common_features), 0)
+  expect_equal(out$num_diff_features, c(1L, 1L))
+  expect_equal(out$diff_features[out$method == "m1"], "A [g1 vs g2]")
+  expect_equal(out$diff_features[out$method == "m2"], "A [g2 vs g3]")
+})
+
+test_that("compare_daa_results() treats reversed two-group pairs as the same comparison", {
+  m1 <- data.frame(
+    feature = "A",
+    group1 = "control",
+    group2 = "treatment",
+    p_adjust = 0.01,
+    stringsAsFactors = FALSE
+  )
+  m2 <- data.frame(
+    feature = "A",
+    group1 = "treatment",
+    group2 = "control",
+    p_adjust = 0.02,
+    stringsAsFactors = FALSE
+  )
+
+  suppressMessages(
+    out <- compare_daa_results(
+      list(m1, m2),
+      method_names = c("m1", "m2"),
+      p_values_threshold = 0.05
+    )
+  )
+
+  expect_equal(unique(out$num_common_features), 1)
+  expect_equal(out$num_diff_features, c(0L, 0L))
+  expect_equal(out$common_features, c("A", "A"))
+})
+
+test_that("compare_daa_results() rejects ambiguous method names and missing IDs", {
+  df <- data.frame(
+    feature = "A",
+    group1 = "g1",
+    group2 = "g2",
+    p_adjust = 0.01,
+    stringsAsFactors = FALSE
+  )
+
+  expect_error(
+    compare_daa_results(list(df, df), method_names = c("m1", "m1")),
+    "duplicated"
+  )
+
+  df$feature <- NA_character_
+  expect_error(
+    compare_daa_results(list(df), method_names = "m1"),
+    "feature.*non-empty"
+  )
+})
+
 
 # -----------------------------------------------------------------------------
 # Issue 6: visualize_gsea() heatmap branch used to rely solely on
@@ -293,6 +498,9 @@ test_that("visualize_gsea('heatmap') aligns via sample column, not just rownames
   skip_if_not_installed("circlize")
 
   gsea_results <- create_gsea_test_results(n_pathways = 5)
+  gsea_results$leading_edge <- vapply(seq_len(nrow(gsea_results)), function(i) {
+    paste(paste0("K", sprintf("%05d", ((i - 1) * 5 + 1):(i * 5))), collapse = ";")
+  }, character(1))
 
   set.seed(42)
   abundance <- as.data.frame(matrix(
@@ -343,12 +551,26 @@ test_that("visualize_gsea() pure-ggplot branches do not require enrichplot", {
 
 
 # -----------------------------------------------------------------------------
-# Issue 8: run_limma_gsea() voom fallback used <<- to inject v into the
-# caller's frame. Verify the source no longer does that.
+# Issue 8: run_limma_gsea() must not replace a failed voom fit with a log2
+# transform and unit weights because that changes the statistical model.
 # -----------------------------------------------------------------------------
-test_that("run_limma_gsea() no longer uses <<- in its voom fallback", {
+test_that("run_limma_gsea() has no unit-weight voom fallback", {
   run_limma_gsea <- getFromNamespace("run_limma_gsea", "ggpicrust2")
   body_src <- paste(deparse(body(run_limma_gsea)), collapse = "\n")
+
   expect_false(grepl("v\\s*<<-", body_src))
   expect_false(grepl("class\\(v\\)\\s*<<-", body_src))
+  expect_false(grepl("log2\\(abundance_mat \\+ 0\\.5\\)", body_src))
+  expect_false(grepl("weights\\s*=\\s*matrix\\(1", body_src))
+})
+
+test_that("run_limma_gsea() passes raw counts to voom", {
+  run_limma_gsea <- getFromNamespace("run_limma_gsea", "ggpicrust2")
+  body_src <- paste(deparse(body(run_limma_gsea)), collapse = "\n")
+
+  # voom() expects raw counts and applies its own 0.5 offset when computing
+  # logCPM values. Adding a pseudocount before voom changes library sizes and
+  # the estimated mean-variance relationship.
+  expect_false(grepl("abundance_mat\\s*<-\\s*abundance_mat\\s*\\+\\s*0\\.5", body_src))
+  expect_match(body_src, "limma::voom\\(abundance_mat, design")
 })
