@@ -341,7 +341,10 @@ aggregate_taxa_contributions <- function(contrib_data,
 
   # Aggregate by sample, function, taxon_label
   agg <- stats::aggregate(
-    stats::as.formula(paste(contrib_col, "~ sample + function_id + taxon_label")),
+    build_two_sided_formula(
+      contrib_col,
+      c("sample", "function_id", "taxon_label")
+    ),
     data = contrib_data,
     FUN = sum
   )

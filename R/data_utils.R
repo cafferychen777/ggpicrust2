@@ -908,6 +908,31 @@ build_one_sided_formula <- function(variables) {
   stats::as.formula(call("~", rhs))
 }
 
+#' Build a two-sided formula from literal column names
+#'
+#' @noRd
+build_two_sided_formula <- function(response, predictors) {
+  if (!is.character(response) || length(response) != 1 ||
+      is.na(response) || !nzchar(response)) {
+    stop("Formula response must be a non-empty character column name.",
+         call. = FALSE)
+  }
+  if (!is.character(predictors) || length(predictors) == 0 ||
+      anyNA(predictors) || any(!nzchar(predictors))) {
+    stop("Formula predictors must be non-empty character column names.",
+         call. = FALSE)
+  }
+
+  terms <- lapply(predictors, as.name)
+  rhs <- if (length(terms) == 1) {
+    terms[[1]]
+  } else {
+    Reduce(function(left, right) call("+", left, right), terms)
+  }
+
+  stats::as.formula(call("~", as.name(response), rhs))
+}
+
 # =============================================================================
 # Extended Validation Utilities
 # =============================================================================

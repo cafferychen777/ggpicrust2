@@ -485,6 +485,20 @@ test_that("aggregate_taxa_contributions supports explicit contribution column", 
   expect_equal(sum(agg$contribution), sum(contrib$taxon_rel_function_abun))
 })
 
+test_that("aggregate_taxa_contributions supports non-syntactic contribution columns", {
+  td <- create_contrib_test_data()
+  contrib <- read_contrib_file(data = td$contrib_raw)
+  contrib[["taxon function contribution"]] <- contrib$taxon_function_abun
+
+  agg <- aggregate_taxa_contributions(
+    contrib,
+    top_n = 4,
+    contribution_col = "taxon function contribution"
+  )
+
+  expect_equal(sum(agg$contribution), sum(contrib[["taxon function contribution"]]))
+})
+
 test_that("aggregate_taxa_contributions validates p-values and contribution values", {
   td <- create_contrib_test_data()
   contrib <- read_contrib_file(data = td$contrib_raw)
