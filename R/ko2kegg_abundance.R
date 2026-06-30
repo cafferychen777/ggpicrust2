@@ -3,11 +3,11 @@
 #' This function takes a file containing KO (KEGG Orthology) abundance data in picrust2 export format and converts it to KEGG pathway abundance data.
 #' The input file should be in .tsv, .txt, or .csv format.
 #'
-#' @param file A character string representing the file path of the input file containing KO abundance data in picrust2 export format. The input file should have KO identifiers in the first column and sample identifiers in the first row. The remaining cells should contain the abundance values for each KO-sample pair.
-#' @param data An optional data.frame containing KO abundance data in the same format as the input file. If provided, the function will use this data instead of reading from the file. By default, this parameter is set to NULL.
+#' @param file A character string representing the file path of the input file containing KO abundance data in picrust2 export format. The input file should have unique KO identifiers in the first column and sample identifiers in the first row. The remaining cells should contain the abundance values for each KO-sample pair.
+#' @param data An optional data.frame containing KO abundance data in the same format as the input file, with one row per unique KO identifier. Sample columns must be numeric, finite, non-missing, and non-negative. If provided, the function will use this data instead of reading from the file. By default, this parameter is set to NULL.
 #' @param method Method for calculating pathway abundance. One of:
 #'   \itemize{
-#'     \item \code{"abundance"}: (Default) PICRUSt2-style calculation using the mean of upper-half sorted KO abundances. This method is more robust and avoids inflating abundances for pathways with more KOs.
+#'     \item \code{"abundance"}: (Default) Upper-half mean aggregation matching the unstructured pathway abundance rule used by the PICRUSt2 pathway pipeline. This is a KO-to-KEGG pathway aggregation approximation, not a replacement for the full PICRUSt2 pathway pipeline with MinPath and structured MetaCyc pathway inference.
 #'     \item \code{"sum"}: Simple summation of all KO abundances. This is the legacy method and may double-count KOs belonging to multiple pathways.
 #'   }
 #' @param filter_for_prokaryotes Logical. If TRUE (default), filters out KEGG pathways
@@ -28,11 +28,14 @@
 #' A data frame with KEGG pathway abundance values. Rows represent KEGG pathways, identified by their KEGG pathway IDs. Columns represent samples, identified by their sample IDs from the input file.
 #'
 #' @details
-#' The default \code{"abundance"} method follows PICRUSt2's approach for calculating pathway abundance:
+#' The default \code{"abundance"} method follows the unstructured pathway abundance rule
+#' in PICRUSt2's pathway pipeline:
 #' \enumerate{
 #'   \item For each pathway, collect abundances of all associated KOs present in the data
 #'   \item Sort the abundances in ascending order
-#'   \item Take the upper half of the sorted values
+#'   \item Take the upper half of the sorted values using the PICRUSt2 indexing rule
+#'     \code{sorted[int(n / 2):]} (equivalent to \code{floor(n / 2) + 1} through
+#'     \code{n} in R's one-based indexing)
 #'   \item Calculate the mean as the pathway abundance
 #' }
 #'
@@ -44,6 +47,21 @@
 #' }
 #'
 #' The \code{"sum"} method is provided for backward compatibility and simply sums all KO abundances for each pathway.
+#'
+#' Input sample columns must contain finite non-missing non-negative values.
+#' Missing values are rejected rather than ignored because the upper-half mean
+#' aggregation depends on the number and ordering of KO abundances available for
+#' each sample.
+#'
+#' Input KO identifiers must be unique after cleaning optional \code{ko:}
+#' prefixes. Duplicate KO rows are rejected because the pathway aggregation
+#' rule treats each KO as one feature/reaction entry; repeated rows would
+#' duplicate evidence and distort upper-half mean or sum aggregation.
+#'
+#' This function does not run MinPath, does not perform PICRUSt2's structured MetaCyc
+#' pathway inference, and does not estimate pathway coverage. It is intended as a
+#' practical offline KO-to-KEGG pathway aggregation step for downstream comparison
+#' and visualization.
 #'
 #' @section Pathway Filtering:
 #' Before abundance calculation, KEGG BRITE hierarchies and "Not Included in Pathway or
@@ -147,12 +165,32 @@ ko2kegg_abundance <- function (file = NULL, data = NULL, method = c("abundance",
   }
 
   # Standardize KO ID format and validate
- abundance <- clean_ko_abundance(abundance, verbose = FALSE)
+  abundance <- clean_ko_abundance(abundance, verbose = FALSE)
 
-  # Validate numeric matrix (negative values, NA, duplicates)
+  # Validate numeric matrix. Missing or non-finite values cannot be ignored:
+  # the upper-half mean rule depends on the complete ordered KO abundance
+  # vector for each pathway/sample.
   numeric_mat <- as.matrix(abundance[, -1, drop = FALSE])
-  validate_numeric_matrix(numeric_mat)
+  validate_nonnegative_finite_matrix(
+    numeric_mat,
+    context = "ko2kegg_abundance() abundance"
+  )
   validate_feature_ids(abundance[[1]], type = "KO")
+  ko_ids <- validate_nonempty_character_column(
+    abundance[[1]],
+    "function.",
+    "ko2kegg_abundance() KO IDs"
+  )
+  if (anyDuplicated(ko_ids)) {
+    duplicated_kos <- unique(ko_ids[duplicated(ko_ids)])
+    stop(
+      "ko2kegg_abundance() requires one row per KO identifier. ",
+      "Duplicated KO IDs after cleaning: ",
+      paste(utils::head(duplicated_kos, 5), collapse = ", "),
+      ". Aggregate or remove duplicated rows before KO-to-KEGG conversion.",
+      call. = FALSE
+    )
+  }
   
   # Load KEGG reference data using unified loader
   ko_to_kegg_reference <- load_reference_data("ko_to_kegg")
@@ -202,11 +240,13 @@ ko2kegg_abundance <- function (file = NULL, data = NULL, method = c("abundance",
       if (method == "sum") {
         kegg_abundance[i, ] <- colSums(abundance[matching_rows, -1, drop = FALSE])
       } else {
-        # PICRUSt2-style: upper-half mean
+        # PICRUSt2 unstructured pathway rule: sorted[int(n / 2):] in
+        # zero-based Python indexing, equivalent to floor(n / 2) + 1 in R.
         ko_abundances <- as.matrix(abundance[matching_rows, -1, drop = FALSE])
         kegg_abundance[i, ] <- apply(ko_abundances, 2, function(col) {
           sorted_col <- sort(col)
-          mean(sorted_col[ceiling(length(sorted_col) / 2):length(sorted_col)])
+          upper_start <- floor(length(sorted_col) / 2) + 1L
+          mean(sorted_col[upper_start:length(sorted_col)])
         })
       }
     }

@@ -23,6 +23,68 @@ test_that("pathway_annotation warns when file mode receives KEGG-specific params
   )
 })
 
+test_that("pathway_annotation normalizes logical-like ko_to_kegg values", {
+  temp_file <- tempfile(fileext = ".tsv")
+  test_data <- data.frame(
+    feature = c("K00001", "K00002"),
+    sample1 = c(1, 2),
+    sample2 = c(3, 4)
+  )
+  suppressMessages(write.table(test_data, temp_file, sep = "\t", row.names = FALSE))
+  on.exit(unlink(temp_file), add = TRUE)
+
+  expect_warning(
+    suppressMessages(pathway_annotation(file = temp_file, pathway = "KO", ko_to_kegg = "TRUE")),
+    "ko_to_kegg is ignored in file mode"
+  )
+
+  local_result <- suppressMessages(pathway_annotation(
+    file = temp_file,
+    pathway = "KO",
+    ko_to_kegg = "FALSE"
+  ))
+  expect_true("description" %in% colnames(local_result))
+  expect_false("pathway_map" %in% colnames(local_result))
+
+  cache <- getFromNamespace("kegg_cache", "ggpicrust2")
+  fake_entry <- list(list(
+    NAME = "alcohol dehydrogenase",
+    PATHWAY = stats::setNames("Glycolysis", "ko00010"),
+    PATHWAY_MAP = stats::setNames("map_title", "ko00010"),
+    CLASS = "Metabolism; Carbohydrate metabolism"
+  ))
+  assign("K00001", fake_entry, envir = cache)
+  on.exit({
+    if (exists("K00001", envir = cache)) rm("K00001", envir = cache)
+  }, add = TRUE)
+
+  daa_df <- data.frame(
+    feature = "K00001",
+    p_values = 0.001,
+    p_adjust = 0.01,
+    method = "ALDEx2",
+    stringsAsFactors = FALSE
+  )
+  kegg_result <- suppressMessages(pathway_annotation(
+    pathway = "KO",
+    daa_results_df = daa_df,
+    ko_to_kegg = "TRUE",
+    p_adjust_threshold = 0.05
+  ))
+
+  expect_true("pathway_map" %in% colnames(kegg_result))
+  expect_false(is.na(kegg_result$pathway_name[1]))
+  expect_error(
+    pathway_annotation(
+      pathway = "KO",
+      daa_results_df = daa_df,
+      ko_to_kegg = c("TRUE", "FALSE")
+    ),
+    "'ko_to_kegg' must be TRUE or FALSE",
+    fixed = TRUE
+  )
+})
+
 test_that("pathway_annotation basic functionality works", {
   temp_file <- tempfile(fileext = ".tsv")
   test_data <- data.frame(
@@ -234,6 +296,48 @@ test_that("pathway_annotation ko_to_kegg returns every input row (merges back)",
   expect_true(is.na(ns_row$pathway_name))
 })
 
+test_that("pathway_annotation ko_to_kegg merge-back is row-specific for duplicate features", {
+  # Regression: annotation merge-back used match(feature), so if a feature
+  # appeared in two DAA rows and only one row passed p_adjust_threshold, both
+  # rows received KEGG annotations. DAA output can contain repeated features
+  # across methods, contrasts, or ALDEx2 Welch/Wilcoxon tests; significance is
+  # row-specific and must not be propagated by feature ID alone.
+  cache <- getFromNamespace("kegg_cache", "ggpicrust2")
+
+  fake_entry <- function(name, path_id, path_desc) {
+    pathway_vec <- stats::setNames(path_desc, path_id)
+    map_vec <- stats::setNames("map_title", path_id)
+    list(list(
+      NAME = name,
+      PATHWAY = pathway_vec,
+      PATHWAY_MAP = map_vec,
+      CLASS = "Metabolism; Carbohydrate metabolism"
+    ))
+  }
+  assign("K00001", fake_entry("alcohol dehydrogenase", "ko00010", "Glycolysis"),
+         envir = cache)
+  on.exit({
+    if (exists("K00001", envir = cache)) rm("K00001", envir = cache)
+  }, add = TRUE)
+
+  daa_df <- data.frame(
+    feature  = c("K00001", "K00001"),
+    p_values = c(0.001, 0.8),
+    p_adjust = c(0.01, 0.90),
+    method   = c("method_sig", "method_ns"),
+    stringsAsFactors = FALSE
+  )
+
+  result <- suppressMessages(suppressWarnings(
+    pathway_annotation(pathway = "KO", daa_results_df = daa_df,
+                       ko_to_kegg = TRUE, p_adjust_threshold = 0.05)
+  ))
+
+  expect_equal(nrow(result), 2)
+  expect_false(is.na(result$pathway_name[result$method == "method_sig"]))
+  expect_true(is.na(result$pathway_name[result$method == "method_ns"]))
+})
+
 test_that("pathway_annotation validates inputs", {
   expect_error(pathway_annotation(), "Please input")
 
@@ -246,6 +350,27 @@ test_that("pathway_annotation validates inputs", {
 
   empty_df <- data.frame(feature = character(0), p_adjust = numeric(0))
   expect_error(suppressMessages(pathway_annotation(pathway = "KO", daa_results_df = empty_df)), "empty")
+
+  expect_error(
+    suppressMessages(pathway_annotation(
+      pathway = "KO",
+      daa_results_df = test_df,
+      ko_to_kegg = TRUE,
+      p_adjust_threshold = 0
+    )),
+    "range"
+  )
+
+  bad_p <- test_df
+  bad_p$p_adjust <- 1.2
+  expect_error(
+    suppressMessages(pathway_annotation(
+      pathway = "KO",
+      daa_results_df = bad_p,
+      ko_to_kegg = TRUE
+    )),
+    "between 0 and 1"
+  )
 })
 
 # Regression: ko_to_kegg = TRUE used to silently ignore `pathway`, so a caller

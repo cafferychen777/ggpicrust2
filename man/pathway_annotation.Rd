@@ -27,16 +27,19 @@ row names.}
 \item{daa_results_df}{A data frame, the output from `pathway_daa` function. When `ko_to_kegg = TRUE`,
 must contain columns: feature, p_values, p_adjust, and method.}
 
-\item{ko_to_kegg}{A logical, decide if convert KO abundance to KEGG pathway abundance. Default is FALSE.
-Set to TRUE when using the function for the second use case. When TRUE, queries KEGG database for
-pathway annotations (requires internet connection) and filters for significant pathways.}
+\item{ko_to_kegg}{Logical or logical-like string deciding whether to convert
+KO abundance to KEGG pathway abundance. Default is FALSE. Set to TRUE when
+using the function for the second use case. When TRUE, queries KEGG database
+for pathway annotations (requires internet connection) and filters for
+significant pathways.}
 
 \item{organism}{A character string specifying the KEGG organism code (e.g., 'hsa' for human, 'eco' for E. coli).
 Default is NULL, which retrieves generic KO information not specific to any organism. Only used when ko_to_kegg is TRUE.}
 
 \item{p_adjust_threshold}{A numeric value specifying the significance threshold for filtering
 pathways when `ko_to_kegg = TRUE`. Only pathways with `p_adjust < p_adjust_threshold` will be
-annotated via KEGG API. Default is 0.05. Ignored when `ko_to_kegg = FALSE`.}
+annotated via KEGG API. Default is 0.05. Must be in the range (0, 1].
+Ignored when `ko_to_kegg = FALSE`.}
 }
 \value{
 A data frame with annotated pathway information.

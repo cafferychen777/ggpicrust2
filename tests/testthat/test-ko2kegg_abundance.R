@@ -98,7 +98,32 @@ test_that("ko2kegg_abundance throws appropriate errors", {
 
   # Non-numeric columns
   non_numeric <- data.frame(function. = c("K00001"), Sample1 = c("text"), stringsAsFactors = FALSE)
-  expect_error(ko2kegg_abundance(data = non_numeric), "non-numeric")
+  expect_error(ko2kegg_abundance(data = non_numeric), "must be numeric")
+})
+
+test_that("ko2kegg_abundance rejects missing and non-finite sample values", {
+  ko_to_kegg_reference <- ggpicrust2:::load_reference_data("ko_to_kegg")
+  real_kos <- head(unique(ko_to_kegg_reference$ko_id), 4)
+
+  missing_value_data <- data.frame(
+    function. = real_kos,
+    Sample1 = c(1, NA, 3, 4),
+    stringsAsFactors = FALSE
+  )
+  expect_error(
+    ko2kegg_abundance(data = missing_value_data, filter_for_prokaryotes = FALSE),
+    "must not contain missing values"
+  )
+
+  infinite_value_data <- data.frame(
+    function. = real_kos,
+    Sample1 = c(1, Inf, 3, 4),
+    stringsAsFactors = FALSE
+  )
+  expect_error(
+    ko2kegg_abundance(data = infinite_value_data, filter_for_prokaryotes = FALSE),
+    "must contain only finite values"
+  )
 })
 
 test_that("ko2kegg_abundance fails fast when input is not KO data (e.g. EC IDs)", {
@@ -135,6 +160,22 @@ test_that("ko2kegg_abundance fails fast when KO IDs are absent from the KEGG ref
   )
 })
 
+test_that("ko2kegg_abundance rejects duplicate KO IDs after cleaning", {
+  ko_to_kegg_reference <- ggpicrust2:::load_reference_data("ko_to_kegg")
+  real_ko <- unique(ko_to_kegg_reference$ko_id)[1]
+
+  duplicated_ko_data <- data.frame(
+    function. = c(real_ko, paste0("ko:", real_ko)),
+    Sample1 = c(10, 20),
+    stringsAsFactors = FALSE
+  )
+
+  expect_error(
+    suppressMessages(ko2kegg_abundance(data = duplicated_ko_data)),
+    "Duplicated KO IDs after cleaning"
+  )
+})
+
 test_that("ko2kegg_abundance preserves sample names and removes zero pathways", {
   ko_to_kegg_reference <- ggpicrust2:::load_reference_data("ko_to_kegg")
   real_kos <- head(unique(ko_to_kegg_reference$ko_id), 5)
@@ -152,6 +193,29 @@ test_that("ko2kegg_abundance preserves sample names and removes zero pathways", 
     expect_equal(colnames(result), c("SampleA", "SampleB"))
     expect_true(all(rowSums(result) > 0))
   }
+})
+
+test_that("ko2kegg_abundance upper-half mean matches PICRUSt2 unstructured indexing", {
+  ko_to_kegg_reference <- ggpicrust2:::load_reference_data("ko_to_kegg")
+  pathway_reference <- ggpicrust2:::filter_kegg_reference_to_pathways(ko_to_kegg_reference)
+  pathway_counts <- table(pathway_reference$pathway_id)
+  target_pathway <- names(pathway_counts[pathway_counts >= 4])[1]
+  target_kos <- unique(pathway_reference$ko_id[pathway_reference$pathway_id == target_pathway])[1:4]
+
+  mock_ko_data <- data.frame(
+    function. = target_kos,
+    Sample1 = c(1, 2, 3, 4),
+    stringsAsFactors = FALSE
+  )
+
+  result <- suppressMessages(
+    ko2kegg_abundance(
+      data = mock_ko_data,
+      filter_for_prokaryotes = FALSE
+    )
+  )
+
+  expect_equal(result[target_pathway, "Sample1"], 3.5)
 })
 
 test_that("KEGG pathway filter removes non-pathway buckets", {

@@ -161,13 +161,28 @@ process_kegg_annotations <- function(df, organism = NULL, p_adjust_threshold = 0
   if (nrow(df) == 0) {
     stop("Empty data frame provided for KEGG annotation")
   }
+  validate_dataframe(df,
+                     required_cols = c("feature", "p_adjust"),
+                     param_name = "df")
+  validate_probability_threshold(p_adjust_threshold, "p_adjust_threshold")
+  validate_probability_values(df$p_adjust, "p_adjust", "df")
 
-  # Filter for significant pathways
+  # Filter for significant pathways. Keep the original row index so that
+  # annotation merge-back remains row-specific when the same feature appears
+  # multiple times (e.g. different DAA methods or contrasts).
+  row_id_col <- ".ggpicrust2_annotation_row_id"
+  while (row_id_col %in% colnames(df)) {
+    row_id_col <- paste0(row_id_col, "_")
+  }
+  df[[row_id_col]] <- seq_len(nrow(df))
   filtered_df <- df[which(df$p_adjust < p_adjust_threshold), ]
 
   # Handle case when no significant pathways are found
   if (nrow(filtered_df) == 0) {
-    min_p <- min(df$p_adjust, na.rm = TRUE)
+    min_p <- suppressWarnings(min(df$p_adjust, na.rm = TRUE))
+    if (!is.finite(min_p)) {
+      min_p <- NA_real_
+    }
 
     warning(
       "\n================================================================================\n",
@@ -197,6 +212,7 @@ process_kegg_annotations <- function(df, organism = NULL, p_adjust_threshold = 0
     # Return original data with empty annotation columns for compatibility
     new_cols <- c("pathway_name", "pathway_description", "pathway_class", "pathway_map")
     df[new_cols] <- NA_character_
+    df[[row_id_col]] <- NULL
 
     log_message("No significant pathways found. Returning data with empty annotation columns.", "WARN")
     return(df)
@@ -395,19 +411,18 @@ process_kegg_annotations <- function(df, organism = NULL, p_adjust_threshold = 0
   }
 
   # Merge annotations back onto the full input so the return value keeps
-  # every row of `daa_results_df`. Previously we returned only the
-  # p_adjust < threshold subset, which silently dropped non-significant
-  # features that downstream code (e.g. ggpicrust2()'s plot_result_list$
-  # daa_results_df and user post-hoc analyses) expected to still be there.
-  # Non-significant rows get NA annotation columns, mirroring the
-  # no-significant-pathways branch above.
+  # every row of `daa_results_df`. The merge key is the original row index,
+  # not the feature ID: the same feature can appear in multiple DAA rows
+  # (method-specific tests, group pairs, or contrasts), and only the rows
+  # that passed the p_adjust threshold should receive KEGG annotations.
   new_cols <- c("pathway_name", "pathway_description", "pathway_class", "pathway_map")
   df[new_cols] <- NA_character_
-  match_idx <- match(df$feature, filtered_df$feature)
+  match_idx <- match(df[[row_id_col]], filtered_df[[row_id_col]])
   populated <- !is.na(match_idx)
   for (col in new_cols) {
     df[populated, col] <- filtered_df[[col]][match_idx[populated]]
   }
+  df[[row_id_col]] <- NULL
 
   df
 }
@@ -510,14 +525,17 @@ annotate_pathways <- function(data, pathway_type, ref_data) {
 #' @param pathway A character string, the type of pathway to annotate. Options are "KO", "EC", "MetaCyc", or "KEGG".
 #' @param daa_results_df A data frame, the output from `pathway_daa` function. When `ko_to_kegg = TRUE`,
 #'   must contain columns: feature, p_values, p_adjust, and method.
-#' @param ko_to_kegg A logical, decide if convert KO abundance to KEGG pathway abundance. Default is FALSE.
-#'   Set to TRUE when using the function for the second use case. When TRUE, queries KEGG database for
-#'   pathway annotations (requires internet connection) and filters for significant pathways.
+#' @param ko_to_kegg Logical or logical-like string deciding whether to convert
+#'   KO abundance to KEGG pathway abundance. Default is FALSE. Set to TRUE when
+#'   using the function for the second use case. When TRUE, queries KEGG database
+#'   for pathway annotations (requires internet connection) and filters for
+#'   significant pathways.
 #' @param organism A character string specifying the KEGG organism code (e.g., 'hsa' for human, 'eco' for E. coli).
 #'   Default is NULL, which retrieves generic KO information not specific to any organism. Only used when ko_to_kegg is TRUE.
 #' @param p_adjust_threshold A numeric value specifying the significance threshold for filtering
 #'   pathways when `ko_to_kegg = TRUE`. Only pathways with `p_adjust < p_adjust_threshold` will be
-#'   annotated via KEGG API. Default is 0.05. Ignored when `ko_to_kegg = FALSE`.
+#'   annotated via KEGG API. Default is 0.05. Must be in the range (0, 1].
+#'   Ignored when `ko_to_kegg = FALSE`.
 #'
 #' @return A data frame with annotated pathway information.
 #'
@@ -569,6 +587,8 @@ pathway_annotation <- function(file = NULL,
                              ko_to_kegg = FALSE,
                              organism = NULL,
                              p_adjust_threshold = 0.05) {
+  validate_probability_threshold(p_adjust_threshold, "p_adjust_threshold")
+  ko_to_kegg <- normalize_logical_flag(ko_to_kegg, "ko_to_kegg")
   
   # Input validation
   if (is.null(file) && is.null(data) && is.null(daa_results_df)) {

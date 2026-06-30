@@ -7,6 +7,12 @@
 #' @param pathway_type A character string specifying the pathway type: "KEGG", "MetaCyc", or "GO"
 #'
 #' @return A data frame with annotated GSEA results
+#'
+#' @details
+#' The \code{pathway_id} column must contain non-empty values without
+#' \code{NA}. Unknown but non-empty pathway IDs are retained as their own
+#' display names when no reference annotation is found.
+#'
 #' @export
 #'
 #' @examples
@@ -44,13 +50,19 @@ gsea_pathway_annotation <- function(gsea_results,
   }
 
   valid_types <- c("KEGG", "MetaCyc", "GO")
-  if (length(pathway_type) != 1 || !pathway_type %in% valid_types) {
+  if (!is.character(pathway_type) || length(pathway_type) != 1 ||
+      is.na(pathway_type) || !pathway_type %in% valid_types) {
     stop(sprintf("pathway_type must be one of: %s", paste(valid_types, collapse = ", ")))
   }
 
   if (!"pathway_id" %in% colnames(gsea_results)) {
     stop("GSEA results missing required column: pathway_id")
   }
+  gsea_results$pathway_id <- validate_nonempty_character_column(
+    gsea_results$pathway_id,
+    "pathway_id",
+    "gsea_results"
+  )
 
   # Annotate based on pathway type
   if (pathway_type == "KEGG") {

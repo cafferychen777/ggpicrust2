@@ -13,13 +13,13 @@ ko2kegg_abundance(
 )
 }
 \arguments{
-\item{file}{A character string representing the file path of the input file containing KO abundance data in picrust2 export format. The input file should have KO identifiers in the first column and sample identifiers in the first row. The remaining cells should contain the abundance values for each KO-sample pair.}
+\item{file}{A character string representing the file path of the input file containing KO abundance data in picrust2 export format. The input file should have unique KO identifiers in the first column and sample identifiers in the first row. The remaining cells should contain the abundance values for each KO-sample pair.}
 
-\item{data}{An optional data.frame containing KO abundance data in the same format as the input file. If provided, the function will use this data instead of reading from the file. By default, this parameter is set to NULL.}
+\item{data}{An optional data.frame containing KO abundance data in the same format as the input file, with one row per unique KO identifier. Sample columns must be numeric, finite, non-missing, and non-negative. If provided, the function will use this data instead of reading from the file. By default, this parameter is set to NULL.}
 
 \item{method}{Method for calculating pathway abundance. One of:
 \itemize{
-  \item \code{"abundance"}: (Default) PICRUSt2-style calculation using the mean of upper-half sorted KO abundances. This method is more robust and avoids inflating abundances for pathways with more KOs.
+  \item \code{"abundance"}: (Default) Upper-half mean aggregation matching the unstructured pathway abundance rule used by the PICRUSt2 pathway pipeline. This is a KO-to-KEGG pathway aggregation approximation, not a replacement for the full PICRUSt2 pathway pipeline with MinPath and structured MetaCyc pathway inference.
   \item \code{"sum"}: Simple summation of all KO abundances. This is the legacy method and may double-count KOs belonging to multiple pathways.
 }}
 
@@ -46,11 +46,14 @@ This function takes a file containing KO (KEGG Orthology) abundance data in picr
 The input file should be in .tsv, .txt, or .csv format.
 }
 \details{
-The default \code{"abundance"} method follows PICRUSt2's approach for calculating pathway abundance:
+The default \code{"abundance"} method follows the unstructured pathway abundance rule
+in PICRUSt2's pathway pipeline:
 \enumerate{
   \item For each pathway, collect abundances of all associated KOs present in the data
   \item Sort the abundances in ascending order
-  \item Take the upper half of the sorted values
+  \item Take the upper half of the sorted values using the PICRUSt2 indexing rule
+    \code{sorted[int(n / 2):]} (equivalent to \code{floor(n / 2) + 1} through
+    \code{n} in R's one-based indexing)
   \item Calculate the mean as the pathway abundance
 }
 
@@ -62,6 +65,21 @@ This approach has several advantages over simple summation:
 }
 
 The \code{"sum"} method is provided for backward compatibility and simply sums all KO abundances for each pathway.
+
+Input sample columns must contain finite non-missing non-negative values.
+Missing values are rejected rather than ignored because the upper-half mean
+aggregation depends on the number and ordering of KO abundances available for
+each sample.
+
+Input KO identifiers must be unique after cleaning optional \code{ko:}
+prefixes. Duplicate KO rows are rejected because the pathway aggregation
+rule treats each KO as one feature/reaction entry; repeated rows would
+duplicate evidence and distort upper-half mean or sum aggregation.
+
+This function does not run MinPath, does not perform PICRUSt2's structured MetaCyc
+pathway inference, and does not estimate pathway coverage. It is intended as a
+practical offline KO-to-KEGG pathway aggregation step for downstream comparison
+and visualization.
 }
 \section{Pathway Filtering}{
 

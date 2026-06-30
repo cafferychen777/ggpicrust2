@@ -18,6 +18,11 @@ A data frame with annotated GSEA results
 This function adds pathway annotations to GSEA results, including pathway names,
 descriptions, and classifications.
 }
+\details{
+The \code{pathway_id} column must contain non-empty values without
+\code{NA}. Unknown but non-empty pathway IDs are retained as their own
+display names when no reference annotation is found.
+}
 \examples{
 \dontrun{
 # Load example data
