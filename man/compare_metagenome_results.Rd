@@ -39,7 +39,8 @@ The default is "BH".}
 \item{reference}{Optional metagenome name used as the first group in
 pairwise DAA comparisons. Other metagenome pairs are still compared.}
 
-\item{p.adjust}{Deprecated. Use \code{p_adjust_method} instead.}
+\item{p.adjust}{Deprecated alias for \code{p_adjust_method}. Do not supply
+both parameters with different values.}
 
 \item{correlation_permutations}{Non-negative integer. Number of joint
 sample-label permutations used to test the median per-feature Spearman

@@ -78,13 +78,8 @@ significance of differential abundance. Pathways with adjusted p-values below th
 threshold will be displayed in the plot. Default is 0.05. Must be in the
 range (0, 1].}
 
-\item{p.adjust}{a character specifying the method for p-value adjustment, default is "BH", choices are:
-- "BH": Benjamini-Hochberg correction
-- "holm": Holm's correction
-- "bonferroni": Bonferroni correction
-- "hochberg": Hochberg's correction
-- "fdr": False discovery rate correction
-- "none": No p-value adjustment.}
+\item{p.adjust}{Deprecated alias for \code{p_adjust_method}. Do not supply
+both parameters with different values.}
 }
 \value{
 A list containing:

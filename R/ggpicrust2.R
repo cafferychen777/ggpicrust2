@@ -27,13 +27,8 @@
 #'   ko_to_kegg = TRUE. Set to FALSE to include all KEGG pathways.
 #' @param p_adjust_method A character specifying the method for p-value adjustment,
 #'   default is "BH".
-#' @param p.adjust a character specifying the method for p-value adjustment, default is "BH", choices are:
-#'- "BH": Benjamini-Hochberg correction
-#'- "holm": Holm's correction
-#'- "bonferroni": Bonferroni correction
-#'- "hochberg": Hochberg's correction
-#'- "fdr": False discovery rate correction
-#'- "none": No p-value adjustment.
+#' @param p.adjust Deprecated alias for \code{p_adjust_method}. Do not supply
+#'   both parameters with different values.
 #' @param order A character to control the order of the main plot rows
 #' @param p_values_bar A character to control if the main plot has the p_values bar
 #' @param x_lab A character to control the x-axis label name, you can choose from "feature","pathway_name" and "description"
@@ -156,15 +151,11 @@ ggpicrust2 <- function(file = NULL,
                        colors = NULL,
                        p_values_threshold = 0.05,
                        p.adjust = NULL) {
-  # Backward compatibility for the deprecated `p.adjust` parameter. We
-  # keep it accepted (with NULL default so we can distinguish unset from
-  # set) but migrate users onto `p_adjust_method` to match the rest of
-  # the package. Only warn when the caller actually supplied it.
-  if (!is.null(p.adjust)) {
-    warning("'p.adjust' parameter is deprecated. Use 'p_adjust_method' instead.",
-            call. = FALSE)
-    p_adjust_method <- p.adjust
-  }
+  p_adjust_method <- resolve_deprecated_p_adjust_method(
+    p_adjust_method,
+    p.adjust,
+    p_adjust_method_missing = missing(p_adjust_method)
+  )
   ko_to_kegg <- normalize_logical_flag(ko_to_kegg, "ko_to_kegg")
   filter_for_prokaryotes <- normalize_logical_flag(filter_for_prokaryotes, "filter_for_prokaryotes")
   validate_p_adjust_method(p_adjust_method)

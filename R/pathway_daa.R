@@ -84,7 +84,8 @@ NULL
 #'        two-group analysis, failure to compute or validate the requested
 #'        effect-size output stops the analysis.
 #'
-#' @param p.adjust Deprecated. Use \code{p_adjust_method} instead.
+#' @param p.adjust Deprecated alias for \code{p_adjust_method}. Do not supply
+#'        both parameters with different values.
 #' @param .pre_aligned Internal logical. Set to TRUE only when the caller has
 #'        already aligned abundance columns and metadata rows in identical
 #'        sample order.
@@ -462,11 +463,11 @@ pathway_daa <- function(abundance, metadata, group, daa_method = "ALDEx2",
                        include_abundance_stats = FALSE, include_effect_size = TRUE,
                        p.adjust = NULL, .pre_aligned = FALSE,
                        .sample_col = NULL, ...) {
-  # Backward compatibility for deprecated parameter
-  if (!is.null(p.adjust)) {
-    warning("'p.adjust' parameter is deprecated. Use 'p_adjust_method' instead.", call. = FALSE)
-    p_adjust_method <- p.adjust
-  }
+  p_adjust_method <- resolve_deprecated_p_adjust_method(
+    p_adjust_method,
+    p.adjust,
+    p_adjust_method_missing = missing(p_adjust_method)
+  )
   validate_p_adjust_method(p_adjust_method)
 
   # Single source of truth for supported DAA methods: this list drives

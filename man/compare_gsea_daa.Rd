@@ -48,7 +48,10 @@ size is therefore aligned to the GSEA-positive direction before plotting.
 For Venn and UpSet plots, if both inputs include \code{group1} and
 \code{group2}, each input must represent one comparable group pair. This
 prevents pathways found in different biological contrasts from being counted
-as method agreement.
+as method agreement. Direction metadata must be complete: an input may
+provide both columns or neither, but not only one of them. When neither method
+has significant pathways, Venn and UpSet requests return the same explicit
+zero-count summary plot.
 }
 \examples{
 \dontrun{

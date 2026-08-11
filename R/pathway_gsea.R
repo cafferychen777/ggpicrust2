@@ -292,7 +292,8 @@ validate_complete_design_variables <- function(metadata, group, covariates = NUL
 #' @param min_size An integer specifying the minimum gene set size
 #' @param max_size An integer specifying the maximum gene set size
 #' @param p_adjust_method A character string specifying the p-value adjustment method
-#' @param p.adjust Deprecated. Use \code{p_adjust_method} instead.
+#' @param p.adjust Deprecated alias for \code{p_adjust_method}. Do not supply
+#'   both parameters with different values.
 #' @param seed An integer specifying the random seed for reproducibility
 #' @param go_category A single character string specifying GO category to use.
 #'   "all" (default) uses all categories present in the reference data.
@@ -434,11 +435,11 @@ pathway_gsea <- function(abundance,
                         organism = "ko",
                         p.adjust = NULL,
                         comparison = NULL) {
-  # Backward compatibility for deprecated parameter
-  if (!is.null(p.adjust)) {
-    warning("'p.adjust' parameter is deprecated. Use 'p_adjust_method' instead.", call. = FALSE)
-    p_adjust_method <- p.adjust
-  }
+  p_adjust_method <- resolve_deprecated_p_adjust_method(
+    p_adjust_method,
+    p.adjust,
+    p_adjust_method_missing = missing(p_adjust_method)
+  )
   
   # Normalize PICRUSt2-style input before validation so the feature ID column
   # is not counted as a sample or mixed into numeric matrix checks.

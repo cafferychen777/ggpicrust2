@@ -114,7 +114,8 @@ compatibility; passing any value other than the default
 \code{"ko"} emits a deprecation warning. Will be removed in a
 future release.}
 
-\item{p.adjust}{Deprecated. Use \code{p_adjust_method} instead.}
+\item{p.adjust}{Deprecated alias for \code{p_adjust_method}. Do not supply
+both parameters with different values.}
 
 \item{comparison}{For preranked methods only (\code{"fgsea"},
 \code{"GSEA"}, or \code{"clusterProfiler"}), an optional length-2

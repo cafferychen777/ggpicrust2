@@ -152,6 +152,83 @@ test_that("compare_gsea_daa handles an empty significant UpSet universe", {
   expect_equal(result$plot$data$count, c(0, 0, 0))
 })
 
+test_that("compare_gsea_daa handles an empty significant Venn universe", {
+  gsea_results <- data.frame(
+    pathway_id = c("ko00010", "ko00020"),
+    p.adjust = c(0.5, 0.6),
+    stringsAsFactors = FALSE
+  )
+  daa_results <- data.frame(
+    feature = c("ko00010", "ko00030"),
+    p_adjust = c(0.7, 0.8),
+    stringsAsFactors = FALSE
+  )
+
+  result <- compare_gsea_daa(
+    gsea_results,
+    daa_results,
+    plot_type = "venn"
+  )
+
+  expect_s3_class(result$plot, "ggplot")
+  expect_equal(result$plot$data$count, c(0, 0, 0))
+})
+
+test_that("compare_gsea_daa scatter rejects missing p-values", {
+  gsea_results <- data.frame(
+    pathway_id = "ko00010",
+    NES = 1.5,
+    p.adjust = NA_real_,
+    group1 = "Treatment",
+    group2 = "Control",
+    stringsAsFactors = FALSE
+  )
+  daa_results <- data.frame(
+    feature = "ko00010",
+    log2_fold_change = 2,
+    p_adjust = 0.01,
+    group1 = "Control",
+    group2 = "Treatment",
+    stringsAsFactors = FALSE
+  )
+
+  expect_error(
+    compare_gsea_daa(gsea_results, daa_results, plot_type = "scatter"),
+    "scatter plot.*between 0 and 1"
+  )
+})
+
+test_that("compare_gsea_daa preserves subnormal adjusted p-values", {
+  gsea_results <- data.frame(
+    pathway_id = "ko00010",
+    NES = 1.5,
+    p.adjust = 1e-320,
+    group1 = "Treatment",
+    group2 = "Control",
+    stringsAsFactors = FALSE
+  )
+  daa_results <- data.frame(
+    feature = "ko00010",
+    log2_fold_change = 2,
+    p_adjust = 0.01,
+    group1 = "Control",
+    group2 = "Treatment",
+    stringsAsFactors = FALSE
+  )
+
+  result <- compare_gsea_daa(
+    gsea_results,
+    daa_results,
+    plot_type = "scatter"
+  )
+
+  expect_equal(
+    result$results$scatter_data$gsea_neg_log10_p_adjust,
+    320,
+    tolerance = 1e-6
+  )
+})
+
 test_that("compare_gsea_daa set plots require comparable group pairs when available", {
   gsea_results <- data.frame(
     pathway_id = "ko00010",
@@ -203,6 +280,32 @@ test_that("compare_gsea_daa set plots require comparable group pairs when availa
       plot_type = "upset"
     ),
     "not comparable"
+  )
+})
+
+test_that("compare_gsea_daa rejects partial direction schemas", {
+  gsea_results <- data.frame(
+    pathway_id = "ko00010",
+    p.adjust = 0.01,
+    group1 = "Treatment",
+    stringsAsFactors = FALSE
+  )
+  daa_results <- data.frame(
+    feature = "ko00010",
+    p_adjust = 0.01,
+    stringsAsFactors = FALSE
+  )
+
+  expect_error(
+    compare_gsea_daa(gsea_results, daa_results, plot_type = "venn"),
+    "must provide both 'group1' and 'group2'"
+  )
+
+  gsea_results$group2 <- "Control"
+  daa_results$group2 <- "Treatment"
+  expect_error(
+    compare_gsea_daa(gsea_results, daa_results, plot_type = "upset"),
+    "daa_results contains only 'group2'"
   )
 })
 

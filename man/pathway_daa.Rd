@@ -94,7 +94,8 @@ FALSE to skip the extra \code{aldex.effect()} computation. For a
 two-group analysis, failure to compute or validate the requested
 effect-size output stops the analysis.}
 
-\item{p.adjust}{Deprecated. Use \code{p_adjust_method} instead.}
+\item{p.adjust}{Deprecated alias for \code{p_adjust_method}. Do not supply
+both parameters with different values.}
 
 \item{.pre_aligned}{Internal logical. Set to TRUE only when the caller has
 already aligned abundance columns and metadata rows in identical

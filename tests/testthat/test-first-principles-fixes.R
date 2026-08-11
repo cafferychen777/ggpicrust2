@@ -530,6 +530,78 @@ test_that("compare_daa_results() rejects ambiguous method names and missing IDs"
     compare_daa_results(list(df), method_names = "m1"),
     "feature.*non-empty"
   )
+
+  self_comparison <- data.frame(
+    feature = "A",
+    group1 = "control",
+    group2 = "control",
+    p_adjust = 0.01,
+    stringsAsFactors = FALSE
+  )
+  expect_error(
+    compare_daa_results(list(self_comparison), method_names = "m1"),
+    "invalid self-comparison"
+  )
+})
+
+test_that("deprecated p.adjust aliases cannot override explicit parameters", {
+  resolver <- getFromNamespace(
+    "resolve_deprecated_p_adjust_method",
+    "ggpicrust2"
+  )
+  expect_warning(
+    expect_equal(resolver("BH", "holm", TRUE), "holm"),
+    "deprecated"
+  )
+  expect_warning(
+    expect_equal(resolver("BH", "BH", FALSE), "BH"),
+    "deprecated"
+  )
+  expect_error(
+    resolver("holm", "BH", FALSE),
+    "Conflicting p-value adjustment parameters"
+  )
+
+  expect_error(
+    ggpicrust2(
+      data = NULL,
+      metadata = NULL,
+      group = "group",
+      pathway = "KEGG",
+      p_adjust_method = "holm",
+      p.adjust = "BH"
+    ),
+    "Conflicting p-value adjustment parameters"
+  )
+  expect_error(
+    pathway_daa(
+      abundance = NULL,
+      metadata = NULL,
+      group = "group",
+      p_adjust_method = "holm",
+      p.adjust = "BH"
+    ),
+    "Conflicting p-value adjustment parameters"
+  )
+  expect_error(
+    pathway_gsea(
+      abundance = NULL,
+      metadata = NULL,
+      group = "group",
+      p_adjust_method = "holm",
+      p.adjust = "BH"
+    ),
+    "Conflicting p-value adjustment parameters"
+  )
+  expect_error(
+    compare_metagenome_results(
+      metagenomes = list(),
+      names = character(),
+      p_adjust_method = "holm",
+      p.adjust = "BH"
+    ),
+    "Conflicting p-value adjustment parameters"
+  )
 })
 
 

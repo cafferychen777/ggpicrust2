@@ -76,7 +76,10 @@ extract_compare_direction <- function(results, context) {
 #' For Venn and UpSet plots, if both inputs include \code{group1} and
 #' \code{group2}, each input must represent one comparable group pair. This
 #' prevents pathways found in different biological contrasts from being counted
-#' as method agreement.
+#' as method agreement. Direction metadata must be complete: an input may
+#' provide both columns or neither, but not only one of them. When neither method
+#' has significant pathways, Venn and UpSet requests return the same explicit
+#' zero-count summary plot.
 #'
 #' @return A list with two elements: \code{plot} (a ggplot2 object, or an
 #'   UpSetR object when \code{plot_type = "upset"} and UpSetR is installed)
@@ -173,6 +176,18 @@ compare_gsea_daa <- function(gsea_results,
     validate_finite_numeric_values(gsea_results[["NES"]], "NES", "gsea_results")
     validate_finite_numeric_values(daa_results[["log2_fold_change"]],
                                    "log2_fold_change", "daa_results")
+    validate_probability_values(
+      gsea_results[["p.adjust"]],
+      "p.adjust",
+      "gsea_results for scatter plot",
+      allow_na = FALSE
+    )
+    validate_probability_values(
+      daa_results[["p_adjust"]],
+      "p_adjust",
+      "daa_results for scatter plot",
+      allow_na = FALSE
+    )
 
     missing_gsea_direction <- setdiff(c("group1", "group2"), colnames(gsea_results))
     missing_daa_direction <- setdiff(c("group1", "group2"), colnames(daa_results))
@@ -262,8 +277,9 @@ compare_gsea_daa <- function(gsea_results,
 
   # Create visualization based on plot_type
   if (plot_type == "venn") {
-    # Check if required package is available
-    if (!requireNamespace("ggVennDiagram", quietly = TRUE)) {
+    if (length(sig_gsea) == 0 && length(sig_daa) == 0) {
+      p <- create_comparison_count_plot(comparison_results)
+    } else if (!requireNamespace("ggVennDiagram", quietly = TRUE)) {
       warning("Package 'ggVennDiagram' is required for Venn diagrams. Using a basic plot instead.")
       p <- create_comparison_count_plot(comparison_results)
     } else {
@@ -361,7 +377,7 @@ compare_gsea_daa <- function(gsea_results,
         -merged_results$log2_fold_change
       )
       merged_results$gsea_neg_log10_p_adjust <-
-        -log10(pmax(merged_results$p.adjust, .Machine$double.xmin))
+        negative_log10_probability(merged_results$p.adjust)
       comparison_results$scatter_data <- merged_results
 
       # Create scatter plot
@@ -396,6 +412,20 @@ validate_compare_gsea_daa_set_direction <- function(gsea_results,
                                                     daa_results,
                                                     plot_type) {
   direction_cols <- c("group1", "group2")
+  gsea_direction_cols <- intersect(direction_cols, colnames(gsea_results))
+  daa_direction_cols <- intersect(direction_cols, colnames(daa_results))
+  if (length(gsea_direction_cols) == 1 || length(daa_direction_cols) == 1) {
+    stop(
+      "Direction metadata must provide both 'group1' and 'group2' or neither. ",
+      if (length(gsea_direction_cols) == 1) {
+        paste0("gsea_results contains only '", gsea_direction_cols, "'. ")
+      } else "",
+      if (length(daa_direction_cols) == 1) {
+        paste0("daa_results contains only '", daa_direction_cols, "'.")
+      } else "",
+      call. = FALSE
+    )
+  }
   gsea_has_direction <- all(direction_cols %in% colnames(gsea_results))
   daa_has_direction <- all(direction_cols %in% colnames(daa_results))
   if (!gsea_has_direction || !daa_has_direction) {

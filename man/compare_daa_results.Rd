@@ -35,6 +35,8 @@ identified a significant difference, not the effect-size direction. This
 prevents the same feature from being counted as method-consistent when
 different methods found it in different pairwise contrasts, while still
 treating \code{A vs B} and \code{B vs A} as the same biological comparison.
+Rows whose two group labels are identical are invalid self-comparisons and
+are rejected.
 If all significant discoveries share one group pair, the printed feature
 lists use feature IDs only for backward-readable output; otherwise feature
 lists include the canonical contrast as \code{feature [group1 vs group2]}.

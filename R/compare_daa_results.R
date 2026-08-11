@@ -27,6 +27,8 @@
 #' prevents the same feature from being counted as method-consistent when
 #' different methods found it in different pairwise contrasts, while still
 #' treating \code{A vs B} and \code{B vs A} as the same biological comparison.
+#' Rows whose two group labels are identical are invalid self-comparisons and
+#' are rejected.
 #' If all significant discoveries share one group pair, the printed feature
 #' lists use feature IDs only for backward-readable output; otherwise feature
 #' lists include the canonical contrast as \code{feature [group1 vs group2]}.
@@ -155,6 +157,18 @@ compare_daa_results <- function(daa_results_list, method_names, p_values_thresho
                                                      "group1", context_i)
     group2_chr <- validate_nonempty_character_column(result_i$group2,
                                                      "group2", context_i)
+    self_comparison <- group1_chr == group2_chr
+    if (any(self_comparison)) {
+      stop(
+        context_i,
+        " contains invalid self-comparison rows where 'group1' equals ",
+        "'group2': ",
+        paste(utils::head(unique(group1_chr[self_comparison]), 5),
+              collapse = ", "),
+        ".",
+        call. = FALSE
+      )
+    }
 
     sig <- !is.na(result_i$p_adjust) & result_i$p_adjust < p_values_threshold
     canonical_pair <- canonical_daa_group_pair(group1_chr[sig],
@@ -210,49 +224,44 @@ compare_daa_results <- function(daa_results_list, method_names, p_values_thresho
   # this function exists to surface.
   diff_features <- lapply(features_flat, function(x) setdiff(x, intersect_features))
 
-  # Initialize a data frame to store the comparison results
+  common_features_names <- format_daa_comparison_units(
+    intersect_features,
+    unit_lookup,
+    include_contrast
+  )
   comparison_results <- data.frame(
-    method = character(),
-    num_features = integer(),
-    num_common_features = integer(),
-    num_diff_features = integer(),
-    common_features = character(),
-    diff_features = character(),
+    method = method_names_chr,
+    num_features = lengths(features_flat),
+    num_common_features = rep(length(intersect_features),
+                              length(features_flat)),
+    num_diff_features = lengths(diff_features),
+    common_features = rep(common_features_names, length(features_flat)),
+    diff_features = vapply(
+      diff_features,
+      format_daa_comparison_units,
+      character(1),
+      lookup = unit_lookup,
+      include_contrast = include_contrast
+    ),
     stringsAsFactors = FALSE
   )
 
-  # Output the comparison results and store them in the data frame
+  # Report the comparison summary.
   message("Comparing ", length(daa_results_list), " methods:\n")
   unit_noun <- if (include_contrast) "feature/contrast units" else "features"
   for (i in seq_along(daa_results_list)) {
-    num_features <- length(features_flat[[i]])
-    num_common_features <- length(intersect_features)
-    num_diff_features <- length(diff_features[[i]])
-    common_features_names <- format_daa_comparison_units(
-      intersect_features, unit_lookup, include_contrast
-    )
-    diff_features_names <- format_daa_comparison_units(
-      diff_features[[i]], unit_lookup, include_contrast
-    )
-
-    message("The ", method_names[i], " method obtained ", num_features,
+    message("The ", method_names_chr[i], " method obtained ",
+            comparison_results$num_features[i],
             " statistically significant ", unit_noun, ".")
     message("The number of ", unit_noun,
-            " that are common to other methods is ", num_common_features)
+            " that are common to other methods is ",
+            comparison_results$num_common_features[i])
     message("The number of ", unit_noun,
-            " that are different from other methods is ", num_diff_features)
+            " that are different from other methods is ",
+            comparison_results$num_diff_features[i])
     message("The names of the ", unit_noun,
-            " that are different from other methods are ", diff_features_names, "\n")
-
-    comparison_results <- rbind(comparison_results, data.frame(
-      method = method_names[i],
-      num_features = num_features,
-      num_common_features = num_common_features,
-      num_diff_features = num_diff_features,
-      common_features = common_features_names,
-      diff_features = diff_features_names,
-      stringsAsFactors = FALSE
-    ))
+            " that are different from other methods are ",
+            comparison_results$diff_features[i], "\n")
   }
 
   message("The number of ", unit_noun,
@@ -266,5 +275,5 @@ compare_daa_results <- function(daa_results_list, method_names, p_values_thresho
           " that are obtained by any of the methods are ",
           format_daa_comparison_units(union_features, unit_lookup, include_contrast))
 
-  return(comparison_results)
+  comparison_results
 }

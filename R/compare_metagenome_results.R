@@ -17,7 +17,8 @@
 #' The default is "BH".
 #' @param reference Optional metagenome name used as the first group in
 #'   pairwise DAA comparisons. Other metagenome pairs are still compared.
-#' @param p.adjust Deprecated. Use \code{p_adjust_method} instead.
+#' @param p.adjust Deprecated alias for \code{p_adjust_method}. Do not supply
+#'   both parameters with different values.
 #' @param correlation_permutations Non-negative integer. Number of joint
 #'   sample-label permutations used to test the median per-feature Spearman
 #'   correlation. Use 0 to skip correlation p-values. Default 999.
@@ -100,11 +101,11 @@ compare_metagenome_results <- function(metagenomes, names, daa_method = "ALDEx2"
                                        correlation_permutations = 999,
                                        correlation_seed = 123,
                                        correlation_p_adjust_method = "BH") {
-  # Backward compatibility for deprecated parameter
-  if (!is.null(p.adjust)) {
-    warning("'p.adjust' parameter is deprecated. Use 'p_adjust_method' instead.", call. = FALSE)
-    p_adjust_method <- p.adjust
-  }
+  p_adjust_method <- resolve_deprecated_p_adjust_method(
+    p_adjust_method,
+    p.adjust,
+    p_adjust_method_missing = missing(p_adjust_method)
+  )
   validate_p_adjust_method(p_adjust_method)
   validate_p_adjust_method(correlation_p_adjust_method,
                            "correlation_p_adjust_method")
