@@ -49,7 +49,8 @@ complete_sample_function_totals <- function(contrib_data, samples,
 #' @param function_ids Optional character vector of function IDs to plot.
 #'   If NULL (default), the top \code{n_functions} by between-sample variance
 #'   in total contribution are shown. Single-sample inputs are ranked by total
-#'   contribution because variance is undefined.
+#'   contribution because variance is undefined. Facets preserve this ranking
+#'   or the order of explicitly supplied IDs.
 #' @param n_functions Integer. Number of functions to show when
 #'   \code{function_ids} is NULL. Default 6.
 #' @param facet_by Character. Facet by \code{"function"} (default) or
@@ -76,12 +77,13 @@ complete_sample_function_totals <- function(contrib_data, samples,
 #' @examples
 #' \donttest{
 #' # Synthetic example
-#' agg <- data.frame(
-#'   sample = rep(c("S1", "S2", "S3", "S4"), each = 3),
-#'   function_id = rep(c("K00001", "K00002"), each = 6),
-#'   taxon_label = rep(c("Genus_A", "Genus_B", "Other"), 4),
-#'   contribution = runif(12)
+#' agg <- expand.grid(
+#'   sample = c("S1", "S2", "S3", "S4"),
+#'   function_id = c("K00001", "K00002"),
+#'   taxon_label = c("Genus_A", "Genus_B", "Other"),
+#'   stringsAsFactors = FALSE
 #' )
+#' agg$contribution <- runif(nrow(agg))
 #' metadata <- data.frame(
 #'   sample = c("S1", "S2", "S3", "S4"),
 #'   group = c("Control", "Control", "Treatment", "Treatment")
@@ -191,6 +193,10 @@ taxa_contribution_bar <- function(contrib_agg,
     stop("No contribution rows match the requested function_ids.",
          call. = FALSE)
   }
+  contrib_agg$function_id <- factor(
+    contrib_agg$function_id,
+    levels = function_ids
+  )
 
   # Add group info
   sample_col <- aligned$sample_col
@@ -291,7 +297,9 @@ taxa_contribution_bar <- function(contrib_agg,
 #'
 #' @param contrib_agg A data.frame from \code{\link{aggregate_taxa_contributions}}.
 #' @param annotation_data Optional data.frame from \code{\link{pathway_annotation}}
-#'   for replacing function IDs with readable descriptions.
+#'   for replacing function IDs with readable descriptions. It must contain
+#'   either \code{feature}/\code{description} or
+#'   \code{pathway}/\code{pathway_name} columns.
 #' @param n_functions Integer. Number of functions to include. Default 20.
 #' @param cluster_rows Logical. Cluster rows (taxa)? Default TRUE.
 #' @param cluster_cols Logical. Cluster columns (functions)? Default TRUE.
@@ -315,7 +323,8 @@ taxa_contribution_bar <- function(contrib_agg,
 #' across samples.
 #' If \code{annotation_data} contains multiple non-empty labels for the same
 #' plotted function ID, the function errors instead of silently choosing one
-#' label. Repeated rows with the same ID and same label are allowed.
+#' label. Repeated rows with the same ID and same label are allowed, and label
+#' whitespace is normalized before comparison and display.
 #'
 #' @examples
 #' \donttest{
@@ -420,46 +429,30 @@ taxa_contribution_heatmap <- function(contrib_agg,
   # users can drop in whatever pathway_annotation() returned without
   # silently getting raw IDs on the heatmap axis.
   if (!is.null(annotation_data)) {
-    id_col <- if ("feature" %in% colnames(annotation_data)) {
-      "feature"
-    } else if ("pathway" %in% colnames(annotation_data)) {
-      "pathway"
-    } else {
-      NULL
-    }
-    label_col <- if ("description" %in% colnames(annotation_data)) {
-      "description"
-    } else if ("pathway_name" %in% colnames(annotation_data)) {
-      "pathway_name"
-    } else {
-      NULL
-    }
+    annotation_cols <- resolve_contribution_annotation_columns(annotation_data)
+    desc_map <- build_annotation_label_map(
+      annotation_data,
+      id_col = annotation_cols$id,
+      label_col = annotation_cols$label,
+      selected_ids = colnames(mat)
+    )
+    function_ids <- colnames(mat)
+    new_names <- desc_map[function_ids]
+    # Only replace where we found a non-empty match, truncate long names
+    found <- !is.na(new_names) & nzchar(new_names)
+    new_names[found] <- substr(new_names[found], 1, 50)
+    new_names[!found] <- function_ids[!found]
 
-    if (!is.null(id_col) && !is.null(label_col)) {
-      desc_map <- build_annotation_label_map(
-        annotation_data,
-        id_col = id_col,
-        label_col = label_col,
-        selected_ids = colnames(mat)
-      )
-      function_ids <- colnames(mat)
-      new_names <- desc_map[function_ids]
-      # Only replace where we found a non-empty match, truncate long names
-      found <- !is.na(new_names) & nzchar(new_names)
-      new_names[found] <- substr(new_names[found], 1, 50)
-      new_names[!found] <- function_ids[!found]
-
-      # Different function IDs can legitimately share the same annotation.
-      # Axis factor levels must still be unique, so retain the function ID for
-      # every ambiguous display label rather than crashing in factor().
-      duplicated_labels <- duplicated(new_names) |
-        duplicated(new_names, fromLast = TRUE)
-      new_names[duplicated_labels] <- paste0(
-        substr(new_names[duplicated_labels], 1, 38),
-        " [", function_ids[duplicated_labels], "]"
-      )
-      colnames(mat) <- new_names
-    }
+    # Different function IDs can legitimately share the same annotation.
+    # Axis factor levels must still be unique, so retain the function ID for
+    # every ambiguous display label rather than crashing in factor().
+    duplicated_labels <- duplicated(new_names) |
+      duplicated(new_names, fromLast = TRUE)
+    new_names[duplicated_labels] <- paste0(
+      substr(new_names[duplicated_labels], 1, 38),
+      " [", function_ids[duplicated_labels], "]"
+    )
+    colnames(mat) <- new_names
   }
 
   # Clustering
@@ -556,13 +549,38 @@ taxa_contribution_heatmap <- function(contrib_agg,
   p
 }
 
+#' Resolve a supported taxa-contribution annotation schema
+#'
+#' @noRd
+resolve_contribution_annotation_columns <- function(annotation_data) {
+  validate_dataframe(annotation_data, param_name = "annotation_data")
+  schemas <- list(
+    c(id = "feature", label = "description"),
+    c(id = "pathway", label = "pathway_name")
+  )
+  matched <- vapply(
+    schemas,
+    function(schema) all(unname(schema) %in% colnames(annotation_data)),
+    logical(1)
+  )
+  if (!any(matched)) {
+    stop(
+      "'annotation_data' must contain either 'feature'/'description' or ",
+      "'pathway'/'pathway_name' columns.",
+      call. = FALSE
+    )
+  }
+
+  as.list(schemas[[which(matched)[1]]])
+}
+
 #' Build a unique annotation label map for selected function IDs
 #'
 #' @noRd
 build_annotation_label_map <- function(annotation_data, id_col, label_col,
                                        selected_ids) {
   annotation_ids <- as.character(annotation_data[[id_col]])
-  annotation_labels <- as.character(annotation_data[[label_col]])
+  annotation_labels <- trimws(as.character(annotation_data[[label_col]]))
   selected <- !is.na(annotation_ids) & annotation_ids %in% selected_ids
   if (!any(selected)) {
     return(character(0))

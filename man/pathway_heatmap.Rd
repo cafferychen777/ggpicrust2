@@ -55,7 +55,8 @@ heatmap. If NULL or not provided, a default color set is used for the facet stri
 \item{dendro_labels}{A logical value indicating whether to show dendrogram labels. Default is FALSE.}
 
 \item{facet_by}{\strong{[Deprecated]} A character string specifying an additional grouping variable for creating faceted heatmaps.
-This parameter is deprecated and will be removed in future versions. Use \code{secondary_groups} instead.}
+This parameter is deprecated and will be removed in future versions. Use \code{secondary_groups} instead;
+supplying different values to both parameters is an error.}
 
 \item{colorbar_title}{A character string specifying the title for the color bar. Default is "Z Score".}
 

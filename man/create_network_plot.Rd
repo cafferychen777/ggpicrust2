@@ -8,7 +8,6 @@ create_network_plot(
   gsea_results,
   similarity_measure = "jaccard",
   similarity_cutoff = 0.3,
-  n_pathways = 20,
   layout = "fruchterman",
   node_color_by = "NES",
   edge_width_by = "similarity",
@@ -21,8 +20,6 @@ create_network_plot(
 \item{similarity_measure}{A character string specifying the similarity measure: "jaccard", "overlap", or "correlation"}
 
 \item{similarity_cutoff}{A numeric value specifying the similarity threshold for filtering connections}
-
-\item{n_pathways}{An integer specifying the number of pathways to display}
 
 \item{layout}{A character string specifying the network layout algorithm: "fruchterman", "kamada", or "circle"}
 

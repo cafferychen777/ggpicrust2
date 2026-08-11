@@ -163,6 +163,33 @@ test_that("pathway_pca throws error with wrong color count", {
   )
 })
 
+test_that("pathway_pca maps named colors by exact group identity", {
+  data <- create_pca_test_data()
+
+  expect_error(
+    pathway_pca(
+      data$abundance,
+      data$metadata,
+      "group",
+      colors = c(Group1 = "red", typo = "blue"),
+      show_marginal = FALSE
+    ),
+    "must exactly match categorical levels"
+  )
+
+  p <- pathway_pca(
+    data$abundance,
+    data$metadata,
+    "group",
+    colors = c(Group2 = "blue", Group1 = "red"),
+    show_marginal = FALSE
+  )
+  expect_identical(
+    unname(p$scales$get_scales("colour")$palette(2)),
+    c("red", "blue")
+  )
+})
+
 test_that("pathway_pca show_marginal parameter works", {
   data <- create_pca_test_data()
 
@@ -171,6 +198,41 @@ test_that("pathway_pca show_marginal parameter works", {
 
   expect_s3_class(result_with, "ggplot")
   expect_s3_class(result_without, "ggplot")
+})
+
+test_that("pathway_pca omits singleton groups from marginal densities", {
+  data <- create_pca_test_data(n_pathways = 4, n_samples = 3, n_groups = 2)
+  data$metadata$group <- factor(c("A", "A", "B"))
+  warnings <- character(0)
+
+  p <- withCallingHandlers(
+    pathway_pca(data$abundance, data$metadata, "group"),
+    warning = function(w) {
+      warnings <<- c(warnings, conditionMessage(w))
+      invokeRestart("muffleWarning")
+    }
+  )
+
+  expect_true(any(grepl("Skipping PCA marginal density.*B=1", warnings)))
+  expect_s3_class(p, "ggplot")
+  expect_warning(ggplot2::ggplot_build(p), NA)
+})
+
+test_that("pathway_pca returns the scatter plot when no density is estimable", {
+  data <- create_pca_test_data(n_pathways = 4, n_samples = 3, n_groups = 3)
+  warnings <- character(0)
+
+  p <- withCallingHandlers(
+    pathway_pca(data$abundance, data$metadata, "group"),
+    warning = function(w) {
+      warnings <<- c(warnings, conditionMessage(w))
+      invokeRestart("muffleWarning")
+    }
+  )
+
+  expect_true(any(grepl("Skipping PCA marginal density", warnings)))
+  expect_equal(nrow(p$data), 3)
+  expect_warning(ggplot2::ggplot_build(p), NA)
 })
 
 # Regression: the marginal density panels used to attach

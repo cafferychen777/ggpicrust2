@@ -55,7 +55,9 @@ across samples are filtered before PCA because they are variables in
 as observations, even if a sample has zero variance across pathways. PCA
 confidence ellipses are drawn only for groups with at least four samples;
 smaller groups remain in the scatter plot but are skipped for ellipse
-estimation.
+estimation. Marginal densities require at least two samples per group;
+singleton groups are omitted from those panels, and the scatter plot is
+returned alone when no group has enough observations for density estimation.
 }
 \examples{
 # Create example abundance data

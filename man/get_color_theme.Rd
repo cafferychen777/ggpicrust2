@@ -7,9 +7,12 @@
 get_color_theme(theme_name = "default", n_colors = 8)
 }
 \arguments{
-\item{theme_name}{Character string specifying the theme name}
+\item{theme_name}{Character string specifying one of the names returned by
+`get_available_themes()`}
 
-\item{n_colors}{Positive integer specifying the number of colors needed}
+\item{n_colors}{Positive integer specifying the number of colors needed.
+Requests beyond a theme's base palette are interpolated so categorical
+colors are not recycled exactly.}
 }
 \value{
 A list containing theme colors and settings

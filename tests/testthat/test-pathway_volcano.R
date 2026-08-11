@@ -53,6 +53,14 @@ test_that("pathway_volcano handles custom colors", {
     colors = c("Down" = "blue", "Not Significant" = "gray", "Up" = "red")
   )
   expect_s3_class(p, "ggplot")
+
+  expect_error(
+    pathway_volcano(
+      create_volcano_test_data(),
+      colors = c(Down = "blue", typo = "gray", Up = "red")
+    ),
+    "must exactly match categorical levels"
+  )
 })
 
 test_that("pathway_volcano handles no labels", {
@@ -92,6 +100,41 @@ test_that("pathway_volcano keeps all-zero p-values finite", {
   )
   expect_true(all(is.finite(p$data$neg_log10_p)))
   expect_true(all(p$data$neg_log10_p > 0))
+})
+
+test_that("pathway_volcano preserves valid subnormal p-values", {
+  daa_results <- data.frame(
+    pathway_name = c("Tiny", "Zero"),
+    log2_fold_change = c(2, -2),
+    p_adjust = c(1e-320, 0),
+    stringsAsFactors = FALSE
+  )
+
+  p <- pathway_volcano(daa_results, label_top_n = 0)
+
+  expect_equal(p$data$neg_log10_p[1], 320, tolerance = 1e-6)
+  expect_equal(
+    p$data$neg_log10_p[2],
+    -log10(.Machine$double.xmin),
+    tolerance = 1e-12
+  )
+})
+
+test_that("pathway_volcano requires explicit label columns when labeling", {
+  daa_results <- data.frame(
+    log2_fold_change = c(2, -2),
+    p_adjust = c(0.01, 0.02),
+    stringsAsFactors = FALSE
+  )
+
+  expect_error(
+    pathway_volcano(daa_results, label_col = "misspelled"),
+    "Column 'misspelled' not found"
+  )
+  expect_s3_class(
+    pathway_volcano(daa_results, label_col = "misspelled", label_top_n = 0),
+    "ggplot"
+  )
 })
 
 test_that("pathway_volcano rejects negative p-values", {

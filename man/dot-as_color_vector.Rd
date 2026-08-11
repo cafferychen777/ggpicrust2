@@ -2,13 +2,11 @@
 % Please edit documentation in R/visualize_gsea.R
 \name{.as_color_vector}
 \alias{.as_color_vector}
-\title{Internal: coerce user 'scale' input to a vector of colors (or NULL)
-Accepts character vector or function(n)->colors. Returns character vector or NULL.}
+\title{Internal: extract a normalized color vector}
 \usage{
 .as_color_vector(scale)
 }
 \description{
-Internal: coerce user 'scale' input to a vector of colors (or NULL)
-Accepts character vector or function(n)->colors. Returns character vector or NULL.
+Internal: extract a normalized color vector
 }
 \keyword{internal}

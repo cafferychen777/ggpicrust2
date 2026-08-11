@@ -33,7 +33,8 @@ Default is "log2_fold_change". Legacy name "log2FoldChange" is also accepted.}
 Default is "p_adjust".}
 
 \item{label_col}{Character string specifying the column name for pathway labels.
-Default is "pathway_name". If NULL, no labels will be shown.}
+Default is "pathway_name". If NULL, no labels will be shown. A non-NULL
+column must exist when `label_top_n > 0`.}
 
 \item{fc_threshold}{Numeric. Absolute fold change threshold for significance.
 Default is 1 (2-fold change). Pathways with |log2FC| > fc_threshold are considered
@@ -50,7 +51,8 @@ Default is 10. Set to 0 to disable labels.}
 \item{point_alpha}{Numeric. Transparency of points (0-1). Default is 0.6.}
 
 \item{colors}{Named character vector with colors for "Down", "Not Significant", and "Up".
-Default uses blue for down-regulated, grey for non-significant, and red for up-regulated.}
+Names, when supplied, must match those three categories exactly. Default
+uses blue for down-regulated, grey for non-significant, and red for up-regulated.}
 
 \item{show_threshold_lines}{Logical. Whether to show dashed lines for fold change
 and p-value thresholds. Default is TRUE.}
@@ -80,6 +82,8 @@ versus fold change (x-axis). Points are colored by significance:
 
 The function automatically labels the top N most significant pathways using
 \code{ggrepel::geom_text_repel()} if the ggrepel package is installed.
+Exact zero p-values are plotted at `.Machine$double.xmin`; positive subnormal
+p-values retain their original magnitude.
 }
 \examples{
 \dontrun{

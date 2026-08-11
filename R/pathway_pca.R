@@ -46,7 +46,9 @@
 #' as observations, even if a sample has zero variance across pathways. PCA
 #' confidence ellipses are drawn only for groups with at least four samples;
 #' smaller groups remain in the scatter plot but are skipped for ellipse
-#' estimation.
+#' estimation. Marginal densities require at least two samples per group;
+#' singleton groups are omitted from those panels, and the scatter plot is
+#' returned alone when no group has enough observations for density estimation.
 #'
 #' @examples
 #' # Create example abundance data
@@ -174,11 +176,11 @@ pathway_pca <- function(abundance,
 
   # Validate colors if provided
   if (!is.null(colors)) {
-    if (length(colors) != n_groups) {
-      stop(sprintf("Number of colors (%d) does not match number of groups (%d)",
-                   length(colors), n_groups))
-    }
-    validate_color_values(colors, "colors", expected_length = n_groups)
+    colors <- normalize_level_colors(
+      colors,
+      levels(metadata[[group]]),
+      "colors"
+    )
   }
 
   # Perform PCA on the abundance data
@@ -225,6 +227,11 @@ pathway_pca <- function(abundance,
     } else {
       grDevices::colorRampPalette(base_colors)(n_groups)
     }
+    colors <- normalize_level_colors(
+      colors,
+      levels(metadata[[group]]),
+      "colors"
+    )
   }
 
   ellipse_counts <- table(pca_data$Group)
@@ -288,19 +295,32 @@ pathway_pca <- function(abundance,
       )
   }
 
-  # Marginal density for PC1.
-  #
-  # geom_density() maps `..density..` (a continuous value) to y, so the
-  # matching position scale is `scale_y_continuous()`. The previous
-  # `scale_y_discrete()` was a latent type mismatch: ggplot2 silently
-  # coerced the continuous aesthetic through a discrete scale, and
-  # `expand = c(0, 0.001)` ended up interpreted in discrete-category
-  # units rather than the intended "0 multiplicative + small additive
-  # padding" on a continuous axis. Using the continuous scale makes
-  # the grammar-of-graphics contract explicit and keeps the behavior
-  # stable across ggplot2 versions.
+  if (!show_marginal) {
+    return(pca_plot)
+  }
+
+  density_groups <- names(ellipse_counts)[ellipse_counts >= 2]
+  skipped_density_groups <- names(ellipse_counts)[ellipse_counts < 2]
+  if (length(skipped_density_groups) > 0) {
+    warning(
+      "Skipping PCA marginal density for group(s) with fewer than 2 samples: ",
+      paste(
+        paste0(skipped_density_groups, "=", ellipse_counts[skipped_density_groups]),
+        collapse = ", "
+      ),
+      ". Density estimation requires at least 2 observations.",
+      call. = FALSE
+    )
+  }
+  if (length(density_groups) == 0) {
+    return(pca_plot)
+  }
+  density_data <- pca_data[pca_data$Group %in% density_groups, , drop = FALSE]
+
+  # Marginal density for PC1. geom_density() produces a continuous y
+  # aesthetic, so its matching position scale must also be continuous.
   pc1_density <-
-    ggplot2::ggplot(pca_data) +
+    ggplot2::ggplot(density_data) +
     ggplot2::geom_density(
       ggplot2::aes(
         x = .data$PC1,
@@ -324,7 +344,7 @@ pathway_pca <- function(abundance,
   # Marginal density for PC2 (horizontal after coord_flip()). Same
   # continuous-scale reasoning applies.
   pc2_density <-
-    ggplot2::ggplot(pca_data) +
+    ggplot2::ggplot(density_data) +
     ggplot2::geom_density(
       ggplot2::aes(
         x = .data$PC2,
@@ -346,13 +366,8 @@ pathway_pca <- function(abundance,
     ) +
     ggplot2::coord_flip()
 
-  # Return plot with or without marginal density plots
-  if (show_marginal) {
-    pca_plot %>%
-      aplot::insert_top(pc1_density, height = 0.3) %>%
-      aplot::insert_right(pc2_density, width = 0.3) %>%
-      ggplotify::as.ggplot()
-  } else {
-    pca_plot
-  }
+  pca_plot %>%
+    aplot::insert_top(pc1_density, height = 0.3) %>%
+    aplot::insert_right(pc2_density, width = 0.3) %>%
+    ggplotify::as.ggplot()
 }

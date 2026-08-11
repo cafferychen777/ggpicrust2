@@ -40,7 +40,8 @@
 #' @param dendro_line_size A numeric value specifying the line width of dendrogram branches. Default is 0.5.
 #' @param dendro_labels A logical value indicating whether to show dendrogram labels. Default is FALSE.
 #' @param facet_by \strong{[Deprecated]} A character string specifying an additional grouping variable for creating faceted heatmaps.
-#'   This parameter is deprecated and will be removed in future versions. Use \code{secondary_groups} instead.
+#'   This parameter is deprecated and will be removed in future versions. Use \code{secondary_groups} instead;
+#'   supplying different values to both parameters is an error.
 #' @param colorbar_title A character string specifying the title for the color bar. Default is "Z Score".
 #' @param colorbar_position A character string specifying the position of the color bar. Options: "right", "left", "top", "bottom". Default is "right".
 #' @param colorbar_width A numeric value specifying the width of the color bar. Default is 0.6.
@@ -247,7 +248,11 @@ generate_nested_colors <- function(metadata, all_groups, colors = NULL) {
     # Multi-level grouping: each grouping level needs distinct colors
     # Sum up unique levels across all grouping variables
     # e.g., Diet(2) + Time(4) = 6 colors needed for all facet strips
-    n_colors_needed <- sum(sapply(all_groups, function(g) length(unique(metadata[[g]]))))
+    n_colors_needed <- sum(vapply(
+      all_groups,
+      function(g) length(unique(metadata[[g]])),
+      integer(1)
+    ))
   }
 
   # Default color palette
@@ -325,17 +330,20 @@ compute_correlation_distance <- function(values, method = "pearson", item_label 
   undefined <- !is.finite(cor_matrix)
   if (any(undefined)) {
     cor_matrix[undefined] <- 0
-    for (i in seq_len(nrow(values))) {
-      for (j in seq_len(nrow(values))) {
-        if (undefined[i, j] && isTRUE(all.equal(values[i, ], values[j, ],
-                                               check.attributes = FALSE))) {
+    n_items <- nrow(values)
+    for (i in seq_len(max(n_items - 1, 0))) {
+      for (j in seq.int(i + 1, n_items)) {
+        if (undefined[i, j] &&
+            isTRUE(all.equal(values[i, ], values[j, ],
+                             check.attributes = FALSE))) {
           cor_matrix[i, j] <- 1
+          cor_matrix[j, i] <- 1
         }
       }
     }
     diag(cor_matrix) <- 1
     message(sprintf(
-      "Undefined %s correlation(s) involving zero-variance %s were treated as neutral distance for clustering.",
+      "Undefined %s correlation(s) involving zero-variance %s were assigned distance 0 for identical profiles and 1 otherwise.",
       method, item_label
     ))
   }
@@ -381,7 +389,6 @@ pathway_heatmap <- function(abundance,
     context = "pathway_heatmap() abundance"
   )
   validate_abundance(abundance, min_samples = 2, check_zero_columns = FALSE)
-  validate_metadata(metadata)
   validate_hclust_parameters(
     clustering_method,
     clustering_distance,
@@ -406,6 +413,10 @@ pathway_heatmap <- function(abundance,
   validate_color_values(mid_color, "mid_color", expected_length = 1)
   validate_color_values(high_color, "high_color", expected_length = 1)
   validate_color_values(colors, "colors", allow_null = TRUE)
+  if (!is.null(custom_theme) && !inherits(custom_theme, "theme")) {
+    stop("'custom_theme' must be NULL or a ggplot2 theme object.",
+         call. = FALSE)
+  }
   if (!is.null(colorbar_breaks) &&
       (!is.numeric(colorbar_breaks) || anyNA(colorbar_breaks) ||
        any(!is.finite(colorbar_breaks)))) {
@@ -439,27 +450,50 @@ pathway_heatmap <- function(abundance,
          call. = FALSE)
   }
 
-  # Handle deprecated facet_by parameter
+  # Handle the deprecated alias before building the grouping hierarchy. When
+  # both names are supplied, accepting two different values would silently
+  # discard one of the user's requested grouping variables.
   if (!is.null(facet_by)) {
     warning("'facet_by' is deprecated. Use 'secondary_groups' instead.", call. = FALSE)
-    if (is.null(secondary_groups)) secondary_groups <- facet_by
+    if (!is.character(facet_by) || length(facet_by) != 1 ||
+        is.na(facet_by) || !nzchar(trimws(facet_by))) {
+      stop("'facet_by' must be NULL or a single non-empty metadata column name.",
+           call. = FALSE)
+    }
+    if (!is.null(secondary_groups) &&
+        !identical(secondary_groups, facet_by)) {
+      stop(
+        "'facet_by' and 'secondary_groups' specify different grouping columns. Use only 'secondary_groups'.",
+        call. = FALSE
+      )
+    }
+    secondary_groups <- facet_by
   }
 
-  # Build and validate all grouping variables
-  all_groups <- c(group, secondary_groups)
-  if (!is.character(all_groups) || length(all_groups) == 0 ||
-      anyNA(all_groups) || any(!nzchar(trimws(all_groups)))) {
-    stop("'group' and 'secondary_groups' must contain non-empty metadata column names.",
+  # Validate each public argument before concatenation. c() would otherwise
+  # coerce a numeric secondary_groups value to character because group is a
+  # character string, bypassing the intended type check.
+  if (!is.character(group) || length(group) != 1 ||
+      is.na(group) || !nzchar(trimws(group))) {
+    stop("'group' must be a single non-empty metadata column name.",
          call. = FALSE)
   }
+  if (!is.null(secondary_groups) &&
+      (!is.character(secondary_groups) || length(secondary_groups) == 0 ||
+       anyNA(secondary_groups) ||
+       any(!nzchar(trimws(secondary_groups))))) {
+    stop("'secondary_groups' must be NULL or a character vector of non-empty metadata column names.",
+         call. = FALSE)
+  }
+
+  # Build and validate the grouping hierarchy.
+  all_groups <- c(group, secondary_groups)
   if (anyDuplicated(all_groups)) {
     stop("Grouping columns must be unique; duplicated column(s): ",
          paste(unique(all_groups[duplicated(all_groups)]), collapse = ", "),
          ".", call. = FALSE)
   }
-  for (grp in all_groups) {
-    validate_group(metadata, grp, min_groups = 2)
-  }
+  validate_metadata(metadata, required_cols = all_groups)
 
   # Heatmaps use color changes to visualize changes in values. However, if the
   # data for plotting the heat map are too different, for example, if the heat
@@ -693,16 +727,18 @@ pathway_heatmap <- function(abundance,
     )
   }
 
+  if (!is.null(custom_theme)) {
+    p <- p + custom_theme
+  }
+
+  # Explicit visibility flags are API behavior, not styling suggestions. Apply
+  # them after custom_theme so a theme cannot accidentally reverse them.
   if (!show_row_names) {
     p <- p + theme(axis.text.y = element_blank())
   }
-  
+
   if (!show_legend) {
     p <- p + theme(legend.position = "none")
-  }
-  
-  if (!is.null(custom_theme)) {
-    p <- p + custom_theme
   }
 
   # Create dendrograms if clustering was performed

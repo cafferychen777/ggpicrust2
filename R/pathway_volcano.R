@@ -11,7 +11,8 @@
 #' @param p_col Character string specifying the column name for adjusted p-values.
 #'   Default is "p_adjust".
 #' @param label_col Character string specifying the column name for pathway labels.
-#'   Default is "pathway_name". If NULL, no labels will be shown.
+#'   Default is "pathway_name". If NULL, no labels will be shown. A non-NULL
+#'   column must exist when `label_top_n > 0`.
 #' @param fc_threshold Numeric. Absolute fold change threshold for significance.
 #'   Default is 1 (2-fold change). Pathways with |log2FC| > fc_threshold are considered
 #'   biologically significant.
@@ -22,7 +23,8 @@
 #' @param point_size Numeric. Size of points in the plot. Default is 2.
 #' @param point_alpha Numeric. Transparency of points (0-1). Default is 0.6.
 #' @param colors Named character vector with colors for "Down", "Not Significant", and "Up".
-#'   Default uses blue for down-regulated, grey for non-significant, and red for up-regulated.
+#'   Names, when supplied, must match those three categories exactly. Default
+#'   uses blue for down-regulated, grey for non-significant, and red for up-regulated.
 #' @param show_threshold_lines Logical. Whether to show dashed lines for fold change
 #'   and p-value thresholds. Default is TRUE.
 #' @param title Character string for plot title. Default is
@@ -44,6 +46,8 @@
 #'
 #' The function automatically labels the top N most significant pathways using
 #' \code{ggrepel::geom_text_repel()} if the ggrepel package is installed.
+#' Exact zero p-values are plotted at `.Machine$double.xmin`; positive subnormal
+#' p-values retain their original magnitude.
 #'
 #' @examples
 #' \dontrun{
@@ -144,21 +148,7 @@ pathway_volcano <- function(daa_results,
  )
 
  significance_levels <- c("Down", "Not Significant", "Up")
- if (length(colors) != length(significance_levels)) {
-   stop("'colors' must contain exactly three valid colors for Down, Not Significant, and Up.",
-        call. = FALSE)
- }
- validate_color_values(colors, "colors", expected_length = 3)
- if (is.null(names(colors)) || all(!nzchar(names(colors)))) {
-   names(colors) <- significance_levels
- } else {
-   missing_colors <- setdiff(significance_levels, names(colors))
-   if (length(missing_colors) > 0 || anyDuplicated(names(colors))) {
-     stop("Named 'colors' must provide each of: ",
-          paste(significance_levels, collapse = ", "), ".", call. = FALSE)
-   }
-   colors <- colors[significance_levels]
- }
+ colors <- normalize_level_colors(colors, significance_levels, "colors")
 
  # Backward compatibility: accept legacy column name
  if (fc_col == "log2_fold_change" && !fc_col %in% colnames(daa_results) &&
@@ -171,9 +161,8 @@ pathway_volcano <- function(daa_results,
  validate_finite_numeric_values(daa_results[[fc_col]], fc_col, "daa_results")
  validate_probability_values(daa_results[[p_col]], p_col, "daa_results")
 
- if (!is.null(label_col) && !label_col %in% colnames(daa_results)) {
-   warning(paste0("Column '", label_col, "' not found. Labels will not be shown."))
-   label_col <- NULL
+ if (!is.null(label_col) && label_top_n > 0) {
+   require_column(daa_results, label_col, "daa_results")
  }
 
  # Prepare data
@@ -186,10 +175,8 @@ pathway_volcano <- function(daa_results,
    stop("No valid data rows after removing NA values.")
  }
 
- # Add significance categories and -log10(p). Clamp exact zero p-values to
- # the smallest positive double so all-zero inputs remain finite and plottable.
- p_for_log <- pmax(df[[p_col]], .Machine$double.xmin)
- df$neg_log10_p <- -log10(p_for_log)
+ # Add significance categories and a finite -log10(p) transformation.
+ df$neg_log10_p <- negative_log10_probability(df[[p_col]])
  df$significance <- ifelse(
    df[[p_col]] < p_threshold & df[[fc_col]] > fc_threshold, "Up",
    ifelse(df[[p_col]] < p_threshold & df[[fc_col]] < -fc_threshold, "Down",
@@ -229,8 +216,10 @@ pathway_volcano <- function(daa_results,
    # Get top pathways by significance (excluding non-significant and NA labels)
    top_pathways <- df[df$significance != "Not Significant", ]
    # Filter out rows with NA or empty labels
-   top_pathways <- top_pathways[!is.na(top_pathways[[label_col]]) &
-                                 top_pathways[[label_col]] != "", ]
+   label_values <- as.character(top_pathways[[label_col]])
+   valid_labels <- !is.na(label_values) & nzchar(trimws(label_values))
+   top_pathways <- top_pathways[valid_labels, , drop = FALSE]
+   top_pathways[[label_col]] <- trimws(label_values[valid_labels])
    if (nrow(top_pathways) > 0) {
      top_pathways <- top_pathways[order(-top_pathways$neg_log10_p), ]
      top_pathways <- head(top_pathways, label_top_n)

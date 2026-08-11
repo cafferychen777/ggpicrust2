@@ -9,11 +9,11 @@ create_heatmap_plot(
   abundance,
   metadata,
   group,
-  n_pathways = 20,
   cluster_rows = TRUE,
   cluster_columns = TRUE,
   show_rownames = TRUE,
   annotation_colors = NULL,
+  default_group_colors = c("#E41A1C", "#377EB8"),
   col_fun = NULL
 )
 }
@@ -26,8 +26,6 @@ create_heatmap_plot(
 
 \item{group}{A character string specifying the column name in metadata that contains the grouping variable}
 
-\item{n_pathways}{An integer specifying the number of pathways to display}
-
 \item{cluster_rows}{A logical value indicating whether to cluster rows}
 
 \item{cluster_columns}{A logical value indicating whether to cluster columns}
@@ -35,6 +33,9 @@ create_heatmap_plot(
 \item{show_rownames}{A logical value indicating whether to show row names}
 
 \item{annotation_colors}{A list of colors for annotations}
+
+\item{default_group_colors}{Colors used to construct the group annotation
+palette when annotation_colors is NULL}
 
 \item{col_fun}{A color function (e.g., circlize::colorRamp2) to control the main heatmap colors (optional)}
 }

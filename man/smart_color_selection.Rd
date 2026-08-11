@@ -18,7 +18,8 @@ smart_color_selection(
 
 \item{data_type}{Type of data ("abundance", "pvalue", "foldchange")}
 
-\item{accessibility_mode}{Whether to use accessibility-friendly colors}
+\item{accessibility_mode}{Whether to require accessibility-friendly colors.
+When TRUE, this constraint takes precedence over data-type heuristics.}
 }
 \value{
 A list with suggested theme and colors

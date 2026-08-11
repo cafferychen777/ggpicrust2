@@ -28,7 +28,8 @@ taxa_contribution_bar(
 \item{function_ids}{Optional character vector of function IDs to plot.
 If NULL (default), the top \code{n_functions} by between-sample variance
 in total contribution are shown. Single-sample inputs are ranked by total
-contribution because variance is undefined.}
+contribution because variance is undefined. Facets preserve this ranking
+or the order of explicitly supplied IDs.}
 
 \item{n_functions}{Integer. Number of functions to show when
 \code{function_ids} is NULL. Default 6.}
@@ -67,12 +68,13 @@ to display absolute zero contributions.
 \examples{
 \donttest{
 # Synthetic example
-agg <- data.frame(
-  sample = rep(c("S1", "S2", "S3", "S4"), each = 3),
-  function_id = rep(c("K00001", "K00002"), each = 6),
-  taxon_label = rep(c("Genus_A", "Genus_B", "Other"), 4),
-  contribution = runif(12)
+agg <- expand.grid(
+  sample = c("S1", "S2", "S3", "S4"),
+  function_id = c("K00001", "K00002"),
+  taxon_label = c("Genus_A", "Genus_B", "Other"),
+  stringsAsFactors = FALSE
 )
+agg$contribution <- runif(nrow(agg))
 metadata <- data.frame(
   sample = c("S1", "S2", "S3", "S4"),
   group = c("Control", "Control", "Treatment", "Treatment")

@@ -169,6 +169,20 @@ test_that("pathway_heatmap warns for deprecated facet_by", {
     ),
     "deprecated"
   )
+
+  expect_error(
+    expect_warning(
+      pathway_heatmap(
+        abundance = td$abundance,
+        metadata = td$metadata,
+        group = "group",
+        secondary_groups = "batch",
+        facet_by = "group"
+      ),
+      "deprecated"
+    ),
+    "specify different grouping columns"
+  )
 })
 
 test_that("pathway_heatmap fails fast when sample IDs do not match", {
@@ -331,6 +345,15 @@ test_that("pathway_heatmap validates logical flags and grouping hierarchy", {
     ),
     "Grouping columns must be unique"
   )
+  expect_error(
+    pathway_heatmap(
+      td$abundance,
+      td$metadata,
+      "group",
+      secondary_groups = 1
+    ),
+    "secondary_groups.*character vector"
+  )
 })
 
 test_that("pathway_heatmap requires explicit sample identity", {
@@ -368,6 +391,10 @@ test_that("pathway_heatmap validates clustering cardinality and display paramete
     "invalid R color"
   )
   expect_error(
+    pathway_heatmap(td$abundance, td$metadata, "group", custom_theme = list()),
+    "custom_theme.*ggplot2 theme"
+  )
+  expect_error(
     pathway_heatmap(
       td$abundance,
       td$metadata,
@@ -376,4 +403,22 @@ test_that("pathway_heatmap validates clustering cardinality and display paramete
     ),
     "colorbar_position.*must be one of"
   )
+})
+
+test_that("pathway_heatmap visibility flags override custom theme styling", {
+  td <- create_heatmap_test_data()
+  p <- pathway_heatmap(
+    td$abundance,
+    td$metadata,
+    "group",
+    show_row_names = FALSE,
+    show_legend = FALSE,
+    custom_theme = ggplot2::theme(
+      axis.text.y = ggplot2::element_text(color = "red"),
+      legend.position = "right"
+    )
+  )
+
+  expect_s3_class(p$theme$axis.text.y, "element_blank")
+  expect_identical(p$theme$legend.position, "none")
 })

@@ -230,125 +230,148 @@ pathway_ridgeplot <- function(gsea_results,
     stop("No pathways to display after filtering.")
   }
 
- # Get pathway-gene mappings
- if (is.null(pathway_reference)) {
-   # Load reference data using unified loader
-   if (pathway_type == "KEGG") {
-     kegg_ref <- load_reference_data("ko_to_kegg")
-     # Aggregate KO IDs by pathway_id
-     pathway_reference <- stats::aggregate(
-       ko_id ~ pathway_id + pathway_name,
-       data = kegg_ref,
-       FUN = function(x) paste(unique(x), collapse = ";")
-     )
-     colnames(pathway_reference)[colnames(pathway_reference) == "ko_id"] <- "ko_members"
-   } else if (pathway_type == "GO") {
-     pathway_reference <- load_reference_data("ko_to_go")
-   } else {
-     stop("Please provide pathway_reference parameter for ", pathway_type, " pathways.")
-   }
- }
+  # Get pathway-gene mappings
+  if (is.null(pathway_reference)) {
+    if (pathway_type == "KEGG") {
+      kegg_ref <- load_reference_data("ko_to_kegg")
+      pathway_reference <- stats::aggregate(
+        ko_id ~ pathway_id + pathway_name,
+        data = kegg_ref,
+        FUN = function(x) paste(unique(x), collapse = ";")
+      )
+      colnames(pathway_reference)[colnames(pathway_reference) == "ko_id"] <- "ko_members"
+    } else if (pathway_type == "GO") {
+      pathway_reference <- load_reference_data("ko_to_go")
+    } else {
+      stop("Please provide pathway_reference parameter for ", pathway_type,
+           " pathways.", call. = FALSE)
+    }
+  }
+  validate_dataframe(pathway_reference, param_name = "pathway_reference")
 
- # Calculate fold changes between groups. The comparison must be tied to
- # group labels, not to the first groups encountered in sample order; otherwise
- # simply reordering abundance columns can flip the x-axis interpretation.
- group_factor <- droplevels(factor(metadata[[group]]))
- observed_levels <- levels(group_factor)
- if (is.null(comparison)) {
-   if (length(observed_levels) != 2) {
-     stop(
-       "pathway_ridgeplot() requires 'comparison = c(group1, group2)' ",
-       "when metadata contains ", length(observed_levels), " group levels. ",
-       "The ridge plot displays log2(group2 / group1), so the comparison ",
-       "must match the GSEA contrast being interpreted.",
-       call. = FALSE
-     )
-   }
-   group_levels <- observed_levels
- } else {
-   comparison <- validate_nonempty_character_column(
-     comparison,
-     "comparison",
-     "pathway_ridgeplot()"
-   )
-   if (length(comparison) != 2) {
-     stop("'comparison' must be NULL or a character vector of length 2: c(group1, group2).",
-          call. = FALSE)
-   }
-   if (anyDuplicated(comparison)) {
-     stop("'comparison' must contain two distinct group labels.",
-          call. = FALSE)
-   }
-   missing_groups <- setdiff(comparison, observed_levels)
-   if (length(missing_groups) > 0) {
-     stop(
-       "'comparison' group(s) not found in metadata after sample alignment: ",
-       paste(missing_groups, collapse = ", "),
-       ". Available groups: ", paste(observed_levels, collapse = ", "),
-       call. = FALSE
-     )
-   }
-   group_levels <- comparison
- }
- group_vec <- as.character(group_factor)
+  # Calculate fold changes between groups. The comparison must be tied to
+  # group labels, not to the first groups encountered in sample order; otherwise
+  # simply reordering abundance columns can flip the x-axis interpretation.
+  group_factor <- droplevels(factor(metadata[[group]]))
+  observed_levels <- levels(group_factor)
+  if (is.null(comparison)) {
+    if (length(observed_levels) != 2) {
+      stop(
+        "pathway_ridgeplot() requires 'comparison = c(group1, group2)' ",
+        "when metadata contains ", length(observed_levels), " group levels. ",
+        "The ridge plot displays log2(group2 / group1), so the comparison ",
+        "must match the GSEA contrast being interpreted.",
+        call. = FALSE
+      )
+    }
+    group_levels <- observed_levels
+  } else {
+    comparison <- validate_nonempty_character_column(
+      comparison,
+      "comparison",
+      "pathway_ridgeplot()"
+    )
+    if (length(comparison) != 2) {
+      stop("'comparison' must be NULL or a character vector of length 2: c(group1, group2).",
+           call. = FALSE)
+    }
+    if (anyDuplicated(comparison)) {
+      stop("'comparison' must contain two distinct group labels.",
+           call. = FALSE)
+    }
+    missing_groups <- setdiff(comparison, observed_levels)
+    if (length(missing_groups) > 0) {
+      stop(
+        "'comparison' group(s) not found in metadata after sample alignment: ",
+        paste(missing_groups, collapse = ", "),
+        ". Available groups: ", paste(observed_levels, collapse = ", "),
+        call. = FALSE
+      )
+    }
+    group_levels <- comparison
+  }
+  group_vec <- as.character(group_factor)
 
- # Calculate mean abundance per group
- samples_g1 <- which(as.character(group_vec) == group_levels[1])
- samples_g2 <- which(as.character(group_vec) == group_levels[2])
+  samples_g1 <- which(group_vec == group_levels[1])
+  samples_g2 <- which(group_vec == group_levels[2])
+  mean_g1 <- rowMeans(abundance[, samples_g1, drop = FALSE])
+  mean_g2 <- rowMeans(abundance[, samples_g2, drop = FALSE])
 
- mean_g1 <- rowMeans(abundance[, samples_g1, drop = FALSE], na.rm = TRUE)
- mean_g2 <- rowMeans(abundance[, samples_g2, drop = FALSE], na.rm = TRUE)
+  pseudocount <- calculate_pseudocount(as.vector(abundance))
+  log2fc <- calculate_log2_fold_change(mean_g1, mean_g2,
+                                       pseudocount = pseudocount)
+  names(log2fc) <- rownames(abundance)
 
- # Calculate log2 fold change using unified function
- pseudocount <- calculate_pseudocount(as.vector(abundance))
- log2fc <- calculate_log2_fold_change(mean_g1, mean_g2, pseudocount = pseudocount)
- names(log2fc) <- rownames(abundance)
+  ref_id_candidates <- c("pathway_id", "go_id")
+  ref_id_col <- ref_id_candidates[ref_id_candidates %in%
+                                    colnames(pathway_reference)][1]
+  if (is.na(ref_id_col)) {
+    stop(
+      "pathway_reference must contain a 'pathway_id' or 'go_id' column.",
+      call. = FALSE
+    )
+  }
+  pathway_reference[[ref_id_col]] <- validate_nonempty_character_column(
+    pathway_reference[[ref_id_col]],
+    ref_id_col,
+    "pathway_reference"
+  )
 
- # Determine gene member column in pathway_reference
- # Support both wide format (semicolon-separated) and long format (one gene per row)
- gene_col_candidates <- c("ko_members", "KO", "ko_id", "genes", "gene", "ec_numbers")
- gene_col <- NULL
- for (col in gene_col_candidates) {
-   if (col %in% colnames(pathway_reference)) {
-     gene_col <- col
-     break
-   }
- }
- if (is.null(gene_col)) {
-   # Fallback: try to find any column with semicolon-separated values
-   for (col in colnames(pathway_reference)) {
-     if (any(grepl(";", as.character(pathway_reference[[col]]), fixed = TRUE))) {
-       gene_col <- col
-       break
-     }
-   }
- }
- if (is.null(gene_col)) {
-   stop("Cannot find gene member column in pathway_reference. ",
-        "Expected columns: ", paste(gene_col_candidates, collapse = ", "))
- }
+  gene_col_candidates <- c("ko_members", "KO", "ko_id", "genes", "gene",
+                           "ec_numbers")
+  known_gene_cols <- gene_col_candidates[gene_col_candidates %in%
+                                           colnames(pathway_reference)]
+  if (length(known_gene_cols) > 1) {
+    stop(
+      "pathway_reference contains multiple recognized gene member columns: ",
+      paste(known_gene_cols, collapse = ", "), ". Keep only one.",
+      call. = FALSE
+    )
+  }
+  gene_col <- if (length(known_gene_cols) == 1) known_gene_cols else NULL
+  if (is.null(gene_col)) {
+    possible_member_cols <- setdiff(colnames(pathway_reference), ref_id_col)
+    semicolon_cols <- possible_member_cols[vapply(
+      pathway_reference[possible_member_cols],
+      function(values) any(grepl(";", as.character(values), fixed = TRUE),
+                            na.rm = TRUE),
+      logical(1)
+    )]
+    if (length(semicolon_cols) == 1) {
+      gene_col <- semicolon_cols
+    } else if (length(semicolon_cols) > 1) {
+      stop(
+        "pathway_reference contains multiple possible semicolon-delimited gene member columns: ",
+        paste(semicolon_cols, collapse = ", "), ". Keep only one.",
+        call. = FALSE
+      )
+    }
+  }
+  if (is.null(gene_col)) {
+    stop("Cannot find a gene member column in pathway_reference. Expected one of: ",
+         paste(gene_col_candidates, collapse = ", "), ".", call. = FALSE)
+  }
 
- # Build data for ridge plot
- # Using list + do.call(rbind, ...) for O(n) vs O(n²) performance
- ridge_data_list <- vector("list", nrow(df))
+  display_labels <- ifelse(
+    nchar(df[[pathway_name_col]]) > 50,
+    paste0(substr(df[[pathway_name_col]], 1, 47), "..."),
+    df[[pathway_name_col]]
+  )
+  duplicated_labels <- duplicated(display_labels) |
+    duplicated(display_labels, fromLast = TRUE)
+  display_labels[duplicated_labels] <- paste0(
+    display_labels[duplicated_labels], " [",
+    df$pathway_id[duplicated_labels], "]"
+  )
+  df$.ridge_display_label <- display_labels
 
- # Determine ref_id_col once outside the loop
- ref_id_col <- if ("pathway_id" %in% colnames(pathway_reference)) {
-   "pathway_id"
- } else if ("go_id" %in% colnames(pathway_reference)) {
-   "go_id"
- } else {
-   colnames(pathway_reference)[1]
- }
+  # Build data for ridge plot using one parsing rule for both long references
+  # and semicolon-delimited wide references.
+  ridge_data_list <- vector("list", nrow(df))
 
  for (i in seq_len(nrow(df))) {
    pid <- df[["pathway_id"]][i]
-   pname <- df[[pathway_name_col]][i]
-
-   # Truncate long names
-   if (nchar(pname) > 50) {
-     pname <- paste0(substr(pname, 1, 47), "...")
-   }
+   pname <- df$.ridge_display_label[i]
 
    # Get direction if available
    direction <- if (!is.null(direction_col)) {
@@ -363,16 +386,10 @@ pathway_ridgeplot <- function(gsea_results,
    ref_rows <- pathway_reference[pathway_reference[[ref_id_col]] == pid, ]
 
    if (nrow(ref_rows) > 0) {
-     # Handle both long format (multiple rows) and wide format (semicolon-separated)
-     if (nrow(ref_rows) > 1) {
-       # Long format: each row is one gene
-       genes <- unique(as.character(ref_rows[[gene_col]]))
-     } else {
-       # Wide format: genes are semicolon-separated in one row
-       genes_str <- ref_rows[[gene_col]][1]
-       genes <- unlist(strsplit(as.character(genes_str), ";"))
-     }
-     genes <- trimws(genes)
+     member_values <- as.character(ref_rows[[gene_col]])
+     member_values <- member_values[!is.na(member_values)]
+     genes <- unique(trimws(unlist(strsplit(member_values, ";", fixed = TRUE))))
+     genes <- genes[nzchar(genes)]
 
      # Get fold changes for these genes
      fc_values <- log2fc[names(log2fc) %in% genes]
@@ -390,25 +407,18 @@ pathway_ridgeplot <- function(gsea_results,
    }
  }
 
- # Combine all data frames at once (O(n) instead of O(n²))
- non_null_list <- ridge_data_list[!sapply(ridge_data_list, is.null)]
- if (length(non_null_list) == 0) {
-   stop("No gene data found for the selected pathways. ",
-        "Check that pathway_reference matches your abundance data.")
- }
- ridge_data <- do.call(rbind, non_null_list)
+  non_null_list <- ridge_data_list[!vapply(ridge_data_list, is.null, logical(1))]
+  if (length(non_null_list) == 0) {
+    stop("No gene data found for the selected pathways. ",
+         "Check that pathway_reference matches your abundance data.",
+         call. = FALSE)
+  }
+  ridge_data <- do.call(rbind, non_null_list)
 
- if (is.null(ridge_data) || nrow(ridge_data) == 0) {
-   stop("No gene data found for the selected pathways. ",
-        "Check that pathway_reference matches your abundance data.")
- }
-
- # Order pathways by their appearance in the sorted results
- pathway_order <- unique(df[[pathway_name_col]])
- pathway_order <- sapply(pathway_order, function(x) {
-   if (nchar(x) > 50) paste0(substr(x, 1, 47), "...") else x
- })
- ridge_data$pathway <- factor(ridge_data$pathway, levels = rev(pathway_order))
+  pathway_order <- df$.ridge_display_label
+  pathway_order <- pathway_order[pathway_order %in% ridge_data$pathway]
+  ridge_data$pathway <- factor(ridge_data$pathway,
+                               levels = rev(pathway_order))
 
  if (show_direction) {
    if (!is.character(colors) || is.null(names(colors))) {

@@ -236,6 +236,207 @@ test_that("visualize_gsea validates inputs correctly", {
     visualize_gsea(gsea_results, pathway_label_column = ""),
     "single non-empty character string"
   )
+  expect_error(
+    visualize_gsea(gsea_results, colors = character(0)),
+    "one or more valid R color"
+  )
+  expect_error(
+    visualize_gsea(gsea_results, colors = "not-a-color"),
+    "invalid R color"
+  )
+})
+
+test_that("visualize_gsea rejects ambiguous or unknown parameter overrides", {
+  gsea_results <- create_gsea_test_results()
+
+  expect_error(
+    visualize_gsea(
+      gsea_results,
+      plot_type = "network",
+      network_params = list(0.5)
+    ),
+    "network_params.*named list"
+  )
+  expect_error(
+    visualize_gsea(
+      gsea_results,
+      plot_type = "network",
+      network_params = list(similarity_cutof = 0.5)
+    ),
+    "unknown parameter name.*similarity_cutof"
+  )
+  expect_error(
+    visualize_gsea(
+      gsea_results,
+      plot_type = "heatmap",
+      abundance = data.frame(),
+      metadata = data.frame(),
+      group = "group",
+      heatmap_params = list(cluster_row = FALSE)
+    ),
+    "unknown parameter name.*cluster_row"
+  )
+  expect_error(
+    visualize_gsea(
+      gsea_results,
+      plot_type = "heatmap",
+      abundance = data.frame(),
+      metadata = data.frame(),
+      group = "group",
+      heatmap_params = list(cluster_rows = c(TRUE, FALSE))
+    ),
+    "heatmap_params\\$cluster_rows.*TRUE or FALSE"
+  )
+  expect_error(
+    visualize_gsea(
+      gsea_results,
+      plot_type = "heatmap",
+      abundance = data.frame(),
+      metadata = data.frame(),
+      group = "group",
+      heatmap_params = list(col_fun = "blue")
+    ),
+    "heatmap_params\\$col_fun.*color function"
+  )
+})
+
+test_that("visualize_gsea validates scale overrides instead of silently ignoring them", {
+  gsea_results <- create_gsea_test_results()
+
+  expect_error(
+    visualize_gsea(gsea_results, plot_type = "barplot", scale = 123),
+    "scale.*character color vector"
+  )
+  expect_error(
+    visualize_gsea(
+      gsea_results,
+      plot_type = "dotplot",
+      scale = function(n) stop("palette unavailable")
+    ),
+    "palette function.*palette unavailable"
+  )
+  expect_error(
+    visualize_gsea(
+      gsea_results,
+      plot_type = "barplot",
+      scale = function(n) rep("not-a-color", n)
+    ),
+    "scale.*invalid R color"
+  )
+  expect_error(
+    visualize_gsea(gsea_results, plot_type = "barplot", scale = "red"),
+    "at least two colors"
+  )
+
+  custom_scale <- ggplot2::scale_fill_manual(
+    values = c(Positive = "orange", Negative = "purple"),
+    name = "Custom direction"
+  )
+  p <- visualize_gsea(
+    gsea_results,
+    plot_type = "barplot",
+    scale = custom_scale
+  )
+  expect_identical(p$scales$get_scales("fill")$name, "Custom direction")
+
+  expect_error(
+    visualize_gsea(
+      gsea_results,
+      plot_type = "dotplot",
+      scale = ggplot2::scale_fill_gradient()
+    ),
+    "must map the 'colour' aesthetic"
+  )
+})
+
+test_that("visualize_gsea rejects conflicting or incompatible heatmap scales", {
+  gsea_results <- create_gsea_test_results()
+  abundance <- matrix(
+    seq_len(20),
+    nrow = 2,
+    dimnames = list(c("K00001", "K00002"), paste0("S", 1:10))
+  )
+  metadata <- data.frame(
+    sample = paste0("S", 1:10),
+    group = rep(c("A", "B"), each = 5),
+    stringsAsFactors = FALSE
+  )
+
+  expect_error(
+    visualize_gsea(
+      gsea_results,
+      plot_type = "heatmap",
+      abundance = abundance,
+      metadata = metadata,
+      group = "group",
+      scale = ggplot2::scale_fill_gradient()
+    ),
+    "cannot be used for a ComplexHeatmap plot"
+  )
+  expect_error(
+    visualize_gsea(
+      gsea_results,
+      plot_type = "heatmap",
+      abundance = abundance,
+      metadata = metadata,
+      group = "group",
+      scale = c("navy", "white", "firebrick"),
+      heatmap_params = list(col_fun = function(x) "black")
+    ),
+    "Specify only one heatmap color mapping"
+  )
+})
+
+test_that("visualize_gsea heatmap validates and cycles annotation colors", {
+  skip_if_not_installed("ComplexHeatmap")
+  skip_if_not_installed("circlize")
+
+  gsea_results <- data.frame(
+    pathway_id = "p1",
+    pathway_name = "Pathway 1",
+    NES = 1.5,
+    p.adjust = 0.01,
+    leading_edge = "K00001",
+    stringsAsFactors = FALSE
+  )
+  abundance <- matrix(
+    seq_len(12),
+    nrow = 1,
+    dimnames = list("K00001", paste0("S", 1:12))
+  )
+  metadata <- data.frame(
+    sample = paste0("S", 1:12),
+    group = paste0("G", 1:12),
+    stringsAsFactors = FALSE
+  )
+
+  p <- visualize_gsea(
+    gsea_results,
+    plot_type = "heatmap",
+    abundance = abundance,
+    metadata = metadata,
+    group = "group"
+  )
+  expect_s4_class(p, "Heatmap")
+
+  expect_error(
+    visualize_gsea(
+      gsea_results,
+      plot_type = "heatmap",
+      abundance = abundance,
+      metadata = metadata,
+      group = "group",
+      heatmap_params = list(
+        annotation_colors = list(
+          Group = stats::setNames(
+            rep("red", 12),
+            c(paste0("G", 1:11), "wrong")
+          )
+        )
+      )
+    ),
+    "must exactly match categorical levels"
+  )
 })
 
 test_that("visualize_gsea validates selected pathway identifiers and labels", {
@@ -274,6 +475,18 @@ test_that("visualize_gsea validates selected pathway identifiers and labels", {
   expect_true(all(c(missing_labels$pathway_id[1],
                     missing_labels$pathway_id[2],
                     "Named pathway") %in% labels))
+
+  duplicated_labels <- gsea_results
+  duplicated_labels$pathway_name <- "Shared pathway"
+  p_disambiguated <- visualize_gsea(
+    duplicated_labels,
+    plot_type = "dotplot",
+    n_pathways = 3
+  )
+  expect_identical(
+    sort(as.character(p_disambiguated$data$pathway_label)),
+    sort(paste0("Shared pathway [", duplicated_labels$pathway_id, "]"))
+  )
 })
 
 test_that("visualize_gsea validates GSEA statistic columns before plotting", {

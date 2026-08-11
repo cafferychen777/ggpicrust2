@@ -20,8 +20,11 @@ get_available_themes <- function() {
 
 #' Get Color Theme
 #'
-#' @param theme_name Character string specifying the theme name
-#' @param n_colors Positive integer specifying the number of colors needed
+#' @param theme_name Character string specifying one of the names returned by
+#'   `get_available_themes()`
+#' @param n_colors Positive integer specifying the number of colors needed.
+#'   Requests beyond a theme's base palette are interpolated so categorical
+#'   colors are not recycled exactly.
 #' @return A list containing theme colors and settings
 #' @export
 get_color_theme <- function(theme_name = "default", n_colors = 8) {
@@ -182,17 +185,28 @@ get_color_theme <- function(theme_name = "default", n_colors = 8) {
   
   # Get the requested theme
   if (!theme_name %in% names(themes)) {
-    warning(paste("Theme", theme_name, "not found. Using default theme."))
-    theme_name <- "default"
+    stop(
+      "Unknown color theme '", theme_name, "'. Available themes: ",
+      paste(names(themes), collapse = ", "),
+      ".",
+      call. = FALSE
+    )
   }
   
   theme <- themes[[theme_name]]
   
-  # Adjust colors to requested number
-  theme$group_colors <- rep(theme$group_colors, length.out = n_colors)
-  theme$pathway_class_colors <- rep(
+  # Expand palettes by interpolation instead of recycling exact colors. A
+  # categorical palette must not assign identical colors to distinct groups.
+  resize_palette <- function(palette, size) {
+    if (size <= length(palette)) {
+      return(palette[seq_len(size)])
+    }
+    grDevices::colorRampPalette(palette)(size)
+  }
+  theme$group_colors <- resize_palette(theme$group_colors, n_colors)
+  theme$pathway_class_colors <- resize_palette(
     theme$pathway_class_colors,
-    length.out = max(n_colors, 20)
+    max(n_colors, 20)
   )
   
   return(theme)
@@ -205,7 +219,8 @@ get_color_theme <- function(theme_name = "default", n_colors = 8) {
 #' @param n_groups Number of groups in the data
 #' @param has_pathway_class Whether pathway class information is available
 #' @param data_type Type of data ("abundance", "pvalue", "foldchange")
-#' @param accessibility_mode Whether to use accessibility-friendly colors
+#' @param accessibility_mode Whether to require accessibility-friendly colors.
+#'   When TRUE, this constraint takes precedence over data-type heuristics.
 #' @return A list with suggested theme and colors
 #' @export
 smart_color_selection <- function(n_groups, has_pathway_class = FALSE, 
@@ -225,22 +240,24 @@ smart_color_selection <- function(n_groups, has_pathway_class = FALSE,
     "data_type"
   )
   
-  # Base recommendation logic
+  # Accessibility is a hard constraint, not a recommendation that later
+  # heuristics may overwrite.
   if (accessibility_mode) {
     recommended_theme <- "colorblind_friendly"
-  } else if (n_groups <= 3) {
-    recommended_theme <- "nature"  # Clean and professional for few groups
-  } else if (n_groups <= 6) {
-    recommended_theme <- "science"  # Good balance for medium number of groups
   } else {
-    recommended_theme <- "viridis"  # Better for many groups
-  }
-  
-  # Adjust based on data type
-  if (data_type == "pvalue") {
-    recommended_theme <- "high_contrast"  # Better for significance visualization
-  } else if (data_type == "foldchange") {
-    recommended_theme <- "cell"  # Good diverging colors for fold changes
+    recommended_theme <- if (n_groups <= 3) {
+      "nature"
+    } else if (n_groups <= 6) {
+      "science"
+    } else {
+      "viridis"
+    }
+
+    if (data_type == "pvalue") {
+      recommended_theme <- "high_contrast"
+    } else if (data_type == "foldchange") {
+      recommended_theme <- "cell"
+    }
   }
   
   # Get the theme

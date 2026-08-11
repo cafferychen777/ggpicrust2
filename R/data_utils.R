@@ -1347,6 +1347,55 @@ normalize_logical_flag <- function(value, param_name) {
   stop(sprintf("'%s' must be TRUE or FALSE.", param_name), call. = FALSE)
 }
 
+#' Merge a strict named parameter list with defaults
+#'
+#' Unlike utils::modifyList(), this helper rejects unnamed, duplicated, and
+#' unknown overrides. Public parameter bundles should fail at the API boundary
+#' instead of silently ignoring misspelled or positional entries.
+#' @noRd
+merge_named_parameters <- function(defaults, overrides, param_name) {
+  if (!is.list(overrides)) {
+    stop(sprintf("'%s' must be a named list.", param_name), call. = FALSE)
+  }
+  if (length(overrides) == 0) {
+    return(defaults)
+  }
+
+  override_names <- names(overrides)
+  if (is.null(override_names) || anyNA(override_names) ||
+      any(!nzchar(trimws(override_names)))) {
+    stop(sprintf("'%s' must be a named list with no unnamed entries.",
+                 param_name),
+         call. = FALSE)
+  }
+  if (anyDuplicated(override_names)) {
+    duplicated_names <- unique(override_names[duplicated(override_names)])
+    stop(
+      sprintf(
+        "'%s' contains duplicated parameter name(s): %s.",
+        param_name,
+        paste(duplicated_names, collapse = ", ")
+      ),
+      call. = FALSE
+    )
+  }
+
+  unknown_names <- setdiff(override_names, names(defaults))
+  if (length(unknown_names) > 0) {
+    stop(
+      sprintf(
+        "'%s' contains unknown parameter name(s): %s. Allowed names: %s.",
+        param_name,
+        paste(unknown_names, collapse = ", "),
+        paste(names(defaults), collapse = ", ")
+      ),
+      call. = FALSE
+    )
+  }
+
+  utils::modifyList(defaults, overrides, keep.null = TRUE)
+}
+
 #' Validate a p-value or FDR threshold
 #'
 #' @noRd
@@ -1395,6 +1444,20 @@ validate_probability_values <- function(values, column_name,
   invisible(TRUE)
 }
 
+#' Convert probabilities to a finite negative base-10 logarithm
+#'
+#' Exact zeros have no finite logarithm, so they are represented at the
+#' smallest positive normalized double. Positive subnormal values are preserved
+#' rather than being raised by pmax(). Inputs are expected to be validated
+#' probabilities; missing values remain missing.
+#' @noRd
+negative_log10_probability <- function(values) {
+  values_for_log <- values
+  exact_zero <- !is.na(values_for_log) & values_for_log == 0
+  values_for_log[exact_zero] <- .Machine$double.xmin
+  -log10(values_for_log)
+}
+
 #' Validate a p-value adjustment method
 #'
 #' @noRd
@@ -1410,6 +1473,31 @@ validate_p_adjust_method <- function(value, param_name = "p_adjust_method") {
   }
 
   invisible(TRUE)
+}
+
+#' Resolve the deprecated p.adjust alias without silent conflicts
+#'
+#' @noRd
+resolve_deprecated_p_adjust_method <- function(p_adjust_method, p.adjust,
+                                               p_adjust_method_missing) {
+  if (is.null(p.adjust)) {
+    return(p_adjust_method)
+  }
+
+  if (!p_adjust_method_missing && !identical(p_adjust_method, p.adjust)) {
+    stop(
+      "Conflicting p-value adjustment parameters: 'p_adjust_method' is '",
+      p_adjust_method, "' but deprecated 'p.adjust' is '", p.adjust,
+      "'. Supply only 'p_adjust_method'.",
+      call. = FALSE
+    )
+  }
+
+  warning(
+    "'p.adjust' parameter is deprecated. Use 'p_adjust_method' instead.",
+    call. = FALSE
+  )
+  p.adjust
 }
 
 #' Validate finite numeric result columns
@@ -1740,6 +1828,63 @@ validate_color_values <- function(values, param_name, allow_null = FALSE,
   }
 
   invisible(TRUE)
+}
+
+#' Normalize a color palette against categorical levels
+#'
+#' Unnamed palettes are assigned in level order. Named palettes must identify
+#' every level exactly once so typos cannot silently produce missing colors.
+#' @noRd
+normalize_level_colors <- function(colors, levels, param_name = "colors",
+                                   allow_unnamed = TRUE) {
+  levels <- as.character(levels)
+  if (length(levels) == 0 || anyNA(levels) ||
+      any(!nzchar(trimws(levels))) || anyDuplicated(levels)) {
+    stop("Internal error: categorical color levels must be unique and non-empty.",
+         call. = FALSE)
+  }
+  if (length(colors) != length(levels)) {
+    stop(
+      "Number of colors in '", param_name, "' (", length(colors),
+      ") does not match number of levels (", length(levels), "): ",
+      paste(levels, collapse = ", "),
+      ".",
+      call. = FALSE
+    )
+  }
+  validate_color_values(
+    colors,
+    param_name,
+    expected_length = length(levels)
+  )
+
+  color_names <- names(colors)
+  is_unnamed <- is.null(color_names) ||
+    (!anyNA(color_names) && all(!nzchar(trimws(color_names))))
+  if (is_unnamed) {
+    if (!allow_unnamed) {
+      stop("'", param_name, "' must be named by categorical levels: ",
+           paste(levels, collapse = ", "), ".", call. = FALSE)
+    }
+    return(stats::setNames(unname(colors), levels))
+  }
+
+  if (anyNA(color_names) || any(!nzchar(trimws(color_names))) ||
+      anyDuplicated(trimws(color_names))) {
+    stop("Names of '", param_name,
+         "' must be unique, non-missing, and non-empty.", call. = FALSE)
+  }
+  color_names <- trimws(color_names)
+  missing_levels <- setdiff(levels, color_names)
+  extra_levels <- setdiff(color_names, levels)
+  if (length(missing_levels) > 0 || length(extra_levels) > 0) {
+    stop("Names of '", param_name,
+         "' must exactly match categorical levels: ",
+         paste(levels, collapse = ", "), ".", call. = FALSE)
+  }
+
+  colors <- stats::setNames(unname(colors), color_names)
+  colors[levels]
 }
 
 #' Validate Data Frame Input

@@ -23,7 +23,9 @@ taxa_contribution_heatmap(
 \item{contrib_agg}{A data.frame from \code{\link{aggregate_taxa_contributions}}.}
 
 \item{annotation_data}{Optional data.frame from \code{\link{pathway_annotation}}
-for replacing function IDs with readable descriptions.}
+for replacing function IDs with readable descriptions. It must contain
+either \code{feature}/\code{description} or
+\code{pathway}/\code{pathway_name} columns.}
 
 \item{n_functions}{Integer. Number of functions to include. Default 20.}
 
@@ -62,7 +64,8 @@ PICRUSt2 contribution outputs are sparse; combinations absent from
 across samples.
 If \code{annotation_data} contains multiple non-empty labels for the same
 plotted function ID, the function errors instead of silently choosing one
-label. Repeated rows with the same ID and same label are allowed.
+label. Repeated rows with the same ID and same label are allowed, and label
+whitespace is normalized before comparison and display.
 }
 \examples{
 \donttest{

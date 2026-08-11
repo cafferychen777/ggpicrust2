@@ -28,7 +28,9 @@ visualize_gsea(
 
 \item{sort_by}{A character string specifying the sorting criterion: "NES", "pvalue", or "p.adjust"}
 
-\item{colors}{A vector of colors for the visualization}
+\item{colors}{A vector of valid R colors used for the default heatmap group
+annotation palette. Colors are cycled when the number of observed groups
+exceeds the palette length.}
 
 \item{abundance}{A data frame containing the original abundance data (required for heatmap visualization). Data frames may also provide a leading non-numeric feature ID column (for example \code{#NAME}, \code{feature}, or \code{pathway}); it is converted to row names before sample alignment.}
 
@@ -36,9 +38,14 @@ visualize_gsea(
 
 \item{group}{A character string specifying the column name in metadata that contains the grouping variable (required for heatmap visualization)}
 
-\item{network_params}{A list of parameters for network visualization}
+\item{network_params}{A named list of network overrides. Supported names are
+`similarity_measure`, `similarity_cutoff`, `layout`, `node_color_by`, and
+`edge_width_by`.}
 
-\item{heatmap_params}{A list of parameters for heatmap visualization}
+\item{heatmap_params}{A named list of heatmap overrides. Supported names are
+`cluster_rows`, `cluster_columns`, `show_rownames`, `annotation_colors`, and
+`col_fun`. Custom `annotation_colors` must be a list containing a named `Group`
+color vector whose names exactly match the observed group labels.}
 
 \item{pathway_label_column}{A character string specifying which column to use for pathway labels.
 If NULL (default), the function will automatically use 'pathway_name' if available, otherwise 'pathway_id'.
@@ -46,7 +53,8 @@ This allows for custom labeling when using annotated GSEA results.}
 
 \item{scale}{Optional palette/scale for customizing colors. Accepts: (1) a character vector of colors,
   (2) a function that returns colors given an integer (e.g., viridisLite::viridis), or
-  (3) a ggplot2 scale object (e.g., ggplot2::scale_fill_gradientn(...)).
+  (3) for non-heatmap plots, a ggplot2 scale object for the mapped aesthetic
+  (e.g., ggplot2::scale_fill_gradientn(...)).
   When NULL, defaults keep current behavior. Applies to: enrichment_plot (fill, continuous),
   dotplot (color, continuous), barplot (fill, discrete Positive/Negative), network (color, diverging around 0),
   heatmap (main heatmap col; row annotation stays default unless overridden in heatmap_params).

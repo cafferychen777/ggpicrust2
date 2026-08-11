@@ -973,6 +973,31 @@ test_that("taxa_contribution_bar groups percentages by exact key pairs", {
   expect_equal(p$data$contribution, rep(100, 4))
 })
 
+test_that("taxa_contribution_bar preserves requested function order", {
+  agg <- data.frame(
+    sample = rep(c("S1", "S2"), each = 2),
+    function_id = rep(c("F_first", "F_second"), 2),
+    taxon_label = "Taxon1",
+    contribution = seq_len(4),
+    stringsAsFactors = FALSE
+  )
+  metadata <- data.frame(
+    sample = c("S1", "S2"),
+    group = c("A", "B"),
+    stringsAsFactors = FALSE
+  )
+
+  p <- taxa_contribution_bar(
+    agg,
+    metadata,
+    group = "group",
+    function_ids = c("F_second", "F_first"),
+    show_percentage = FALSE
+  )
+
+  expect_equal(levels(p$data$function_id), c("F_second", "F_first"))
+})
+
 
 # ---- taxa_contribution_heatmap ----
 
@@ -1077,6 +1102,49 @@ test_that("taxa_contribution_heatmap rejects conflicting annotation labels", {
     ),
     "multiple labels"
   )
+})
+
+test_that("taxa_contribution_heatmap validates and normalizes annotations", {
+  agg <- data.frame(
+    sample = c("S1", "S2"),
+    function_id = "K00001",
+    taxon_label = "Taxon1",
+    contribution = c(1, 2),
+    stringsAsFactors = FALSE
+  )
+
+  expect_error(
+    taxa_contribution_heatmap(
+      agg,
+      annotation_data = list(feature = "K00001", description = "label"),
+      cluster_rows = FALSE,
+      cluster_cols = FALSE
+    ),
+    "annotation_data.*data frame"
+  )
+  expect_error(
+    taxa_contribution_heatmap(
+      agg,
+      annotation_data = data.frame(id = "K00001", label = "label"),
+      cluster_rows = FALSE,
+      cluster_cols = FALSE
+    ),
+    "must contain either"
+  )
+
+  annotation <- data.frame(
+    feature = c("K00001", "K00001"),
+    description = c("  normalized label", "normalized label  "),
+    stringsAsFactors = FALSE
+  )
+  p <- taxa_contribution_heatmap(
+    agg,
+    annotation_data = annotation,
+    cluster_rows = FALSE,
+    cluster_cols = FALSE
+  )
+
+  expect_equal(levels(p$data$func), "normalized label")
 })
 
 test_that("taxa_contribution_heatmap disambiguates shared annotation labels", {

@@ -231,6 +231,69 @@ test_that("pathway_ridgeplot uses factor levels rather than sample order for def
   expect_gt(k00001_fc, 0)
 })
 
+test_that("pathway_ridgeplot validates and fully parses pathway references", {
+  skip_if_not_installed("ggridges")
+
+  abundance <- matrix(
+    c(1, 2, 8, 10,
+      2, 3, 7, 9,
+      4, 5, 6, 8),
+    nrow = 3,
+    byrow = TRUE,
+    dimnames = list(c("K00001", "K00002", "K00003"), paste0("S", 1:4))
+  )
+  metadata <- data.frame(
+    sample = paste0("S", 1:4),
+    group = c("A", "A", "B", "B"),
+    stringsAsFactors = FALSE
+  )
+  shared_long_name <- paste(rep("Shared pathway label", 4), collapse = " ")
+  gsea_results <- data.frame(
+    pathway_id = c("p1", "p2"),
+    pathway_name = shared_long_name,
+    NES = c(2, 1),
+    pvalue = c(0.01, 0.02),
+    p.adjust = c(0.02, 0.03),
+    stringsAsFactors = FALSE
+  )
+  pathway_reference <- data.frame(
+    pathway_id = c("p1", "p1", "p2"),
+    ko_members = c("K00001;K00002", "K00003", "K00002;K00003"),
+    stringsAsFactors = FALSE
+  )
+
+  plot <- pathway_ridgeplot(
+    gsea_results,
+    abundance,
+    metadata,
+    group = "group",
+    pathway_reference = pathway_reference
+  )
+
+  expect_setequal(
+    plot$data$gene_id[plot$data$pathway_id == "p1"],
+    c("K00001", "K00002", "K00003")
+  )
+  expect_length(levels(plot$data$pathway), 2)
+  expect_true(all(grepl("\\[p[12]\\]$", levels(plot$data$pathway))))
+
+  invalid_reference <- data.frame(
+    wrong_id = "p1",
+    ko_members = "K00001",
+    stringsAsFactors = FALSE
+  )
+  expect_error(
+    pathway_ridgeplot(
+      gsea_results[1, , drop = FALSE],
+      abundance,
+      metadata,
+      group = "group",
+      pathway_reference = invalid_reference
+    ),
+    "pathway_id.*go_id"
+  )
+})
+
 test_that("pathway_ridgeplot requires explicit comparison for multi-group metadata", {
   skip_if_not_installed("ggridges")
 
