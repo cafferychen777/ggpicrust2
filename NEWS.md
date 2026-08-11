@@ -1,6 +1,39 @@
-# ggpicrust2 2.5.17
+# ggpicrust2 2.5.18
 
 ## Bug Fixes
+
+* Color themes now reject unknown names instead of silently falling back to
+  the default theme, expand large palettes without recycling identical colors,
+  and keep accessibility mode authoritative during smart theme selection.
+* `visualize_gsea()` now validates named network/heatmap parameter bundles,
+  applies custom scales consistently across supported plot types, rejects
+  incompatible heatmap scale combinations, preserves group-to-color identity,
+  and disambiguates duplicate pathway display labels with pathway IDs.
+* `pathway_ridgeplot()` now requires an explicit pathway-reference ID schema,
+  parses member lists consistently across supported table layouts, rejects
+  ambiguous member columns, and disambiguates duplicate pathway labels.
+* `pathway_heatmap()` now validates secondary groups before concatenation,
+  rejects conflicting deprecated/new grouping arguments, avoids duplicate
+  correlation-distance work, and keeps explicit legend/row-name visibility
+  flags authoritative over custom themes.
+* `pathway_pca()` now maps named colors by group identity and omits marginal
+  density estimates for singleton groups instead of constructing invalid or
+  unused density layers.
+* `pathway_volcano()` now requires an available label column when labels are
+  requested, removes blank labels, maps named colors by significance class,
+  and preserves positive subnormal p-values on the negative-log10 scale.
+* `compare_gsea_daa()` now rejects missing scatter probabilities and partial
+  group-direction schemas, preserves positive subnormal probabilities, and
+  returns the same explicit count plot for empty Venn and UpSet universes.
+* Deprecated `p.adjust` aliases now share one compatibility path across the
+  top-level, DAA, GSEA, and metagenome-comparison entry points and can no
+  longer silently override a conflicting explicit `p_adjust_method`.
+* Taxa-contribution plots now preserve requested function order, reject
+  unsupported annotation schemas instead of silently retaining raw IDs, and
+  normalize annotation-label whitespace before conflict detection.
+* `compare_daa_results()` now rejects invalid self-comparisons where
+  `group1 == group2` and constructs its result table without repeated
+  row-binding.
 
 * `pathway_heatmap()` and `taxa_contribution_heatmap()` now validate
   hierarchical clustering method/distance combinations. Ward linkage methods

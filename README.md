@@ -1192,8 +1192,8 @@ When encountering the following error:
 
     Error in grid.Call(C_textBounds, as.graphicsAnnot(xlabel),x$x, x$y, :
 
-Please having some required fonts installed. You can refer to this
-[thread](https://stackoverflow.com/questions/71362738/r-error-in-grid-callc-textbounds-as-graphicsannotxlabel-xx-xy-polygo).
+Install the fonts required by the selected plotting theme, restart the R
+graphics device, and rerun the plot.
 
 ### Issue 6: Visualization becomes cluttered when there are more than 30 features of statistical significance.
 
