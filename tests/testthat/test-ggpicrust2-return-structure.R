@@ -127,15 +127,15 @@ test_that("ggpicrust2 aligns Group vector to abundance sample order before plott
   expect_equal(unname(captured_group), c("B", "A"))
 })
 
-test_that("ggpicrust2 preserves rownamed abundance input without dropping the first sample", {
+test_that("ggpicrust2 accepts a rownamed matrix without dropping the first sample", {
   seen <- NULL
-  mock_abundance <- data.frame(
-    S1 = c(10, 20),
-    S2 = c(11, 21),
-    S3 = c(30, 40),
-    S4 = c(31, 41),
-    row.names = c("K00001", "K00002"),
-    check.names = FALSE
+  mock_abundance <- matrix(
+    c(10, 20, 11, 21, 30, 40, 31, 41),
+    nrow = 2,
+    dimnames = list(
+      c("K00001", "K00002"),
+      paste0("S", 1:4)
+    )
   )
   metadata <- data.frame(
     sample = paste0("S", 1:4),
@@ -518,4 +518,71 @@ test_that("ggpicrust2 still warns when caller passes legacy p.adjust argument", 
     error = function(e) invisible(NULL)
   )
   expect_true(got_dep)
+})
+
+test_that("ggpicrust2 returns non-significant results without calling the plotter", {
+  abundance <- data.frame(
+    feature = c("K00001", "K00002"),
+    S1 = c(10, 20),
+    S2 = c(11, 21),
+    S3 = c(12, 22),
+    S4 = c(13, 23),
+    check.names = FALSE
+  )
+  metadata <- data.frame(
+    sample = paste0("S", 1:4),
+    Environment = c("A", "A", "B", "B"),
+    stringsAsFactors = FALSE
+  )
+  plotter_called <- FALSE
+
+  mock_pathway_daa <- function(abundance, metadata, group, daa_method,
+                               p_adjust_method, reference,
+                               .pre_aligned = FALSE,
+                               .sample_col = NULL) {
+    data.frame(
+      feature = rownames(abundance),
+      method = "mock_method",
+      p_values = c(0.4, 0.8),
+      adj_method = p_adjust_method,
+      p_adjust = c(0.5, 0.8),
+      group1 = "A",
+      group2 = "B",
+      stringsAsFactors = FALSE
+    )
+  }
+
+  mock_pathway_annotation <- function(pathway, ko_to_kegg, daa_results_df,
+                                      p_adjust_threshold) {
+    daa_results_df$description <- daa_results_df$feature
+    daa_results_df
+  }
+
+  mock_pathway_errorbar <- function(...) {
+    plotter_called <<- TRUE
+    stop("The plotter must not be called without significant results.")
+  }
+
+  result <- NULL
+  expect_warning(
+    result <- suppressMessages(testthat::with_mocked_bindings(
+      ggpicrust2(
+        data = abundance,
+        metadata = metadata,
+        group = "Environment",
+        pathway = "KO",
+        daa_method = "ALDEx2",
+        ko_to_kegg = FALSE
+      ),
+      pathway_daa = mock_pathway_daa,
+      pathway_annotation = mock_pathway_annotation,
+      pathway_errorbar = mock_pathway_errorbar
+    )),
+    "No statistically significant biomarkers"
+  )
+
+  expect_false(plotter_called)
+  expect_null(result[[1]]$plot)
+  expect_equal(result[[1]]$results$feature, c("K00001", "K00002"))
+  expect_equal(result$daa_results_df, result[[1]]$results)
 })

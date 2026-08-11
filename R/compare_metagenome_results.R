@@ -39,10 +39,14 @@
 #' }
 #'
 #' @details
-#' Metagenome matrices are aligned to the same feature and sample identifiers.
-#' Because each matrix measures the same biological samples, DAA must retain
-#' this pairing. Independent-group DAA methods would treat repeated
-#' measurements as independent replicates and are therefore rejected.
+#' Metagenome matrices are aligned to the same sample identifiers. Each DAA
+#' comparison uses the feature intersection for that pair, so an unrelated
+#' third metagenome cannot remove testable features from the pair. Correlations
+#' use the feature intersection across all metagenomes so every matrix entry is
+#' based on the same feature universe. Because each matrix measures the same
+#' biological samples, DAA must retain this pairing. Independent-group DAA
+#' methods would treat repeated measurements as independent replicates and are
+#' therefore rejected.
 #'
 #' Correlation inference permutes the sample columns of one metagenome jointly
 #' across all features. This preserves within-metagenome feature dependence
@@ -141,26 +145,10 @@ compare_metagenome_results <- function(metagenomes, names, daa_method = "ALDEx2"
     }
   }
 
-  # Align every metagenome on the shared feature set AND the shared sample
-  # set before anything else. Both downstream steps index by position:
-  #
-  #   * `cbind()` concatenates feature-by-position for the DAA matrix.
-  #   * the per-feature Spearman correlation indexes
-  #     `metagenomes[[i]][k, ]` vs `metagenomes[[j]][k, ]` -- i.e. compares
-  #     a feature's abundance pattern *across samples* between two
-  #     metagenomes, which is only biologically meaningful if column k
-  #     refers to the same biological sample in both matrices.
-  #
-  # So two alignments are needed in parallel:
-  #   1. Intersect row names (features). Two metagenomes with identical
-  #      feature names in different orders used to produce correlations
-  #      that could flip sign vs the correct by-name alignment.
-  #   2. Intersect column names (samples). Two metagenomes with identical
-  #      sample names in different orders used to correlate "sample 1 of
-  #      metagenome A" against "sample 5 of metagenome B" and produce
-  #      meaningless negative correlations. Mismatched column counts also
-  #      used to fall through to `stats::cor()` and abort mid-loop with
-  #      "incompatible dimensions" instead of failing at the boundary.
+  # Validate identifiers before alignment. Samples must be shared across all
+  # metagenomes because they represent the same biological units. Features
+  # have two different alignment scopes: pair-specific for DAA, and global for
+  # the correlation matrix so all matrix entries use a common feature universe.
   metagenomes <- lapply(seq_along(metagenomes), function(i) {
     m <- metagenomes[[i]]
     context <- sprintf("metagenomes[[%s]]", names[i])
@@ -192,14 +180,6 @@ compare_metagenome_results <- function(metagenomes, names, daa_method = "ALDEx2"
   require_package("circlize", "comparison heatmap")
   require_package("ComplexHeatmap", "comparison heatmap")
 
-  if (any(vapply(metagenomes, function(m) is.null(rownames(m)), logical(1)))) {
-    stop("Every element of 'metagenomes' must have row names (feature identifiers) ",
-         "so features can be aligned across metagenomes.")
-  }
-  if (any(vapply(metagenomes, function(m) is.null(colnames(m)), logical(1)))) {
-    stop("Every element of 'metagenomes' must have column names (sample identifiers) ",
-         "so samples can be aligned across metagenomes.")
-  }
   shared_features <- Reduce(intersect, lapply(metagenomes, rownames))
   if (length(shared_features) == 0) {
     stop("No shared feature identifiers (row names) across the provided metagenomes.")
@@ -232,22 +212,28 @@ compare_metagenome_results <- function(metagenomes, names, daa_method = "ALDEx2"
         call. = FALSE)
     }
   }
-  metagenomes <- lapply(metagenomes,
-                        function(m) m[shared_features, shared_samples, drop = FALSE])
+  sample_aligned_metagenomes <- lapply(
+    metagenomes,
+    function(m) m[, shared_samples, drop = FALSE]
+  )
 
-  # Perform pairwise DAA while retaining the shared-sample pairing.
+  # Perform pairwise DAA while retaining the shared-sample pairing. Feature
+  # alignment is deliberately deferred to each pair: globally intersecting
+  # here would let a third metagenome discard valid features from another pair.
   daa_results <- run_paired_metagenome_daa(
-    metagenomes = metagenomes,
+    metagenomes = sample_aligned_metagenomes,
     names = names,
     daa_method = daa_method,
     p_adjust_method = p_adjust_method,
     reference = reference
   )
 
-  # Compute per-feature Spearman correlations between metagenomes. Safe
-  # to index by both row position (shared feature order) and column
-  # position (shared sample order) now that every metagenome has been
-  # aligned in both dimensions above.
+  # Correlations form one joint matrix, so they use the global feature
+  # intersection to keep every pair on the same feature universe.
+  correlation_metagenomes <- lapply(
+    sample_aligned_metagenomes,
+    function(m) m[shared_features, , drop = FALSE]
+  )
   n_metagenomes <- length(names)
   cor_matrix <- diag(1, nrow = n_metagenomes, ncol = n_metagenomes)
   p_matrix <- matrix(NA_real_, nrow = n_metagenomes, ncol = n_metagenomes)
@@ -255,7 +241,8 @@ compare_metagenome_results <- function(metagenomes, names, daa_method = "ALDEx2"
                             ncol = n_metagenomes)
   n_features_matrix <- matrix(NA_integer_, nrow = n_metagenomes,
                               ncol = n_metagenomes)
-  spearman_inputs <- lapply(metagenomes, prepare_spearman_rank_matrix)
+  spearman_inputs <- lapply(correlation_metagenomes,
+                            prepare_spearman_rank_matrix)
   diag(n_features_matrix) <- vapply(
     spearman_inputs,
     function(x) sum(x$row_norm > 0),
@@ -353,18 +340,34 @@ run_paired_metagenome_daa <- function(metagenomes, names, daa_method,
   results <- lapply(comparisons, function(comparison) {
     group1_index <- comparison[1]
     group2_index <- comparison[2]
+    group1_abundance <- metagenomes[[group1_index]]
+    group2_abundance <- metagenomes[[group2_index]]
+    shared_features <- intersect(
+      rownames(group1_abundance),
+      rownames(group2_abundance)
+    )
+    if (length(shared_features) == 0) {
+      stop(
+        "No shared feature identifiers for metagenome pair '",
+        names[group1_index], "' and '", names[group2_index], "'.",
+        call. = FALSE
+      )
+    }
+    group1_abundance <- group1_abundance[shared_features, , drop = FALSE]
+    group2_abundance <- group2_abundance[shared_features, , drop = FALSE]
+
     if (identical(daa_method, "ALDEx2")) {
       run_paired_aldex2_comparison(
-        metagenomes[[group1_index]],
-        metagenomes[[group2_index]],
+        group1_abundance,
+        group2_abundance,
         group1 = names[group1_index],
         group2 = names[group2_index],
         p_adjust_method = p_adjust_method
       )
     } else {
       run_paired_wilcoxon_comparison(
-        metagenomes[[group1_index]],
-        metagenomes[[group2_index]],
+        group1_abundance,
+        group2_abundance,
         group1 = names[group1_index],
         group2 = names[group2_index],
         p_adjust_method = p_adjust_method

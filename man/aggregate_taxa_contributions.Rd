@@ -19,9 +19,10 @@ aggregate_taxa_contributions(
 \item{contrib_data}{A data.frame from \code{\link{read_contrib_file}} or
 \code{\link{read_strat_file}}.}
 
-\item{taxonomy}{Optional data.frame mapping taxon IDs to taxonomy. Supports
-QIIME2 format (semicolon-delimited taxonomy strings) or DADA2 format
-(separate columns for each rank).}
+\item{taxonomy}{Optional data frame or matrix mapping taxon IDs to taxonomy.
+Taxon IDs may be stored in a standard ID column or in explicit row names.
+Supports QIIME2 format (semicolon-delimited taxonomy strings) or DADA2
+format (separate columns for each rank).}
 
 \item{tax_level}{Character. Taxonomic rank for aggregation. One of
 \code{"Kingdom"}, \code{"Phylum"}, \code{"Class"}, \code{"Order"},

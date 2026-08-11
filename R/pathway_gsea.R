@@ -1143,13 +1143,15 @@ calculate_rank_metric <- function(abundance,
     mean1 <- rowMeans(abundance[, group1_samples, drop = FALSE])
     mean2 <- rowMeans(abundance[, group2_samples, drop = FALSE])
 
-    # Calculate pseudocount using unified function
-    # Note: GSEA uses mean1/mean2 direction (group1/group2)
+    # Apply the package-wide pseudocount rule to both sides of the ratio.
+    # GSEA ranks use group1/group2 direction, the inverse of the shared
+    # group2/group1 fold-change helper.
     pseudocount <- calculate_pseudocount(c(mean1, mean2))
-    mean1[mean1 == 0] <- pseudocount
-    mean2[mean2 == 0] <- pseudocount
-
-    metric <- log2(mean1 / mean2)
+    metric <- -calculate_log2_fold_change(
+      mean1,
+      mean2,
+      pseudocount = pseudocount
+    )
     # Ensure names are preserved - critical for fgsea
     names(metric) <- rownames(abundance)
     

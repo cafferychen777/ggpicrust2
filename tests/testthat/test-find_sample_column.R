@@ -65,4 +65,34 @@ test_that("find_sample_column uses rownames only with near-complete overlap", {
   meta2 <- data.frame(group = c("a", "a", "b", "b"),
                       stringsAsFactors = FALSE)
   expect_null(fsc(meta2, paste0("S", 1:4)))
+
+  # Numeric abundance sample names must not turn default positional row names
+  # into an implicit join key.
+  expect_null(fsc(meta2, as.character(1:4)))
+})
+
+test_that("align_samples treats sample identifiers as unique primary keys", {
+  align <- getFromNamespace("align_samples", "ggpicrust2")
+  abundance <- matrix(
+    seq_len(8),
+    nrow = 2,
+    dimnames = list(c("f1", "f2"), c("S1", "S1", "S2", "S3"))
+  )
+  metadata <- data.frame(
+    sample = c("S1", "S2", "S3"),
+    group = c("A", "B", "B"),
+    stringsAsFactors = FALSE
+  )
+
+  expect_error(
+    align(abundance, metadata, verbose = FALSE),
+    "abundance column names.*duplicated sample identifiers: S1"
+  )
+
+  colnames(abundance) <- c("S1", "S4", "S2", "S3")
+  metadata$sample[2] <- NA_character_
+  expect_error(
+    align(abundance, metadata, sample_col = "sample", verbose = FALSE),
+    "non-missing, non-empty sample identifiers"
+  )
 })

@@ -117,11 +117,48 @@ pathway_volcano <- function(daa_results,
    stop("'daa_results' must be a data frame.")
  }
 
- if (!is.numeric(fc_threshold) || length(fc_threshold) != 1 ||
-     is.na(fc_threshold) || !is.finite(fc_threshold) || fc_threshold < 0) {
-   stop("'fc_threshold' must be a single finite non-negative number.", call. = FALSE)
+ column_parameters <- list(fc_col = fc_col, p_col = p_col)
+ for (column_parameter in names(column_parameters)) {
+   column_value <- column_parameters[[column_parameter]]
+   if (!is.character(column_value) || length(column_value) != 1 ||
+       is.na(column_value) || !nzchar(trimws(column_value))) {
+     stop("'", column_parameter,
+          "' must be a single non-empty column name.", call. = FALSE)
+   }
  }
+ if (!is.null(label_col) &&
+     (!is.character(label_col) || length(label_col) != 1 ||
+      is.na(label_col) || !nzchar(trimws(label_col)))) {
+   stop("'label_col' must be NULL or a single non-empty column name.",
+        call. = FALSE)
+ }
+
+ validate_positive_number(fc_threshold, "fc_threshold", allow_zero = TRUE)
  validate_probability_threshold(p_threshold, "p_threshold")
+ validate_count_parameter(label_top_n, "label_top_n", allow_zero = TRUE)
+ validate_positive_number(point_size, "point_size")
+ validate_probability_threshold(point_alpha, "point_alpha", allow_zero = TRUE)
+ show_threshold_lines <- normalize_logical_flag(
+   show_threshold_lines,
+   "show_threshold_lines"
+ )
+
+ significance_levels <- c("Down", "Not Significant", "Up")
+ if (length(colors) != length(significance_levels)) {
+   stop("'colors' must contain exactly three valid colors for Down, Not Significant, and Up.",
+        call. = FALSE)
+ }
+ validate_color_values(colors, "colors", expected_length = 3)
+ if (is.null(names(colors)) || all(!nzchar(names(colors)))) {
+   names(colors) <- significance_levels
+ } else {
+   missing_colors <- setdiff(significance_levels, names(colors))
+   if (length(missing_colors) > 0 || anyDuplicated(names(colors))) {
+     stop("Named 'colors' must provide each of: ",
+          paste(significance_levels, collapse = ", "), ".", call. = FALSE)
+   }
+   colors <- colors[significance_levels]
+ }
 
  # Backward compatibility: accept legacy column name
  if (fc_col == "log2_fold_change" && !fc_col %in% colnames(daa_results) &&

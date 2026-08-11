@@ -21,10 +21,16 @@ get_available_themes <- function() {
 #' Get Color Theme
 #'
 #' @param theme_name Character string specifying the theme name
-#' @param n_colors Integer specifying the number of colors needed
+#' @param n_colors Positive integer specifying the number of colors needed
 #' @return A list containing theme colors and settings
 #' @export
 get_color_theme <- function(theme_name = "default", n_colors = 8) {
+  if (!is.character(theme_name) || length(theme_name) != 1 ||
+      is.na(theme_name) || !nzchar(trimws(theme_name))) {
+    stop("'theme_name' must be a single non-empty character string.",
+         call. = FALSE)
+  }
+  validate_count_parameter(n_colors, "n_colors")
   
   # Define base themes
   themes <- list(
@@ -183,10 +189,11 @@ get_color_theme <- function(theme_name = "default", n_colors = 8) {
   theme <- themes[[theme_name]]
   
   # Adjust colors to requested number
-  if (n_colors > 0) {
-    theme$group_colors <- rep(theme$group_colors, length.out = n_colors)
-    theme$pathway_class_colors <- rep(theme$pathway_class_colors, length.out = max(n_colors, 20))
-  }
+  theme$group_colors <- rep(theme$group_colors, length.out = n_colors)
+  theme$pathway_class_colors <- rep(
+    theme$pathway_class_colors,
+    length.out = max(n_colors, 20)
+  )
   
   return(theme)
 }
@@ -203,6 +210,20 @@ get_color_theme <- function(theme_name = "default", n_colors = 8) {
 #' @export
 smart_color_selection <- function(n_groups, has_pathway_class = FALSE, 
                                  data_type = "abundance", accessibility_mode = FALSE) {
+  validate_count_parameter(n_groups, "n_groups")
+  has_pathway_class <- normalize_logical_flag(
+    has_pathway_class,
+    "has_pathway_class"
+  )
+  accessibility_mode <- normalize_logical_flag(
+    accessibility_mode,
+    "accessibility_mode"
+  )
+  validate_choice(
+    data_type,
+    c("abundance", "pvalue", "foldchange"),
+    "data_type"
+  )
   
   # Base recommendation logic
   if (accessibility_mode) {
@@ -229,6 +250,7 @@ smart_color_selection <- function(n_groups, has_pathway_class = FALSE,
   theme$recommendation_reason <- paste(
     "Selected", recommended_theme, "theme for", n_groups, "groups,",
     "data type:", data_type,
+    if (has_pathway_class) ", with pathway-class annotations" else "",
     if (accessibility_mode) ", with accessibility considerations" else ""
   )
   
@@ -244,12 +266,13 @@ smart_color_selection <- function(n_groups, has_pathway_class = FALSE,
 #' Creates gradient colors for fold change visualization
 #'
 #' @param theme_name Character string specifying the theme
-#' @param n_colors Number of colors in the gradient
-#' @param diverging Whether to create a diverging gradient (for fold changes)
+#' @param n_colors Positive integer specifying the number of colors in the gradient
+#' @param diverging Logical. Whether to create a diverging gradient (for fold changes)
 #' @return A vector of colors
 #' @export
 create_gradient_colors <- function(theme_name = "default", n_colors = 11, diverging = TRUE) {
-  
+  validate_count_parameter(n_colors, "n_colors")
+  diverging <- normalize_logical_flag(diverging, "diverging")
   theme <- get_color_theme(theme_name)
   
   if (n_colors == 1) {
@@ -263,20 +286,34 @@ create_gradient_colors <- function(theme_name = "default", n_colors = 11, diverg
     
     if (n_colors == 2) {
       colors <- c(low_color, high_color)
+    } else if (n_colors %% 2 == 1) {
+      # Odd palettes have one exact neutral midpoint.
+      n_side <- (n_colors - 1) %/% 2
+      low_gradient <- colorRampPalette(c(low_color, mid_color))(n_side + 1)
+      high_gradient <- colorRampPalette(c(mid_color, high_color))(n_side + 1)
+      colors <- c(
+        low_gradient[seq_len(n_side)],
+        mid_color,
+        high_gradient[-1]
+      )
     } else {
-      # Create gradient
-      n_half <- (n_colors - 1) / 2
+      # Even palettes have no single midpoint. Exclude the duplicated neutral
+      # endpoint from both halves while preserving both extremes and exactly
+      # the requested number of colors.
+      n_half <- n_colors %/% 2
       low_gradient <- colorRampPalette(c(low_color, mid_color))(n_half + 1)
       high_gradient <- colorRampPalette(c(mid_color, high_color))(n_half + 1)
-      
-      colors <- c(low_gradient[1:n_half], mid_color, high_gradient[2:(n_half + 1)])
+      colors <- c(
+        low_gradient[seq_len(n_half)],
+        high_gradient[-1]
+      )
     }
   } else {
     # Create single-direction gradient
     colors <- colorRampPalette(theme$group_colors[1:2])(n_colors)
   }
   
-  return(colors)
+  return(unname(colors))
 }
 
 #' Preview Color Theme
@@ -289,6 +326,13 @@ create_gradient_colors <- function(theme_name = "default", n_colors = 11, diverg
 #' @return A ggplot object showing the color preview
 #' @export
 preview_color_theme <- function(theme_name = "default", save_plot = FALSE, filename = NULL) {
+  save_plot <- normalize_logical_flag(save_plot, "save_plot")
+  if (save_plot && !is.null(filename) &&
+      (!is.character(filename) || length(filename) != 1 ||
+       is.na(filename) || !nzchar(trimws(filename)))) {
+    stop("'filename' must be NULL or a single non-empty character string when save_plot = TRUE.",
+         call. = FALSE)
+  }
   
   if (!requireNamespace("ggplot2", quietly = TRUE)) {
     stop("ggplot2 is required for theme preview")

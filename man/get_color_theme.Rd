@@ -9,7 +9,7 @@ get_color_theme(theme_name = "default", n_colors = 8)
 \arguments{
 \item{theme_name}{Character string specifying the theme name}
 
-\item{n_colors}{Integer specifying the number of colors needed}
+\item{n_colors}{Positive integer specifying the number of colors needed}
 }
 \value{
 A list containing theme colors and settings

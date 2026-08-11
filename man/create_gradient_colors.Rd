@@ -9,9 +9,9 @@ create_gradient_colors(theme_name = "default", n_colors = 11, diverging = TRUE)
 \arguments{
 \item{theme_name}{Character string specifying the theme}
 
-\item{n_colors}{Number of colors in the gradient}
+\item{n_colors}{Positive integer specifying the number of colors in the gradient}
 
-\item{diverging}{Whether to create a diverging gradient (for fold changes)}
+\item{diverging}{Logical. Whether to create a diverging gradient (for fold changes)}
 }
 \value{
 A vector of colors

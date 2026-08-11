@@ -4,7 +4,13 @@
 #' The input file should be in .tsv, .txt, or .csv format.
 #'
 #' @param file A character string representing the file path of the input file containing KO abundance data in picrust2 export format. The input file should have unique KO identifiers in the first column and sample identifiers in the first row. The remaining cells should contain the abundance values for each KO-sample pair.
-#' @param data An optional data.frame containing KO abundance data in the same format as the input file, with one row per unique KO identifier. Sample columns must be numeric, finite, non-missing, and non-negative. If provided, the function will use this data instead of reading from the file. By default, this parameter is set to NULL.
+#' @param data An optional data frame or numeric matrix containing KO abundance
+#'   data with one row per unique KO identifier. Data frames may use the same
+#'   format as the input file, with KO identifiers in the first column, or data
+#'   frames and matrices may store KO identifiers in row names. Sample columns
+#'   must be numeric, finite, non-missing, and non-negative. If provided, the
+#'   function will use this data instead of reading from the file. By default,
+#'   this parameter is set to NULL.
 #' @param method Method for calculating pathway abundance. One of:
 #'   \itemize{
 #'     \item \code{"abundance"}: (Default) Upper-half mean aggregation matching the unstructured pathway abundance rule used by the PICRUSt2 pathway pipeline. This is a KO-to-KEGG pathway aggregation approximation, not a replacement for the full PICRUSt2 pathway pipeline with MinPath and structured MetaCyc pathway inference.
@@ -122,7 +128,8 @@ ko2kegg_abundance <- function (file = NULL, data = NULL, method = c("abundance",
 
   # Basic parameter validation
   if (is.null(file) & is.null(data)) {
-    stop("Error: Please provide either a file or a data.frame.")
+    stop("Please provide either a file or an abundance data object.",
+         call. = FALSE)
   }
 
   if (!is.null(file) && !is.null(data)) {
@@ -134,10 +141,25 @@ ko2kegg_abundance <- function (file = NULL, data = NULL, method = c("abundance",
   if (!is.null(file)) {
     abundance <- read_abundance_file(file)
   } else {
-    if (!is.data.frame(data)) {
-      stop("'data' must be a data.frame")
+    if (!is.data.frame(data) && !is.matrix(data)) {
+      stop("'data' must be a data frame or matrix.", call. = FALSE)
     }
-    abundance <- data
+    abundance <- as.data.frame(data, stringsAsFactors = FALSE,
+                               check.names = FALSE)
+
+    # Normalized abundance objects commonly store feature identifiers in row
+    # names and contain only numeric sample columns. Convert that representation
+    # to the file-shaped form used by the aggregation loop below.
+    if (ncol(abundance) > 0 && is.numeric(abundance[[1]])) {
+      validate_feature_rownames(abundance,
+                                "ko2kegg_abundance() abundance")
+      abundance <- data.frame(
+        function. = rownames(abundance),
+        abundance,
+        stringsAsFactors = FALSE,
+        check.names = FALSE
+      )
+    }
     if (ncol(abundance) < 2) {
       stop("Data must have at least 2 columns (KO IDs and samples)")
     }

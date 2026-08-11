@@ -133,7 +133,7 @@ test_that("pathway_volcano rejects non-finite fold changes", {
 
   expect_error(pathway_volcano(daa_results), "finite numeric")
   expect_error(pathway_volcano(daa_results, fc_threshold = NA_real_),
-               "finite non-negative")
+               "single finite numeric")
 })
 
 test_that("pathway_volcano works with real DAA workflow", {
@@ -160,4 +160,38 @@ test_that("pathway_volcano works with real DAA workflow", {
 
   p <- pathway_volcano(daa_annotated, label_top_n = 5)
   expect_s3_class(p, "ggplot")
+})
+
+test_that("pathway_volcano validates display parameters at the boundary", {
+  daa_results <- data.frame(
+    pathway_name = c("Pathway 1", "Pathway 2"),
+    log2_fold_change = c(2, -2),
+    p_adjust = c(0.01, 0.02),
+    stringsAsFactors = FALSE
+  )
+
+  expect_error(
+    pathway_volcano(daa_results, label_top_n = 1.5),
+    "label_top_n.*integer"
+  )
+  expect_error(
+    pathway_volcano(daa_results, show_threshold_lines = NA),
+    "show_threshold_lines.*TRUE or FALSE"
+  )
+  expect_error(
+    pathway_volcano(daa_results, point_alpha = 1.1),
+    "point_alpha.*range"
+  )
+  expect_error(
+    pathway_volcano(daa_results, point_size = 0),
+    "point_size.*positive"
+  )
+  expect_error(
+    pathway_volcano(daa_results, colors = c("red", "not-a-color", "blue")),
+    "invalid R color"
+  )
+  expect_error(
+    pathway_volcano(daa_results, fc_col = c("a", "b")),
+    "fc_col.*single non-empty"
+  )
 })

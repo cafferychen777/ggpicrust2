@@ -103,6 +103,38 @@ test_that("import_MicrobiomeAnalyst_daa_results validates imported statistics", 
     import_MicrobiomeAnalyst_daa_results(data = daa, group_levels = "control"),
     "at least two"
   )
+
+  numeric_features <- daa
+  numeric_features$feature <- c(101, 102)
+  imported_numeric_features <- import_MicrobiomeAnalyst_daa_results(
+    data = numeric_features
+  )
+  expect_type(imported_numeric_features$feature, "character")
+  expect_equal(imported_numeric_features$feature, c("101", "102"))
+
+  blank_p <- daa
+  blank_p$p_values[1] <- " "
+  imported_blank_p <- import_MicrobiomeAnalyst_daa_results(data = blank_p)
+  expect_true(is.na(imported_blank_p$p_values[1]))
+
+  expect_error(
+    import_MicrobiomeAnalyst_daa_results(
+      data = daa,
+      group_levels = c("control", " control ")
+    ),
+    "unique"
+  )
+})
+
+test_that("import_MicrobiomeAnalyst_daa_results validates file_path shape", {
+  expect_error(
+    import_MicrobiomeAnalyst_daa_results(file_path = c("a.csv", "b.csv")),
+    "single non-empty file path"
+  )
+  expect_error(
+    import_MicrobiomeAnalyst_daa_results(file_path = NA_character_),
+    "single non-empty file path"
+  )
 })
 
 test_that("import_MicrobiomeAnalyst_daa_results warns that data wins over file_path", {

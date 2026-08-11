@@ -83,35 +83,12 @@ gsea_pathway_annotation <- function(gsea_results,
 annotate_kegg_gsea <- function(gsea_results) {
   # Load KEGG pathway reference using unified loader
   kegg_ref <- load_reference_data("KEGG")
-  gsea_results$.gsea_input_order <- seq_len(nrow(gsea_results))
-
-  # Remove pathway_name from gsea_results if present (will be replaced by reference)
-  if ("pathway_name" %in% colnames(gsea_results)) {
-    gsea_results$pathway_name <- NULL
-  }
-
-  # Merge with GSEA results
-  annotated_results <- merge(
+  annotate_gsea_from_lookup(
     gsea_results,
-    kegg_ref,
-    by.x = "pathway_id",
-    by.y = "pathway",
-    all.x = TRUE,
-    sort = FALSE
+    reference_ids = kegg_ref$pathway,
+    reference_names = kegg_ref$pathway_name,
+    reference_name = "KEGG reference"
   )
-  annotated_results <- annotated_results[order(annotated_results$.gsea_input_order), ]
-  annotated_results$.gsea_input_order <- NULL
-  rownames(annotated_results) <- NULL
-
-  # Fill missing pathway names with pathway_id
-  if ("pathway_name" %in% colnames(annotated_results)) {
-    annotated_results$pathway_name[is.na(annotated_results$pathway_name)] <-
-      annotated_results$pathway_id[is.na(annotated_results$pathway_name)]
-  } else {
-    annotated_results$pathway_name <- annotated_results$pathway_id
-  }
-
-  annotated_results
 }
 
 #' Annotate GSEA results with MetaCyc pathway information
@@ -121,35 +98,12 @@ annotate_kegg_gsea <- function(gsea_results) {
 annotate_metacyc_gsea <- function(gsea_results) {
   # Load MetaCyc reference using unified loader
   metacyc_ref <- load_reference_data("MetaCyc")
-  gsea_results$.gsea_input_order <- seq_len(nrow(gsea_results))
-
-  # Remove pathway_name from gsea_results if present (will be replaced by reference)
-  if ("pathway_name" %in% colnames(gsea_results)) {
-    gsea_results$pathway_name <- NULL
-  }
-
-  # Merge with GSEA results
-  annotated_results <- merge(
+  annotate_gsea_from_lookup(
     gsea_results,
-    metacyc_ref,
-    by.x = "pathway_id",
-    by.y = "id",
-    all.x = TRUE,
-    sort = FALSE
+    reference_ids = metacyc_ref$id,
+    reference_names = metacyc_ref$description,
+    reference_name = "MetaCyc reference"
   )
-  annotated_results <- annotated_results[order(annotated_results$.gsea_input_order), ]
-  annotated_results$.gsea_input_order <- NULL
-  rownames(annotated_results) <- NULL
-
-  # Use description as pathway_name
-  annotated_results$pathway_name <- ifelse(
-    is.na(annotated_results$description) | annotated_results$description == "",
-    annotated_results$pathway_id,
-    annotated_results$description
-  )
-  annotated_results$description <- NULL
-
-  annotated_results
 }
 
 #' Annotate GSEA results with GO term information
@@ -159,39 +113,48 @@ annotate_metacyc_gsea <- function(gsea_results) {
 annotate_go_gsea <- function(gsea_results) {
   # Load GO reference using unified loader
   go_ref <- load_reference_data("ko_to_go")
-  gsea_results$.gsea_input_order <- seq_len(nrow(gsea_results))
-
-  # Remove pathway_name from gsea_results if present (will be replaced by reference)
-  if ("pathway_name" %in% colnames(gsea_results)) {
-    gsea_results$pathway_name <- NULL
-  }
-
-  # Create lookup data frame for merging (unique GO IDs with names)
-  go_lookup <- unique(data.frame(
-    pathway_id = go_ref$go_id,
-    pathway_name = go_ref$go_name,
-    stringsAsFactors = FALSE
-  ))
-
-  # Merge with GSEA results
-  annotated_results <- merge(
+  annotate_gsea_from_lookup(
     gsea_results,
-    go_lookup,
-    by = "pathway_id",
-    all.x = TRUE,
-    sort = FALSE
+    reference_ids = go_ref$go_id,
+    reference_names = go_ref$go_name,
+    reference_name = "GO reference"
   )
-  annotated_results <- annotated_results[order(annotated_results$.gsea_input_order), ]
-  annotated_results$.gsea_input_order <- NULL
-  rownames(annotated_results) <- NULL
+}
 
-  # Fill missing pathway names with pathway_id
-  if ("pathway_name" %in% colnames(annotated_results)) {
-    annotated_results$pathway_name[is.na(annotated_results$pathway_name)] <-
-      annotated_results$pathway_id[is.na(annotated_results$pathway_name)]
-  } else {
-    annotated_results$pathway_name <- annotated_results$pathway_id
+#' Annotate GSEA rows through a strict many-to-one lookup
+#'
+#' @noRd
+annotate_gsea_from_lookup <- function(gsea_results,
+                                      reference_ids,
+                                      reference_names,
+                                      reference_name) {
+  reference_ids <- as.character(reference_ids)
+  reference_names <- as.character(reference_names)
+  if (length(reference_ids) != length(reference_names)) {
+    stop(reference_name, " has mismatched ID and name lengths.",
+         call. = FALSE)
   }
 
-  annotated_results
+  valid_ids <- !is.na(reference_ids) & nzchar(trimws(reference_ids))
+  reference_ids <- reference_ids[valid_ids]
+  reference_names <- reference_names[valid_ids]
+  if (anyDuplicated(reference_ids)) {
+    duplicated_ids <- unique(reference_ids[duplicated(reference_ids)])
+    stop(
+      reference_name,
+      " contains duplicated pathway IDs: ",
+      paste(utils::head(duplicated_ids, 5), collapse = ", "),
+      ". Each pathway ID must map to exactly one annotation row.",
+      call. = FALSE
+    )
+  }
+
+  lookup_index <- match(gsea_results$pathway_id, reference_ids)
+  pathway_names <- reference_names[lookup_index]
+  missing_names <- is.na(pathway_names) | !nzchar(trimws(pathway_names))
+  pathway_names[missing_names] <- gsea_results$pathway_id[missing_names]
+
+  gsea_results$pathway_name <- pathway_names
+  rownames(gsea_results) <- NULL
+  gsea_results
 }

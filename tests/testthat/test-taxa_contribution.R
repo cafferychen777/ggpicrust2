@@ -393,6 +393,71 @@ test_that("aggregate_taxa_contributions with DADA2 taxonomy uses genus labels", 
                     c("Lactobacillus", "Escherichia", "Roseburia", "Bacteroides")))
 })
 
+test_that("aggregate_taxa_contributions uses taxonomy row names as taxon IDs", {
+  td <- create_contrib_test_data()
+  contrib <- read_contrib_file(data = td$contrib_raw)
+  taxonomy <- as.matrix(td$taxonomy_dada2[, c("Kingdom", "Genus")])
+  rownames(taxonomy) <- td$taxonomy_dada2$ASV
+
+  agg <- aggregate_taxa_contributions(
+    contrib,
+    taxonomy = taxonomy,
+    tax_level = "Genus",
+    top_n = 10
+  )
+
+  expect_setequal(
+    unique(agg$taxon_label),
+    c("Lactobacillus", "Escherichia", "Roseburia", "Bacteroides")
+  )
+})
+
+test_that("aggregate_taxa_contributions rejects taxonomy without taxon IDs", {
+  td <- create_contrib_test_data()
+  contrib <- read_contrib_file(data = td$contrib_raw)
+  taxonomy_without_ids <- td$taxonomy_dada2[, c("Kingdom", "Genus")]
+
+  expect_error(
+    aggregate_taxa_contributions(
+      contrib,
+      taxonomy = taxonomy_without_ids,
+      tax_level = "Genus"
+    ),
+    "recognized ID column.*explicit row names"
+  )
+
+  nonmatching_taxonomy <- td$taxonomy_dada2
+  nonmatching_taxonomy$ASV <- paste0("other_", seq_len(nrow(nonmatching_taxonomy)))
+  expect_error(
+    aggregate_taxa_contributions(
+      contrib,
+      taxonomy = nonmatching_taxonomy,
+      tax_level = "Genus"
+    ),
+    "No taxon identifiers.*match"
+  )
+})
+
+test_that("QIIME2 taxonomy parsing supports modern domain and SILVA prefixes", {
+  parse_taxonomy <- getFromNamespace("parse_taxonomy_string", "ggpicrust2")
+
+  greengenes2 <- paste(
+    "d__Bacteria", "p__Firmicutes", "g__Blautia",
+    sep = "; "
+  )
+  silva <- paste(
+    "D_0__Bacteria", "D_1__Firmicutes", "D_5__Roseburia",
+    "D_6__intestinalis",
+    sep = ";"
+  )
+
+  expect_equal(parse_taxonomy(greengenes2, "Kingdom"), "Bacteria")
+  expect_equal(parse_taxonomy(greengenes2, "Genus"), "Blautia")
+  expect_equal(parse_taxonomy(silva, "Phylum"), "Firmicutes")
+  expect_equal(parse_taxonomy(silva, "Species"), "intestinalis")
+  expect_true(is.na(parse_taxonomy(NA_character_, "Genus")))
+})
+
 test_that("aggregate_taxa_contributions does not duplicate rows for repeated taxonomy IDs", {
   contrib <- data.frame(
     sample = "S1",
@@ -717,6 +782,34 @@ test_that("taxa contribution visualizations validate contribution values and cou
                           show_percentage = FALSE),
     "not-present"
   )
+
+  empty_agg <- agg[FALSE, , drop = FALSE]
+  expect_error(
+    taxa_contribution_bar(empty_agg, td$metadata, group = "group"),
+    "at least one contribution row"
+  )
+  expect_error(
+    taxa_contribution_heatmap(empty_agg),
+    "at least one contribution row"
+  )
+
+  expect_error(
+    taxa_contribution_bar(
+      agg,
+      td$metadata,
+      group = "group",
+      show_percentage = NA
+    ),
+    "show_percentage.*TRUE or FALSE"
+  )
+  expect_error(
+    taxa_contribution_heatmap(agg, cluster_rows = NA),
+    "cluster_rows.*TRUE or FALSE"
+  )
+  expect_error(
+    taxa_contribution_heatmap(agg, high_color = "not-a-color"),
+    "invalid R color"
+  )
 })
 
 test_that("taxa_contribution_bar accepts facet_by = 'group'", {
@@ -737,6 +830,31 @@ test_that("taxa_contribution_bar supports metadata with a single group", {
 
   p <- taxa_contribution_bar(agg, td$metadata, group = "group")
   expect_s3_class(p, "ggplot")
+})
+
+test_that("taxa_contribution_bar validates aligned group labels", {
+  agg <- data.frame(
+    sample = c("S1", "S2"),
+    function_id = "K00001",
+    taxon_label = "Taxon1",
+    contribution = c(1, 2),
+    stringsAsFactors = FALSE
+  )
+  metadata <- data.frame(
+    sample = c("S1", "S2", "S3"),
+    group = c("Control", NA, "Unused"),
+    stringsAsFactors = FALSE
+  )
+
+  expect_error(
+    taxa_contribution_bar(
+      agg,
+      metadata,
+      group = "group",
+      show_percentage = FALSE
+    ),
+    "non-missing, non-empty group labels.*S2"
+  )
 })
 
 test_that("taxa_contribution_bar ranks default functions by sample-level variance", {
@@ -828,6 +946,31 @@ test_that("taxa_contribution_bar treats absent sample/function rows as zero deno
   )
   expect_s3_class(p, "ggplot")
   expect_equal(unique(p$data$sample), "S1")
+})
+
+test_that("taxa_contribution_bar groups percentages by exact key pairs", {
+  agg <- data.frame(
+    sample = c("A.B", "A.B", "A", "A"),
+    function_id = c("C", "B.C", "C", "B.C"),
+    taxon_label = "Taxon1",
+    contribution = c(2, 4, 6, 8),
+    stringsAsFactors = FALSE
+  )
+  metadata <- data.frame(
+    sample = c("A.B", "A"),
+    group = c("X", "Y"),
+    stringsAsFactors = FALSE
+  )
+
+  p <- taxa_contribution_bar(
+    agg,
+    metadata,
+    group = "group",
+    function_ids = c("C", "B.C"),
+    show_percentage = TRUE
+  )
+
+  expect_equal(p$data$contribution, rep(100, 4))
 })
 
 
@@ -936,6 +1079,34 @@ test_that("taxa_contribution_heatmap rejects conflicting annotation labels", {
   )
 })
 
+test_that("taxa_contribution_heatmap disambiguates shared annotation labels", {
+  agg <- data.frame(
+    sample = rep(c("S1", "S2"), each = 2),
+    function_id = rep(c("K00001", "K00002"), 2),
+    taxon_label = "Taxon1",
+    contribution = seq_len(4),
+    stringsAsFactors = FALSE
+  )
+  shared_annotation <- data.frame(
+    feature = c("K00001", "K00002"),
+    description = c("shared label", "shared label"),
+    stringsAsFactors = FALSE
+  )
+
+  p <- taxa_contribution_heatmap(
+    agg,
+    annotation_data = shared_annotation,
+    cluster_rows = FALSE,
+    cluster_cols = FALSE
+  )
+
+  expect_s3_class(p, "ggplot")
+  expect_setequal(
+    levels(p$data$func),
+    c("shared label [K00001]", "shared label [K00002]")
+  )
+})
+
 test_that("taxa_contribution_heatmap validates clustering methods and distances", {
   agg <- data.frame(
     sample = c("S1", "S1", "S2", "S2"),
@@ -998,6 +1169,6 @@ test_that("aggregate_taxa_contributions errors with invalid tax_level", {
   expect_error(
     aggregate_taxa_contributions(contrib, taxonomy = td$taxonomy_qiime2,
                                  tax_level = "Superclass"),
-    "Invalid tax_level"
+    "tax_level.*must be one of"
   )
 })

@@ -186,3 +186,54 @@ test_that("pathway_pca marginal density uses a continuous y scale", {
   # And the discrete scale must be gone from the density construction.
   expect_false(grepl("scale_y_discrete\\(", body_src))
 })
+
+test_that("pathway_pca isolates plotting columns from metadata names", {
+  data <- create_pca_test_data(n_samples = 8)
+  names(data$metadata)[names(data$metadata) == "group"] <- "PC1"
+
+  p <- pathway_pca(
+    data$abundance,
+    data$metadata,
+    "PC1",
+    show_marginal = FALSE
+  )
+  expect_s3_class(p, "ggplot")
+  expect_named(p$data, c("PC1", "PC2", "Group"), ignore.order = FALSE)
+  expect_setequal(as.character(p$data$Group), c("Group1", "Group2"))
+  expect_error(ggplot2::ggplot_build(p), NA)
+})
+
+test_that("pathway_pca preserves a group column named .sample_id", {
+  data <- create_pca_test_data(n_samples = 8)
+  metadata <- data.frame(
+    .sample_id = as.character(data$metadata$group),
+    row.names = colnames(data$abundance),
+    check.names = FALSE
+  )
+
+  p <- pathway_pca(
+    data$abundance,
+    metadata,
+    group = ".sample_id",
+    show_marginal = FALSE
+  )
+
+  expect_s3_class(p, "ggplot")
+  expect_setequal(as.character(p$data$Group), c("Group1", "Group2"))
+})
+
+test_that("pathway_pca generates complete default palettes beyond 20 groups", {
+  data <- create_pca_test_data(n_pathways = 3, n_samples = 21, n_groups = 21)
+
+  p <- suppressWarnings(pathway_pca(
+    data$abundance,
+    data$metadata,
+    "group",
+    show_marginal = FALSE
+  ))
+
+  scale <- p$scales$get_scales("colour")
+  palette <- scale$palette(21)
+  expect_length(palette, 21)
+  expect_false(anyNA(palette))
+})

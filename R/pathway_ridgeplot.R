@@ -147,11 +147,7 @@ pathway_ridgeplot <- function(gsea_results,
   }
   show_direction <- normalize_logical_flag(show_direction, "show_direction")
   validate_probability_threshold(alpha, "alpha", allow_zero = TRUE)
-  if (!is.numeric(scale_height) || length(scale_height) != 1 ||
-      is.na(scale_height) || !is.finite(scale_height) || scale_height <= 0) {
-    stop("'scale_height' must be a single positive finite numeric value.",
-         call. = FALSE)
-  }
+  validate_positive_number(scale_height, "scale_height")
 
   # Convert abundance to matrix if needed
   if (is.data.frame(abundance)) {
@@ -172,10 +168,12 @@ pathway_ridgeplot <- function(gsea_results,
   abundance <- as.matrix(aligned$abundance)
   metadata <- aligned$metadata
   validate_group(metadata, group, min_groups = 2)
-  if (any(is.na(metadata[[group]]))) {
-    stop("Group column '", group, "' contains NA values after sample alignment.",
-         call. = FALSE)
-  }
+  validate_group_vector_for_summary(
+    metadata[[group]],
+    context = paste0("Group column '", group, "' after sample alignment"),
+    sample_ids = colnames(abundance),
+    min_groups = 2
+  )
 
   # Validate required columns (pathway_gsea() output format)
   require_column(gsea_results, "pathway_id", "gsea_results")
@@ -417,14 +415,7 @@ pathway_ridgeplot <- function(gsea_results,
      stop("'colors' must be a named character vector when show_direction = TRUE.",
           call. = FALSE)
    }
-   invalid_colors <- vapply(colors, function(x) {
-     !tryCatch(is.matrix(grDevices::col2rgb(x)), error = function(e) FALSE)
-   }, logical(1))
-   if (any(invalid_colors)) {
-     stop("Invalid color value(s) in 'colors': ",
-          paste(names(colors)[invalid_colors], collapse = ", "),
-          call. = FALSE)
-   }
+   validate_color_values(colors, "colors")
    missing_directions <- setdiff(unique(as.character(ridge_data$direction)),
                                  names(colors))
    if (length(missing_directions) > 0) {

@@ -797,6 +797,27 @@ test_that("wrapper-computed DAA p-values are adjusted within each contrast", {
   expect_equal(adjusted$adj_method, rep("bonferroni", nrow(adjusted)))
 })
 
+test_that("DAA p-value adjustment groups by exact context keys", {
+  result <- data.frame(
+    feature = paste0("p", 1:4),
+    method = c("M.A", "M.A", "M", "M"),
+    group1 = c("B", "B", "A.B", "A.B"),
+    group2 = "C",
+    p_values = c(0.01, 0.02, 0.03, 0.04),
+    stringsAsFactors = FALSE
+  )
+
+  adjusted <- ggpicrust2:::adjust_daa_p_values(result, "bonferroni")
+
+  expect_equal(
+    adjusted$p_adjust,
+    c(
+      stats::p.adjust(c(0.01, 0.02), method = "bonferroni"),
+      stats::p.adjust(c(0.03, 0.04), method = "bonferroni")
+    )
+  )
+})
+
 test_that("DAA p-value adjustment validates raw p-values before adjustment", {
   result <- data.frame(
     feature = "p1",
@@ -1126,6 +1147,54 @@ test_that("include_abundance_stats does not collide with method-native log2FC", 
   # The retained log2_fold_change should equal ALDEx2's diff_btw (CLR space),
   # not the relative-abundance ratio.
   expect_equal(result$log2_fold_change, result$diff_btw)
+})
+
+test_that("attaching abundance stats preserves backend row order and cardinality", {
+  attach_stats <- getFromNamespace("attach_abundance_stats", "ggpicrust2")
+  backend <- data.frame(
+    feature = c("f3", "f1", "f3", "f2"),
+    group1 = "A",
+    group2 = "B",
+    method = c("m1", "m1", "m2", "m1"),
+    p_values = c(0.03, 0.01, 0.04, 0.02),
+    stringsAsFactors = FALSE
+  )
+  summaries <- data.frame(
+    feature = c("f1", "f2", "f3"),
+    group1 = "A",
+    group2 = "B",
+    mean_rel_abundance_group1 = c(0.1, 0.2, 0.3),
+    stringsAsFactors = FALSE
+  )
+
+  result <- attach_stats(backend, summaries)
+
+  expect_equal(result$feature, backend$feature)
+  expect_equal(result$method, backend$method)
+  expect_equal(nrow(result), nrow(backend))
+  expect_equal(result$mean_rel_abundance_group1, c(0.3, 0.1, 0.3, 0.2))
+})
+
+test_that("attaching abundance stats rejects duplicate summary keys", {
+  attach_stats <- getFromNamespace("attach_abundance_stats", "ggpicrust2")
+  backend <- data.frame(
+    feature = "f1",
+    group1 = "A",
+    group2 = "B",
+    stringsAsFactors = FALSE
+  )
+  duplicated_summaries <- data.frame(
+    feature = c("f1", "f1"),
+    group1 = "A",
+    group2 = "B",
+    mean_rel_abundance_group1 = c(0.1, 0.2),
+    stringsAsFactors = FALSE
+  )
+
+  expect_error(
+    attach_stats(backend, duplicated_summaries),
+    "summary keys are not unique.*f1 / A / B"
+  )
 })
 
 test_that("include_abundance_stats fails when backend features cannot be summarized", {

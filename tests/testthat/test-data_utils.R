@@ -300,6 +300,25 @@ test_that("summarize_abundance_by_group errors on length mismatch", {
   expect_error(sbg(M, c("A", "B")), regexp = "length")
 })
 
+test_that("calculate_abundance_stats rejects invalid aligned group labels", {
+  calculate_stats <- getFromNamespace("calculate_abundance_stats", "ggpicrust2")
+  abundance <- matrix(
+    c(1, 2, 3, 4, 4, 3, 2, 1),
+    nrow = 2,
+    dimnames = list(c("f1", "f2"), paste0("S", 1:4))
+  )
+  metadata <- data.frame(
+    sample = paste0("S", 1:4),
+    group = c("A", NA_character_, "B", "B"),
+    stringsAsFactors = FALSE
+  )
+
+  expect_error(
+    calculate_stats(abundance, metadata, "group", "f1", "A", "B"),
+    "non-missing, non-empty.*S2"
+  )
+})
+
 test_that("validate_count_parameter rejects invalid counts without coercion warnings", {
   validate_count <- getFromNamespace("validate_count_parameter", "ggpicrust2")
 

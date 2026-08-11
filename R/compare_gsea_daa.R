@@ -1,3 +1,55 @@
+create_comparison_count_plot <- function(comparison_results) {
+  plot_data <- data.frame(
+    label = factor(
+      c("GSEA only", "Overlap", "DAA only"),
+      levels = c("GSEA only", "Overlap", "DAA only")
+    ),
+    count = c(
+      comparison_results$n_gsea_only,
+      comparison_results$n_overlap,
+      comparison_results$n_daa_only
+    )
+  )
+
+  ggplot2::ggplot(
+    plot_data,
+    ggplot2::aes(x = .data$label, y = .data$count, fill = .data$label)
+  ) +
+    ggplot2::geom_col() +
+    ggplot2::labs(
+      title = "Comparison of Significant Pathways",
+      x = NULL,
+      y = "Number of Pathways",
+      fill = NULL
+    ) +
+    ggplot2::theme_minimal() +
+    ggplot2::theme(
+      plot.title = ggplot2::element_text(hjust = 0.5)
+    )
+}
+
+extract_compare_direction <- function(results, context) {
+  group1 <- validate_nonempty_character_column(
+    results[["group1"]],
+    "group1",
+    context
+  )
+  group2 <- validate_nonempty_character_column(
+    results[["group2"]],
+    "group2",
+    context
+  )
+  list(
+    group1 = group1,
+    group2 = group2,
+    pairs = unique(data.frame(
+      group1 = group1,
+      group2 = group2,
+      stringsAsFactors = FALSE
+    ))
+  )
+}
+
 #' Compare GSEA and DAA results
 #'
 #' This function compares the results from Gene Set Enrichment Analysis (GSEA) and
@@ -139,25 +191,14 @@ compare_gsea_daa <- function(gsea_results,
         call. = FALSE
       )
     }
-    gsea_group1 <- validate_nonempty_character_column(gsea_results[["group1"]],
-                                                      "group1",
-                                                      "gsea_results")
-    gsea_group2 <- validate_nonempty_character_column(gsea_results[["group2"]],
-                                                      "group2",
-                                                      "gsea_results")
-    daa_group1 <- validate_nonempty_character_column(daa_results[["group1"]],
-                                                    "group1",
-                                                    "daa_results")
-    daa_group2 <- validate_nonempty_character_column(daa_results[["group2"]],
-                                                    "group2",
-                                                    "daa_results")
-
-    gsea_pairs <- unique(data.frame(group1 = gsea_group1,
-                                    group2 = gsea_group2,
-                                    stringsAsFactors = FALSE))
-    daa_pairs <- unique(data.frame(group1 = daa_group1,
-                                  group2 = daa_group2,
-                                  stringsAsFactors = FALSE))
+    gsea_direction <- extract_compare_direction(gsea_results, "gsea_results")
+    daa_direction <- extract_compare_direction(daa_results, "daa_results")
+    gsea_group1 <- gsea_direction$group1
+    gsea_group2 <- gsea_direction$group2
+    daa_group1 <- daa_direction$group1
+    daa_group2 <- daa_direction$group2
+    gsea_pairs <- gsea_direction$pairs
+    daa_pairs <- daa_direction$pairs
     if (nrow(gsea_pairs) > 1 || nrow(daa_pairs) > 1) {
       stop(
         "plot_type = 'scatter' requires one GSEA comparison and one DAA group pair. ",
@@ -224,27 +265,7 @@ compare_gsea_daa <- function(gsea_results,
     # Check if required package is available
     if (!requireNamespace("ggVennDiagram", quietly = TRUE)) {
       warning("Package 'ggVennDiagram' is required for Venn diagrams. Using a basic plot instead.")
-
-      # Create a basic representation
-      counts <- c(comparison_results$n_gsea_only,
-                 comparison_results$n_overlap,
-                 comparison_results$n_daa_only)
-
-      labels <- c("GSEA only", "Overlap", "DAA only")
-
-      p <- ggplot2::ggplot(data.frame(counts = counts, labels = labels),
-                         ggplot2::aes(x = labels, y = counts, fill = labels)) +
-        ggplot2::geom_bar(stat = "identity") +
-        ggplot2::labs(
-          title = "Comparison of Significant Pathways",
-          x = "",
-          y = "Number of Pathways",
-          fill = ""
-        ) +
-        ggplot2::theme_minimal() +
-        ggplot2::theme(
-          plot.title = ggplot2::element_text(hjust = 0.5)
-        )
+      p <- create_comparison_count_plot(comparison_results)
     } else {
       # Create a proper Venn diagram
       venn_list <- list(
@@ -258,33 +279,16 @@ compare_gsea_daa <- function(gsea_results,
     }
 
   } else if (plot_type == "upset") {
+    all_pathways <- unique(c(sig_gsea, sig_daa))
+
     # Check if required package is available
-    if (!requireNamespace("UpSetR", quietly = TRUE)) {
+    if (length(all_pathways) == 0) {
+      p <- create_comparison_count_plot(comparison_results)
+    } else if (!requireNamespace("UpSetR", quietly = TRUE)) {
       warning("Package 'UpSetR' is required for UpSet plots. Using a basic plot instead.")
-
-      # Create a basic representation
-      counts <- c(comparison_results$n_gsea_only,
-                 comparison_results$n_overlap,
-                 comparison_results$n_daa_only)
-
-      labels <- c("GSEA only", "Overlap", "DAA only")
-
-      p <- ggplot2::ggplot(data.frame(counts = counts, labels = labels),
-                         ggplot2::aes(x = labels, y = counts, fill = labels)) +
-        ggplot2::geom_bar(stat = "identity") +
-        ggplot2::labs(
-          title = "Comparison of Significant Pathways",
-          x = "",
-          y = "Number of Pathways",
-          fill = ""
-        ) +
-        ggplot2::theme_minimal() +
-        ggplot2::theme(
-          plot.title = ggplot2::element_text(hjust = 0.5)
-        )
+      p <- create_comparison_count_plot(comparison_results)
     } else {
       # Create UpSet plot
-      all_pathways <- unique(c(sig_gsea, sig_daa))
       upset_matrix <- matrix(0, nrow = length(all_pathways), ncol = 2)
       rownames(upset_matrix) <- all_pathways
       colnames(upset_matrix) <- c("GSEA", "DAA")
@@ -299,7 +303,7 @@ compare_gsea_daa <- function(gsea_results,
   } else if (plot_type == "scatter") {
     # Create a scatter plot comparing p-values or effect sizes
 
-    gsea_for_merge <- data.frame(
+    gsea_scatter <- data.frame(
       pathway_id = gsea_pathways,
       NES = gsea_results[["NES"]],
       p.adjust = gsea_results[["p.adjust"]],
@@ -307,8 +311,8 @@ compare_gsea_daa <- function(gsea_results,
       gsea_group2 = gsea_group2,
       stringsAsFactors = FALSE
     )
-    daa_for_merge <- data.frame(
-      feature = daa_features,
+    daa_scatter <- data.frame(
+      pathway_id = daa_features,
       log2_fold_change = daa_results[["log2_fold_change"]],
       p_adjust = daa_results[["p_adjust"]],
       daa_group1 = daa_group1,
@@ -316,14 +320,18 @@ compare_gsea_daa <- function(gsea_results,
       stringsAsFactors = FALSE
     )
 
-    # Merge the results
-    merged_results <- merge(
-      gsea_for_merge,
-      daa_for_merge,
-      by.x = "pathway_id",
-      by.y = "feature",
-      all = FALSE
+    # Preserve GSEA row order while mapping the already-validated unique DAA
+    # rows. merge() sorts by pathway_id and makes tied visual selections
+    # depend on identifier spelling rather than the supplied result order.
+    overlap <- gsea_scatter$pathway_id %in% daa_scatter$pathway_id
+    merged_results <- gsea_scatter[overlap, , drop = FALSE]
+    daa_index <- match(merged_results$pathway_id, daa_scatter$pathway_id)
+    merged_results <- cbind(
+      merged_results,
+      daa_scatter[daa_index, setdiff(colnames(daa_scatter), "pathway_id"),
+                  drop = FALSE]
     )
+    rownames(merged_results) <- NULL
 
     # If no overlapping pathways, return a message
     if (nrow(merged_results) == 0) {
@@ -394,25 +402,14 @@ validate_compare_gsea_daa_set_direction <- function(gsea_results,
     return(invisible(NULL))
   }
 
-  gsea_group1 <- validate_nonempty_character_column(gsea_results[["group1"]],
-                                                    "group1",
-                                                    "gsea_results")
-  gsea_group2 <- validate_nonempty_character_column(gsea_results[["group2"]],
-                                                    "group2",
-                                                    "gsea_results")
-  daa_group1 <- validate_nonempty_character_column(daa_results[["group1"]],
-                                                  "group1",
-                                                  "daa_results")
-  daa_group2 <- validate_nonempty_character_column(daa_results[["group2"]],
-                                                  "group2",
-                                                  "daa_results")
-
-  gsea_pairs <- unique(data.frame(group1 = gsea_group1,
-                                  group2 = gsea_group2,
-                                  stringsAsFactors = FALSE))
-  daa_pairs <- unique(data.frame(group1 = daa_group1,
-                                group2 = daa_group2,
-                                stringsAsFactors = FALSE))
+  gsea_pairs <- extract_compare_direction(
+    gsea_results,
+    "gsea_results"
+  )$pairs
+  daa_pairs <- extract_compare_direction(
+    daa_results,
+    "daa_results"
+  )$pairs
   if (nrow(gsea_pairs) > 1 || nrow(daa_pairs) > 1) {
     stop(
       "plot_type = '", plot_type,

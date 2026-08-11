@@ -170,25 +170,17 @@ pathway_pca <- function(abundance,
     min_groups = 2
   )
   metadata[[group]] <- droplevels(factor(group_values))
+  n_groups <- nlevels(metadata[[group]])
 
   # Validate colors if provided
   if (!is.null(colors)) {
-    n_groups <- length(levels(metadata[[group]]))
-    if (!is.character(colors)) {
-      stop("Colors must be a character vector")
-    }
-    if (!all(sapply(colors, function(x) tryCatch(is.matrix(col2rgb(x)), error = function(e) FALSE)))) {
-      stop("Invalid color names provided")
-    }
     if (length(colors) != n_groups) {
       stop(sprintf("Number of colors (%d) does not match number of groups (%d)",
                    length(colors), n_groups))
     }
+    validate_color_values(colors, "colors", expected_length = n_groups)
   }
 
-  # due to NSE notes in R CMD check
-  PC1 = PC2 = Group = NULL
-  
   # Perform PCA on the abundance data
   pca_result <- tryCatch({
     stats::prcomp(t(abundance), center = TRUE, scale = TRUE)
@@ -203,32 +195,39 @@ pathway_pca <- function(abundance,
   })
   
   # Keep the first two principal components
-  pca_axis <- pca_result$x[,1:2]
+  pca_axis <- pca_result$x[, 1:2, drop = FALSE]
 
   # Calculate the proportion of total variance explained by each PC
   # Note: variance = sdev^2, so we need to square the standard deviations
   pca_proportion <- (pca_result$sdev[1:2]^2) / sum(pca_result$sdev^2) * 100
 
-  # Combine the PCA results with the metadata information
-  pca <- cbind(pca_axis, metadata %>% select(all_of(c(group))))
-  pca$Group <- pca[,group]
-
-  levels <- length(levels(factor(pca$Group)))
+  # Keep internal plotting columns independent of user metadata names. A group
+  # column named "PC1", "PC2", or "Group" previously created duplicate names
+  # and failed only when ggplot evaluated its aesthetics.
+  pca_data <- data.frame(
+    PC1 = pca_axis[, 1],
+    PC2 = pca_axis[, 2],
+    Group = metadata[[group]],
+    row.names = rownames(pca_axis),
+    check.names = FALSE
+  )
 
   # Set default colors if colors are not provided
   if (is.null(colors)) {
-    colors <- c("#d93c3e", "#3685bc","#208A42","#89288F","#F47D2B",
-                "#FEE500","#8A9FD1","#C06CAB","#E6C2DC","#90D5E4",
-                "#89C75F","#F37B7D","#9983BD","#D24B27","#3BBCA8",
-                "#6E4B9E","#0C727C", "#7E1416","#D8A767","#3D3D3D")[1:levels]
+    base_colors <- c(
+      "#d93c3e", "#3685bc", "#208A42", "#89288F", "#F47D2B",
+      "#FEE500", "#8A9FD1", "#C06CAB", "#E6C2DC", "#90D5E4",
+      "#89C75F", "#F37B7D", "#9983BD", "#D24B27", "#3BBCA8",
+      "#6E4B9E", "#0C727C", "#7E1416", "#D8A767", "#3D3D3D"
+    )
+    colors <- if (n_groups <= length(base_colors)) {
+      base_colors[seq_len(n_groups)]
+    } else {
+      grDevices::colorRampPalette(base_colors)(n_groups)
+    }
   }
 
-  # Ensure the number of colors matches the number of levels in Group
-  if (length(colors) != levels) {
-    stop("The length of colors vector must match the number of levels in Group")
-  }
-
-  ellipse_counts <- table(pca$Group)
+  ellipse_counts <- table(pca_data$Group)
   ellipse_groups <- names(ellipse_counts)[ellipse_counts >= 4]
   skipped_ellipse_groups <- names(ellipse_counts)[ellipse_counts < 4]
   if (length(skipped_ellipse_groups) > 0) {
@@ -242,28 +241,45 @@ pathway_pca <- function(abundance,
   }
 
   # Create a ggplot object for the PCA scatter plot
-  Fig1a.taxa.pca <- ggplot2::ggplot(pca,ggplot2::aes(PC1,PC2))+
-    ggplot2::geom_point(size=4,ggplot2::aes(color=Group),show.legend = T)+
-    ggplot2::scale_color_manual(values=colors)+
-    ggplot2::labs(x=paste0("PC1(",round(pca_proportion[1],1),"%)"),y=paste0("PC2(",round(pca_proportion[2],1),"%)"),color = group)+
-    ggplot2::theme_classic()+
-    ggplot2::theme(axis.line=ggplot2::element_line(colour = "black"),
-          axis.title=ggplot2::element_text(color="black",face = "bold"),
-          panel.grid.major = ggplot2::element_blank(),
-          panel.grid.minor = ggplot2::element_blank(),
-          panel.background = ggplot2::element_blank(),
-          axis.text = ggplot2::element_text(color="black",size=10,face = "bold"),
-          legend.text = ggplot2::element_text(size = 16, face = "bold"),
-          legend.title = ggplot2::element_text(size = 16, face = "bold"))+
+  pca_plot <- ggplot2::ggplot(
+    pca_data,
+    ggplot2::aes(x = .data$PC1, y = .data$PC2)
+  ) +
+    ggplot2::geom_point(
+      size = 4,
+      ggplot2::aes(color = .data$Group),
+      show.legend = TRUE
+    ) +
+    ggplot2::scale_color_manual(values = colors) +
+    ggplot2::labs(
+      x = paste0("PC1(", round(pca_proportion[1], 1), "%)"),
+      y = paste0("PC2(", round(pca_proportion[2], 1), "%)"),
+      color = group
+    ) +
+    ggplot2::theme_classic() +
+    ggplot2::theme(
+      axis.line = ggplot2::element_line(colour = "black"),
+      axis.title = ggplot2::element_text(color = "black", face = "bold"),
+      panel.grid.major = ggplot2::element_blank(),
+      panel.grid.minor = ggplot2::element_blank(),
+      panel.background = ggplot2::element_blank(),
+      axis.text = ggplot2::element_text(
+        color = "black",
+        size = 10,
+        face = "bold"
+      ),
+      legend.text = ggplot2::element_text(size = 16, face = "bold"),
+      legend.title = ggplot2::element_text(size = 16, face = "bold")
+    ) +
     ggplot2::geom_vline(xintercept = 0, linetype = "dashed", color = "black") +
     ggplot2::geom_hline(yintercept = 0, linetype = "dashed", color = "black")
 
   if (length(ellipse_groups) > 0) {
-    ellipse_data <- pca[pca$Group %in% ellipse_groups, , drop = FALSE]
-    Fig1a.taxa.pca <- Fig1a.taxa.pca +
+    ellipse_data <- pca_data[pca_data$Group %in% ellipse_groups, , drop = FALSE]
+    pca_plot <- pca_plot +
       ggplot2::stat_ellipse(
         data = ellipse_data,
-        ggplot2::aes(color = Group),
+        ggplot2::aes(color = .data$Group),
         fill = "white",
         geom = "polygon",
         level = 0.95,
@@ -283,38 +299,60 @@ pathway_pca <- function(abundance,
   # padding" on a continuous axis. Using the continuous scale makes
   # the grammar-of-graphics contract explicit and keeps the behavior
   # stable across ggplot2 versions.
-  Fig1a.taxa.pc1.density <-
-    ggplot2::ggplot(pca) +
-    ggplot2::geom_density(ggplot2::aes(x=PC1, group=Group, fill=Group),
-                 color="black", alpha=1, position = 'identity',show.legend = F) +
-    ggplot2::scale_fill_manual(values=colors) +
+  pc1_density <-
+    ggplot2::ggplot(pca_data) +
+    ggplot2::geom_density(
+      ggplot2::aes(
+        x = .data$PC1,
+        group = .data$Group,
+        fill = .data$Group
+      ),
+      color = "black",
+      alpha = 1,
+      position = "identity",
+      show.legend = FALSE
+    ) +
+    ggplot2::scale_fill_manual(values = colors) +
     ggplot2::theme_classic() +
     ggplot2::scale_y_continuous(expand = c(0, 0.001)) +
-    ggplot2::labs(x=NULL, y=NULL) +
-    ggplot2::theme(axis.text.x=ggplot2::element_blank(),
-          axis.ticks.x = ggplot2::element_blank())
+    ggplot2::labs(x = NULL, y = NULL) +
+    ggplot2::theme(
+      axis.text.x = ggplot2::element_blank(),
+      axis.ticks.x = ggplot2::element_blank()
+    )
 
   # Marginal density for PC2 (horizontal after coord_flip()). Same
   # continuous-scale reasoning applies.
-  Fig1a.taxa.pc2.density <-
-    ggplot2::ggplot(pca) +
-    ggplot2::geom_density(ggplot2::aes(x=PC2, group=Group, fill=Group),
-                 color="black", alpha=1, position = 'identity',show.legend = F) +
-    ggplot2::scale_fill_manual(values=colors) +
+  pc2_density <-
+    ggplot2::ggplot(pca_data) +
+    ggplot2::geom_density(
+      ggplot2::aes(
+        x = .data$PC2,
+        group = .data$Group,
+        fill = .data$Group
+      ),
+      color = "black",
+      alpha = 1,
+      position = "identity",
+      show.legend = FALSE
+    ) +
+    ggplot2::scale_fill_manual(values = colors) +
     ggplot2::theme_classic() +
     ggplot2::scale_y_continuous(expand = c(0, 0.001)) +
-    ggplot2::labs(x=NULL, y=NULL) +
-    ggplot2::theme(axis.text.y = ggplot2::element_blank(),
-          axis.ticks.y = ggplot2::element_blank()) +
+    ggplot2::labs(x = NULL, y = NULL) +
+    ggplot2::theme(
+      axis.text.y = ggplot2::element_blank(),
+      axis.ticks.y = ggplot2::element_blank()
+    ) +
     ggplot2::coord_flip()
 
   # Return plot with or without marginal density plots
   if (show_marginal) {
-    Fig1a.taxa.pca %>%
-      aplot::insert_top(Fig1a.taxa.pc1.density, height = 0.3) %>%
-      aplot::insert_right(Fig1a.taxa.pc2.density, width=0.3) %>%
+    pca_plot %>%
+      aplot::insert_top(pc1_density, height = 0.3) %>%
+      aplot::insert_right(pc2_density, width = 0.3) %>%
       ggplotify::as.ggplot()
   } else {
-    Fig1a.taxa.pca
+    pca_plot
   }
 }

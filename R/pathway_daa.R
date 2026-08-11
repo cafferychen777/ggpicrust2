@@ -266,21 +266,17 @@ calculate_abundance_stats <- function(abundance, metadata, group, features, grou
   aligned <- align_samples(abundance_mat, metadata, verbose = FALSE)
   abundance_filtered <- aligned$abundance
   metadata_ordered <- aligned$metadata
-  sample_col <- aligned$sample_col
 
-  # Get group assignments
-  group_assignments <- metadata_ordered[[group]]
-
-  # Filter for the two groups of interest
-  group1_samples <- colnames(abundance_filtered)[group_assignments == group1]
-  group2_samples <- colnames(abundance_filtered)[group_assignments == group2]
-
-  if (length(group1_samples) == 0) {
-    stop("No samples found for group1: ", group1)
-  }
-  if (length(group2_samples) == 0) {
-    stop("No samples found for group2: ", group2)
-  }
+  # Validate the aligned labels rather than relying on raw metadata. Missing
+  # labels and absent contrast groups otherwise become NA column indices and
+  # contaminate the summary matrix before a useful error is raised.
+  group_assignments <- validate_group_vector_for_summary(
+    metadata_ordered[[group]],
+    context = sprintf("Group column '%s' after sample alignment", group),
+    sample_ids = colnames(abundance_filtered),
+    required_groups = c(group1, group2),
+    min_groups = 2
+  )
 
   # Convert to relative abundance via the shared helper so zero-sum sample
   # columns fail fast here instead of producing NaN that later gets
@@ -361,6 +357,58 @@ calculate_abundance_stats <- function(abundance, metadata, group, features, grou
   return(results)
 }
 
+#' Attach abundance summaries without changing backend row order
+#'
+#' @noRd
+attach_abundance_stats <- function(result, abundance_stats) {
+  join_keys <- c("feature", "group1", "group2")
+  missing_result_keys <- setdiff(join_keys, colnames(result))
+  missing_stats_keys <- setdiff(join_keys, colnames(abundance_stats))
+  if (length(missing_result_keys) > 0 || length(missing_stats_keys) > 0) {
+    stop(
+      "Cannot attach abundance statistics: both inputs must contain ",
+      paste(join_keys, collapse = ", "),
+      ".",
+      call. = FALSE
+    )
+  }
+
+  duplicated_stats <- duplicated(abundance_stats[join_keys])
+  if (any(duplicated_stats)) {
+    example <- abundance_stats[which(duplicated_stats)[1], join_keys,
+                               drop = FALSE]
+    stop(
+      "Cannot attach abundance statistics: summary keys are not unique. ",
+      "Duplicated example: ",
+      paste(unlist(example[1, , drop = TRUE]), collapse = " / "),
+      ".",
+      call. = FALSE
+    )
+  }
+
+  # A backend-native effect size and a relative-abundance mean ratio are
+  # different estimands. Preserve the backend value when it exists.
+  if ("log2_fold_change" %in% colnames(result)) {
+    abundance_stats$log2_fold_change <- NULL
+  }
+
+  overlapping_values <- intersect(
+    setdiff(colnames(abundance_stats), join_keys),
+    setdiff(colnames(result), join_keys)
+  )
+  if (length(overlapping_values) > 0) {
+    stop(
+      "Cannot attach abundance statistics because result already contains ",
+      "column(s) with ambiguous ownership: ",
+      paste(overlapping_values, collapse = ", "),
+      ".",
+      call. = FALSE
+    )
+  }
+
+  dplyr::left_join(result, abundance_stats, by = join_keys)
+}
+
 adjust_daa_p_values <- function(result, p_adjust_method) {
   if (is.null(result) || !"p_values" %in% colnames(result) || nrow(result) == 0) {
     return(result)
@@ -385,11 +433,13 @@ adjust_daa_p_values <- function(result, p_adjust_method) {
   adjust_by <- c("method", "group1", "group2")
 
   if (all(adjust_by %in% colnames(result))) {
-    split_key <- do.call(
-      interaction,
-      c(result[adjust_by], list(drop = TRUE, lex.order = TRUE))
+    group_id <- dplyr::group_indices(
+      dplyr::group_by(
+        result,
+        dplyr::across(dplyr::all_of(adjust_by))
+      )
     )
-    for (idx in split(seq_len(nrow(result)), split_key)) {
+    for (idx in split(seq_len(nrow(result)), group_id)) {
       result$p_adjust[idx] <- stats::p.adjust(
         result$p_values[idx],
         method = p_adjust_method
@@ -514,10 +564,9 @@ pathway_daa <- function(abundance, metadata, group, daa_method = "ALDEx2",
       stop("Pre-aligned metadata must contain sample identifiers matching abundance columns.",
            call. = FALSE)
     }
-    if (sample_col == ".rownames") {
-      metadata$.sample_id <- rownames(metadata)
-      sample_col <- ".sample_id"
-    }
+    sample_key <- materialize_metadata_sample_column(metadata, sample_col)
+    metadata <- sample_key$metadata
+    sample_col <- sample_key$sample_col
     if (!identical(colnames(abundance), as.character(metadata[[sample_col]]))) {
       stop("Pre-aligned abundance and metadata are not in the same sample order.",
            call. = FALSE)
@@ -691,22 +740,10 @@ pathway_daa <- function(abundance, metadata, group, daa_method = "ALDEx2",
           }
         }
 
-        # Merge abundance stats with results. If the DAA method already
-        # provides a method-native log2_fold_change (e.g. ALDEx2 effect size
-        # in CLR space, DESeq2 shrunk log2FC), keep it and drop the
-        # relative-abundance-ratio version to avoid a .x/.y merge collision
-        # and to avoid conflating two different effect-size definitions.
+        # Attach abundance stats without sorting backend rows or allowing a
+        # duplicated summary key to multiply the result cardinality.
         if (nrow(all_abundance_stats) > 0) {
-          if ("log2_fold_change" %in% colnames(result) &&
-              "log2_fold_change" %in% colnames(all_abundance_stats)) {
-            all_abundance_stats$log2_fold_change <- NULL
-          }
-          result <- merge(
-            result,
-            all_abundance_stats,
-            by = c("feature", "group1", "group2"),
-            all.x = TRUE
-          )
+          result <- attach_abundance_stats(result, all_abundance_stats)
         }
       }, error = function(e) {
         stop("Failed to calculate abundance statistics: ", e$message,
@@ -1554,7 +1591,7 @@ perform_maaslin2_analysis <- function(abundance_mat, metadata, group, reference,
 
   # Run Maaslin2 analysis via dynamic lookup so the package remains optional
   maaslin2_fn <- getExportedValue("Maaslin2", "Maaslin2")
-  fit_data <- maaslin2_fn(
+  maaslin2_fn(
     input_data = abundance_mat_t,
     input_metadata = metadata,
     output = output_dir,
@@ -1684,9 +1721,9 @@ validate_maaslin2_results <- function(maaslin2_results, group, feature_map) {
     "value",
     context
   )
-  duplicate_pairs <- duplicated(paste(maaslin2_results$feature,
-                                      maaslin2_results$value,
-                                      sep = "\r"))
+  duplicate_pairs <- duplicated(
+    maaslin2_results[, c("feature", "value"), drop = FALSE]
+  )
   if (any(duplicate_pairs)) {
     duplicated_rows <- paste0(
       maaslin2_results$feature[duplicate_pairs],

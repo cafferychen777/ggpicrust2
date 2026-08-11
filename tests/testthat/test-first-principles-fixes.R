@@ -50,6 +50,28 @@ test_that("align_samples() still succeeds on unique explicit sample_col", {
   expect_equal(colnames(res$abundance), c("S1", "S2", "S3"))
 })
 
+test_that("align_samples() preserves user columns when row names identify samples", {
+  align <- getFromNamespace("align_samples", "ggpicrust2")
+
+  abundance <- matrix(
+    seq_len(6),
+    nrow = 2,
+    dimnames = list(c("f1", "f2"), c("S1", "S2", "S3"))
+  )
+  metadata <- data.frame(
+    .sample_id = c("Control", "Control", "Treatment"),
+    row.names = c("S1", "S2", "S3"),
+    check.names = FALSE
+  )
+
+  result <- align(abundance, metadata, verbose = FALSE)
+
+  expect_equal(result$metadata$.sample_id,
+               c("Control", "Control", "Treatment"))
+  expect_false(identical(result$sample_col, ".sample_id"))
+  expect_equal(result$metadata[[result$sample_col]], c("S1", "S2", "S3"))
+})
+
 
 # -----------------------------------------------------------------------------
 # Issue 2: aggregate_taxa_contributions() used to treat every DAA feature as
@@ -462,6 +484,31 @@ test_that("compare_daa_results() treats reversed two-group pairs as the same com
   expect_equal(unique(out$num_common_features), 1)
   expect_equal(out$num_diff_features, c(0L, 0L))
   expect_equal(out$common_features, c("A", "A"))
+})
+
+test_that("compare_daa_results() keeps structured comparison keys distinct", {
+  method1 <- data.frame(
+    feature = "f\001A",
+    group1 = "B",
+    group2 = "C",
+    p_adjust = 0.01,
+    stringsAsFactors = FALSE
+  )
+  method2 <- data.frame(
+    feature = "f",
+    group1 = "A\001B",
+    group2 = "C",
+    p_adjust = 0.01,
+    stringsAsFactors = FALSE
+  )
+
+  out <- suppressMessages(compare_daa_results(
+    list(method1, method2),
+    method_names = c("m1", "m2")
+  ))
+
+  expect_equal(out$num_common_features, c(0L, 0L))
+  expect_equal(out$num_diff_features, c(1L, 1L))
 })
 
 test_that("compare_daa_results() rejects ambiguous method names and missing IDs", {

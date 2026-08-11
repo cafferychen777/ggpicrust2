@@ -218,7 +218,7 @@ test_that("visualize_gsea heatmap rejects missing group annotations after alignm
       metadata = metadata,
       group = "group"
     ),
-    "contains NA values after sample alignment"
+    "non-missing, non-empty group labels"
   )
 })
 

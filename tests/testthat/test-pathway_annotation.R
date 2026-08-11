@@ -371,6 +371,29 @@ test_that("pathway_annotation validates inputs", {
     )),
     "between 0 and 1"
   )
+
+  expect_error(
+    suppressMessages(pathway_annotation(
+      pathway = "KO",
+      daa_results_df = test_df,
+      ko_to_kegg = TRUE,
+      organism = NA_character_
+    )),
+    "organism.*single non-empty"
+  )
+})
+
+test_that("KEGG retry count is a positive integer", {
+  with_retry <- getFromNamespace("with_retry", "ggpicrust2")
+
+  expect_error(
+    with_retry(function() stop("transient"), max_attempts = 0),
+    "max_attempts.*positive"
+  )
+  expect_error(
+    with_retry(function() stop("transient"), max_attempts = NA_integer_),
+    "max_attempts.*finite integer"
+  )
 })
 
 # Regression: ko_to_kegg = TRUE used to silently ignore `pathway`, so a caller
@@ -422,4 +445,20 @@ test_that("pathway_annotation allows ko_to_kegg = TRUE with pathway = 'KO' or NU
   past_check(suppressMessages(
     pathway_annotation(pathway = NULL, daa_results_df = test_df, ko_to_kegg = TRUE)
   ))
+})
+
+test_that("safe_extract always returns one value or one missing value", {
+  input <- list(NAME = c("first", "second"), EMPTY = character(0))
+
+  expect_identical(safe_extract(input, "NAME", 2), "second")
+  expect_identical(safe_extract(input, "NAME", 3), NA_character_)
+  expect_identical(safe_extract(input, "EMPTY"), NA_character_)
+  expect_identical(safe_extract(input, "MISSING"), NA_character_)
+  expect_length(safe_extract(NULL, "NAME"), 1)
+
+  expect_error(safe_extract(input, "NAME", 0), "index.*positive")
+  expect_error(safe_extract(input, "NAME", -1), "index.*positive")
+  expect_error(safe_extract(input, c("NAME", "EMPTY")),
+               "field.*single non-empty")
+  expect_error(safe_extract("not a list", "NAME"), "list.*NULL or a list")
 })

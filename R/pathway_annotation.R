@@ -96,6 +96,8 @@ rewrite_kegg_pathway_organism <- function(result, organism) {
 #' @return Result or error
 #' @noRd
 with_retry <- function(expr, max_attempts = getOption("ggpicrust2.max_retries", 3)) {
+  validate_count_parameter(max_attempts, "max_attempts")
+
   for (attempt in seq_len(max_attempts)) {
     result <- tryCatch({
       if (is.function(expr)) expr() else if (is.expression(expr)) eval(expr) else expr
@@ -333,7 +335,7 @@ process_kegg_annotations <- function(df, organism = NULL, p_adjust_threshold = 0
       log_message(sprintf("KO IDs not found: %s", paste(not_found_ids, collapse = ", ")), "WARN")
     } else {
       log_message(sprintf("First 10 KO IDs not found: %s...", 
-                          paste(not_found_ids[1:10], collapse = ", ")), "WARN")
+                          paste(utils::head(not_found_ids, 10), collapse = ", ")), "WARN")
     }
   }
   
@@ -354,7 +356,7 @@ process_kegg_annotations <- function(df, organism = NULL, p_adjust_threshold = 0
       ko_list <- if (length(not_found_ids) <= 10) {
         paste("  ", paste(not_found_ids, collapse = ", "))
       } else {
-        paste("  ", paste(not_found_ids[1:10], collapse = ", "), "...")
+        paste("  ", paste(utils::head(not_found_ids, 10), collapse = ", "), "...")
       }
 
       error_msg <- paste0(error_msg,
@@ -373,7 +375,7 @@ process_kegg_annotations <- function(df, organism = NULL, p_adjust_threshold = 0
       ko_list <- if (length(error_ids) <= 10) {
         paste("  ", paste(error_ids, collapse = ", "))
       } else {
-        paste("  ", paste(error_ids[1:10], collapse = ", "), "...")
+        paste("  ", paste(utils::head(error_ids, 10), collapse = ", "), "...")
       }
 
       error_msg <- paste0(error_msg,
@@ -667,6 +669,17 @@ pathway_annotation <- function(file = NULL,
       ref_data <- load_reference_data(pathway)
       return(annotate_pathways(daa_results_df, pathway, ref_data))
     } else {
+      if (!is.null(organism) &&
+          (!is.character(organism) || length(organism) != 1 ||
+           is.na(organism) || !nzchar(trimws(organism)))) {
+        stop(
+          "'organism' must be NULL or a single non-empty KEGG organism code.",
+          call. = FALSE
+        )
+      }
+      if (!is.null(organism)) {
+        organism <- trimws(organism)
+      }
       message("KO to KEGG is set to TRUE. Proceeding with KEGG pathway annotations...")
       if (!is.null(organism)) {
         message("Using organism code: ", organism, " for species-specific pathway information.")
@@ -716,7 +729,9 @@ normalize_annotation_data <- function(data) {
 #' @param field The name of the field to extract from the list
 #' @param index The index position to extract from the field. Default is 1
 #'
-#' @return The extracted element if successful, NA if extraction fails
+#' @return A single character value if successful, otherwise
+#'   \code{NA_character_} when the field is absent, empty, or shorter than
+#'   \code{index}.
 #'
 #' @examples
 #' # Create a sample list
@@ -732,14 +747,30 @@ normalize_annotation_data <- function(data) {
 #' safe_extract(my_list, "c", 1)
 #' @export
 safe_extract <- function(list, field, index = 1) {
+  if (!is.null(list) && !is.list(list)) {
+    stop("'list' must be NULL or a list.", call. = FALSE)
+  }
+  if (!is.character(field) || length(field) != 1 || is.na(field) ||
+      !nzchar(trimws(field))) {
+    stop("'field' must be a single non-empty character string.",
+         call. = FALSE)
+  }
+  validate_count_parameter(index, "index")
+
+  if (is.null(list) || !field %in% names(list)) {
+    return(NA_character_)
+  }
+  values <- list[[field]]
+  if (is.null(values) || length(values) < index) {
+    return(NA_character_)
+  }
+
   tryCatch({
-    if (is.null(list) || !field %in% names(list) || is.null(list[[field]]) || length(list[[field]]) == 0) {
+    extracted <- as.character(values[index])
+    if (length(extracted) == 0 || is.na(extracted[1])) {
       NA_character_
     } else {
-      as.character(list[[field]][index])
+      extracted[1]
     }
-  }, error = function(e) {
-    message(paste("Error in safe_extract:", e$message))
-    NA_character_
-  })
+  }, error = function(e) NA_character_)
 }

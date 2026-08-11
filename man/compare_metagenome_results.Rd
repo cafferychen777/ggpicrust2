@@ -68,10 +68,14 @@ Use \code{print()} or \code{draw()} to display it.
 Compare Metagenome Results
 }
 \details{
-Metagenome matrices are aligned to the same feature and sample identifiers.
-Because each matrix measures the same biological samples, DAA must retain
-this pairing. Independent-group DAA methods would treat repeated
-measurements as independent replicates and are therefore rejected.
+Metagenome matrices are aligned to the same sample identifiers. Each DAA
+comparison uses the feature intersection for that pair, so an unrelated
+third metagenome cannot remove testable features from the pair. Correlations
+use the feature intersection across all metagenomes so every matrix entry is
+based on the same feature universe. Because each matrix measures the same
+biological samples, DAA must retain this pairing. Independent-group DAA
+methods would treat repeated measurements as independent replicates and are
+therefore rejected.
 
 Correlation inference permutes the sample columns of one metagenome jointly
 across all features. This preserves within-metagenome feature dependence

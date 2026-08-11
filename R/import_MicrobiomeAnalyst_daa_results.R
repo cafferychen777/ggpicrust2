@@ -33,6 +33,11 @@ import_MicrobiomeAnalyst_daa_results <- function(file_path = NULL,
     if (is.null(file_path)) {
       stop("Please provide either a file_path or a data frame.")
     }
+    if (!is.character(file_path) || length(file_path) != 1 ||
+        is.na(file_path) || !nzchar(trimws(file_path))) {
+      stop("'file_path' must be a single non-empty file path.",
+           call. = FALSE)
+    }
     if (!file.exists(file_path)) {
       stop("file_path does not exist: ", file_path, call. = FALSE)
     }
@@ -44,26 +49,32 @@ import_MicrobiomeAnalyst_daa_results <- function(file_path = NULL,
   validate_dataframe(data, param_name = "data")
 
   if (!is.character(method) || length(method) != 1 ||
-      is.na(method) || !nzchar(method)) {
+      is.na(method) || !nzchar(trimws(method))) {
     stop("method must be a single non-empty character value.",
          call. = FALSE)
   }
+  method <- trimws(method)
 
   if (!is.character(group_levels) || length(group_levels) < 2 ||
-      anyNA(group_levels) || any(!nzchar(group_levels)) ||
-      anyDuplicated(group_levels)) {
+      anyNA(group_levels) || any(!nzchar(trimws(group_levels)))) {
+    stop("group_levels must contain at least two unique, non-empty character values without NA values.",
+         call. = FALSE)
+  }
+  group_levels <- trimws(group_levels)
+  if (anyDuplicated(group_levels)) {
     stop("group_levels must contain at least two unique, non-empty character values without NA values.",
          call. = FALSE)
   }
 
   data <- standardize_microbiomeanalyst_columns(data)
 
-  if (anyNA(data$feature) || any(!nzchar(as.character(data$feature)))) {
-    stop("Column 'feature' must contain non-empty feature identifiers.",
-         call. = FALSE)
-  }
-  if (anyDuplicated(as.character(data$feature))) {
-    dup_features <- unique(as.character(data$feature[duplicated(as.character(data$feature))]))
+  data$feature <- validate_nonempty_character_column(
+    data$feature,
+    "feature",
+    "data"
+  )
+  if (anyDuplicated(data$feature)) {
+    dup_features <- unique(data$feature[duplicated(data$feature)])
     stop("Column 'feature' contains duplicated identifiers: ",
          paste(utils::head(dup_features, 5), collapse = ", "),
          call. = FALSE)
@@ -75,9 +86,10 @@ import_MicrobiomeAnalyst_daa_results <- function(file_path = NULL,
   )
   for (col in numeric_cols) {
     if (!is.numeric(data[[col]])) {
-      parsed <- suppressWarnings(as.numeric(data[[col]]))
-      non_missing_input <- !is.na(data[[col]])
-      introduced_na <- is.na(parsed) & non_missing_input
+      input_values <- as.character(data[[col]])
+      missing_input <- is.na(input_values) | !nzchar(trimws(input_values))
+      parsed <- suppressWarnings(as.numeric(input_values))
+      introduced_na <- is.na(parsed) & !missing_input
       if (any(introduced_na)) {
         stop("Column '", col, "' must be numeric or numeric-like.",
              call. = FALSE)
@@ -145,15 +157,6 @@ resolve_microbiomeanalyst_column <- function(data,
   }
 
   matches
-}
-
-has_non_default_rownames <- function(data) {
-  rn <- rownames(data)
-  !is.null(rn) &&
-    length(rn) == nrow(data) &&
-    !identical(rn, as.character(seq_len(nrow(data)))) &&
-    !anyNA(rn) &&
-    all(nzchar(rn))
 }
 
 standardize_microbiomeanalyst_columns <- function(data) {

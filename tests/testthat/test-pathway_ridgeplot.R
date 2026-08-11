@@ -173,6 +173,19 @@ test_that("pathway_ridgeplot aligns metadata to abundance columns before fold-ch
 
   k00001_fc <- plot$data$log2fc[plot$data$gene_id == "K00001"]
   expect_gt(k00001_fc, 0)
+
+  metadata_with_blank <- metadata
+  metadata_with_blank$group[1] <- " "
+  expect_error(
+    pathway_ridgeplot(
+      gsea_results = gsea_results,
+      abundance = abundance,
+      metadata = metadata_with_blank,
+      group = "group",
+      pathway_reference = pathway_reference
+    ),
+    "non-missing, non-empty group labels.*S3"
+  )
 })
 
 test_that("pathway_ridgeplot uses factor levels rather than sample order for default two-group comparison", {

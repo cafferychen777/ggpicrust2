@@ -77,11 +77,6 @@ canonical_daa_group_pair <- function(group1, group2) {
   )
 }
 
-daa_comparison_key <- function(feature, group1, group2) {
-  pair <- canonical_daa_group_pair(group1, group2)
-  paste(feature, pair$group1, pair$group2, sep = "\001")
-}
-
 format_daa_comparison_units <- function(keys, lookup, include_contrast) {
   if (length(keys) == 0) {
     return("")
@@ -165,29 +160,38 @@ compare_daa_results <- function(daa_results_list, method_names, p_values_thresho
     canonical_pair <- canonical_daa_group_pair(group1_chr[sig],
                                                group2_chr[sig])
     units_i <- data.frame(
-      key = daa_comparison_key(feature_chr[sig], group1_chr[sig], group2_chr[sig]),
       feature = feature_chr[sig],
       group1 = canonical_pair$group1,
       group2 = canonical_pair$group2,
       stringsAsFactors = FALSE
     )
-    feature_units[[i]] <- units_i[!duplicated(units_i$key), , drop = FALSE]
+    feature_units[[i]] <- units_i[!duplicated(units_i), , drop = FALSE]
   }
 
-  # Flatten to comparison-unit keys while keeping metadata for readable labels.
-  features_flat <- lapply(feature_units, function(x) x$key)
-  unit_lookup <- do.call(rbind, feature_units)
+  # Assign opaque integer IDs after deduplicating the exact structured keys.
+  # Serializing feature/group columns with a separator can collide when user
+  # labels contain that separator; data-frame joins preserve key boundaries.
+  unit_lookup <- unique(do.call(rbind, feature_units))
   if (is.null(unit_lookup) || nrow(unit_lookup) == 0) {
     unit_lookup <- data.frame(
-      key = character(0),
       feature = character(0),
       group1 = character(0),
       group2 = character(0),
       stringsAsFactors = FALSE
     )
-  } else {
-    unit_lookup <- unit_lookup[!duplicated(unit_lookup$key), , drop = FALSE]
   }
+  rownames(unit_lookup) <- NULL
+  unit_lookup$key <- as.character(seq_len(nrow(unit_lookup)))
+  unit_lookup <- unit_lookup[, c("key", "feature", "group1", "group2"),
+                             drop = FALSE]
+  features_flat <- lapply(feature_units, function(units) {
+    if (nrow(units) == 0) return(character(0))
+    dplyr::left_join(
+      units,
+      unit_lookup,
+      by = c("feature", "group1", "group2")
+    )$key
+  })
   include_contrast <- nrow(unique(unit_lookup[, c("group1", "group2"), drop = FALSE])) > 1
 
   # Calculate the intersection and union of the features obtained by each method

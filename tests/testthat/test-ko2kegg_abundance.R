@@ -17,6 +17,20 @@ test_that("ko2kegg_abundance works with valid data frame input", {
   }
 })
 
+test_that("ko2kegg_abundance accepts numeric matrix input with KO row names", {
+  mock_ko_data <- matrix(
+    c(10, 20, 30, 15, 25, 35),
+    nrow = 3,
+    dimnames = list(c("K00001", "K00002", "K00003"), c("S1", "S2"))
+  )
+
+  result <- suppressMessages(ko2kegg_abundance(data = mock_ko_data))
+
+  expect_s3_class(result, "data.frame")
+  expect_equal(colnames(result), c("S1", "S2"))
+  expect_true(nrow(result) > 0)
+})
+
 test_that("ko2kegg_abundance handles file input correctly", {
   temp_file <- tempfile(fileext = ".tsv")
   mock_ko_data <- data.frame(
@@ -88,9 +102,9 @@ test_that("ko2kegg_abundance progress bar closes safely", {
 })
 
 test_that("ko2kegg_abundance throws appropriate errors", {
-  expect_error(ko2kegg_abundance(), "Please provide either a file or a data.frame")
+  expect_error(ko2kegg_abundance(), "Please provide either a file")
   expect_error(ko2kegg_abundance(file = "test.pdf"), "File does not exist")
-  expect_error(ko2kegg_abundance(data = list(a = 1)), "must be a data.frame")
+  expect_error(ko2kegg_abundance(data = list(a = 1)), "data frame or matrix")
 
   # Negative values
   negative_data <- data.frame(function. = c("K00001"), Sample1 = c(-1), stringsAsFactors = FALSE)
@@ -123,6 +137,19 @@ test_that("ko2kegg_abundance rejects missing and non-finite sample values", {
   expect_error(
     ko2kegg_abundance(data = infinite_value_data, filter_for_prokaryotes = FALSE),
     "must contain only finite values"
+  )
+})
+
+test_that("ko2kegg_abundance rejects missing KO identifiers explicitly", {
+  missing_id_data <- data.frame(
+    function. = c("K00001", NA_character_),
+    Sample1 = c(1, 2),
+    stringsAsFactors = FALSE
+  )
+
+  expect_error(
+    suppressWarnings(ko2kegg_abundance(data = missing_id_data)),
+    "function.*non-empty values without NA"
   )
 })
 

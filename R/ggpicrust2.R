@@ -192,8 +192,9 @@ ggpicrust2 <- function(file = NULL,
 
   # Validate data parameter if provided
   if (!is.null(data)) {
-    if (!is.data.frame(data)) {
-      stop("Error: 'data' parameter must be a data frame. If you want to provide a file path, please use the 'file' parameter instead.")
+    if (!is.data.frame(data) && !is.matrix(data)) {
+      stop("'data' must be a data frame or matrix. If you want to provide a file path, use the 'file' parameter instead.",
+           call. = FALSE)
     }
   }
 
@@ -272,7 +273,8 @@ ggpicrust2 <- function(file = NULL,
   num_significant <- sum(daa_results_df$p_adjust < p_values_threshold, na.rm = TRUE)
   if (num_significant == 0) {
     warning(sprintf("No statistically significant biomarkers found (p_adjust < %g). ", p_values_threshold),
-            "Analysis will continue for visualization purposes.", call. = FALSE)
+            "Results will still be returned; significance-filtered plots will be skipped.",
+            call. = FALSE)
   }
 
   # Step 3: Pathway annotation
@@ -296,18 +298,25 @@ ggpicrust2 <- function(file = NULL,
     method_name <- method_names[i]
     daa_sub_method_results_df <- daa_results_df[canonical_methods == method_name, , drop = FALSE]
 
-    combination_bar_plot <- pathway_errorbar(
-      abundance = abundance,
-      daa_results_df = daa_sub_method_results_df,
-      Group = Group_vec,
-      ko_to_kegg = ko_to_kegg,
-      p_value_bar = p_values_bar,
-      order = order,
-      colors = colors,
-      select = select,
-      x_lab = x_lab,
-      p_values_threshold = p_values_threshold
+    has_significant_results <- any(
+      !is.na(daa_sub_method_results_df$p_adjust) &
+        daa_sub_method_results_df$p_adjust < p_values_threshold
     )
+    combination_bar_plot <- NULL
+    if (has_significant_results) {
+      combination_bar_plot <- pathway_errorbar(
+        abundance = abundance,
+        daa_results_df = daa_sub_method_results_df,
+        Group = Group_vec,
+        ko_to_kegg = ko_to_kegg,
+        p_value_bar = p_values_bar,
+        order = order,
+        colors = colors,
+        select = select,
+        x_lab = x_lab,
+        p_values_threshold = p_values_threshold
+      )
+    }
 
     if (is.null(combination_bar_plot)) {
       message(sprintf("Plot %d skipped (no data for method: %s)\n", i, method_name))

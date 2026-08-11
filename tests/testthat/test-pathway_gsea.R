@@ -708,6 +708,35 @@ test_that("calculate_rank_metric aligns by sample column and handles constant t-
   expect_true(is.finite(metric["K00002"]))
 })
 
+test_that("calculate_rank_metric applies pseudocounts symmetrically for log2 ratios", {
+  calc <- getFromNamespace("calculate_rank_metric", "ggpicrust2")
+  abundance <- matrix(
+    c(
+      0, 0, 2, 2,
+      4, 4, 1, 1
+    ),
+    nrow = 2,
+    byrow = TRUE,
+    dimnames = list(c("K00001", "K00002"), paste0("S", 1:4))
+  )
+  metadata <- data.frame(
+    sample_name = paste0("S", 1:4),
+    group = c("A", "A", "B", "B"),
+    stringsAsFactors = FALSE
+  )
+
+  metric <- calc(abundance, metadata, "group", method = "log2_ratio")
+  pseudocount <- 0.5
+
+  expect_equal(
+    unname(metric[c("K00001", "K00002")]),
+    c(
+      log2((0 + pseudocount) / (2 + pseudocount)),
+      log2((4 + pseudocount) / (1 + pseudocount))
+    )
+  )
+})
+
 test_that("calculate_rank_metric uses explicit preranked comparison direction", {
   calc <- getFromNamespace("calculate_rank_metric", "ggpicrust2")
 

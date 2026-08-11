@@ -4,8 +4,8 @@
 # position (metagenomes[[i]][k, ] vs metagenomes[[j]][k, ]). Two
 # metagenomes with identical row names in different orders therefore
 # compared *different* features and produced nonsense (often negative)
-# correlations. We now align all metagenomes on the shared feature set by
-# name before both the DAA cbind step and the correlation loop.
+# correlations. We now align features by name within each DAA pair and use the
+# global feature intersection for the joint correlation matrix.
 
 test_that("compare_metagenome_results aligns metagenomes by feature name, not by row position", {
   set.seed(1)
@@ -107,6 +107,40 @@ test_that("compare_metagenome_results aligns metagenomes by sample name, not by 
   # position-indexed bug produced on identical content.
   expect_equal(res$correlation$cor_matrix["m1", "m2"], 1)
   expect_equal(res$correlation$cor_matrix["m2", "m1"], 1)
+})
+
+test_that("pairwise DAA is not restricted by an unrelated metagenome", {
+  skip_if_not_installed("ComplexHeatmap")
+
+  sample_ids <- paste0("S", 1:4)
+  m1 <- rbind(
+    shared_all = c(1, 2, 4, 8),
+    shared_pair = c(8, 4, 2, 1)
+  )
+  m2 <- rbind(
+    shared_pair = c(7, 5, 3, 2),
+    shared_all = c(2, 3, 5, 9)
+  )
+  m3 <- rbind(
+    shared_all = c(3, 5, 8, 13),
+    only_m3 = c(13, 8, 5, 3)
+  )
+  colnames(m1) <- colnames(m2) <- colnames(m3) <- sample_ids
+
+  result <- suppressWarnings(suppressMessages(compare_metagenome_results(
+    list(m1, m2, m3),
+    names = c("m1", "m2", "m3"),
+    daa_method = "paired Wilcoxon",
+    correlation_permutations = 0
+  )))
+
+  m1_m2 <- result$daa[
+    result$daa$group1 == "m1" & result$daa$group2 == "m2",
+    ,
+    drop = FALSE
+  ]
+  expect_equal(m1_m2$feature, c("shared_all", "shared_pair"))
+  expect_equal(result$correlation$n_features_matrix["m1", "m2"], 1)
 })
 
 test_that("compare_metagenome_results errors cleanly when metagenomes have no sample names", {

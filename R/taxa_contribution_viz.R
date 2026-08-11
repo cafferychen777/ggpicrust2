@@ -3,6 +3,41 @@
 # =============================================================================
 # Stacked bar plots and heatmaps showing which taxa drive pathway abundances.
 
+#' Complete a contribution grid with structural zeros
+#'
+#' @noRd
+complete_contribution_grid <- function(complete_index, observed, key_cols) {
+  if (anyDuplicated(observed[key_cols])) {
+    stop("Internal error: observed contribution keys must be unique.",
+         call. = FALSE)
+  }
+  completed <- dplyr::left_join(complete_index, observed, by = key_cols)
+  completed$contribution[is.na(completed$contribution)] <- 0
+  completed
+}
+
+#' Complete sample/function contribution totals with structural zeros
+#'
+#' @noRd
+complete_sample_function_totals <- function(contrib_data, samples,
+                                            function_ids) {
+  observed <- stats::aggregate(
+    contribution ~ sample + function_id,
+    data = contrib_data,
+    FUN = sum
+  )
+  complete_index <- expand.grid(
+    sample = samples,
+    function_id = function_ids,
+    stringsAsFactors = FALSE
+  )
+  complete_contribution_grid(
+    complete_index,
+    observed,
+    key_cols = c("sample", "function_id")
+  )
+}
+
 #' Stacked bar plot of taxa contributions
 #'
 #' Creates a stacked bar plot showing taxa contributions to predicted
@@ -71,6 +106,10 @@ taxa_contribution_bar <- function(contrib_agg,
                      required_cols = c("sample", "function_id",
                                        "taxon_label", "contribution"),
                      param_name = "contrib_agg")
+  if (nrow(contrib_agg) == 0) {
+    stop("'contrib_agg' must contain at least one contribution row.",
+         call. = FALSE)
+  }
   validate_contrib_key_columns(contrib_agg,
                                c("sample", "function_id", "taxon_label"),
                                "contrib_agg")
@@ -78,6 +117,14 @@ taxa_contribution_bar <- function(contrib_agg,
   validate_metadata(metadata)
   validate_group(metadata, group, min_groups = 1)
   validate_count_parameter(n_functions, "n_functions")
+  show_percentage <- normalize_logical_flag(show_percentage,
+                                            "show_percentage")
+  validate_positive_number(font_size, "font_size")
+  validate_choice(
+    legend_position,
+    c("top", "bottom", "left", "right", "none"),
+    "legend_position"
+  )
   function_ids_requested <- !is.null(function_ids)
   if (!is.null(function_ids)) {
     function_ids <- unique(validate_nonempty_character_column(
@@ -98,6 +145,12 @@ taxa_contribution_bar <- function(contrib_agg,
   aligned <- align_samples(pseudo_abundance, metadata, verbose = FALSE)
   common_samples <- colnames(aligned$abundance)
   metadata_aligned <- aligned$metadata
+  group_values <- validate_group_vector_for_summary(
+    metadata_aligned[[group]],
+    context = paste0("metadata column '", group, "' after sample alignment"),
+    sample_ids = common_samples,
+    min_groups = 1
+  )
 
   contrib_agg <- contrib_agg[contrib_agg$sample %in% common_samples, ]
   if (nrow(contrib_agg) == 0) {
@@ -106,26 +159,11 @@ taxa_contribution_bar <- function(contrib_agg,
 
   # Select functions to plot
   if (is.null(function_ids)) {
-    sample_function_totals <- stats::aggregate(
-      contribution ~ sample + function_id,
-      data = contrib_agg,
-      FUN = sum
+    sample_function_totals <- complete_sample_function_totals(
+      contrib_agg,
+      samples = unique(contrib_agg$sample),
+      function_ids = unique(contrib_agg$function_id)
     )
-    complete_index <- expand.grid(
-      sample = unique(contrib_agg$sample),
-      function_id = unique(contrib_agg$function_id),
-      stringsAsFactors = FALSE
-    )
-    sample_function_totals <- merge(
-      complete_index,
-      sample_function_totals,
-      by = c("sample", "function_id"),
-      all.x = TRUE,
-      sort = FALSE
-    )
-    sample_function_totals$contribution[
-      is.na(sample_function_totals$contribution)
-    ] <- 0
 
     sample_count <- length(unique(sample_function_totals$sample))
     ranking_fun <- if (sample_count > 1) stats::var else sum
@@ -156,38 +194,19 @@ taxa_contribution_bar <- function(contrib_agg,
 
   # Add group info
   sample_col <- aligned$sample_col
-  if (sample_col == ".rownames") {
-    contrib_agg$group_var <- metadata_aligned[contrib_agg$sample, group]
-  } else {
-    group_map <- stats::setNames(
-      metadata_aligned[[group]],
-      metadata_aligned[[sample_col]]
-    )
-    contrib_agg$group_var <- group_map[contrib_agg$sample]
-  }
+  group_map <- stats::setNames(
+    group_values,
+    metadata_aligned[[sample_col]]
+  )
+  contrib_agg$group_var <- group_map[contrib_agg$sample]
 
   # Normalize to percentage if requested
   if (show_percentage) {
-    observed_totals <- stats::aggregate(
-      contribution ~ sample + function_id,
-      data = contrib_agg,
-      FUN = sum
+    sample_function_totals <- complete_sample_function_totals(
+      contrib_agg,
+      samples = common_samples,
+      function_ids = function_ids
     )
-    complete_totals <- expand.grid(
-      sample = common_samples,
-      function_id = function_ids,
-      stringsAsFactors = FALSE
-    )
-    sample_function_totals <- merge(
-      complete_totals,
-      observed_totals,
-      by = c("sample", "function_id"),
-      all.x = TRUE,
-      sort = FALSE
-    )
-    sample_function_totals$contribution[
-      is.na(sample_function_totals$contribution)
-    ] <- 0
     zero_totals <- sample_function_totals$contribution <= 0
     if (any(zero_totals)) {
       zero_examples <- paste(
@@ -204,15 +223,22 @@ taxa_contribution_bar <- function(contrib_agg,
       )
     }
 
-    contrib_agg <- do.call(rbind, lapply(
-      split(contrib_agg, list(contrib_agg$sample, contrib_agg$function_id)),
-      function(df) {
-        total <- sum(df$contribution)
-        df$contribution <- df$contribution / total * 100
-        df
-      }
-    ))
-    rownames(contrib_agg) <- NULL
+    total_col <- ".ggpicrust2_contribution_total"
+    while (total_col %in% colnames(contrib_agg)) {
+      total_col <- paste0(total_col, "_")
+    }
+    normalization_totals <- sample_function_totals
+    colnames(normalization_totals)[
+      colnames(normalization_totals) == "contribution"
+    ] <- total_col
+    contrib_agg <- dplyr::left_join(
+      contrib_agg,
+      normalization_totals,
+      by = c("sample", "function_id")
+    )
+    contrib_agg$contribution <-
+      contrib_agg$contribution / contrib_agg[[total_col]] * 100
+    contrib_agg[[total_col]] <- NULL
     y_label <- "Relative contribution (%)"
   } else {
     y_label <- "Contribution"
@@ -319,11 +345,22 @@ taxa_contribution_heatmap <- function(contrib_agg,
                      required_cols = c("sample", "function_id",
                                        "taxon_label", "contribution"),
                      param_name = "contrib_agg")
+  if (nrow(contrib_agg) == 0) {
+    stop("'contrib_agg' must contain at least one contribution row.",
+         call. = FALSE)
+  }
   validate_contrib_key_columns(contrib_agg,
                                c("sample", "function_id", "taxon_label"),
                                "contrib_agg")
   validate_count_parameter(n_functions, "n_functions")
   validate_contribution_values(contrib_agg$contribution, "contribution")
+  cluster_rows <- normalize_logical_flag(cluster_rows, "cluster_rows")
+  cluster_cols <- normalize_logical_flag(cluster_cols, "cluster_cols")
+  validate_positive_number(font_size, "font_size")
+  validate_positive_number(dendro_line_size, "dendro_line_size",
+                           allow_zero = TRUE)
+  validate_color_values(low_color, "low_color", expected_length = 1)
+  validate_color_values(high_color, "high_color", expected_length = 1)
   validate_hclust_parameters(
     clustering_method,
     clustering_distance,
@@ -352,14 +389,11 @@ taxa_contribution_heatmap <- function(contrib_agg,
     taxon_label = unique(heatmap_data$taxon_label),
     stringsAsFactors = FALSE
   )
-  complete_contrib <- merge(
+  complete_contrib <- complete_contribution_grid(
     complete_index,
     sample_contrib,
-    by = c("sample", "function_id", "taxon_label"),
-    all.x = TRUE,
-    sort = FALSE
+    key_cols = c("sample", "function_id", "taxon_label")
   )
-  complete_contrib$contribution[is.na(complete_contrib$contribution)] <- 0
 
   mean_contrib <- stats::aggregate(
     contribution ~ function_id + taxon_label,
@@ -408,11 +442,22 @@ taxa_contribution_heatmap <- function(contrib_agg,
         label_col = label_col,
         selected_ids = colnames(mat)
       )
-      new_names <- desc_map[colnames(mat)]
+      function_ids <- colnames(mat)
+      new_names <- desc_map[function_ids]
       # Only replace where we found a non-empty match, truncate long names
       found <- !is.na(new_names) & nzchar(new_names)
       new_names[found] <- substr(new_names[found], 1, 50)
-      new_names[!found] <- colnames(mat)[!found]
+      new_names[!found] <- function_ids[!found]
+
+      # Different function IDs can legitimately share the same annotation.
+      # Axis factor levels must still be unique, so retain the function ID for
+      # every ambiguous display label rather than crashing in factor().
+      duplicated_labels <- duplicated(new_names) |
+        duplicated(new_names, fromLast = TRUE)
+      new_names[duplicated_labels] <- paste0(
+        substr(new_names[duplicated_labels], 1, 38),
+        " [", function_ids[duplicated_labels], "]"
+      )
       colnames(mat) <- new_names
     }
   }

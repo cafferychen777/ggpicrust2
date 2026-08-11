@@ -106,12 +106,14 @@ pathway_errorbar_table <- function(abundance,
                                   ko_to_kegg = FALSE,
                                   p_values_threshold = 0.05,
                                   select = NULL,
-	                                  max_features = 30,
-	                                  metadata = NULL,
-	                                  sample_col = NULL) {
+                                  max_features = 30,
+                                  metadata = NULL,
+                                  sample_col = NULL) {
   ko_to_kegg <- normalize_logical_flag(ko_to_kegg, "ko_to_kegg")
+  validate_positive_integer_or_infinity(max_features, "max_features")
+  select <- validate_optional_character_values(select, "select")
 
-	  # Input validation
+  # Input validation
   if (!is.matrix(abundance) && !is.data.frame(abundance)) {
     stop("'abundance' must be a matrix or data frame")
   }
@@ -146,11 +148,16 @@ pathway_errorbar_table <- function(abundance,
     # through the intersect+reorder step without us needing to track
     # indices by hand. Column name is prefixed to avoid colliding with
     # any user column.
-    metadata[[".pet_group"]] <- Group
+    group_key <- add_internal_metadata_column(
+      metadata,
+      Group,
+      prefix = ".ggpicrust2_errorbar_group"
+    )
+    metadata <- group_key$metadata
     aligned <- align_samples(abundance, metadata,
                              sample_col = sample_col, verbose = FALSE)
     abundance <- aligned$abundance
-    Group <- aligned$metadata[[".pet_group"]]
+    Group <- aligned$metadata[[group_key$column]]
   } else if (!is.null(names(Group)) &&
              length(names(Group)) == length(Group) &&
              all(!is.na(names(Group))) &&
@@ -195,8 +202,8 @@ pathway_errorbar_table <- function(abundance,
          ncol(abundance), ")")
   }
 
-	  # Validate single method and group pair
-	  validate_daa_results(daa_results_df)
+  # Validate single method and group pair
+  validate_daa_results(daa_results_df)
   if (ko_to_kegg && !"pathway_class" %in% colnames(daa_results_df)) {
     stop(
       "The 'pathway_class' column is missing but ko_to_kegg = TRUE. ",
@@ -271,16 +278,24 @@ pathway_errorbar_table <- function(abundance,
   annotation_cols <- setdiff(colnames(daa_results_filtered_sub_df),
                              c(abundance_stats_cols, "method", "p_values"))
 
-  # Include p_adjust and annotation columns for merging
-  merge_cols <- c("feature", "p_adjust", annotation_cols)
-  merge_cols <- intersect(merge_cols, colnames(daa_results_filtered_sub_df))
-
-  # Merge with DAA results to include p-values and other information
-  result_table <- merge(
+  # Attach p-values and annotations through a strict one-to-one lookup.
+  # merge() sorts by the key before the explicit p-value ordering below,
+  # which silently changes DAA order whenever p-values are tied.
+  annotation_cols <- unique(c("p_adjust", annotation_cols))
+  annotation_cols <- intersect(annotation_cols,
+                               colnames(daa_results_filtered_sub_df))
+  annotation_index <- match(
+    abundance_stats$feature,
+    daa_results_filtered_sub_df$feature
+  )
+  if (anyNA(annotation_index)) {
+    stop("Internal error: abundance statistics could not be mapped back to DAA rows.",
+         call. = FALSE)
+  }
+  result_table <- cbind(
     abundance_stats,
-    daa_results_filtered_sub_df[, merge_cols, drop = FALSE],
-    by = "feature",
-    all.x = TRUE
+    daa_results_filtered_sub_df[annotation_index, annotation_cols,
+                                drop = FALSE]
   )
 
   # Reorder columns for better readability

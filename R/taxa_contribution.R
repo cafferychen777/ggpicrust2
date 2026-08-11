@@ -56,20 +56,7 @@
 read_contrib_file <- function(file = NULL, data = NULL,
                               type = c("auto", "gene_family", "pathway")) {
   type <- match.arg(type)
-  if (is.null(file) && is.null(data)) {
-    stop("Please provide either a file path or a data.frame.")
-  }
-  if (!is.null(file) && !is.null(data)) {
-    warning("Both file and data provided. Using data and ignoring file.")
-  }
-
-  if (!is.null(data)) {
-    validate_dataframe(data, param_name = "data")
-    contrib <- data
-  } else {
-    contrib <- read_abundance_file(file)
-  }
-
+  contrib <- read_contribution_input(file, data)
   normalize_contrib_table(contrib, type = type)
 }
 
@@ -140,19 +127,7 @@ read_pathway_contrib_file <- function(file = NULL, data = NULL) {
 #'
 #' @export
 read_strat_file <- function(file = NULL, data = NULL) {
-  if (is.null(file) && is.null(data)) {
-    stop("Please provide either a file path or a data.frame.")
-  }
-  if (!is.null(file) && !is.null(data)) {
-    warning("Both file and data provided. Using data and ignoring file.")
-  }
-
-  if (!is.null(data)) {
-    validate_dataframe(data, param_name = "data")
-    strat <- data
-  } else {
-    strat <- read_abundance_file(file)
-  }
+  strat <- read_contribution_input(file, data)
 
   # Validate minimum structure: function column + sequence column + >= 1 sample
   if (ncol(strat) < 3) {
@@ -210,9 +185,10 @@ read_strat_file <- function(file = NULL, data = NULL) {
 #'
 #' @param contrib_data A data.frame from \code{\link{read_contrib_file}} or
 #'   \code{\link{read_strat_file}}.
-#' @param taxonomy Optional data.frame mapping taxon IDs to taxonomy. Supports
-#'   QIIME2 format (semicolon-delimited taxonomy strings) or DADA2 format
-#'   (separate columns for each rank).
+#' @param taxonomy Optional data frame or matrix mapping taxon IDs to taxonomy.
+#'   Taxon IDs may be stored in a standard ID column or in explicit row names.
+#'   Supports QIIME2 format (semicolon-delimited taxonomy strings) or DADA2
+#'   format (separate columns for each rank).
 #' @param tax_level Character. Taxonomic rank for aggregation. One of
 #'   \code{"Kingdom"}, \code{"Phylum"}, \code{"Class"}, \code{"Order"},
 #'   \code{"Family"}, \code{"Genus"}, \code{"Species"}. Default \code{"Genus"}.
@@ -376,6 +352,26 @@ aggregate_taxa_contributions <- function(contrib_data,
 # =============================================================================
 # Internal helpers
 # =============================================================================
+
+#' Resolve mutually exclusive file/data contribution input
+#'
+#' @noRd
+read_contribution_input <- function(file = NULL, data = NULL) {
+  if (is.null(file) && is.null(data)) {
+    stop("Please provide either a file path or a data frame.", call. = FALSE)
+  }
+  if (!is.null(file) && !is.null(data)) {
+    warning("Both file and data provided. Using data and ignoring file.",
+            call. = FALSE)
+  }
+
+  if (!is.null(data)) {
+    validate_dataframe(data, param_name = "data")
+    return(data)
+  }
+
+  read_abundance_file(file)
+}
 
 #' Filter contribution data by a vector of DAA features (KO or pathway IDs)
 #'
@@ -787,18 +783,32 @@ is_pathway_id <- function(ids) {
 #' @return Character. The taxon name at the requested level, or NA.
 #' @noRd
 parse_taxonomy_string <- function(tax_string, level) {
-  prefix_map <- c(
-    Kingdom = "k__", Phylum = "p__", Class = "c__", Order = "o__",
-    Family = "f__", Genus = "g__", Species = "s__"
+  prefix_map <- list(
+    Kingdom = c("k__", "d__", "D_0__"),
+    Phylum = c("p__", "D_1__"),
+    Class = c("c__", "D_2__"),
+    Order = c("o__", "D_3__"),
+    Family = c("f__", "D_4__"),
+    Genus = c("g__", "D_5__"),
+    Species = c("s__", "D_6__")
   )
-  prefix <- prefix_map[[level]]
-  if (is.null(prefix)) return(NA_character_)
+  prefixes <- prefix_map[[level]]
+  if (is.null(prefixes)) return(NA_character_)
+  if (length(tax_string) != 1 || is.na(tax_string) ||
+      !nzchar(trimws(tax_string))) {
+    return(NA_character_)
+  }
 
   parts <- strsplit(tax_string, ";\\s*")[[1]]
-  match <- parts[startsWith(parts, prefix)]
-  if (length(match) == 0) return(NA_character_)
+  matched_part <- parts[vapply(
+    parts,
+    function(part) any(startsWith(part, prefixes)),
+    logical(1)
+  )]
+  if (length(matched_part) == 0) return(NA_character_)
 
-  name <- sub(paste0("^", prefix), "", match[1])
+  matched_prefix <- prefixes[startsWith(matched_part[1], prefixes)][1]
+  name <- substring(matched_part[1], nchar(matched_prefix) + 1L)
   name <- trimws(name)
   if (nchar(name) == 0 || name == "__") return(NA_character_)
   name
@@ -814,26 +824,43 @@ parse_taxonomy_string <- function(tax_string, level) {
 apply_taxonomy <- function(contrib_data, taxonomy, tax_level) {
   valid_levels <- c("Kingdom", "Phylum", "Class", "Order",
                     "Family", "Genus", "Species")
-  if (!tax_level %in% valid_levels) {
-    stop(sprintf(
-      "Invalid tax_level '%s'. Must be one of: %s",
-      tax_level, paste(valid_levels, collapse = ", ")
-    ))
+  validate_choice(tax_level, valid_levels, "tax_level")
+  if (!is.data.frame(taxonomy) && !is.matrix(taxonomy)) {
+    stop("'taxonomy' must be a data frame or matrix.", call. = FALSE)
+  }
+  taxonomy <- as.data.frame(taxonomy, stringsAsFactors = FALSE,
+                            check.names = FALSE)
+  if (nrow(taxonomy) == 0 || ncol(taxonomy) == 0) {
+    stop("'taxonomy' must contain at least one row and one taxonomy column.",
+         call. = FALSE)
   }
 
   # Detect taxonomy format
   tax_cols <- colnames(taxonomy)
   id_col <- intersect(
-    c("Feature.ID", "Feature ID", "feature_id", "ASV", "OTU", "#OTU ID"),
+    c("Feature.ID", "Feature ID", "feature_id", "feature", "Feature",
+      "ASV", "OTU", "#OTU ID", "ID", "id", "sequence", "Sequence"),
     tax_cols
   )
 
-  # Also check first column as ID
-  if (length(id_col) == 0) {
-    id_col <- tax_cols[1]
-  } else {
-    id_col <- id_col[1]
+  if (length(id_col) > 1) {
+    stop("'taxonomy' contains multiple possible taxon ID columns: ",
+         paste(id_col, collapse = ", "), ". Keep only one ID column.",
+         call. = FALSE)
   }
+  if (length(id_col) == 1) {
+    taxon_ids <- taxonomy[[id_col]]
+  } else if (has_non_default_rownames(taxonomy)) {
+    taxon_ids <- rownames(taxonomy)
+  } else {
+    stop(
+      "'taxonomy' must store taxon identifiers in a recognized ID column ",
+      "or in explicit row names.",
+      call. = FALSE
+    )
+  }
+  taxon_ids <- validate_nonempty_character_column(taxon_ids, "taxon_id",
+                                                   "taxonomy")
 
   # QIIME2 format: has a Taxon or taxonomy column with semicolon-delimited strings
   qiime2_col <- intersect(c("Taxon", "taxonomy", "Taxonomy"), tax_cols)
@@ -848,14 +875,14 @@ apply_taxonomy <- function(contrib_data, taxonomy, tax_level) {
       level = tax_level
     )
     tax_map <- data.frame(
-      taxon = taxonomy[[id_col]],
+      taxon = taxon_ids,
       taxon_label = tax_labels,
       stringsAsFactors = FALSE
     )
   } else if (tax_level %in% tax_cols) {
     # DADA2 format: separate columns per rank
     tax_map <- data.frame(
-      taxon = taxonomy[[id_col]],
+      taxon = taxon_ids,
       taxon_label = taxonomy[[tax_level]],
       stringsAsFactors = FALSE
     )
@@ -867,7 +894,6 @@ apply_taxonomy <- function(contrib_data, taxonomy, tax_level) {
     return(contrib_data)
   }
 
-  tax_map <- tax_map[!is.na(tax_map$taxon), , drop = FALSE]
   duplicate_taxa <- unique(tax_map$taxon[duplicated(tax_map$taxon)])
   if (length(duplicate_taxa) > 0) {
     warning(
@@ -881,6 +907,27 @@ apply_taxonomy <- function(contrib_data, taxonomy, tax_level) {
   }
 
   match_idx <- match(contrib_data$taxon, tax_map$taxon)
+  if (all(is.na(match_idx))) {
+    stop(
+      "No taxon identifiers in 'taxonomy' match contrib_data$taxon. ",
+      "Taxonomy examples: '",
+      paste(utils::head(tax_map$taxon, 3), collapse = "', '"),
+      "'; contribution examples: '",
+      paste(utils::head(unique(contrib_data$taxon), 3), collapse = "', '"),
+      "'.",
+      call. = FALSE
+    )
+  }
+  unmatched_taxa <- unique(contrib_data$taxon[is.na(match_idx)])
+  if (length(unmatched_taxa) > 0) {
+    warning(
+      sprintf(
+        "%d contribution taxon identifier(s) were not found in taxonomy and will be labeled 'Unclassified'.",
+        length(unmatched_taxa)
+      ),
+      call. = FALSE
+    )
+  }
   contrib_data$taxon_label <- tax_map$taxon_label[match_idx]
   contrib_data$taxon_label[
     is.na(contrib_data$taxon_label) | trimws(contrib_data$taxon_label) == ""

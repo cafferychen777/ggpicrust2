@@ -14,7 +14,9 @@ safe_extract(list, field, index = 1)
 \item{index}{The index position to extract from the field. Default is 1}
 }
 \value{
-The extracted element if successful, NA if extraction fails
+A single character value if successful, otherwise
+  \code{NA_character_} when the field is absent, empty, or shorter than
+  \code{index}.
 }
 \description{
 Safely extracts elements from a list, returning NA if the extraction fails

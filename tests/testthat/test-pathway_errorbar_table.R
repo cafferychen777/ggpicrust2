@@ -89,6 +89,101 @@ test_that("pathway_errorbar_table honors an explicit sample_col", {
   expect_true("feature" %in% colnames(res))
 })
 
+test_that("pathway_errorbar_table does not overwrite a sample column named like an old internal key", {
+  abundance <- matrix(
+    c(1, 2, 8, 9, 9, 8, 2, 1),
+    nrow = 2,
+    byrow = TRUE,
+    dimnames = list(c("f1", "f2"), paste0("S", 1:4))
+  )
+  metadata <- data.frame(
+    .pet_group = paste0("S", 1:4),
+    stringsAsFactors = FALSE,
+    check.names = FALSE
+  )
+  group <- c("A", "A", "B", "B")
+  daa_results <- data.frame(
+    feature = c("f1", "f2"),
+    method = "method",
+    group1 = "A",
+    group2 = "B",
+    p_adjust = c(0.01, 0.02),
+    stringsAsFactors = FALSE
+  )
+
+  result <- pathway_errorbar_table(
+    abundance,
+    daa_results,
+    group,
+    metadata = metadata,
+    sample_col = ".pet_group"
+  )
+
+  expect_setequal(result$feature, c("f1", "f2"))
+})
+
+test_that("pathway_errorbar_table validates max_features consistently", {
+  abundance <- matrix(
+    1:8,
+    nrow = 2,
+    dimnames = list(c("f1", "f2"), paste0("S", 1:4))
+  )
+  daa_results <- data.frame(
+    feature = c("f1", "f2"),
+    method = "method",
+    group1 = "A",
+    group2 = "B",
+    p_adjust = c(0.01, 0.02),
+    stringsAsFactors = FALSE
+  )
+
+  expect_error(
+    pathway_errorbar_table(
+      abundance,
+      daa_results,
+      c("A", "A", "B", "B"),
+      max_features = 1.5
+    ),
+    "positive integer or Inf"
+  )
+  expect_error(
+    pathway_errorbar_table(
+      abundance,
+      daa_results,
+      c("A", "A", "B", "B"),
+      select = 1
+    ),
+    "select.*character vector"
+  )
+})
+
+test_that("pathway_errorbar_table preserves DAA order when p-values are tied", {
+  abundance <- matrix(
+    c(1, 2, 8, 9, 9, 8, 2, 1),
+    nrow = 2,
+    byrow = TRUE,
+    dimnames = list(c("f1", "f2"), paste0("S", 1:4))
+  )
+  daa_results <- data.frame(
+    feature = c("f2", "f1"),
+    method = "method",
+    group1 = "A",
+    group2 = "B",
+    p_adjust = c(0.01, 0.01),
+    description = c("second", "first"),
+    stringsAsFactors = FALSE
+  )
+
+  result <- pathway_errorbar_table(
+    abundance,
+    daa_results,
+    c("A", "A", "B", "B")
+  )
+
+  expect_equal(result$feature, c("f2", "f1"))
+  expect_equal(result$description, c("second", "first"))
+})
+
 test_that("pathway_errorbar_table aligns named Group vector to abundance columns", {
   abundance <- matrix(
     c(1, 1, 9, 9,

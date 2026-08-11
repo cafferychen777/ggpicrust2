@@ -129,7 +129,7 @@ test_that("pathway_heatmap revalidates grouping variables after sample alignment
       group = "group",
       secondary_groups = "batch"
     ),
-    "At least 2 groups are required"
+    "must contain at least 2 group"
   )
 
   metadata_group_na <- data.frame(
@@ -143,7 +143,18 @@ test_that("pathway_heatmap revalidates grouping variables after sample alignment
       metadata = metadata_group_na,
       group = "group"
     ),
-    "contains NA values after sample alignment"
+    "non-missing, non-empty group labels"
+  )
+
+  metadata_group_blank <- metadata_group_na
+  metadata_group_blank$group <- c("A", "A", "B", " ")
+  expect_error(
+    pathway_heatmap(
+      abundance = abundance,
+      metadata = metadata_group_blank,
+      group = "group"
+    ),
+    "non-missing, non-empty group labels"
   )
 })
 
@@ -287,4 +298,82 @@ test_that("pathway_heatmap handles zero-variance sample profiles with correlatio
     "Undefined pearson correlation"
   )
   expect_s3_class(p, "ggplot")
+})
+
+test_that("pathway_heatmap does not overwrite a group named sample_name", {
+  td <- create_heatmap_test_data()
+  metadata <- data.frame(
+    sample = td$metadata$sample,
+    sample_name = td$metadata$group,
+    stringsAsFactors = FALSE
+  )
+
+  p <- pathway_heatmap(td$abundance, metadata, group = "sample_name")
+
+  expect_s3_class(p, "ggplot")
+  expect_setequal(p$data$sample_name, c("A", "B"))
+  expect_error(ggplot2::ggplot_build(p), NA)
+})
+
+test_that("pathway_heatmap validates logical flags and grouping hierarchy", {
+  td <- create_heatmap_test_data()
+
+  expect_error(
+    pathway_heatmap(td$abundance, td$metadata, "group", show_legend = NA),
+    "show_legend.*TRUE or FALSE"
+  )
+  expect_error(
+    pathway_heatmap(
+      td$abundance,
+      td$metadata,
+      "group",
+      secondary_groups = "group"
+    ),
+    "Grouping columns must be unique"
+  )
+})
+
+test_that("pathway_heatmap requires explicit sample identity", {
+  td <- create_heatmap_test_data()
+  unnamed_abundance <- td$abundance
+  colnames(unnamed_abundance) <- NULL
+  misleading_metadata <- td$metadata
+  misleading_metadata$sample <- paste0("Sample", seq_len(nrow(misleading_metadata)))
+
+  expect_error(
+    pathway_heatmap(unnamed_abundance, misleading_metadata, "group"),
+    "sample identifiers in column names"
+  )
+})
+
+test_that("pathway_heatmap validates clustering cardinality and display parameters", {
+  td <- create_heatmap_test_data()
+  one_pathway <- td$abundance[1, , drop = FALSE]
+
+  expect_error(
+    pathway_heatmap(
+      one_pathway,
+      td$metadata,
+      "group",
+      cluster_rows = TRUE
+    ),
+    "At least two pathways"
+  )
+  expect_error(
+    pathway_heatmap(td$abundance, td$metadata, "group", font_size = NA_real_),
+    "font_size.*finite"
+  )
+  expect_error(
+    pathway_heatmap(td$abundance, td$metadata, "group", low_color = "not-a-color"),
+    "invalid R color"
+  )
+  expect_error(
+    pathway_heatmap(
+      td$abundance,
+      td$metadata,
+      "group",
+      colorbar_position = "somewhere"
+    ),
+    "colorbar_position.*must be one of"
+  )
 })

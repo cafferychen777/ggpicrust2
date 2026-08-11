@@ -80,7 +80,9 @@ clean_ko_abundance <- function(abundance, verbose = TRUE) {
   ko_ids <- gsub("^ko:", "", ko_ids)
 
   # Count changes
-  n_cleaned <- sum(original_ids != ko_ids)
+  n_cleaned <- sum(
+    !is.na(original_ids) & !is.na(ko_ids) & original_ids != ko_ids
+  )
 
   if (n_cleaned > 0 && verbose) {
     message(sprintf("Standardized %d KO IDs (removed 'ko:' prefix)", n_cleaned))
@@ -103,6 +105,14 @@ clean_ko_abundance <- function(abundance, verbose = TRUE) {
 samples_match <- function(vec1, vec2, threshold = 0.5, require_unique = FALSE) {
   vec1 <- as.character(vec1)
   vec2 <- as.character(vec2)
+
+  # Missing or blank values cannot identify samples. Treat the candidate as
+  # non-matching here; align_samples() provides the actionable boundary error.
+  if (anyNA(vec1) || anyNA(vec2) ||
+      any(!nzchar(trimws(vec1))) || any(!nzchar(trimws(vec2)))) {
+    return(FALSE)
+  }
+
   n_common <- length(intersect(vec1, vec2))
   min_length <- min(length(vec1), length(vec2))
 
@@ -171,12 +181,34 @@ find_sample_column <- function(metadata, abundance_samples) {
   # Priority 3: rownames -- also require uniqueness and high overlap, since
   # default integer rownames ("1", "2", ...) should not be mistaken for
   # sample identifiers.
-  if (samples_match(rownames(metadata), abundance_samples,
+  metadata_rownames <- rownames(metadata)
+  default_rownames <- as.character(seq_len(nrow(metadata)))
+  has_explicit_rownames <- !is.null(metadata_rownames) &&
+    !identical(as.character(metadata_rownames), default_rownames)
+  if (has_explicit_rownames &&
+      samples_match(metadata_rownames, abundance_samples,
                     threshold = 0.9, require_unique = TRUE)) {
     return(".rownames")
   }
 
   NULL
+}
+
+#' Materialize metadata row names as a collision-free sample column
+#'
+#' @noRd
+materialize_metadata_sample_column <- function(metadata, sample_col) {
+  metadata <- as.data.frame(metadata)
+  if (!identical(sample_col, ".rownames")) {
+    return(list(metadata = metadata, sample_col = sample_col))
+  }
+
+  sample_key <- add_internal_metadata_column(
+    metadata,
+    rownames(metadata),
+    prefix = ".ggpicrust2_sample_id"
+  )
+  list(metadata = sample_key$metadata, sample_col = sample_key$column)
 }
 
 #' Align Abundance Data and Metadata by Samples
@@ -201,6 +233,10 @@ align_samples <- function(abundance, metadata, sample_col = NULL, verbose = TRUE
   if (length(abundance_samples) == 0) {
     stop("Abundance data has no column names (sample identifiers)")
   }
+  abundance_samples <- validate_sample_identifiers(
+    abundance_samples,
+    context = "abundance column names"
+  )
 
   # Find sample column if not provided
   if (is.null(sample_col)) {
@@ -228,34 +264,25 @@ align_samples <- function(abundance, metadata, sample_col = NULL, verbose = TRUE
     }
   }
 
-  # Handle rownames case
-  if (sample_col == ".rownames") {
-    metadata <- as.data.frame(metadata)
-    metadata$.sample_id <- rownames(metadata)
-    sample_col <- ".sample_id"
+  if (!is.character(sample_col) || length(sample_col) != 1 ||
+      is.na(sample_col) || !nzchar(trimws(sample_col))) {
+    stop("'sample_col' must be NULL or a single non-empty column name.",
+         call. = FALSE)
   }
 
+  sample_key <- materialize_metadata_sample_column(metadata, sample_col)
+  metadata <- sample_key$metadata
+  sample_col <- sample_key$sample_col
+
   # Validate sample_col exists
- if (!sample_col %in% colnames(metadata)) {
+  if (!sample_col %in% colnames(metadata)) {
     stop(sprintf("Sample column '%s' not found in metadata", sample_col))
   }
 
-  metadata_samples <- as.character(metadata[[sample_col]])
-
-  # A sample identifier column is a primary key: one row per sample.
-  # find_sample_column() already enforces uniqueness when auto-detecting,
-  # but users who pass `sample_col` explicitly bypass that path. Without
-  # this guard, duplicated IDs silently collapse in match() below
-  # (match() returns only the first hit), so a metadata row is dropped
-  # without warning and the caller gets stats on the wrong sample count.
-  dup_ids <- unique(metadata_samples[duplicated(metadata_samples)])
-  if (length(dup_ids) > 0) {
-    stop(sprintf(
-      "Sample column '%s' contains duplicated IDs: %s. Each metadata row must correspond to a unique sample.",
-      sample_col,
-      paste(head(dup_ids, 5), collapse = ", ")
-    ), call. = FALSE)
-  }
+  metadata_samples <- validate_sample_identifiers(
+    metadata[[sample_col]],
+    context = sprintf("metadata sample column '%s'", sample_col)
+  )
 
   # Find common samples
   common_samples <- intersect(abundance_samples, metadata_samples)
@@ -300,6 +327,37 @@ align_samples <- function(abundance, metadata, sample_col = NULL, verbose = TRUE
     sample_col = sample_col,
     n_samples = length(common_samples)
   )
+}
+
+#' Validate sample identifiers as primary keys
+#'
+#' Sample identifiers determine the abundance/metadata join. Missing, blank,
+#' or duplicated identifiers make that join ambiguous and must be rejected
+#' before intersect() or match() can silently discard observations.
+#' @noRd
+validate_sample_identifiers <- function(ids, context = "sample identifiers") {
+  ids_chr <- as.character(ids)
+  invalid <- is.na(ids_chr) | !nzchar(trimws(ids_chr))
+  if (any(invalid)) {
+    stop(
+      context,
+      " must contain non-missing, non-empty sample identifiers.",
+      call. = FALSE
+    )
+  }
+
+  if (anyDuplicated(ids_chr)) {
+    duplicated_ids <- unique(ids_chr[duplicated(ids_chr)])
+    stop(
+      context,
+      " contains duplicated sample identifiers: ",
+      paste(utils::head(duplicated_ids, 5), collapse = ", "),
+      ". Each identifier must refer to exactly one sample.",
+      call. = FALSE
+    )
+  }
+
+  ids_chr
 }
 
 # =============================================================================
@@ -724,7 +782,11 @@ validate_group_vector_for_summary <- function(group_vector,
                                               sample_ids = NULL,
                                               required_groups = NULL,
                                               min_groups = 1) {
+  group_names <- names(group_vector)
   group_chr <- as.character(group_vector)
+  if (!is.null(group_names)) {
+    names(group_chr) <- group_names
+  }
   invalid <- is.na(group_chr) | !nzchar(trimws(group_chr))
 
   if (any(invalid)) {
@@ -1493,6 +1555,39 @@ validate_nonempty_character_column <- function(values, column_name, context = "d
   values_chr
 }
 
+#' Validate an optional non-empty character parameter
+#'
+#' @noRd
+validate_optional_character_values <- function(values, param_name,
+                                               scalar = FALSE) {
+  if (is.null(values)) {
+    return(NULL)
+  }
+  if (!is.character(values) || length(values) == 0 || anyNA(values) ||
+      any(!nzchar(trimws(values))) || (scalar && length(values) != 1)) {
+    expected <- if (scalar) {
+      "NULL or a single non-empty character string"
+    } else {
+      "NULL or a non-empty character vector without missing or blank values"
+    }
+    stop(sprintf("'%s' must be %s.", param_name, expected), call. = FALSE)
+  }
+
+  values
+}
+
+#' Check for explicit, usable row names
+#'
+#' @noRd
+has_non_default_rownames <- function(data) {
+  rn <- rownames(data)
+  !is.null(rn) &&
+    length(rn) == nrow(data) &&
+    !identical(as.character(rn), as.character(seq_len(nrow(data)))) &&
+    !anyNA(rn) &&
+    all(nzchar(trimws(as.character(rn))))
+}
+
 #' Validate feature identifiers stored in row names
 #'
 #' @noRd
@@ -1548,6 +1643,100 @@ validate_count_parameter <- function(value, param_name, allow_zero = FALSE) {
       param_name,
       if (allow_zero) "non-negative" else "positive"
     ), call. = FALSE)
+  }
+
+  invisible(TRUE)
+}
+
+#' Validate a positive integer limit that may be infinite
+#'
+#' @noRd
+validate_positive_integer_or_infinity <- function(value, param_name) {
+  valid <- is.numeric(value) && length(value) == 1 && !is.na(value) &&
+    value > 0 &&
+    (is.infinite(value) ||
+       (is.finite(value) && value <= .Machine$integer.max &&
+          value == floor(value)))
+  if (!valid) {
+    stop(sprintf("'%s' must be a positive integer or Inf.", param_name),
+         call. = FALSE)
+  }
+
+  invisible(TRUE)
+}
+
+#' Validate a positive finite numeric parameter
+#'
+#' @noRd
+validate_positive_number <- function(value, param_name, allow_zero = FALSE) {
+  if (!is.numeric(value) || length(value) != 1 ||
+      is.na(value) || !is.finite(value)) {
+    stop(sprintf(
+      "'%s' must be a single finite numeric value.",
+      param_name
+    ), call. = FALSE)
+  }
+
+  lower_ok <- if (allow_zero) value >= 0 else value > 0
+  if (!lower_ok) {
+    stop(sprintf(
+      "'%s' must be %s.",
+      param_name,
+      if (allow_zero) "non-negative" else "positive"
+    ), call. = FALSE)
+  }
+
+  invisible(TRUE)
+}
+
+#' Validate an automatic or positive numeric display parameter
+#'
+#' @noRd
+validate_auto_or_positive_number <- function(value, param_name) {
+  if (identical(value, "auto")) {
+    return(invisible(TRUE))
+  }
+
+  if (!is.numeric(value) || length(value) != 1 || is.na(value) ||
+      !is.finite(value) || value <= 0) {
+    stop(sprintf(
+      "'%s' must be 'auto' or a single positive finite numeric value.",
+      param_name
+    ), call. = FALSE)
+  }
+
+  invisible(TRUE)
+}
+
+#' Validate R color values
+#'
+#' @noRd
+validate_color_values <- function(values, param_name, allow_null = FALSE,
+                                  expected_length = NULL) {
+  if (is.null(values) && allow_null) {
+    return(invisible(TRUE))
+  }
+  wrong_length <- !is.null(expected_length) &&
+    length(values) != expected_length
+  if (!is.character(values) || length(values) == 0 || anyNA(values) ||
+      wrong_length) {
+    stop(sprintf(
+      "'%s' must contain %s valid R color value%s.",
+      param_name,
+      if (is.null(expected_length)) "one or more" else expected_length,
+      if (identical(expected_length, 1)) "" else "s"
+    ), call. = FALSE)
+  }
+
+  invalid <- vapply(values, function(value) {
+    !tryCatch(
+      is.matrix(grDevices::col2rgb(value)),
+      error = function(e) FALSE
+    )
+  }, logical(1))
+  if (any(invalid)) {
+    stop(sprintf("'%s' contains invalid R color value(s).", param_name),
+         call. = FALSE)
   }
 
   invisible(TRUE)

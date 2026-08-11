@@ -1,4 +1,3 @@
-#' @importFrom grDevices col2rgb
 #' @importFrom methods new
 #' @importFrom stats as.formula model.matrix relevel p.adjust reorder var prcomp sd
 #' @importFrom utils head data
@@ -21,4 +20,4 @@
   packageStartupMessage("Loading required package: ggpicrust2")
   packageStartupMessage("To cite ggpicrust2 in publications use:")
   packageStartupMessage("Chen Yang, Jiahao Mai, Xuan Cao, Aaron Burberry, Fabio Cominelli, Liangliang Zhang, ggpicrust2: an R package for PICRUSt2 predicted functional profile analysis and visualization, Bioinformatics, Volume 39, Issue 8, August 2023, btad470, https://doi.org/10.1093/bioinformatics/btad470")
-} 
+}

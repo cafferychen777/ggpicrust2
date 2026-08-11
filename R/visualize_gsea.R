@@ -815,10 +815,12 @@ create_heatmap_plot <- function(gsea_results,
                                  allow_na = FALSE)
   metadata <- aligned$metadata
   validate_group(metadata, group, min_groups = 1)
-  if (any(is.na(metadata[[group]]))) {
-    stop("Group column '", group, "' contains NA values after sample alignment.",
-         call. = FALSE)
-  }
+  validate_group_vector_for_summary(
+    metadata[[group]],
+    context = paste0("Group column '", group, "' after sample alignment"),
+    sample_ids = colnames(abundance),
+    min_groups = 1
+  )
 
   # Create heatmap data matrix
   # For each pathway, calculate the average expression of leading edge genes

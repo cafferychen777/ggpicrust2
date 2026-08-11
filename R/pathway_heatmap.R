@@ -256,7 +256,7 @@ generate_nested_colors <- function(metadata, all_groups, colors = NULL) {
   if (is.null(colors)) {
     # Use default colors, repeat if necessary
     if (n_colors_needed <= length(default_colors)) {
-      colors <- default_colors[1:n_colors_needed]
+      colors <- default_colors[seq_len(n_colors_needed)]
     } else {
       # Generate additional colors using colorRampPalette
       color_func <- grDevices::colorRampPalette(default_colors)
@@ -268,7 +268,7 @@ generate_nested_colors <- function(metadata, all_groups, colors = NULL) {
       warning(paste("Not enough colors provided. Need", n_colors_needed, "colors but only", length(colors), "provided. Repeating colors."))
       colors <- rep(colors, length.out = n_colors_needed)
     } else if (length(colors) > n_colors_needed) {
-      colors <- colors[1:n_colors_needed]
+      colors <- colors[seq_len(n_colors_needed)]
     }
   }
 
@@ -387,6 +387,31 @@ pathway_heatmap <- function(abundance,
     clustering_distance,
     allow_correlation = TRUE
   )
+  show_row_names <- normalize_logical_flag(show_row_names, "show_row_names")
+  show_legend <- normalize_logical_flag(show_legend, "show_legend")
+  cluster_rows <- normalize_logical_flag(cluster_rows, "cluster_rows")
+  cluster_cols <- normalize_logical_flag(cluster_cols, "cluster_cols")
+  dendro_labels <- normalize_logical_flag(dendro_labels, "dendro_labels")
+  validate_positive_number(font_size, "font_size")
+  validate_positive_number(dendro_line_size, "dendro_line_size",
+                           allow_zero = TRUE)
+  validate_positive_number(colorbar_width, "colorbar_width")
+  validate_positive_number(colorbar_height, "colorbar_height")
+  validate_choice(
+    colorbar_position,
+    c("top", "bottom", "left", "right"),
+    "colorbar_position"
+  )
+  validate_color_values(low_color, "low_color", expected_length = 1)
+  validate_color_values(mid_color, "mid_color", expected_length = 1)
+  validate_color_values(high_color, "high_color", expected_length = 1)
+  validate_color_values(colors, "colors", allow_null = TRUE)
+  if (!is.null(colorbar_breaks) &&
+      (!is.numeric(colorbar_breaks) || anyNA(colorbar_breaks) ||
+       any(!is.finite(colorbar_breaks)))) {
+    stop("'colorbar_breaks' must be NULL or a finite numeric vector.",
+         call. = FALSE)
+  }
 
   # Ensure abundance is a matrix with names
   abundance <- as.matrix(abundance)
@@ -402,25 +427,40 @@ pathway_heatmap <- function(abundance,
          call. = FALSE)
   }
   if (nrow(abundance) < 1) stop("At least one pathway is required")
-  if (is.null(colnames(abundance))) colnames(abundance) <- paste0("Sample", seq_len(ncol(abundance)))
+  if (is.null(colnames(abundance))) {
+    stop(
+      "Abundance data must have sample identifiers in column names; implicit Sample1-style matching is not safe.",
+      call. = FALSE
+    )
+  }
   if (is.null(rownames(abundance))) rownames(abundance) <- paste0("Pathway", seq_len(nrow(abundance)))
+  if (cluster_rows && nrow(abundance) < 2) {
+    stop("At least two pathways are required when cluster_rows = TRUE.",
+         call. = FALSE)
+  }
 
   # Handle deprecated facet_by parameter
- if (!is.null(facet_by)) {
+  if (!is.null(facet_by)) {
     warning("'facet_by' is deprecated. Use 'secondary_groups' instead.", call. = FALSE)
     if (is.null(secondary_groups)) secondary_groups <- facet_by
   }
 
   # Build and validate all grouping variables
   all_groups <- c(group, secondary_groups)
+  if (!is.character(all_groups) || length(all_groups) == 0 ||
+      anyNA(all_groups) || any(!nzchar(trimws(all_groups)))) {
+    stop("'group' and 'secondary_groups' must contain non-empty metadata column names.",
+         call. = FALSE)
+  }
+  if (anyDuplicated(all_groups)) {
+    stop("Grouping columns must be unique; duplicated column(s): ",
+         paste(unique(all_groups[duplicated(all_groups)]), collapse = ", "),
+         ".", call. = FALSE)
+  }
   for (grp in all_groups) {
     validate_group(metadata, grp, min_groups = 2)
   }
 
-  if (!is.null(colors) && !is.character(colors)) {
-    stop("colors must be NULL or a character vector")
-  }
-  
   # Heatmaps use color changes to visualize changes in values. However, if the
   # data for plotting the heat map are too different, for example, if the heat
   # map is plotted using gene expression data, gene1 is expressed above 1000 in
@@ -440,18 +480,45 @@ pathway_heatmap <- function(abundance,
   aligned <- align_samples(abundance, metadata)
   abundance <- as.matrix(aligned$abundance)
   metadata <- aligned$metadata
-  metadata$sample_name <- colnames(abundance)
+
+  # Store the aligned sample key in a collision-free internal column. The old
+  # hard-coded `metadata$sample_name <- ...` assignment overwrote a legitimate
+  # grouping column named "sample_name" and silently changed its groups into
+  # one level per sample.
+  sample_key <- add_internal_metadata_column(
+    metadata,
+    colnames(abundance),
+    prefix = ".ggpicrust2_sample"
+  )
+  metadata <- sample_key$metadata
+  sample_key_col <- sample_key$column
+
+  # pivot_longer() creates these names. Copy only colliding grouping columns
+  # to internal aliases so joins and facet expressions remain unambiguous.
+  plot_groups <- all_groups
+  reserved_long_names <- c("Sample", "Value", "rowname")
+  for (i in seq_along(all_groups)) {
+    if (all_groups[i] %in% reserved_long_names) {
+      group_key <- add_internal_metadata_column(
+        metadata,
+        metadata[[all_groups[i]]],
+        prefix = paste0(".ggpicrust2_group_", i)
+      )
+      metadata <- group_key$metadata
+      plot_groups[i] <- group_key$column
+    }
+  }
 
   # Validate grouping columns after sample alignment. Pre-alignment metadata may
   # contain extra samples that provide additional levels; the plotted heatmap
   # only reflects aligned samples, so grouping validity must be checked here.
   for (grp in all_groups) {
-    validate_group(metadata, grp, min_groups = 2)
-    if (any(is.na(metadata[[grp]]))) {
-      stop("Grouping column '", grp,
-           "' contains NA values after sample alignment.",
-           call. = FALSE)
-    }
+    validate_group_vector_for_summary(
+      metadata[[grp]],
+      context = paste0("Grouping column '", grp, "' after sample alignment"),
+      sample_ids = colnames(abundance),
+      min_groups = 2
+    )
   }
 
   # Perform z-score normalization. A constant (zero-variance) row has
@@ -509,7 +576,7 @@ pathway_heatmap <- function(abundance,
     # Order by multiple grouping variables
     ordered_metadata <- metadata[do.call(order, metadata[all_groups]),]
   }
-  ordered_sample_names <- ordered_metadata$sample_name
+  ordered_sample_names <- ordered_metadata[[sample_key_col]]
   ordered_group_levels <- ordered_metadata %>% select(all_of(c(group))) %>% pull()
   
   if (cluster_cols) {
@@ -536,22 +603,20 @@ pathway_heatmap <- function(abundance,
 
   # Convert the abundance data frame to a long format
   # Prepare metadata columns to join - include all grouping variables
-  metadata_cols <- c("sample_name", all_groups)
+  metadata_cols <- c(sample_key_col, plot_groups)
+  join_columns <- stats::setNames(sample_key_col, "Sample")
   
   long_df <- z_df %>%
     tibble::rownames_to_column() %>%
     tidyr::pivot_longer(cols = -rowname,
                         names_to = "Sample",
                         values_to = "Value") %>% 
-    left_join(metadata %>% select(all_of(metadata_cols)), 
-              by = c("Sample" = "sample_name"))
+    left_join(metadata %>% select(all_of(metadata_cols)),
+              by = join_columns)
 
   # Set the order of the samples and pathways in the heatmap
   long_df$Sample <- factor(long_df$Sample, levels = col_order)
   long_df$rowname <- factor(long_df$rowname, levels = row_order)
-
-  # Compute breaks from the data
-  breaks <- range(long_df$Value, na.rm = TRUE)
 
   # Generate appropriate colors for the grouping structure
   colors <- generate_nested_colors(metadata, all_groups, colors)
@@ -607,7 +672,7 @@ pathway_heatmap <- function(abundance,
   if (length(all_groups) == 1) {
     # Single-level faceting
     p <- p + ggh4x::facet_nested(
-      cols = vars(!!sym(all_groups[1])),
+      cols = vars(!!sym(plot_groups[1])),
       space = "free",
       scale = "free",
       switch = "x",
@@ -618,7 +683,7 @@ pathway_heatmap <- function(abundance,
   } else {
     # Multi-level nested faceting
     p <- p + ggh4x::facet_nested(
-      cols = vars(!!!syms(all_groups)),
+      cols = vars(!!!syms(plot_groups)),
       space = "free",
       scale = "free",
       switch = "x",

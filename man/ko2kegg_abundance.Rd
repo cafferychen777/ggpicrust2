@@ -15,7 +15,13 @@ ko2kegg_abundance(
 \arguments{
 \item{file}{A character string representing the file path of the input file containing KO abundance data in picrust2 export format. The input file should have unique KO identifiers in the first column and sample identifiers in the first row. The remaining cells should contain the abundance values for each KO-sample pair.}
 
-\item{data}{An optional data.frame containing KO abundance data in the same format as the input file, with one row per unique KO identifier. Sample columns must be numeric, finite, non-missing, and non-negative. If provided, the function will use this data instead of reading from the file. By default, this parameter is set to NULL.}
+\item{data}{An optional data frame or numeric matrix containing KO abundance
+data with one row per unique KO identifier. Data frames may use the same
+format as the input file, with KO identifiers in the first column, or data
+frames and matrices may store KO identifiers in row names. Sample columns
+must be numeric, finite, non-missing, and non-negative. If provided, the
+function will use this data instead of reading from the file. By default,
+this parameter is set to NULL.}
 
 \item{method}{Method for calculating pathway abundance. One of:
 \itemize{
