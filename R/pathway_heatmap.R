@@ -1,3 +1,132 @@
+utils::globalVariables(c("rowname","Sample","Value","quantile","facet_nested","strip_nested","elem_list_rect", "x", "y", "xend", "yend"))
+
+#' Generate colors for nested grouping variables
+#'
+#' @param metadata A data frame containing metadata
+#' @param all_groups A character vector of grouping variables
+#' @param colors A character vector of colors or NULL
+#' @return A character vector of colors appropriate for the grouping structure
+#' @keywords internal
+generate_nested_colors <- function(metadata, all_groups, colors = NULL) {
+  # Calculate the number of colors needed
+  if (length(all_groups) == 1) {
+    # Single-level grouping: one color per group level
+    n_colors_needed <- length(unique(metadata[[all_groups[1]]]))
+  } else {
+    # Multi-level grouping: each grouping level needs distinct colors
+    # Sum up unique levels across all grouping variables
+    # e.g., Diet(2) + Time(4) = 6 colors needed for all facet strips
+    n_colors_needed <- sum(vapply(
+      all_groups,
+      function(g) length(unique(metadata[[g]])),
+      integer(1)
+    ))
+  }
+
+  # Default color palette
+  default_colors <- c("#d93c3e", "#3685bc", "#6faa3e", "#e8a825", "#c973e6", "#ee6b3d", "#2db0a7", "#f25292")
+
+  if (is.null(colors)) {
+    # Use default colors, repeat if necessary
+    if (n_colors_needed <= length(default_colors)) {
+      colors <- default_colors[seq_len(n_colors_needed)]
+    } else {
+      # Generate additional colors using colorRampPalette
+      color_func <- grDevices::colorRampPalette(default_colors)
+      colors <- color_func(n_colors_needed)
+    }
+  } else {
+    # Use provided colors, repeat if necessary
+    if (length(colors) < n_colors_needed) {
+      warning(paste("Not enough colors provided. Need", n_colors_needed, "colors but only", length(colors), "provided. Repeating colors."))
+      colors <- rep(colors, length.out = n_colors_needed)
+    } else if (length(colors) > n_colors_needed) {
+      colors <- colors[seq_len(n_colors_needed)]
+    }
+  }
+
+  return(colors)
+}
+
+#' Create dendrogram plot from hierarchical clustering
+#'
+#' @param hclust_obj An hclust object from hierarchical clustering
+#' @param dendro_line_size Line width for dendrogram branches
+#' @param dendro_labels Whether to show labels on dendrogram
+#' @param horizontal Whether to create horizontal dendrogram
+#' @return A ggplot dendrogram
+#' @keywords internal
+create_dendrogram <- function(hclust_obj, dendro_line_size = 0.5, dendro_labels = FALSE, horizontal = FALSE) {
+  if (!requireNamespace("ggdendro", quietly = TRUE)) {
+    warning("Package 'ggdendro' is required for dendrogram visualization. Skipping dendrogram.")
+    return(NULL)
+  }
+
+  # Convert hclust to dendrogram
+  dendro_data <- ggdendro::dendro_data(hclust_obj)
+
+  # Create the plot
+  p <- ggplot2::ggplot() +
+    ggplot2::geom_segment(data = dendro_data$segments,
+                         ggplot2::aes(x = x, y = y, xend = xend, yend = yend),
+                         linewidth = dendro_line_size, color = "black") +
+    ggplot2::theme_void()
+
+  if (dendro_labels) {
+    p <- p + ggplot2::geom_text(data = dendro_data$labels,
+                               ggplot2::aes(x = x, y = y, label = label),
+                               size = 3, hjust = 0.5, vjust = 1)
+  }
+
+  if (horizontal) {
+    p <- p + ggplot2::coord_flip()
+  }
+
+  return(p)
+}
+
+#' Compute correlation distance with zero-variance safeguards
+#'
+#' @param values Numeric matrix with items in rows and variables in columns
+#' @param method Correlation method passed to stats::cor
+#' @param item_label Human-readable item label for messages
+#' @return A dist object equal to 1 - correlation
+#' @keywords internal
+compute_correlation_distance <- function(values, method = "pearson", item_label = "items") {
+  cor_matrix <- suppressWarnings(stats::cor(t(values), method = method))
+
+  undefined <- !is.finite(cor_matrix)
+  if (any(undefined)) {
+    cor_matrix[undefined] <- 0
+    n_items <- nrow(values)
+    for (i in seq_len(max(n_items - 1, 0))) {
+      for (j in seq.int(i + 1, n_items)) {
+        if (undefined[i, j] &&
+            isTRUE(all.equal(values[i, ], values[j, ],
+                             check.attributes = FALSE))) {
+          cor_matrix[i, j] <- 1
+          cor_matrix[j, i] <- 1
+        }
+      }
+    }
+    diag(cor_matrix) <- 1
+    message(sprintf(
+      "Undefined %s correlation(s) involving zero-variance %s were assigned distance 0 for identical profiles and 1 otherwise.",
+      method, item_label
+    ))
+  }
+
+  dist_obj <- stats::as.dist(1 - cor_matrix)
+  if (any(!is.finite(dist_obj))) {
+    stop(sprintf(
+      "Cannot compute %s correlation distance for %s: non-finite distances remain after zero-variance handling.",
+      method, item_label
+    ), call. = FALSE)
+  }
+
+  dist_obj
+}
+
 #' Create pathway heatmap with support for multiple grouping variables
 #'
 #' This function creates a heatmap of the predicted functional pathway abundance data
@@ -159,7 +288,7 @@
 #'   ko_to_kegg = FALSE
 #' )
 #' feature_with_p_0.05 <- metacyc_daa_results_df %>% filter(p_adjust < 0.05)
-#' 
+#'
 #' # Example 7: Real data with hierarchical clustering
 #' pathway_heatmap(
 #'   abundance = metacyc_abundance %>%
@@ -230,135 +359,6 @@
 #'   clustering_distance = "correlation"
 #' )
 #' }
-utils::globalVariables(c("rowname","Sample","Value","quantile","facet_nested","strip_nested","elem_list_rect", "x", "y", "xend", "yend"))
-
-#' Generate colors for nested grouping variables
-#'
-#' @param metadata A data frame containing metadata
-#' @param all_groups A character vector of grouping variables
-#' @param colors A character vector of colors or NULL
-#' @return A character vector of colors appropriate for the grouping structure
-#' @keywords internal
-generate_nested_colors <- function(metadata, all_groups, colors = NULL) {
-  # Calculate the number of colors needed
-  if (length(all_groups) == 1) {
-    # Single-level grouping: one color per group level
-    n_colors_needed <- length(unique(metadata[[all_groups[1]]]))
-  } else {
-    # Multi-level grouping: each grouping level needs distinct colors
-    # Sum up unique levels across all grouping variables
-    # e.g., Diet(2) + Time(4) = 6 colors needed for all facet strips
-    n_colors_needed <- sum(vapply(
-      all_groups,
-      function(g) length(unique(metadata[[g]])),
-      integer(1)
-    ))
-  }
-
-  # Default color palette
-  default_colors <- c("#d93c3e", "#3685bc", "#6faa3e", "#e8a825", "#c973e6", "#ee6b3d", "#2db0a7", "#f25292")
-
-  if (is.null(colors)) {
-    # Use default colors, repeat if necessary
-    if (n_colors_needed <= length(default_colors)) {
-      colors <- default_colors[seq_len(n_colors_needed)]
-    } else {
-      # Generate additional colors using colorRampPalette
-      color_func <- grDevices::colorRampPalette(default_colors)
-      colors <- color_func(n_colors_needed)
-    }
-  } else {
-    # Use provided colors, repeat if necessary
-    if (length(colors) < n_colors_needed) {
-      warning(paste("Not enough colors provided. Need", n_colors_needed, "colors but only", length(colors), "provided. Repeating colors."))
-      colors <- rep(colors, length.out = n_colors_needed)
-    } else if (length(colors) > n_colors_needed) {
-      colors <- colors[seq_len(n_colors_needed)]
-    }
-  }
-
-  return(colors)
-}
-
-#' Create dendrogram plot from hierarchical clustering
-#'
-#' @param hclust_obj An hclust object from hierarchical clustering
-#' @param dendro_line_size Line width for dendrogram branches
-#' @param dendro_labels Whether to show labels on dendrogram
-#' @param horizontal Whether to create horizontal dendrogram
-#' @return A ggplot dendrogram
-#' @keywords internal
-create_dendrogram <- function(hclust_obj, dendro_line_size = 0.5, dendro_labels = FALSE, horizontal = FALSE) {
-  if (!requireNamespace("ggdendro", quietly = TRUE)) {
-    warning("Package 'ggdendro' is required for dendrogram visualization. Skipping dendrogram.")
-    return(NULL)
-  }
-  
-  # Convert hclust to dendrogram
-  dendro_data <- ggdendro::dendro_data(hclust_obj)
-  
-  # Create the plot
-  p <- ggplot2::ggplot() +
-    ggplot2::geom_segment(data = dendro_data$segments, 
-                         ggplot2::aes(x = x, y = y, xend = xend, yend = yend),
-                         linewidth = dendro_line_size, color = "black") +
-    ggplot2::theme_void()
-  
-  if (dendro_labels) {
-    p <- p + ggplot2::geom_text(data = dendro_data$labels, 
-                               ggplot2::aes(x = x, y = y, label = label),
-                               size = 3, hjust = 0.5, vjust = 1)
-  }
-  
-  if (horizontal) {
-    p <- p + ggplot2::coord_flip()
-  }
-  
-  return(p)
-}
-
-#' Compute correlation distance with zero-variance safeguards
-#'
-#' @param values Numeric matrix with items in rows and variables in columns
-#' @param method Correlation method passed to stats::cor
-#' @param item_label Human-readable item label for messages
-#' @return A dist object equal to 1 - correlation
-#' @keywords internal
-compute_correlation_distance <- function(values, method = "pearson", item_label = "items") {
-  cor_matrix <- suppressWarnings(stats::cor(t(values), method = method))
-
-  undefined <- !is.finite(cor_matrix)
-  if (any(undefined)) {
-    cor_matrix[undefined] <- 0
-    n_items <- nrow(values)
-    for (i in seq_len(max(n_items - 1, 0))) {
-      for (j in seq.int(i + 1, n_items)) {
-        if (undefined[i, j] &&
-            isTRUE(all.equal(values[i, ], values[j, ],
-                             check.attributes = FALSE))) {
-          cor_matrix[i, j] <- 1
-          cor_matrix[j, i] <- 1
-        }
-      }
-    }
-    diag(cor_matrix) <- 1
-    message(sprintf(
-      "Undefined %s correlation(s) involving zero-variance %s were assigned distance 0 for identical profiles and 1 otherwise.",
-      method, item_label
-    ))
-  }
-
-  dist_obj <- stats::as.dist(1 - cor_matrix)
-  if (any(!is.finite(dist_obj))) {
-    stop(sprintf(
-      "Cannot compute %s correlation distance for %s: non-finite distances remain after zero-variance handling.",
-      method, item_label
-    ), call. = FALSE)
-  }
-
-  dist_obj
-}
-
 pathway_heatmap <- function(abundance,
                             metadata,
                             group,
@@ -582,7 +582,7 @@ pathway_heatmap <- function(abundance,
   # Perform clustering if requested
   row_order <- rownames(z_abundance)
   col_order <- colnames(z_abundance)
-  
+
   if (cluster_rows) {
     # Calculate distance matrix for rows
     if (clustering_distance == "correlation") {
@@ -601,7 +601,7 @@ pathway_heatmap <- function(abundance,
     row_hclust <- hclust(row_dist, method = clustering_method)
     row_order <- rownames(z_abundance)[row_hclust$order]
   }
-  
+
   # Always prepare ordered metadata for consistent behavior
   # Order by all grouping variables hierarchically
   if (length(all_groups) == 1) {
@@ -612,7 +612,7 @@ pathway_heatmap <- function(abundance,
   }
   ordered_sample_names <- ordered_metadata[[sample_key_col]]
   ordered_group_levels <- ordered_metadata %>% select(all_of(c(group))) %>% pull()
-  
+
   if (cluster_cols) {
     # Calculate distance matrix for columns
     if (clustering_distance == "correlation") {
@@ -639,12 +639,12 @@ pathway_heatmap <- function(abundance,
   # Prepare metadata columns to join - include all grouping variables
   metadata_cols <- c(sample_key_col, plot_groups)
   join_columns <- stats::setNames(sample_key_col, "Sample")
-  
+
   long_df <- z_df %>%
     tibble::rownames_to_column() %>%
     tidyr::pivot_longer(cols = -rowname,
                         names_to = "Sample",
-                        values_to = "Value") %>% 
+                        values_to = "Value") %>%
     left_join(metadata %>% select(all_of(metadata_cols)),
               by = join_columns)
 
@@ -699,7 +699,7 @@ pathway_heatmap <- function(abundance,
         ticks = TRUE,
         label = TRUE
       )
-    ) + 
+    ) +
     ggplot2::theme(legend.position = colorbar_position)
 
   # Add faceting support with multiple grouping levels
@@ -747,7 +747,7 @@ pathway_heatmap <- function(abundance,
       warning("Package 'patchwork' is required for combining plots with dendrograms. Returning heatmap only.")
       return(p)
     }
-    
+
     # Create row dendrogram if rows were clustered
     if (cluster_rows) {
       row_dendro <- create_dendrogram(row_hclust, dendro_line_size, dendro_labels, horizontal = TRUE)
@@ -755,7 +755,7 @@ pathway_heatmap <- function(abundance,
         p <- row_dendro + p + patchwork::plot_layout(widths = c(0.2, 1))
       }
     }
-    
+
     # Create column dendrogram if columns were clustered
     if (cluster_cols) {
       col_dendro <- create_dendrogram(col_hclust, dendro_line_size, dendro_labels, horizontal = FALSE)

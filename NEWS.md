@@ -16,6 +16,10 @@
 
 ## Documentation and diagnostics
 
+* Fixed the existing CRAN check findings: restored generated usage sections
+  for three plotting/comparison helpers and made backend-dependent tests
+  respect unavailable optional packages, including ALDEx2 on macOS oldrel.
+
 * Restored the installed-package test entry point so `R CMD check` actually
   executes the bundled regression tests.
 * Camera tutorial examples now estimate within-set correlation explicitly.

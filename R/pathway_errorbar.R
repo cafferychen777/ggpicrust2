@@ -1,3 +1,4 @@
+utils::globalVariables(c("group", "name", "value", "feature", "negative_log10_p", "pathway_class", "p_adjust", "log2_fold_change", "transform_sample_counts", "column_to_rownames", "txtProgressBar", "setTxtProgressBar", "utils"))
 #' The function pathway_errorbar() is used to visualize the results of functional pathway differential abundance analysis as error bar plots.
 #'
 #' @name pathway_errorbar
@@ -92,7 +93,6 @@
 #' }
 #' # See vignette("using_ggpicrust2") for the complete stepwise workflow.
 #' }
-utils::globalVariables(c("group", "name", "value", "feature", "negative_log10_p", "pathway_class", "p_adjust", "log2_fold_change", "transform_sample_counts", "column_to_rownames", "txtProgressBar", "setTxtProgressBar", "utils"))
 pathway_errorbar <-
   function(abundance,
            daa_results_df,

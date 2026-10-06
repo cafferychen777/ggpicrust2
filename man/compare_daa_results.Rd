@@ -3,6 +3,9 @@
 \name{compare_daa_results}
 \alias{compare_daa_results}
 \title{Compare the Consistency of Statistically Significant Features}
+\usage{
+compare_daa_results(daa_results_list, method_names, p_values_threshold = 0.05)
+}
 \arguments{
 \item{daa_results_list}{A list of data frames containing statistically significant features obtained using different methods.}
 

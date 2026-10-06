@@ -27,6 +27,7 @@ create_daa_test_data <- function(n_samples = 4, n_groups = 2) {
 }
 
 test_that("pathway_daa works with basic inputs", {
+  skip_if_not_installed("ALDEx2")
   td <- create_daa_test_data(n_samples = 6)
 
   result <- pathway_daa(td$abundance, td$metadata, "group", daa_method = "ALDEx2")
@@ -39,6 +40,7 @@ test_that("pathway_daa works with basic inputs", {
 })
 
 test_that("pathway_daa validates inputs correctly", {
+  skip_if_not_installed("ALDEx2")
   abundance <- data.frame(
     sample1 = c(10, 20, 30), sample2 = c(20, 30, 40),
     sample3 = c(30, 40, 50), sample4 = c(40, 50, 60),
@@ -66,6 +68,7 @@ test_that("pathway_daa validates inputs correctly", {
 })
 
 test_that("pathway_daa rejects invalid reference levels instead of silently falling back", {
+  skip_if_not_installed("ALDEx2")
   td <- create_daa_test_data(n_samples = 6)
 
   expect_error(
@@ -112,6 +115,12 @@ test_that("pathway_daa core methods produce expected results", {
   )
 
   core_methods <- c("ALDEx2", "limma voom", "edgeR")
+  core_packages <- list(ALDEx2 = "ALDEx2", `limma voom` = c("limma", "edgeR"), edgeR = "edgeR")
+  available <- vapply(core_methods, function(method) {
+    all(vapply(core_packages[[method]], requireNamespace, logical(1), quietly = TRUE))
+  }, logical(1))
+  skip_if(!any(available), "No optional core DAA backend is installed.")
+  core_methods <- core_methods[available]
   for (method in core_methods) {
     result <- suppressWarnings(pathway_daa(abundance, metadata, "group", daa_method = method))
 
@@ -231,6 +240,7 @@ test_that("formula-based DAA methods handle non-syntactic group columns", {
 })
 
 test_that("pathway_daa handles sample selection correctly", {
+  skip_if_not_installed("ALDEx2")
   # Use 6 samples so selecting 4 still meets the minimum requirement
   td <- create_daa_test_data(n_samples = 6)
 
@@ -250,6 +260,7 @@ test_that("pathway_daa handles sample selection correctly", {
 })
 
 test_that("pathway_daa select= keeps metadata rows aligned with abundance columns", {
+  skip_if_not_installed("ALDEx2")
   # Regression: previously the select= branch reordered abundance columns to
   # match `select`, but only filtered metadata rows without reordering them.
   # Group labels then drifted relative to abundance, producing wrong p-values
@@ -293,6 +304,8 @@ test_that("pathway_daa select= keeps metadata rows aligned with abundance column
 })
 
 test_that("limma voom multi-group labels align with p-values and coefficients", {
+  skip_if_not_installed("limma")
+  skip_if_not_installed("edgeR")
   # Regression: group2 was assigned a length-(k-1) vector and R's recycling
   # produced interleaved B,C,B,C,... labels for a 3-group design. The correct
   # labeling is B repeated N_features times, then C repeated N_features times,
@@ -624,6 +637,7 @@ test_that("metagenomeSeq fails when CSS normalization is undefined for sparse sa
 })
 
 test_that("pathway_daa rejects negative abundance values", {
+  skip_if_not_installed("ALDEx2")
   # Regression: validate_daa_input() previously skipped numeric-matrix quality
   # checks, so negative entries silently flowed into downstream methods and
   # produced cryptic failures or nonsense results.
@@ -691,6 +705,7 @@ test_that("pathway_daa warns when count-based methods round non-integer abundanc
 })
 
 test_that("pathway_daa handles factor levels correctly with subset", {
+  skip_if_not_installed("ALDEx2")
   # GitHub issue #158: 3 groups, select only 2
   abundance <- data.frame(
     sample1 = c(10, 20, 30), sample2 = c(20, 30, 40),
@@ -731,6 +746,8 @@ test_that("pathway_daa handles factor levels correctly with subset", {
 })
 
 test_that("pathway_daa handles multiple groups correctly", {
+  skip_if_not_installed("limma")
+  skip_if_not_installed("edgeR")
   td <- create_daa_test_data(n_samples = 6, n_groups = 3)
 
   suppressWarnings({
@@ -761,6 +778,7 @@ test_that("pathway_daa handles multiple groups correctly", {
 })
 
 test_that("pathway_daa handles p-value adjustment correctly", {
+  skip_if_not_installed("ALDEx2")
   td <- create_daa_test_data(n_samples = 4)
 
   # ALDEx2 uses its own pre-computed BH correction (Monte Carlo-based),
@@ -1008,6 +1026,7 @@ test_that("edgeR backend output is aligned by exactTest row names", {
 })
 
 test_that("pathway_daa include_abundance_stats parameter works correctly", {
+  skip_if_not_installed("ALDEx2")
   td <- create_daa_test_data(n_samples = 4)
 
   # Columns contributed by abundance stats (relative-abundance means/SDs).
@@ -1049,6 +1068,7 @@ test_that("pathway_daa include_abundance_stats parameter works correctly", {
 })
 
 test_that("ALDEx2 returns effect size columns by default", {
+  skip_if_not_installed("ALDEx2")
   td <- create_daa_test_data(n_samples = 4)
 
   # Default call: no explicit include_effect_size.
@@ -1131,6 +1151,7 @@ test_that("ALDEx2 requested effect-size failures stop the analysis", {
 })
 
 test_that("include_abundance_stats does not collide with method-native log2FC", {
+  skip_if_not_installed("ALDEx2")
   td <- create_daa_test_data(n_samples = 4)
 
   # ALDEx2 with both flags on: method-native log2_fold_change (CLR-space
@@ -1198,6 +1219,7 @@ test_that("attaching abundance stats rejects duplicate summary keys", {
 })
 
 test_that("include_abundance_stats fails when backend features cannot be summarized", {
+  skip_if_not_installed("edgeR")
   skip_if_not_installed("limma")
 
   td <- create_daa_test_data(n_samples = 4)
@@ -1522,6 +1544,7 @@ test_that("pathway_daa Lefser honors reference and tests relative abundance", {
 })
 
 test_that("pathway_daa preserves a leading feature ID column before sample alignment", {
+  skip_if_not_installed("edgeR")
   skip_if_not_installed("limma")
 
   abundance <- data.frame(
@@ -1550,6 +1573,7 @@ test_that("pathway_daa preserves a leading feature ID column before sample align
 })
 
 test_that("pathway_daa requires explicit unique feature identifiers", {
+  skip_if_not_installed("edgeR")
   skip_if_not_installed("limma")
 
   metadata <- data.frame(
@@ -1934,6 +1958,7 @@ test_that("pathway_daa metagenomeSeq emits one block per non-reference level for
 })
 
 test_that("pathway_daa re-validates group count after align/select", {
+  skip_if_not_installed("ALDEx2")
   # Regression: validate_group() only checks the raw metadata. If
   # align_samples() or a narrow `select =` filter removes every sample
   # of a level, the single-group leftover could propagate into backends
@@ -1953,6 +1978,7 @@ test_that("pathway_daa re-validates group count after align/select", {
 })
 
 test_that("pathway_daa re-validates sample count and uniqueness after select", {
+  skip_if_not_installed("ALDEx2")
   # Regression: select= was applied after the aligned sample-count check.
   # A caller could start with a valid dataset, select fewer than four
   # samples, and still reach backend fitting.
@@ -1982,6 +2008,7 @@ test_that("pathway_daa re-validates sample count and uniqueness after select", {
 })
 
 test_that("pathway_daa rejects missing groups and singleton groups after alignment/select", {
+  skip_if_not_installed("ALDEx2")
   td <- create_daa_test_data(n_samples = 6, n_groups = 2)
 
   metadata_missing <- td$metadata

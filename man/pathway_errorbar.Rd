@@ -3,6 +3,47 @@
 \name{pathway_errorbar}
 \alias{pathway_errorbar}
 \title{The function pathway_errorbar() is used to visualize the results of functional pathway differential abundance analysis as error bar plots.}
+\usage{
+pathway_errorbar(
+  abundance,
+  daa_results_df,
+  Group,
+  ko_to_kegg = FALSE,
+  p_values_threshold = 0.05,
+  order = "group",
+  select = NULL,
+  p_value_bar = TRUE,
+  colors = NULL,
+  x_lab = NULL,
+  log2_fold_change_color = "#87ceeb",
+  max_features = 30,
+  color_theme = "default",
+  pathway_class_colors = NULL,
+  smart_colors = FALSE,
+  accessibility_mode = FALSE,
+  legend_position = "top",
+  legend_direction = "horizontal",
+  legend_title = NULL,
+  legend_title_size = 12,
+  legend_text_size = 10,
+  legend_key_size = 0.8,
+  legend_ncol = NULL,
+  legend_nrow = NULL,
+  pvalue_format = "numeric",
+  pvalue_stars = TRUE,
+  pvalue_colors = FALSE,
+  pvalue_size = "auto",
+  pvalue_angle = 0,
+  pvalue_thresholds = c(0.001, 0.01, 0.05),
+  pvalue_star_symbols = c("***", "**", "*"),
+  pathway_class_text_size = "auto",
+  pathway_class_text_color = "black",
+  pathway_class_text_face = "bold",
+  pathway_class_text_angle = 0,
+  pathway_class_position = "right",
+  pathway_names_text_size = "auto"
+)
+}
 \arguments{
 \item{abundance}{A data frame with row names representing pathways and column names representing samples. Values must be non-negative abundances. The function normalizes each sample by its total over all supplied features before computing group means and standard deviations. Supply the full feature matrix and use \code{select} to limit displayed rows; pre-filtering the matrix changes the denominator. Data frames may also provide a leading non-numeric feature ID column (for example \code{#NAME}, \code{feature}, or \code{pathway}); it is converted to row names before sample-count validation.}
 

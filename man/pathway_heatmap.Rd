@@ -3,6 +3,34 @@
 \name{pathway_heatmap}
 \alias{pathway_heatmap}
 \title{Create pathway heatmap with support for multiple grouping variables}
+\usage{
+pathway_heatmap(
+  abundance,
+  metadata,
+  group,
+  secondary_groups = NULL,
+  colors = NULL,
+  font_size = 12,
+  show_row_names = TRUE,
+  show_legend = TRUE,
+  custom_theme = NULL,
+  low_color = "#0571b0",
+  mid_color = "white",
+  high_color = "#ca0020",
+  cluster_rows = FALSE,
+  cluster_cols = FALSE,
+  clustering_method = "complete",
+  clustering_distance = "euclidean",
+  dendro_line_size = 0.5,
+  dendro_labels = FALSE,
+  facet_by = NULL,
+  colorbar_title = "Z Score",
+  colorbar_position = "right",
+  colorbar_width = 0.6,
+  colorbar_height = 9,
+  colorbar_breaks = NULL
+)
+}
 \arguments{
 \item{abundance}{A matrix or data frame of pathway abundance data, where columns
 correspond to samples and rows correspond to pathways. Data frames may also

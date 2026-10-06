@@ -394,6 +394,7 @@ test_that("pathway_errorbar handles p_value_bar parameter correctly", {
 })
 
 test_that("pathway_errorbar_table function works correctly", {
+  skip_if_not_installed("ALDEx2")
   td <- create_errorbar_test_data(n_features = 3, p_adjust = c(0.01, 0.02, 0.03))
   td$abundance <- round(td$abundance)
 

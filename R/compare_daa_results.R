@@ -1,3 +1,28 @@
+utils::globalVariables(c("group1","group2"))
+
+canonical_daa_group_pair <- function(group1, group2) {
+  group1 <- as.character(group1)
+  group2 <- as.character(group2)
+  data.frame(
+    group1 = pmin(group1, group2),
+    group2 = pmax(group1, group2),
+    stringsAsFactors = FALSE
+  )
+}
+
+format_daa_comparison_units <- function(keys, lookup, include_contrast) {
+  if (length(keys) == 0) {
+    return("")
+  }
+  rows <- lookup[match(keys, lookup$key), , drop = FALSE]
+  labels <- if (include_contrast) {
+    sprintf("%s [%s vs %s]", rows$feature, rows$group1, rows$group2)
+  } else {
+    rows$feature
+  }
+  paste(labels, collapse = ", ")
+}
+
 #' Compare the Consistency of Statistically Significant Features
 #'
 #' This function compares the consistency and inconsistency of statistically significant features obtained
@@ -72,31 +97,6 @@
 #' )
 #' comparison_results
 #' @export
-utils::globalVariables(c("group1","group2"))
-
-canonical_daa_group_pair <- function(group1, group2) {
-  group1 <- as.character(group1)
-  group2 <- as.character(group2)
-  data.frame(
-    group1 = pmin(group1, group2),
-    group2 = pmax(group1, group2),
-    stringsAsFactors = FALSE
-  )
-}
-
-format_daa_comparison_units <- function(keys, lookup, include_contrast) {
-  if (length(keys) == 0) {
-    return("")
-  }
-  rows <- lookup[match(keys, lookup$key), , drop = FALSE]
-  labels <- if (include_contrast) {
-    sprintf("%s [%s vs %s]", rows$feature, rows$group1, rows$group2)
-  } else {
-    rows$feature
-  }
-  paste(labels, collapse = ", ")
-}
-
 compare_daa_results <- function(daa_results_list, method_names, p_values_threshold = 0.05) {
   # Compare the consistency and inconsistency of statistically significant features obtained using different methods in pathway_daa.
 
