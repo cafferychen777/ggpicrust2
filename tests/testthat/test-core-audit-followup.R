@@ -213,6 +213,7 @@ test_that("import_MicrobiomeAnalyst_daa_results rejects ambiguous semantic colum
 })
 
 test_that("pathway_errorbar order='group' resolves tied groups deterministically", {
+  skip_if_not_installed("GGally")
   abundance <- matrix(
     c(10, 20, 30, 40,
       20, 10, 40, 30),
@@ -247,6 +248,7 @@ test_that("pathway_errorbar order='group' resolves tied groups deterministically
 })
 
 test_that("pathway_errorbar normalizes logical flags and rejects invalid p_adjust", {
+  skip_if_not_installed("GGally")
   td <- create_followup_errorbar_test_data(n_features = 2, p_adjust = c(0, 0.01))
   expect_error(
     plot <- pathway_errorbar(

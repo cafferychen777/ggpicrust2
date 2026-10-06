@@ -30,6 +30,7 @@ test_that("prepare_gene_sets works with GO pathway_type", {
 })
 
 test_that("pathway_gsea works with GO pathway_type", {
+  skip_if_not_installed("fgsea")
   data("ko_abundance", package = "ggpicrust2")
   data("metadata", package = "ggpicrust2")
   data("ko_to_go_reference", package = "ggpicrust2")

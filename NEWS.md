@@ -19,6 +19,7 @@
 * Fixed the existing CRAN check findings: restored generated usage sections
   for three plotting/comparison helpers and made backend-dependent tests
   respect unavailable optional packages, including ALDEx2 on macOS oldrel.
+  Help examples also check for their optional analysis/plotting dependencies.
 
 * Restored the installed-package test entry point so `R CMD check` actually
   executes the bundled regression tests.

@@ -54,7 +54,7 @@
 #' while breaking only the cross-metagenome sample correspondence. Monte Carlo
 #' p-values use the plus-one correction \code{(b + 1) / (B + 1)}.
 #'
-#' @examples
+#' @examplesIf requireNamespace("ComplexHeatmap", quietly = TRUE) && requireNamespace("circlize", quietly = TRUE)
 #' \donttest{
 #' library(dplyr)
 #' library(ComplexHeatmap)

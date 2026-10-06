@@ -180,6 +180,7 @@ test_that("pathway_volcano rejects non-finite fold changes", {
 })
 
 test_that("pathway_volcano works with real DAA workflow", {
+  skip_if_not_installed("MicrobiomeStat")
   skip_if_not_installed("ggrepel")
   skip_on_cran()
 

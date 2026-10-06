@@ -84,6 +84,7 @@ while breaking only the cross-metagenome sample correspondence. Monte Carlo
 p-values use the plus-one correction \code{(b + 1) / (B + 1)}.
 }
 \examples{
+\dontshow{if (requireNamespace("ComplexHeatmap", quietly = TRUE) && requireNamespace("circlize", quietly = TRUE)) withAutoprint(\{ # examplesIf}
 \donttest{
 library(dplyr)
 library(ComplexHeatmap)
@@ -113,6 +114,7 @@ print(results$correlation$cor_matrix)
 # Display the heatmap
 print(results$heatmap)
 }
+\dontshow{\}) # examplesIf}
 }
 \references{
 Fernandes AD, Macklaim JM, Linn TG, Reid G, Gloor GB. Unifying the

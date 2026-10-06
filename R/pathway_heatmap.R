@@ -187,7 +187,7 @@ compute_correlation_distance <- function(values, method = "pearson", item_label 
 #' @importFrom ggh4x facet_nested strip_nested elem_list_rect
 #' @importFrom stats cor as.dist dist hclust
 #'
-#' @examples
+#' @examplesIf requireNamespace("MicrobiomeStat", quietly = TRUE) && requireNamespace("ggdendro", quietly = TRUE)
 #' \donttest{
 #' library(ggpicrust2)
 #' library(ggh4x)

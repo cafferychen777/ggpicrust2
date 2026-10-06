@@ -57,6 +57,8 @@ test_that("compare_metagenome_results errors cleanly when metagenomes have no ro
 })
 
 test_that("compare_metagenome_results errors when metagenomes share no features", {
+  skip_if_not_installed("ComplexHeatmap")
+  skip_if_not_installed("circlize")
   set.seed(3)
   m1 <- abs(matrix(rnorm(40), nrow = 10, ncol = 4))
   m2 <- abs(matrix(rnorm(40), nrow = 10, ncol = 4))
@@ -207,6 +209,8 @@ test_that("compare_metagenome_results validates metagenome labels and matrix key
 })
 
 test_that("compare_metagenome_results rejects metagenomes whose sample sets do not overlap", {
+  skip_if_not_installed("ComplexHeatmap")
+  skip_if_not_installed("circlize")
   # Mismatched column counts used to fall through to stats::cor() and
   # abort mid-loop with "incompatible dimensions". Disjoint sample sets
   # now fail fast at the boundary with an actionable message.
@@ -462,6 +466,8 @@ test_that("correlation permutation p-values preserve pairing and RNG state", {
 })
 
 test_that("compare_metagenome_results validates correlation inference controls", {
+  skip_if_not_installed("ComplexHeatmap")
+  skip_if_not_installed("circlize")
   m1 <- matrix(
     seq_len(30),
     nrow = 5,

@@ -191,6 +191,7 @@ This function supports multiple methods for analyzing differences in pathway abu
 including popular approaches like ALDEx2, DESeq2, edgeR, and others.
 }
 \examples{
+\dontshow{if (all(vapply(c("ALDEx2", "DESeq2", "limma", "edgeR"), requireNamespace, logical(1), quietly = TRUE))) withAutoprint(\{ # examplesIf}
 \donttest{
 # Load example data
 data(ko_abundance)
@@ -255,7 +256,7 @@ aldex2_pvals_only <- pathway_daa(abundance, metadata, "group",
                                 daa_method = "ALDEx2",
                                 include_effect_size = FALSE)
 }
-
+\dontshow{\}) # examplesIf}
 }
 \references{
 \itemize{

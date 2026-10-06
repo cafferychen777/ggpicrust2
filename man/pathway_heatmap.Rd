@@ -108,6 +108,7 @@ orders the samples based on the grouping information. The heatmap supports neste
 faceting for multiple grouping variables and is created using the `ggplot2` library.
 }
 \examples{
+\dontshow{if (requireNamespace("MicrobiomeStat", quietly = TRUE) && requireNamespace("ggdendro", quietly = TRUE)) withAutoprint(\{ # examplesIf}
 \donttest{
 library(ggpicrust2)
 library(ggh4x)
@@ -279,4 +280,5 @@ pathway_heatmap(
   clustering_distance = "correlation"
 )
 }
+\dontshow{\}) # examplesIf}
 }

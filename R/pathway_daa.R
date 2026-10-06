@@ -166,7 +166,7 @@ NULL
 #' be calculated for every returned feature/group pair, the function fails
 #' instead of returning a partially annotated result table.
 #'
-#' @examples
+#' @examplesIf all(vapply(c("ALDEx2", "DESeq2", "limma", "edgeR"), requireNamespace, logical(1), quietly = TRUE))
 #' \donttest{
 #' # Load example data
 #' data(ko_abundance)

@@ -1,3 +1,5 @@
+skip_if_not_installed("GGally")
+
 # Helper: create standard errorbar test data
 create_errorbar_test_data <- function(n_features = 5, p_adjust = NULL) {
   set.seed(123)
