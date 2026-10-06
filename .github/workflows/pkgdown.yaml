@@ -16,6 +16,7 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
     steps:
@@ -28,8 +29,9 @@ jobs:
         with:
           extra-packages: any::pkgdown, local::.
           needs: website
+          dependencies: '"hard"'
       - name: Build documentation
-        run: pkgdown::build_site_github_pages(new_process = FALSE, install = FALSE)
+        run: pkgdown::build_site_github_pages(new_process = FALSE, install = FALSE, examples = FALSE)
         shell: Rscript {0}
       - uses: actions/upload-pages-artifact@v5
         with:
