@@ -18,6 +18,10 @@
 
 * Restored the installed-package test entry point so `R CMD check` actually
   executes the bundled regression tests.
+* Camera tutorial examples now estimate within-set correlation explicitly.
+  A fixed correlation of 0.01 can underestimate variance for strongly
+  correlated features; changing the abundance transformation alone does not
+  address this assumption. The public function default is unchanged.
 
 * Restored the documentation website build and deployment from maintained
   sources, with generated HTML kept out of the source branch.
