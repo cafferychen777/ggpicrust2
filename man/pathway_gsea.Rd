@@ -22,7 +22,9 @@ pathway_gsea(
   go_category = "all",
   organism = "ko",
   p.adjust = NULL,
-  comparison = NULL
+  comparison = NULL,
+  transformation = c("voom", "logCPM"),
+  gene_sets = NULL
 )
 }
 \arguments{
@@ -127,6 +129,25 @@ Ranking statistics are calculated as group1 versus group2: positive
 exactly two aligned group levels must be present and their factor-level
 order is used. Multi-group preranked analyses must specify
 \code{comparison} explicitly.}
+
+\item{transformation}{Transformation for camera/fry: \code{"voom"} (the
+historical default) uses count-dependent observation weights;
+\code{"logCPM"} uses \code{log2(1e6 * abundance / column_total + 0.5)}
+and abundance-trend variance moderation without voom weights. The latter
+is invariant to positive per-sample rescaling and can be used for predicted
+or relative abundances whose units are not observed read counts. It is a
+different statistical model, not a fallback after a voom failure or a
+guarantee of calibration. Requires positive sample totals. This parameter
+does not apply to preranked methods. Neither transformation accounts for
+uncertainty from the upstream functional prediction. Results also depend
+on the measured feature universe and, for camera, the correlation model.}
+
+\item{gene_sets}{Optional named list of feature identifiers for explicitly
+defined gene sets. When supplied, replaces the bundled sets for all methods;
+size filtering and multiple-testing adjustment still apply. Identifiers must
+match the normalized abundance row names. \code{pathway_type} still controls
+input identifier handling. Do not combine custom sets with \code{organism}
+or \code{go_category}; these are bundled-reference selection arguments.}
 }
 \value{
 A data frame containing GSEA results with columns:

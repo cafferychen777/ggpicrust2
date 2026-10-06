@@ -38,6 +38,7 @@ pkgdown/
 # Development and test files
 *test*.R
 *Test*.R
+!tests/testthat.R
 !tests/testthat/test-*.R
 *debug*.R
 *Debug*.R

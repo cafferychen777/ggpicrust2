@@ -17,7 +17,10 @@ pathway_daa(
   p.adjust = NULL,
   .pre_aligned = FALSE,
   .sample_col = NULL,
-  ...
+  ...,
+  linda_winsor = TRUE,
+  linda_adaptive = TRUE,
+  linda_pseudocount = 0.5
 )
 }
 \arguments{
@@ -108,6 +111,24 @@ sample order.}
 arguments are currently rejected rather than silently ignored, because
 ignored model/covariate arguments can make the fitted analysis differ
 from the analysis the user intended.}
+
+\item{linda_winsor}{Logical. Whether the LinDA backend should winsorize
+feature abundances before its log-ratio model. MicrobiomeStat's count
+winsorization converts to relative abundance, truncates each feature
+at its 97th percentile, rescales by the original sample totals and
+rounds the result. Default TRUE preserves the historical wrapper
+behavior; set FALSE when fractional predicted abundances must remain
+unrounded.}
+
+\item{linda_adaptive}{Logical flag forwarded to MicrobiomeStat's
+\code{adaptive} argument. Default TRUE preserves the historical
+behavior, which depends on the installed backend version. Set FALSE
+to request fixed pseudo-count handling using
+\code{linda_pseudocount}.}
+
+\item{linda_pseudocount}{Positive finite number passed to LinDA as
+\code{pseudo.cnt}. It is added to every cell when fixed pseudo-count
+handling is used and at least one zero is present. Default 0.5.}
 }
 \value{
 A data frame containing the differential abundance analysis results. The structure of the results
@@ -140,6 +161,13 @@ computed in the method's own model space. ALDEx2 returns
 (the default), derived from \code{ALDEx2::aldex.effect()} in CLR space.
 Lefser returns an \code{lda_score} column instead, which is its native
 effect-size metric.
+LinDA additionally returns its method-native \code{standard_error},
+\code{statistic}, \code{degrees_of_freedom}, \code{ci_lower_95}, and
+\code{ci_upper_95} columns. The interval is a nominal, pointwise two-sided
+95% t interval around LinDA's bias-corrected base-2 CLR coefficient, using
+its native standard error and residual degrees of freedom. It is not
+multiplicity-adjusted and does not separately propagate uncertainty in
+the estimated bias correction or the upstream functional predictions.
 
 When \code{include_abundance_stats = TRUE}, the following additional columns
 are included:

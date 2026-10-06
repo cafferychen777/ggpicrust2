@@ -1352,6 +1352,118 @@ test_that("format_linda_output preserves LinDA adjusted p-values", {
   expect_equal(result$p_adjust, c(0.02, 0.2))
 })
 
+test_that("format_linda_output preserves LinDA uncertainty and computes 95% intervals", {
+  linda_output <- list(
+    groupB = data.frame(
+      pvalue = c(0.01, 0.2),
+      padj = c(0.02, 0.2),
+      log2FoldChange = c(1.5, -0.3),
+      lfcSE = c(0.25, 0.1),
+      stat = c(6, -3),
+      df = c(18, 18),
+      row.names = c("path1", "path2")
+    )
+  )
+
+  result <- ggpicrust2:::format_linda_output(
+    linda_output = linda_output,
+    group = "group",
+    reference = "A",
+    Level = c("A", "B")
+  )
+
+  expected_half_width <- stats::qt(0.975, df = 18) * c(0.25, 0.1)
+  expect_equal(result$standard_error, c(0.25, 0.1))
+  expect_equal(result$statistic, c(6, -3))
+  expect_equal(result$degrees_of_freedom, c(18, 18))
+  expect_equal(result$ci_lower_95,
+               result$log2_fold_change - expected_half_width)
+  expect_equal(result$ci_upper_95,
+               result$log2_fold_change + expected_half_width)
+})
+
+test_that("format_linda_output rejects incomplete LinDA uncertainty", {
+  linda_output <- list(
+    groupB = data.frame(
+      pvalue = 0.01,
+      padj = 0.02,
+      log2FoldChange = 1.5,
+      lfcSE = 0.25,
+      row.names = "path1"
+    )
+  )
+
+  expect_error(
+    ggpicrust2:::format_linda_output(
+      linda_output = linda_output,
+      group = "group",
+      reference = "A",
+      Level = c("A", "B")
+    ),
+    "incomplete uncertainty block"
+  )
+})
+
+test_that("pathway_daa forwards explicit LinDA preprocessing choices", {
+  skip_if_not_installed("MicrobiomeStat")
+
+  abundance <- outer(
+    seq_len(12),
+    seq_len(6),
+    function(feature, sample) {
+      feature * 1.7 + sample * 0.6 +
+        ifelse(sample > 3, feature * 0.2, 0)
+    }
+  )
+  abundance[1, 1] <- 0
+  abundance <- as.data.frame(abundance)
+  rownames(abundance) <- paste0("f", seq_len(nrow(abundance)))
+  colnames(abundance) <- paste0("S", seq_len(ncol(abundance)))
+  metadata <- data.frame(
+    sample = paste0("S", 1:6),
+    group = rep(c("A", "B"), each = 3),
+    stringsAsFactors = FALSE
+  )
+
+  result <- suppressMessages(pathway_daa(
+    abundance = abundance,
+    metadata = metadata,
+    group = "group",
+    daa_method = "LinDA",
+    reference = "A",
+    linda_winsor = FALSE,
+    linda_adaptive = FALSE,
+    linda_pseudocount = 0.5
+  ))
+
+  direct_metadata <- metadata
+  rownames(direct_metadata) <- direct_metadata$sample
+  direct_metadata$group <- relevel(factor(direct_metadata$group), ref = "A")
+  direct <- suppressMessages(MicrobiomeStat::linda(
+    feature.dat = as.matrix(abundance),
+    meta.dat = direct_metadata,
+    formula = "~ group",
+    feature.dat.type = "count",
+    prev.filter = 0,
+    mean.abund.filter = 0,
+    is.winsor = FALSE,
+    adaptive = FALSE,
+    zero.handling = "pseudo-count",
+    pseudo.cnt = 0.5,
+    p.adj.method = "BH",
+    alpha = 0.05,
+    n.cores = 1,
+    verbose = FALSE
+  ))$output[[1]]
+
+  direct <- direct[match(result$feature, rownames(direct)), , drop = FALSE]
+  expect_equal(result$log2_fold_change, direct$log2FoldChange)
+  expect_equal(result$standard_error, direct$lfcSE)
+  expect_equal(result$p_adjust, direct$padj)
+  expect_identical(result$ci_lower_95 > 0 | result$ci_upper_95 < 0,
+                   result$p_values < 0.05)
+})
+
 test_that("pathway_daa Lefser fails fast for multi-group input", {
   skip_if_not_installed("lefser")
 

@@ -49,11 +49,22 @@ Choose the hypothesis and input scale before comparing p-values.
 | `fgsea` | Preranked gene-set enrichment | No | Normalized enrichment score (NES) |
 | `clusterProfiler` | Preranked GSEA implementation | No | NES |
 
-The current camera/fry implementation runs `limma::voom()` on non-negative,
+By default, camera/fry run `limma::voom()` on non-negative,
 count-like input. Do not pass log-transformed or relative abundances as if they
 were counts. The default camera correlation setting is `inter.gene.cor = 0.01`;
 it is a supplied correlation adjustment, not an estimate for every set.
 These assumptions do not establish calibration for all PICRUSt2 predictions.
+For predicted or relative abundances, the explicit option
+`transformation = "logCPM"` instead uses
+`log2(1e6 * abundance / column_total + 0.5)` with abundance-trend variance
+moderation and no voom observation weights. It is invariant to positive
+per-sample rescaling, but retains compositional effects and does not account
+for upstream prediction uncertainty. The default remains `"voom"`.
+For camera, `inter.gene.cor = NA_real_` estimates within-set correlation;
+this is a separate modeling choice from the transformation.
+An optional named list, `gene_sets`, replaces the bundled reference sets;
+its member IDs must match the input feature IDs, and the same size filters
+and multiple-testing adjustment apply.
 The [limma documentation](https://bioconductor.org/packages/limma) explains the
 underlying tests; the [fgsea documentation](https://bioconductor.org/packages/fgsea)
 explains preranked enrichment and leading-edge genes.

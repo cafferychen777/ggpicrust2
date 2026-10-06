@@ -83,6 +83,21 @@ NULL
 #'        FALSE to skip the extra \code{aldex.effect()} computation. For a
 #'        two-group analysis, failure to compute or validate the requested
 #'        effect-size output stops the analysis.
+#' @param linda_winsor Logical. Whether the LinDA backend should winsorize
+#'        feature abundances before its log-ratio model. MicrobiomeStat's count
+#'        winsorization converts to relative abundance, truncates each feature
+#'        at its 97th percentile, rescales by the original sample totals and
+#'        rounds the result. Default TRUE preserves the historical wrapper
+#'        behavior; set FALSE when fractional predicted abundances must remain
+#'        unrounded.
+#' @param linda_adaptive Logical flag forwarded to MicrobiomeStat's
+#'        \code{adaptive} argument. Default TRUE preserves the historical
+#'        behavior, which depends on the installed backend version. Set FALSE
+#'        to request fixed pseudo-count handling using
+#'        \code{linda_pseudocount}.
+#' @param linda_pseudocount Positive finite number passed to LinDA as
+#'        \code{pseudo.cnt}. It is added to every cell when fixed pseudo-count
+#'        handling is used and at least one zero is present. Default 0.5.
 #'
 #' @param p.adjust Deprecated alias for \code{p_adjust_method}. Do not supply
 #'        both parameters with different values.
@@ -127,6 +142,13 @@ NULL
 #' (the default), derived from \code{ALDEx2::aldex.effect()} in CLR space.
 #' Lefser returns an \code{lda_score} column instead, which is its native
 #' effect-size metric.
+#' LinDA additionally returns its method-native \code{standard_error},
+#' \code{statistic}, \code{degrees_of_freedom}, \code{ci_lower_95}, and
+#' \code{ci_upper_95} columns. The interval is a nominal, pointwise two-sided
+#' 95% t interval around LinDA's bias-corrected base-2 CLR coefficient, using
+#' its native standard error and residual degrees of freedom. It is not
+#' multiplicity-adjusted and does not separately propagate uncertainty in
+#' the estimated bias correction or the upstream functional predictions.
 #'
 #' When \code{include_abundance_stats = TRUE}, the following additional columns
 #' are included:
@@ -462,13 +484,17 @@ pathway_daa <- function(abundance, metadata, group, daa_method = "ALDEx2",
                        select = NULL, p_adjust_method = "BH", reference = NULL,
                        include_abundance_stats = FALSE, include_effect_size = TRUE,
                        p.adjust = NULL, .pre_aligned = FALSE,
-                       .sample_col = NULL, ...) {
+                       .sample_col = NULL, ..., linda_winsor = TRUE,
+                       linda_adaptive = TRUE, linda_pseudocount = 0.5) {
   p_adjust_method <- resolve_deprecated_p_adjust_method(
     p_adjust_method,
     p.adjust,
     p_adjust_method_missing = missing(p_adjust_method)
   )
   validate_p_adjust_method(p_adjust_method)
+  linda_winsor <- normalize_logical_flag(linda_winsor, "linda_winsor")
+  linda_adaptive <- normalize_logical_flag(linda_adaptive, "linda_adaptive")
+  validate_positive_number(linda_pseudocount, "linda_pseudocount")
 
   # Single source of truth for supported DAA methods: this list drives
   # validation, the method->package mapping for optional-dependency
@@ -692,7 +718,10 @@ pathway_daa <- function(abundance, metadata, group, daa_method = "ALDEx2",
     daa_method,
     "ALDEx2" = perform_aldex2_analysis(abundance_mat, Group, Level, length_Level, reference, include_effect_size),
     "DESeq2" = perform_deseq2_analysis(abundance_mat, metadata, group, reference, Level, length_Level, p_adjust_method),
-    "LinDA" = perform_linda_analysis(abundance, metadata, group, reference, Level, length_Level, p_adjust_method),
+    "LinDA" = perform_linda_analysis(
+      abundance, metadata, group, reference, Level, length_Level,
+      p_adjust_method, linda_winsor, linda_adaptive, linda_pseudocount
+    ),
     "limma voom" = perform_limma_voom_analysis(abundance_mat, Group, reference, Level, length_Level),
     "edgeR" = perform_edger_analysis(abundance_mat, Group, reference, Level, length_Level),
     "metagenomeSeq" = perform_metagenomeseq_analysis(abundance_mat, metadata, group, reference, Level),
@@ -1920,8 +1949,7 @@ format_linda_output <- function(linda_output, group, reference, Level) {
       probability = TRUE
     )
 
-    # Create a results data frame for this comparison
-    results_list[[length(results_list) + 1]] <- data.frame(
+    comparison_result <- data.frame(
       feature = feature_ids,
       method = "LinDA",
       group1 = reference,
@@ -1931,6 +1959,63 @@ format_linda_output <- function(linda_output, group, reference, Level) {
       log2_fold_change = as.numeric(lfc),
       stringsAsFactors = FALSE
     )
+
+    uncertainty_columns <- c("lfcSE", "stat", "df")
+    uncertainty_present <- uncertainty_columns %in% colnames(comparison_df)
+    if (any(uncertainty_present) && !all(uncertainty_present)) {
+      stop(
+        "LinDA output for comparison '", comparison_group,
+        "' contains an incomplete uncertainty block. Expected all of: ",
+        paste(uncertainty_columns, collapse = ", "), ".",
+        call. = FALSE
+      )
+    }
+    if (all(uncertainty_present)) {
+      standard_error <- extract_linda_output_column(
+        comparison_df,
+        column_name = "lfcSE",
+        comparison_group = comparison_group,
+        n_features = n_features,
+        probability = FALSE
+      )
+      statistic <- extract_linda_output_column(
+        comparison_df,
+        column_name = "stat",
+        comparison_group = comparison_group,
+        n_features = n_features,
+        probability = FALSE
+      )
+      degrees_of_freedom <- extract_linda_output_column(
+        comparison_df,
+        column_name = "df",
+        comparison_group = comparison_group,
+        n_features = n_features,
+        probability = FALSE
+      )
+      if (any(standard_error < 0)) {
+        stop(
+          "LinDA output for comparison '", comparison_group,
+          "' contains a negative lfcSE.",
+          call. = FALSE
+        )
+      }
+      if (any(degrees_of_freedom <= 0)) {
+        stop(
+          "LinDA output for comparison '", comparison_group,
+          "' contains non-positive degrees of freedom.",
+          call. = FALSE
+        )
+      }
+
+      critical_value <- stats::qt(0.975, df = degrees_of_freedom)
+      comparison_result$standard_error <- as.numeric(standard_error)
+      comparison_result$statistic <- as.numeric(statistic)
+      comparison_result$degrees_of_freedom <- as.numeric(degrees_of_freedom)
+      comparison_result$ci_lower_95 <- as.numeric(lfc - critical_value * standard_error)
+      comparison_result$ci_upper_95 <- as.numeric(lfc + critical_value * standard_error)
+    }
+
+    results_list[[length(results_list) + 1]] <- comparison_result
   }
 
   # Combine all results
@@ -2001,7 +2086,10 @@ extract_linda_output_column <- function(comparison_df,
 }
 
 perform_linda_analysis <- function(abundance, metadata, group, reference, Level,
-                                   length_Level, p_adjust_method) {
+                                   length_Level, p_adjust_method,
+                                   linda_winsor = TRUE,
+                                   linda_adaptive = TRUE,
+                                   linda_pseudocount = 0.5) {
   # Filter zero-abundance features using unified validation
   feature.dat <- validate_daa_input(as.matrix(abundance), method = "LinDA", filter_zero = TRUE)
   meta.dat <- metadata
@@ -2042,9 +2130,10 @@ perform_linda_analysis <- function(abundance, metadata, group, reference, Level,
       feature.dat.type = "count",
       prev.filter = 0,
       mean.abund.filter = 0,
-      adaptive = TRUE,
+      is.winsor = linda_winsor,
+      adaptive = linda_adaptive,
       zero.handling = "pseudo-count",
-      pseudo.cnt = 0.5,
+      pseudo.cnt = linda_pseudocount,
       p.adj.method = p_adjust_method,
       alpha = 0.05,
       n.cores = 1,

@@ -285,6 +285,23 @@ validate_complete_design_variables <- function(metadata, group, covariates = NUL
 #'   \code{comparison} explicitly.
 #' @param inter.gene.cor Numeric value specifying the inter-gene correlation for camera method.
 #'   Default is 0.01. Use NA to estimate correlation from data for each gene set.
+#' @param transformation Transformation for camera/fry: \code{"voom"} (the
+#'   historical default) uses count-dependent observation weights;
+#'   \code{"logCPM"} uses \code{log2(1e6 * abundance / column_total + 0.5)}
+#'   and abundance-trend variance moderation without voom weights. The latter
+#'   is invariant to positive per-sample rescaling and can be used for predicted
+#'   or relative abundances whose units are not observed read counts. It is a
+#'   different statistical model, not a fallback after a voom failure or a
+#'   guarantee of calibration. Requires positive sample totals. This parameter
+#'   does not apply to preranked methods. Neither transformation accounts for
+#'   uncertainty from the upstream functional prediction. Results also depend
+#'   on the measured feature universe and, for camera, the correlation model.
+#' @param gene_sets Optional named list of feature identifiers for explicitly
+#'   defined gene sets. When supplied, replaces the bundled sets for all methods;
+#'   size filtering and multiple-testing adjustment still apply. Identifiers must
+#'   match the normalized abundance row names. \code{pathway_type} still controls
+#'   input identifier handling. Do not combine custom sets with \code{organism}
+#'   or \code{go_category}; these are bundled-reference selection arguments.
 #' @param rank_method A single character string specifying the ranking statistic for preranked methods
 #'   (fgsea, GSEA, clusterProfiler): "signal2noise", "t_test", "log2_ratio", or "diff_abundance"
 #' @param nperm An integer specifying the number of permutations (for clusterProfiler method only).
@@ -436,7 +453,13 @@ pathway_gsea <- function(abundance,
                         go_category = "all",
                         organism = "ko",
                         p.adjust = NULL,
-                        comparison = NULL) {
+                        comparison = NULL,
+                        transformation = c("voom", "logCPM"),
+                        gene_sets = NULL) {
+  transformation <- match.arg(transformation)
+  if (!is.null(gene_sets) && (!missing(organism) || !missing(go_category))) {
+    stop("Custom 'gene_sets' cannot be combined with 'organism' or 'go_category'.", call. = FALSE)
+  }
   p_adjust_method <- resolve_deprecated_p_adjust_method(
     p_adjust_method,
     p.adjust,
@@ -460,6 +483,9 @@ pathway_gsea <- function(abundance,
   valid_methods <- c("camera", "fry", "fgsea", "GSEA", "clusterProfiler")
   validate_choice(method, valid_methods, "method")
 
+  if (!method %in% c("camera", "fry") && transformation != "voom") {
+    stop("'transformation' applies only to camera/fry, not preranked methods.", call. = FALSE)
+  }
   preranked_methods <- c("fgsea", "GSEA", "clusterProfiler")
   if (!is.null(comparison) && !method %in% preranked_methods) {
     stop(
@@ -582,7 +608,9 @@ pathway_gsea <- function(abundance,
   }
   
   # Prepare gene sets
-  gene_sets <- prepare_gene_sets(pathway_type, organism = organism, go_category = go_category)
+  if (is.null(gene_sets)) {
+    gene_sets <- prepare_gene_sets(pathway_type, organism = organism, go_category = go_category)
+  }
   gene_sets <- validate_gene_sets(gene_sets, "pathway_gsea() gene_sets")
 
   # Run analysis based on selected method
@@ -601,7 +629,8 @@ pathway_gsea <- function(abundance,
       inter.gene.cor = inter.gene.cor,
       min_size = min_size,
       max_size = max_size,
-      p.adjust.method = p_adjust_method
+      p.adjust.method = p_adjust_method,
+      transformation = transformation
     )
 
   } else if (method == "fgsea") {
@@ -1248,6 +1277,8 @@ run_fgsea <- function(ranked_list,
 #' @param min_size Minimum gene set size
 #' @param max_size Maximum gene set size
 #' @param p.adjust.method P-value adjustment method
+#' @param transformation Either \code{"voom"} or \code{"logCPM"}; see
+#'   \code{\link{pathway_gsea}}.
 #'
 #' @return A data frame containing gene set analysis results
 #' @keywords internal
@@ -1261,7 +1292,9 @@ run_limma_gsea <- function(abundance_mat,
                            inter.gene.cor = 0.01,
                            min_size = 5,
                            max_size = 500,
-                           p.adjust.method = "BH") {
+                           p.adjust.method = "BH",
+                           transformation = c("voom", "logCPM")) {
+  transformation <- match.arg(transformation)
   # Samples are already aligned by the caller (pathway_gsea)
   abundance_mat <- as.matrix(abundance_mat)
   gene_sets <- validate_gene_sets(gene_sets, "run_limma_gsea() gene_sets")
@@ -1299,24 +1332,28 @@ run_limma_gsea <- function(abundance_mat,
   # changes both the ranking statistics and the mean-variance relationship.
   validate_nonnegative_finite_matrix(abundance_mat, "abundance_mat")
 
-  # Use limma-voom for count data transformation. This estimates the
-  # mean-variance relationship and computes precision weights.
-  # Pass raw counts to voom. limma's voom() applies its own 0.5 offset when
-  # computing logCPM values; adding a pseudocount here would change library
-  # sizes and distort the mean-variance trend.
-  v <- tryCatch(
-    limma::voom(abundance_mat, design, plot = FALSE),
-    error = function(e) {
-      stop(
-        "limma::voom() failed, so ", method,
-        " gene-set testing was not run. A log2 transform with unit weights ",
-        "is not a statistically equivalent fallback because it discards ",
-        "voom's observation-level mean-variance weights. Original error: ",
-        conditionMessage(e),
-        call. = FALSE
-      )
+  if (transformation == "logCPM") {
+    totals <- colSums(abundance_mat)
+    if (any(!is.finite(totals)) || any(totals <= 0)) {
+      stop("logCPM transformation requires finite, positive sample totals.", call. = FALSE)
     }
-  )
+    v <- log2(1e6 * sweep(abundance_mat, 2, totals, "/") + 0.5)
+  } else {
+    # voom applies its own offset; do not alter the input library sizes.
+    v <- tryCatch(
+      limma::voom(abundance_mat, design, plot = FALSE),
+      error = function(e) {
+        stop(
+          "limma::voom() failed, so ", method,
+          " gene-set testing was not run. A log2 transform with unit weights ",
+          "is not a statistically equivalent fallback because it discards ",
+          "voom's observation-level mean-variance weights. Original error: ",
+          conditionMessage(e),
+          call. = FALSE
+        )
+      }
+    )
+  }
 
   # Run the selected method
   if (method == "camera") {
@@ -1327,7 +1364,8 @@ run_limma_gsea <- function(abundance_mat,
       index = gene_set_indices,
       design = design,
       contrast = contrast_coef,
-      inter.gene.cor = inter.gene.cor
+      inter.gene.cor = inter.gene.cor,
+      trend.var = transformation == "logCPM"
     )
 
   } else if (method == "fry") {
@@ -1336,7 +1374,8 @@ run_limma_gsea <- function(abundance_mat,
       y = v,
       index = gene_set_indices,
       design = design,
-      contrast = contrast_coef
+      contrast = contrast_coef,
+      trend = transformation == "logCPM"
     )
   }
 

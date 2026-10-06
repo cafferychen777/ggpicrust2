@@ -1,6 +1,23 @@
-# ggpicrust2 (development version)
+# ggpicrust2 2.5.19
+
+## Analysis options
+
+* `pathway_gsea()` now accepts explicit `gene_sets` and an opt-in `logCPM`
+  transformation for camera/fry. The latter tests log relative abundances with
+  variance moderation and is invariant to positive per-sample rescaling.
+  The existing voom default is unchanged. Neither transformation guarantees
+  calibration for predicted functional abundances or removes their upstream
+  prediction uncertainty.
+* `pathway_daa()` exposes LinDA's winsorization, adaptive zero-handling flag,
+  and fixed pseudo-count without changing the historical defaults. Disabling
+  winsorization preserves fractional abundances that the count backend would
+  otherwise round. LinDA output now includes its native standard errors,
+  statistics, degrees of freedom, and nominal pointwise 95% t intervals.
 
 ## Documentation and diagnostics
+
+* Restored the installed-package test entry point so `R CMD check` actually
+  executes the bundled regression tests.
 
 * Restored the documentation website build and deployment from maintained
   sources, with generated HTML kept out of the source branch.

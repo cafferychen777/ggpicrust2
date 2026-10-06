@@ -47,8 +47,13 @@ alpha <- 0.05
 
 Both workflows below use the same data, LinDA method, and adjusted p-value
 threshold. LinDA accepts the continuous abundance estimates produced by
-`ko2kegg_abundance()`; count-based methods such as ALDEx2 require integer
-input and the package rounds non-integer input with a warning. Choose the
+`ko2kegg_abundance()`, but its default count-data winsorization rounds values
+inside MicrobiomeStat. In a direct `pathway_daa()` call, set
+`linda_winsor = FALSE` to preserve fractional values and
+`linda_adaptive = FALSE` for fixed pseudo-count handling. A fixed pseudo-count
+still depends on the units of the input when zeros are present.
+Count-based methods such as ALDEx2 require integer input and the package
+rounds non-integer input with a warning. Choose the
 method for its assumptions and your study design, not to obtain significance.
 KEGG pathway annotation requires internet access and `KEGGREST`.
 
