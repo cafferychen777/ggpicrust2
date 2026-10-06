@@ -27,11 +27,12 @@ row names.}
 \item{daa_results_df}{A data frame, the output from `pathway_daa` function. When `ko_to_kegg = TRUE`,
 must contain columns: feature, p_values, p_adjust, and method.}
 
-\item{ko_to_kegg}{Logical or logical-like string deciding whether to convert
-KO abundance to KEGG pathway abundance. Default is FALSE. Set to TRUE when
-using the function for the second use case. When TRUE, queries KEGG database
-for pathway annotations (requires internet connection) and filters for
-significant pathways.}
+\item{ko_to_kegg}{Logical or logical-like string selecting online KEGG
+annotation for DAA results. Use TRUE for KEGG pathway rows already
+obtained by KO-to-pathway aggregation and testing. This flag does not
+convert abundance or turn KO-level p-values into pathway-level p-values.
+Default FALSE uses local reference annotations. TRUE requires internet
+access and annotates only rows below the significance threshold.}
 
 \item{organism}{A character string specifying the KEGG organism code (e.g., 'hsa' for human, 'eco' for E. coli).
 Default is NULL, which retrieves generic KO information not specific to any organism. Only used when ko_to_kegg is TRUE.}
@@ -46,7 +47,8 @@ A data frame with annotated pathway information.
 
 If using the function for the first use case (file input), the output data frame will include:
 \itemize{
-  \item \code{id}: The pathway ID.
+  \item The input feature-ID column (for example \code{#NAME} or
+  \code{function_id}); existing identifiers are preserved.
   \item \code{description}: The description of the pathway.
   \item \code{sample1, sample2, ...}: Abundance values for each sample.
 }
@@ -72,7 +74,9 @@ using the \code{organism} parameter.
 \description{
 This function serves two main purposes:
 1. Annotating pathway information from PICRUSt2 output files or data frames.
-2. Annotating pathway information from the output of `pathway_daa` function, and converting KO abundance to KEGG pathway abundance when `ko_to_kegg` is set to TRUE.
+2. Adding annotations to existing `pathway_daa` result rows. This function
+does not aggregate KO abundance, change feature identifiers, or rerun testing.
+Use `ko2kegg_abundance()` before DAA when KEGG pathways are the analysis unit.
 
 **Important**: When `ko_to_kegg = TRUE`, this function automatically filters pathways by
 `p_adjust < p_adjust_threshold`. If no pathways meet this criterion, the function returns
@@ -80,18 +84,22 @@ the original data with NA annotation columns and issues a detailed warning messa
 diagnostic information and recommendations.
 }
 \examples{
-\dontrun{
-# Example 1: Annotate pathways from PICRUSt2 output file
-pathway_annotation(file = "path/to/picrust2_output.tsv",
-                              pathway = "KO")
-}
+# Annotate KO identifiers using the bundled reference, without changing abundance.
+data("ko_abundance")
+annotated_abundance <- pathway_annotation(data = ko_abundance, pathway = "KO")
+head(annotated_abundance[, c("#NAME", "description")])
 
 \dontrun{
-# Example 2: Annotate pathways from pathway_daa output
-# Assuming you have daa_results from pathway_daa function
-daa_results <- pathway_daa(abundance, metadata, group = "Group")
-annotated_results <- pathway_annotation(pathway = "KO",
-                              daa_results_df = daa_results,
-                              ko_to_kegg = FALSE)
+# Annotate DAA results at their existing feature level.
+data("metadata")
+daa_results <- pathway_daa(
+  abundance = ko_abundance, metadata = metadata,
+  group = "Environment", daa_method = "LinDA"
+)
+annotated_results <- pathway_annotation(
+  pathway = "KO", daa_results_df = daa_results, ko_to_kegg = FALSE
+)
+# For KEGG pathway results, first aggregate with ko2kegg_abundance(),
+# test those pathway rows, then use ko_to_kegg = TRUE for online annotation.
 }
 }

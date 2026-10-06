@@ -28,7 +28,9 @@ The dataset is built from authoritative biological databases:
 
 KEGG DBLINKS primarily cross-references Molecular Function (MF) GO terms, because KO entries describe individual gene functions that naturally correspond to molecular activities (enzyme activities, binding functions, etc.). The current dataset contains predominantly MF terms with a small number of CC (Cellular Component) terms.
 
-Each GO term includes at least 3 associated KO identifiers, ensuring statistical utility for enrichment analysis.
+Each GO term includes at least 3 associated KO identifiers in the reference.
+The observed overlap and the analysis size filter determine which terms can be tested;
+reference membership alone does not guarantee statistical power.
 }
 \source{
 \itemize{
@@ -78,7 +80,7 @@ data("metadata")
 # Perform GO pathway GSEA analysis
 gsea_results <- pathway_gsea(
   abundance = ko_abundance \%>\% column_to_rownames("#NAME"),
-  metadata = metadata \%>\% column_to_rownames("sample_name"),
+  metadata = metadata,
   group = "Environment",
   method = "fgsea",
   pathway_type = "GO",

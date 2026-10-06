@@ -39,6 +39,12 @@
 #'        }
 #'
 #' @details
+#' PCA centers and scales each feature across samples before decomposing
+#' the transposed input matrix. It does not perform library-size or
+#' compositional normalization. Apply any study-specific preprocessing
+#' before calling the function. Visual separation is descriptive, not a
+#' hypothesis test or evidence of causation.
+#'
 #' The function automatically aligns samples between abundance data and metadata,
 #' supporting various sample identifier formats. Pathways with zero variance
 #' across samples are filtered before PCA because they are variables in
@@ -52,7 +58,7 @@
 #'
 #' @examples
 #' # Create example abundance data
-#' abundance_data <- matrix(rnorm(30), nrow = 3, ncol = 10)
+#' abundance_data <- matrix(rexp(30), nrow = 3, ncol = 10)
 #' colnames(abundance_data) <- paste0("Sample", 1:10)
 #' rownames(abundance_data) <- c("PathwayA", "PathwayB", "PathwayC")
 #'

@@ -115,8 +115,11 @@
 #' kegg_abundance_sum <- ko2kegg_abundance(data = ko_abundance, method = "sum")
 #'
 #' # Example 4: From file
-#' input_file <- "path/to/your/picrust2/results/pred_metagenome_unstrat.tsv"
+#' input_file <- tempfile(fileext = ".tsv")
+#' utils::write.table(ko_abundance, input_file, sep = "\t",
+#'                    quote = FALSE, row.names = FALSE)
 #' kegg_abundance <- ko2kegg_abundance(file = input_file)
+#' unlink(input_file)
 #' }
 #' @export
 ko2kegg_abundance <- function (file = NULL, data = NULL, method = c("abundance", "sum"),

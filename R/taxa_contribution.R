@@ -44,8 +44,7 @@
 #'   sample = rep(c("S1", "S2"), each = 4),
 #'   `function` = rep(c("K00001", "K00002"), 4),
 #'   taxon = rep(c("ASV1", "ASV2"), each = 2, times = 2),
-#'   taxon_function_abun = runif(8),
-#'   norm_taxon_function_contrib = runif(8),
+#'   taxon_function_abun = seq_len(8),
 #'   check.names = FALSE
 #' )
 #' result <- read_contrib_file(data = contrib_df)
@@ -209,13 +208,14 @@ read_strat_file <- function(file = NULL, data = NULL) {
 #'   \code{taxon_label}, \code{contribution}.
 #'
 #' @details
-#' When \code{daa_results_df} is provided, the function:
-#' \enumerate{
-#'   \item Extracts significant pathway IDs from the DAA results
-#'   \item Maps pathway IDs to their constituent KO IDs using the internal
-#'     ko_to_kegg reference
-#'   \item Filters contribution data to only matching KO IDs
-#' }
+#' With \code{daa_results_df}, significant feature IDs are used as filters.
+#' KEGG pathway IDs are expanded to member KOs only when the contribution
+#' input is KO-level. This selects KO rows; output \code{function_id} values
+#' remain KO IDs and are not reconstructed pathway contributions. With
+#' pathway-level input (for example MetaCyc), IDs are matched directly.
+#' Aggregation sums the selected contribution column within each
+#' sample/function/taxonomic label. Percentage plots normalize those sums
+#' afterward; aggregation itself does not convert raw abundance to fractions.
 #'
 #' Taxonomy can be provided in two formats:
 #' \itemize{
@@ -236,8 +236,7 @@ read_strat_file <- function(file = NULL, data = NULL) {
 #'   sample = rep(c("S1", "S2"), each = 6),
 #'   function_id = rep(c("K00001", "K00002", "K00003"), 4),
 #'   taxon = rep(c("ASV1", "ASV2"), each = 3, times = 2),
-#'   taxon_function_abun = runif(12),
-#'   norm_taxon_function_contrib = runif(12)
+#'   taxon_function_abun = seq_len(12)
 #' )
 #' agg <- aggregate_taxa_contributions(contrib, top_n = 2)
 #' head(agg)

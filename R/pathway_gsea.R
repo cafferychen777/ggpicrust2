@@ -246,8 +246,8 @@ validate_complete_design_variables <- function(metadata, group, covariates = NUL
 #'   "KEGG", "MetaCyc", or "GO"
 #' @param method A single character string specifying the GSEA method:
 #'   \itemize{
-#'     \item \code{"camera"}: Competitive gene set test using limma's camera function (recommended).
-#'           Accounts for inter-gene correlations and provides more reliable p-values.
+#'     \item \code{"camera"}: Competitive gene set test using limma's camera function (default).
+#'           Uses an inter-gene correlation adjustment under a competitive null.
 #'     \item \code{"fry"}: Fast approximation to rotation gene set testing using limma's fry function.
 #'           Self-contained test that is computationally efficient.
 #'     \item \code{"fgsea"}: Fast preranked GSEA implementation. Note: preranked methods may produce
@@ -328,9 +328,9 @@ validate_complete_design_variables <- function(metadata, group, covariates = NUL
 #' @details
 #' \strong{Method Selection:}
 #'
-#' The \code{camera} method (default) is recommended for most analyses because:
+#' The \code{camera} method (default):
 #' \itemize{
-#'   \item It accounts for inter-gene correlations, providing more accurate p-values
+#'   \item Uses an inter-gene correlation adjustment (default 0.01)
 #'   \item It supports covariate adjustment through the design matrix
 #'   \item It performs a competitive test (genes in set vs. genes not in set)
 #' }
@@ -342,9 +342,9 @@ validate_complete_design_variables <- function(metadata, group, covariates = NUL
 #'   \item Also supports covariate adjustment
 #' }
 #'
-#' The preranked methods (\code{fgsea}, \code{GSEA}) are included for compatibility but
-#' users should be aware that Wu et al. (2012) demonstrated these can produce "spectacularly
-#' wrong p-values" even with low inter-gene correlations.
+#' Preranked methods use a ranked-feature null rather than camera's competitive
+#' model with a correlation adjustment. The hypotheses and input assumptions
+#' differ; neither method is universally calibrated for predicted abundances.
 #' For these methods, positive ES/NES values indicate gene-set enrichment near
 #' the top of the ranked list. With \code{comparison = c(group1, group2)}, the
 #' top of the list corresponds to features higher in \code{group1}; reverse
@@ -390,8 +390,8 @@ validate_complete_design_variables <- function(metadata, group, covariates = NUL
 #' gsea_results_adj <- pathway_gsea(
 #'   abundance = abundance_data,
 #'   metadata = metadata,
-#'   group = "Disease",
-#'   covariates = c("age", "sex"),
+#'   group = "Environment",
+#'   covariates = "Mouse_Sex",
 #'   pathway_type = "KEGG",
 #'   method = "camera"
 #' )
@@ -405,13 +405,15 @@ validate_complete_design_variables <- function(metadata, group, covariates = NUL
 #'   method = "fry"
 #' )
 #'
-#' # Method 4: Using fgsea (preranked, less reliable p-values)
+#' # Method 4: A different null, using a prespecified preranked comparison
 #' gsea_results_fgsea <- pathway_gsea(
 #'   abundance = abundance_data,
 #'   metadata = metadata,
 #'   group = "Environment",
 #'   pathway_type = "KEGG",
-#'   method = "fgsea"
+#'   method = "fgsea",
+#'   comparison = c("Pro-survival", "Pro-inflammatory"),
+#'   seed = 42
 #' )
 #'
 #' # Visualize results
@@ -534,12 +536,12 @@ pathway_gsea <- function(abundance,
   )
   require_package(method_packages[[method]], purpose = paste("GSEA method", method))
 
-  # Warning for preranked methods about p-value reliability
+  # Explain the distinction between ranked-feature and model-based tests
   if (method %in% preranked_methods) {
-    message("Note: Preranked GSEA methods (fgsea, clusterProfiler) do not account for ",
-            "inter-gene correlations, which may lead to unreliable p-values ",
-            "(Wu et al., 2012). Consider using method='camera' or method='fry' for ",
-            "more reliable statistical inference.")
+    message("Preranked GSEA uses a ranked-feature null without modeling ",
+            "inter-gene correlation or covariates. Camera and fry test ",
+            "different hypotheses; choose the method and input scale for ",
+            "the study design rather than comparing discovery counts.")
   }
   
   # Set seed for reproducibility

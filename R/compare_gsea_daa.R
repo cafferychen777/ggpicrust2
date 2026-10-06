@@ -64,10 +64,13 @@ extract_compare_direction <- function(results, context) {
 #'
 #' @details
 #' Venn and UpSet plots compare significant pathway sets with unique pathway
-#' IDs. The scatter plot compares effect sizes and therefore requires one row
+#' IDs. Restrict inputs to the shared tested pathway universe for a method
+#' comparison; an untested pathway is not a non-significant result. Preserve
+#' each analysis's original multiple-testing adjustment. The scatter plot
+#' compares a GSEA score with a DAA effect size and requires one row
 #' per pathway in each input. If a result table contains multiple methods,
 #' contrasts, or group pairs for the same pathway, filter it to a single
-#' effect-size context before using \code{plot_type = "scatter"}.
+#' score/contrast context before using \code{plot_type = "scatter"}.
 #' For scatter plots, GSEA and DAA directions must be explicit. Preranked
 #' GSEA positive NES values represent \code{gsea_results$group1} versus
 #' \code{gsea_results$group2}, while DAA \code{log2_fold_change} values
@@ -85,7 +88,7 @@ extract_compare_direction <- function(results, context) {
 #'   UpSetR object when \code{plot_type = "upset"} and UpSetR is installed)
 #'   and \code{results} (a named list with the overlap, GSEA-only, and
 #'   DAA-only pathway sets plus their counts). For \code{plot_type = "scatter"},
-#'   \code{results$scatter_data} contains the merged effect-size table,
+#'   \code{results$scatter_data} contains the merged score/effect-size table,
 #'   including \code{daa_log2_fold_change_aligned}.
 #' @export
 #'
@@ -100,7 +103,7 @@ extract_compare_direction <- function(results, context) {
 #' rownames(abundance_data) <- abundance_data[, "#NAME"]
 #' abundance_data <- abundance_data[, -1]
 #'
-#' # Run GSEA analysis (using camera method - recommended)
+#' # Run the competitive camera test
 #' gsea_results <- pathway_gsea(
 #'   abundance = abundance_data,
 #'   metadata = metadata,
@@ -109,12 +112,18 @@ extract_compare_direction <- function(results, context) {
 #'   method = "camera"
 #' )
 #'
-#' # Run DAA analysis
+#' # Test pathway abundance, not individual KO abundance.
+#' pathway_abundance <- ko2kegg_abundance(data = ko_abundance)
 #' daa_results <- pathway_daa(
-#'   abundance = abundance_data,
+#'   abundance = pathway_abundance,
 #'   metadata = metadata,
-#'   group = "Environment"
+#'   group = "Environment",
+#'   daa_method = "LinDA"
 #' )
+#'
+#' common_ids <- intersect(gsea_results$pathway_id, daa_results$feature)
+#' gsea_results <- gsea_results[gsea_results$pathway_id %in% common_ids, ]
+#' daa_results <- daa_results[daa_results$feature %in% common_ids, ]
 #'
 #' # Compare results
 #' comparison <- compare_gsea_daa(
@@ -142,7 +151,7 @@ compare_gsea_daa <- function(gsea_results,
 
   # Check if required columns exist. Baseline (for set-membership plots)
   # is just the ID + adjusted p. The scatter variant additionally plots
-  # effect sizes (NES vs log2_fold_change), so it needs those columns;
+  # a GSEA score against log2_fold_change, so it needs those columns;
   # checking here rather than only inside the scatter branch means the
   # user gets an up-front, single error naming exactly what's missing
   # instead of a cryptic "undefined columns selected" from merge().
@@ -388,7 +397,7 @@ compare_gsea_daa <- function(gsea_results,
         ggplot2::scale_color_gradient(low = "blue", high = "red") +
         ggplot2::labs(
           title = "Comparison of GSEA and DAA Results",
-          x = "Normalized Enrichment Score (GSEA)",
+          x = gsea_score_label(gsea_results),
           y = "Log2 Fold Change (DAA, aligned to GSEA direction)",
           color = "-log10(p.adjust)"
         ) +

@@ -37,7 +37,12 @@ gsea_score_label <- function(gsea_results) {
 #' and uses them for better readability, falling back to pathway IDs if names are not available.
 #'
 #' @param gsea_results A data frame containing GSEA results from the pathway_gsea function
-#' @param plot_type A character string specifying the visualization type: "enrichment_plot", "dotplot", "barplot", "network", or "heatmap"
+#' @param plot_type Visualization type: "enrichment_plot" (a score-summary
+#' bar chart, not a running enrichment curve), "dotplot", "barplot",
+#' "network", or "heatmap". Network edges use leading-edge overlap; the
+#' heatmap shows per-pathway mean leading-edge abundance, standardized across
+#' samples. These two modes need leading-edge genes from preranked methods,
+#' which camera/fry do not provide.
 #' @param n_pathways An integer specifying the number of pathways to display
 #' @param sort_by A character string specifying the sorting criterion: "NES", "pvalue", or "p.adjust"
 #' @param colors A vector of valid R colors used for the default heatmap group
@@ -74,7 +79,10 @@ gsea_score_label <- function(gsea_results) {
 #' visualization compatibility, but limma does not estimate a true normalized
 #' enrichment score for these methods. When \code{score_label} is present,
 #' axis and legend labels use it instead of labeling the value as NES.
-
+#'
+#' The function selects the top rows after sorting; it does not automatically
+#' filter by significance. Inspect adjusted p-values before interpreting a
+#' displayed pathway as significant.
 #'
 #' @return A ggplot2 object or ComplexHeatmap object
 #' @export
@@ -112,8 +120,12 @@ gsea_score_label <- function(gsea_results) {
 #' visualize_gsea(annotated_results, plot_type = "dotplot", n_pathways = 20)
 #' visualize_gsea(annotated_results, plot_type = "barplot", n_pathways = 15)
 #'
-#' # Create network plot with custom labels
-#' visualize_gsea(annotated_results, plot_type = "network", n_pathways = 15)
+#' # Only preranked methods provide leading-edge genes for network/heatmap.
+#' fgsea_results <- pathway_gsea(
+#'   abundance_data, metadata, "Environment", method = "fgsea",
+#'   comparison = c("Pro-survival", "Pro-inflammatory"), seed = 42
+#' )
+#' visualize_gsea(fgsea_results, plot_type = "network", n_pathways = 15)
 #'
 #' # Use custom column for labels (if available)
 #' visualize_gsea(annotated_results, plot_type = "barplot",
@@ -121,7 +133,7 @@ gsea_score_label <- function(gsea_results) {
 #'
 #' # Create heatmap
 #' visualize_gsea(
-#'   annotated_results,
+#'   fgsea_results,
 #'   plot_type = "heatmap",
 #'   n_pathways = 15,
 #'   abundance = abundance_data,

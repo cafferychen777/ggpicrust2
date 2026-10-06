@@ -212,79 +212,89 @@ these are different statistical procedures, not equivalent plotting modes.
 
 ## Taxa contribution workflow
 
-PICRUSt2 can output contribution files that explain which taxa are driving predicted functional shifts. `ggpicrust2` supports both gene-family-level and pathway-level contribution workflows.
+PICRUSt2 contribution files attribute predicted functional abundance to taxa. `ggpicrust2` supports both gene-family-level and pathway-level contribution workflows.
 
-### Read PICRUSt2 contribution files
+### Run a synthetic contribution example
 
-```{r contrib-readers, eval = FALSE}
-# For pred_metagenome_contrib.tsv
-contrib_data <- read_contrib_file("pred_metagenome_contrib.tsv")
+This small example illustrates input schemas and aggregation. It is not a
+biological result, and its sample IDs are separate from the bundled KO dataset.
 
-# For path_abun_contrib.tsv.gz; PICRUSt2 pathway output commonly uses MetaCyc IDs.
-path_contrib_data <- read_pathway_contrib_file("path_abun_contrib.tsv.gz")
-
-# For pred_metagenome_strat.tsv
-strat_data <- read_strat_file("pred_metagenome_strat.tsv")
-```
-
-### Aggregate to a taxonomic level
-
-```{r contrib-aggregate, eval = FALSE}
-taxa_contrib <- aggregate_taxa_contributions(
-  contrib_data = contrib_data,
-  taxonomy = your_taxonomy_table,
-  tax_level = "Genus",
-  top_n = 10
+```{r contrib-example, eval = FALSE}
+contrib_input <- expand.grid(
+  sample = paste0("S", 1:4),
+  function_id = c("K00001", "K00002"),
+  taxon = c("ASV1", "ASV2"),
+  stringsAsFactors = FALSE
 )
-
+contrib_input$taxon_function_abun <- seq_len(nrow(contrib_input))
+contrib_data <- read_contrib_file(data = contrib_input)
+contrib_metadata <- data.frame(
+  sample_name = paste0("S", 1:4),
+  Environment = rep(c("Control", "Treatment"), each = 2)
+)
+taxonomy <- data.frame(
+  ASV = c("ASV1", "ASV2"),
+  Genus = c("ExampleGenusA", "ExampleGenusB")
+)
+taxa_contrib <- aggregate_taxa_contributions(
+  contrib_data, taxonomy = taxonomy, tax_level = "Genus", top_n = 2
+)
 head(taxa_contrib)
 ```
 
-`aggregate_taxa_contributions()` accepts either:
+The aggregation sums the selected contribution column. By default it prefers
+`norm_taxon_function_contrib` when supplied; this example supplies raw
+`taxon_function_abun` only. A percentage bar subsequently normalizes within
+each sample/function, so its heights describe the taxonomic composition of
+that function, not a between-function abundance comparison.
 
-- normalized contribution data from `read_contrib_file()`
-- pathway-level contribution data from `read_pathway_contrib_file()`
-- stratified abundance data from `read_strat_file()`
-
-Optional `daa_results_df` or `pathway_ids` filtering requires matching
-identifiers and samples. KO-level contribution rows use KO IDs and must not
-be filtered with the KEGG pathway-level `daa_results` above; that conversion
-does not also convert the contribution file. For MetaCyc contributions, use
-DAA results for those same MetaCyc pathways.
-
-When you already have pathway-level contribution data and do not want to run differential abundance analysis, omit `daa_results_df` and aggregate directly. For PICRUSt2 pathway contribution output, use matching MetaCyc annotations rather than KEGG pathway annotations.
-
-```{r pathway-contrib-no-daa, eval = FALSE}
-path_taxa_contrib <- aggregate_taxa_contributions(
-  contrib_data = path_contrib_data,
-  taxonomy = your_taxonomy_table,
-  tax_level = "Genus",
-  top_n = 10
+```{r contrib-plots, eval = FALSE}
+taxa_contribution_bar(
+  contrib_agg = taxa_contrib,
+  metadata = contrib_metadata,
+  group = "Environment",
+  facet_by = "function"
 )
+taxa_contribution_heatmap(contrib_agg = taxa_contrib, n_functions = 2)
+```
 
+### Read your own PICRUSt2 files
+
+For real data, replace the synthetic input with one of the readers below and
+use metadata and taxonomy for those same samples and taxa:
+
+```r
+# KO/gene-family contributions:
+# contrib_data <- read_contrib_file("pred_metagenome_contrib.tsv")
+# Pathway contributions (often MetaCyc):
+# contrib_data <- read_pathway_contrib_file("path_abun_contrib.tsv.gz")
+# Wide stratified abundance:
+# contrib_data <- read_strat_file("pred_metagenome_strat.tsv")
+```
+
+When optional `daa_results_df` or `pathway_ids` filters contain KEGG pathway IDs
+and the contribution table is KO-level, the function expands those pathway IDs
+to KO members and retains matching KO rows. It does not turn KO contributions
+into pathway contributions. The output `function_id` remains a KO identifier.
+For pathway-level MetaCyc contributions, matching MetaCyc IDs are filtered
+directly. Do not interpret a member-KO filter as independent evidence that a
+taxon drives a reconstructed pathway's activity.
+
+For pathway-level data, use matching pathway annotations. For example:
+
+```{r pathway-contrib-example, eval = FALSE}
+path_input <- contrib_input
+path_input$function_id <- ifelse(path_input$function_id == "K00001",
+                                  "GLYCOLYSIS", "PWY-5484")
+path_data <- read_pathway_contrib_file(data = path_input)
+path_taxa_contrib <- aggregate_taxa_contributions(
+  path_data, taxonomy = taxonomy, tax_level = "Genus", top_n = 2
+)
 pathway_annotation_df <- pathway_annotation(
   data = data.frame(function_id = unique(path_taxa_contrib$function_id)),
   pathway = "MetaCyc"
 )
 ```
-
-### Visualize taxa-level drivers
-
-```{r contrib-plots, eval = FALSE}
-taxa_contribution_bar(
-  contrib_agg = taxa_contrib,
-  metadata = metadata,
-  group = "Environment",
-  facet_by = "function"
-)
-
-taxa_contribution_heatmap(
-  contrib_agg = taxa_contrib,
-  n_functions = 20
-)
-```
-
-This step is useful when pathway-level significance is not enough and you need to identify which taxa are contributing to the change.
 
 ## GSEA workflow
 

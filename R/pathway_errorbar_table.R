@@ -57,6 +57,12 @@
 #'         daa_results_df
 #' }
 #'
+#' @details
+#' Relative abundances use all supplied feature rows as each sample's
+#' denominator. Filtering the input matrix first changes the summaries.
+#' The table's log2 fold change is a descriptive group-mean ratio with a
+#' pseudocount, not a covariate-adjusted DAA model coefficient.
+#'
 #' @examples
 #' \dontrun{
 #' # Load example data

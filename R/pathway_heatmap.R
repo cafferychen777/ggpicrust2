@@ -68,7 +68,7 @@
 #' library(magrittr)
 #'
 #' # Create example functional pathway abundance data
-#' kegg_abundance_example <- matrix(rnorm(30), nrow = 3, ncol = 10)
+#' kegg_abundance_example <- matrix(rexp(30), nrow = 3, ncol = 10)
 #' colnames(kegg_abundance_example) <- paste0("Sample", 1:10)
 #' rownames(kegg_abundance_example) <- c("PathwayA", "PathwayB", "PathwayC")
 #'

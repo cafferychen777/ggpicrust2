@@ -53,8 +53,7 @@ contrib_df <- data.frame(
   sample = rep(c("S1", "S2"), each = 4),
   `function` = rep(c("K00001", "K00002"), 4),
   taxon = rep(c("ASV1", "ASV2"), each = 2, times = 2),
-  taxon_function_abun = runif(8),
-  norm_taxon_function_contrib = runif(8),
+  taxon_function_abun = seq_len(8),
   check.names = FALSE
 )
 result <- read_contrib_file(data = contrib_df)

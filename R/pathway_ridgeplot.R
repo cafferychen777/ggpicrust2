@@ -2,7 +2,10 @@
 #'
 #' Creates a ridge plot (joy plot) to visualize the distribution of gene/KO
 #' abundances or fold changes for enriched pathways from GSEA analysis.
-#' This helps interpret whether pathways are predominantly up- or down-regulated.
+#' The distribution is descriptive: it uses group means of the supplied
+#' abundance, not the covariate-adjusted model coefficients or voom weights
+#' from a camera/fry analysis. Direction colors describe the GSEA test and
+#' need not agree with every member's abundance ratio.
 #'
 #' @param gsea_results A data frame containing GSEA results from \code{\link{pathway_gsea}}.
 #'   Must contain pathway_id column and either NES or direction column.

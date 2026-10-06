@@ -14,11 +14,18 @@
 #'   levels.
 #'
 #' @examples
-#' \dontrun{
-#' # Assuming you have a CSV file named "DAA_results.csv" in your current directory
-#' daa_results <- import_MicrobiomeAnalyst_daa_results(file_path = "DAA_results.csv")
-#' }
+#' # Synthetic export with explicit feature and probability columns.
+#' exported <- data.frame(
+#'   feature = c("K00001", "K00002"),
+#'   Pvalues = c(0.01, 0.20), FDR = c(0.02, 0.20)
+#' )
+#' daa_results <- import_MicrobiomeAnalyst_daa_results(data = exported)
 #'
+#' # The same table can be read from a CSV file.
+#' export_file <- tempfile(fileext = ".csv")
+#' utils::write.csv(exported, export_file, row.names = FALSE)
+#' import_MicrobiomeAnalyst_daa_results(file_path = export_file)
+#' unlink(export_file)
 #' @export
 import_MicrobiomeAnalyst_daa_results <- function(file_path = NULL,
                                                 data = NULL,

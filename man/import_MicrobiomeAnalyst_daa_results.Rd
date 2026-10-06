@@ -31,9 +31,16 @@ a data frame containing the DAA results from MicrobiomeAnalyst with
 This function imports DAA results from an external platform such as MicrobiomeAnalyst. It can be used to compare the results obtained from different platforms.
 }
 \examples{
-\dontrun{
-# Assuming you have a CSV file named "DAA_results.csv" in your current directory
-daa_results <- import_MicrobiomeAnalyst_daa_results(file_path = "DAA_results.csv")
-}
+# Synthetic export with explicit feature and probability columns.
+exported <- data.frame(
+  feature = c("K00001", "K00002"),
+  Pvalues = c(0.01, 0.20), FDR = c(0.02, 0.20)
+)
+daa_results <- import_MicrobiomeAnalyst_daa_results(data = exported)
 
+# The same table can be read from a CSV file.
+export_file <- tempfile(fileext = ".csv")
+utils::write.csv(exported, export_file, row.names = FALSE)
+import_MicrobiomeAnalyst_daa_results(file_path = export_file)
+unlink(export_file)
 }

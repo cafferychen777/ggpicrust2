@@ -18,59 +18,69 @@ knitr::opts_chunk$set(
 
 ## Introduction
 
-This vignette demonstrates how to perform Gene Set Enrichment Analysis (GSEA) on PICRUSt2 predicted functional data using the ggpicrust2 package. GSEA is a powerful method for interpreting gene expression data by focusing on gene sets (pathways) rather than individual genes. In the context of microbiome functional prediction, GSEA can help identify pathways that are enriched in different conditions.
+This vignette tests sets of KO identifiers in PICRUSt2 predicted functional
+profiles. It covers method-specific hypotheses and scores, group contrasts,
+covariate adjustment, and visualizations. The input is predicted abundance,
+not measured gene expression or pathway activity.
 
 ## Installation
 
-First, make sure you have the necessary packages installed:
+The examples use bundled KO abundance and metadata. Install the optional
+backends once, then load the package:
+
+```{r installation, eval=FALSE}
+install.packages(c("ggpicrust2", "MicrobiomeStat", "ggridges", "ggVennDiagram",
+                   "circlize", "igraph", "BiocManager"))
+BiocManager::install(c("limma", "fgsea", "ComplexHeatmap"))
+```
 
 ```{r setup, eval=FALSE}
-# Install ggpicrust2
-if (!requireNamespace("ggpicrust2", quietly = TRUE)) {
-  devtools::install_github("cafferychen777/ggpicrust2")
-}
-
-# Install required Bioconductor packages
-if (!requireNamespace("BiocManager", quietly = TRUE)) {
-  install.packages("BiocManager")
-}
-
-BiocManager::install(c("limma", "fgsea", "clusterProfiler", "enrichplot", "DOSE", "pathview"))
-
-# Load the package
 library(ggpicrust2)
-library(dplyr)
-library(ggplot2)
 ```
 
 ## Method Selection Guide
 
-The `pathway_gsea()` function supports multiple methods for gene set enrichment analysis:
+Choose the hypothesis and input scale before comparing p-values.
 
-| Method | Type | Covariate Support | Description |
-|--------|------|-------------------|-------------|
-| `camera` (default) | Competitive | ✅ Yes | **Recommended.** Accounts for inter-gene correlations, providing more reliable p-values |
-| `fry` | Self-contained | ✅ Yes | Fast rotation test, efficient for large gene set collections |
-| `fgsea` | Preranked | ❌ No | Fast preranked GSEA, but p-values may be unreliable |
-| `clusterProfiler` | Preranked | ❌ No | Traditional GSEA implementation |
+| Method | Null hypothesis / input | Covariates | Score |
+|--------|-------------------------|------------|-------|
+| `camera` (default) | Competitive gene-set test on a voom fit | Yes | Signed -log10(raw p-value) |
+| `fry` | Self-contained gene-set test on a voom fit | Yes | Signed -log10(raw p-value) |
+| `fgsea` | Preranked gene-set enrichment | No | Normalized enrichment score (NES) |
+| `clusterProfiler` | Preranked GSEA implementation | No | NES |
 
-**Why use camera/fry?** Wu et al. (2012) demonstrated that preranked GSEA methods can produce "spectacularly wrong p-values" due to not accounting for inter-gene correlations. The `camera` and `fry` methods from limma address this limitation.
+The current camera/fry implementation runs `limma::voom()` on non-negative,
+count-like input. Do not pass log-transformed or relative abundances as if they
+were counts. The default camera correlation setting is `inter.gene.cor = 0.01`;
+it is a supplied correlation adjustment, not an estimate for every set.
+These assumptions do not establish calibration for all PICRUSt2 predictions.
+The [limma documentation](https://bioconductor.org/packages/limma) explains the
+underlying tests; the [fgsea documentation](https://bioconductor.org/packages/fgsea)
+explains preranked enrichment and leading-edge genes.
 
-## Basic GSEA Analysis (Recommended: camera method)
+Preranked statistics are calculated from the supplied abundance, without an
+implicit voom or library-size normalization step. Account for the input scale
+in the study design. Tied ranks can affect the leading edge; a fixed seed
+makes a run reproducible but does not remove that ambiguity.
 
-Let's start with a basic GSEA analysis using the recommended `camera` method:
+## Competitive analysis with camera
+
+This example uses the competitive `camera` test:
 
 ```{r basic-gsea, eval=FALSE}
 # Load example data
 data(ko_abundance)
 data(metadata)
+metadata$Environment <- factor(
+  metadata$Environment, levels = c("Pro-inflammatory", "Pro-survival")
+)
 
 # Prepare abundance data
 abundance_data <- as.data.frame(ko_abundance)
 rownames(abundance_data) <- abundance_data[, "#NAME"]
 abundance_data <- abundance_data[, -1]
 
-# Run GSEA analysis with camera (recommended)
+# Run the competitive camera test
 gsea_results <- pathway_gsea(
   abundance = abundance_data,
   metadata = metadata,
@@ -86,19 +96,36 @@ gsea_results <- pathway_gsea(
 head(gsea_results)
 ```
 
+For this factor order, camera/fry test Pro-survival minus Pro-inflammatory.
+`direction = "Up"` refers to that contrast. The compatibility column `NES`
+is signed `-log10(pvalue)` for these methods; it is neither a true NES nor
+an effect size. `score_type` and `score_label` identify its meaning.
+
+```{r inspect-results, eval=FALSE}
+table(gsea_results$direction)
+sum(gsea_results$p.adjust < 0.05, na.rm = TRUE)
+unique(gsea_results[, c("method", "score_type", "score_label")])
+```
+
+The KEGG reference contains shared KOs assigned to disease and eukaryotic
+pathway maps as well as microbial pathways. GSEA retains these maps, whereas
+`ko2kegg_abundance()` applies its prokaryote category filter by default.
+A disease name among the top results is therefore a label for a tested KO set,
+not evidence that the microbiome carries out a host disease pathway. Inspect
+its member KOs and coverage before giving it a biological interpretation.
+
 ## Covariate Adjustment
 
 One of the most powerful features of the `camera` and `fry` methods is the ability to adjust for confounding variables. This is particularly important in microbiome studies where factors like age, sex, BMI, and batch effects can influence results.
 
 ```{r covariate-gsea, eval=FALSE}
-# Example with covariate adjustment
-# Assuming metadata has columns: group, age, sex, BMI
+# Mouse_Sex is observed in the bundled metadata and varies within both groups.
 
 gsea_results_adjusted <- pathway_gsea(
   abundance = abundance_data,
   metadata = metadata,
-  group = "Disease",
-  covariates = c("age", "sex", "BMI"),  # Adjust for these confounders
+  group = "Environment",
+  covariates = "Mouse_Sex",
   pathway_type = "KEGG",
   method = "camera"
 )
@@ -109,7 +136,9 @@ head(gsea_results_adjusted)
 
 ## Fast Analysis with fry
 
-For large datasets or when computational efficiency is important, use the `fry` method:
+Use `fry` for the self-contained null that genes in the set have no group effect.
+It does not test camera's competitive null, so discovery counts can differ
+without a software error.
 
 ```{r fry-gsea, eval=FALSE}
 # Fast rotation gene set test
@@ -126,13 +155,16 @@ gsea_results_fry <- pathway_gsea(
 head(gsea_results_fry)
 ```
 
-## Legacy: Preranked GSEA (fgsea)
+## Preranked GSEA (fgsea)
 
-For compatibility with existing workflows, preranked GSEA methods are still available:
+For a prespecified ranked-list analysis, `fgsea` returns true NES values and
+leading-edge genes. The explicit comparison below makes a positive score
+mean higher abundance in Pro-survival, matching the camera/fry contrast above.
+The input and ranking choices are part of this demonstration, not a universal
+recommendation for every study.
 
 ```{r fgsea, eval=FALSE}
-# Note: Preranked methods don't account for inter-gene correlations
-# P-values may be less reliable (Wu et al., 2012)
+# Preranked testing uses a different null from camera/fry.
 gsea_results_fgsea <- pathway_gsea(
   abundance = abundance_data,
   metadata = metadata,
@@ -140,7 +172,7 @@ gsea_results_fgsea <- pathway_gsea(
   pathway_type = "KEGG",
   method = "fgsea",
   rank_method = "signal2noise",
-  nperm = 1000,
+  comparison = c("Pro-survival", "Pro-inflammatory"),
   min_size = 10,
   max_size = 500,
   p_adjust_method = "BH",
@@ -168,7 +200,7 @@ head(annotated_results)
 
 ## Visualizing GSEA Results
 
-The ggpicrust2 package provides several visualization options for GSEA results. The `visualize_gsea()` function automatically detects whether pathway names are available (from `gsea_pathway_annotation()`) and uses them for better readability, falling back to pathway IDs if names are not available.
+The ggpicrust2 package provides several visualization options for GSEA results. The `visualize_gsea()` function uses annotation names when available. It displays the top `n_pathways` after sorting; it does not automatically filter by significance. Inspect adjusted p-values before calling displayed pathways significant.
 
 ### Pathway Label Options
 
@@ -206,7 +238,7 @@ plot_custom_labels
 ### Barplot
 
 ```{r barplot, eval=FALSE}
-# Create a barplot of the top enriched pathways
+# Create a barplot of the top-ranked pathways
 barplot <- visualize_gsea(
   gsea_results = annotated_results,
   plot_type = "barplot",
@@ -221,7 +253,7 @@ barplot
 ### Dotplot
 
 ```{r dotplot, eval=FALSE}
-# Create a dotplot of the top enriched pathways
+# Create a dotplot of the top-ranked pathways
 dotplot <- visualize_gsea(
   gsea_results = annotated_results,
   plot_type = "dotplot",
@@ -233,15 +265,15 @@ dotplot <- visualize_gsea(
 dotplot
 ```
 
-### Enrichment Plot
+### Enrichment-score summary
 
 ```{r enrichment-plot, eval=FALSE}
-# Create an enrichment plot for a specific pathway
+# This is a score-summary bar chart, not a running enrichment curve.
 enrichment_plot <- visualize_gsea(
   gsea_results = annotated_results,
   plot_type = "enrichment_plot",
   n_pathways = 10,
-  sort_by = "NES"
+  sort_by = "p.adjust"
 )
 
 # Display the plot
@@ -250,7 +282,10 @@ enrichment_plot
 
 ### Ridge Plot
 
-Ridge plots (also known as joy plots) provide a powerful way to visualize the distribution of gene abundances or fold changes within enriched pathways. This helps understand whether pathways are predominantly up- or down-regulated.
+A ridge plot shows the distribution of member-KO group-mean abundance ratios.
+It does not reproduce covariate-adjusted model coefficients, voom-weighted
+effects, or a gene-set significance test. A pathway can contain KO ratios of
+both signs even when its test has one enrichment direction.
 
 ```{r ridge-plot, eval=FALSE}
 # Create a ridge plot for GSEA results
@@ -261,6 +296,7 @@ ridge_plot <- pathway_ridgeplot(
   metadata = metadata,
   group = "Environment",
   pathway_type = "KEGG",
+  comparison = c("Pro-inflammatory", "Pro-survival"),
   n_pathways = 10,
   sort_by = "p.adjust",
   show_direction = TRUE,
@@ -274,8 +310,42 @@ ridge_plot
 The ridge plot shows:
 - Each pathway as a density ridge
 - Color indicates enrichment direction (Up = red, Down = blue)
-- The distribution of log2 fold changes for genes within each pathway
+- The log2 ratio of mean supplied KO abundance, Pro-survival / Pro-inflammatory
+- A data-derived pseudocount added to both group means; see `?pathway_ridgeplot`
 - A vertical dashed line at 0 for reference
+
+## Leading-edge network and heatmap
+
+Only preranked methods provide leading-edge genes. camera/fry return an empty
+`leading_edge` field; passing those results to these displays produces no
+leading-edge information. Do not interpret an empty graph as no biological
+relationships. Use the preranked result created above for this example:
+
+```{r leading-edge-plots, eval=FALSE}
+annotated_fgsea <- gsea_pathway_annotation(gsea_results_fgsea, pathway_type = "KEGG")
+leading_results <- annotated_fgsea[
+  !is.na(annotated_fgsea$leading_edge) & nzchar(annotated_fgsea$leading_edge), , drop = FALSE
+]
+if (nrow(leading_results) > 0) {
+  network_plot <- visualize_gsea(
+    leading_results, plot_type = "network", n_pathways = 10,
+    network_params = list(similarity_measure = "jaccard", similarity_cutoff = 0.2)
+  )
+  print(network_plot)
+  leading_heatmap <- visualize_gsea(
+    leading_results, plot_type = "heatmap", n_pathways = 10,
+    abundance = abundance_data, metadata = metadata, group = "Environment",
+    heatmap_params = list(cluster_rows = TRUE, cluster_columns = TRUE,
+                          show_rownames = TRUE)
+  )
+  ComplexHeatmap::draw(leading_heatmap)
+}
+```
+
+Edges measure overlap between leading-edge sets, not biochemical interaction
+or causation. Each heatmap row is the mean supplied abundance over one
+pathway's matched leading-edge genes, standardized across samples. It is not
+a row per gene or measured gene expression. Overlapping sets reuse genes.
 
 ## Comparing GSEA and DAA Results
 
@@ -283,7 +353,10 @@ Compare results at the same identifier level: GSEA returns KEGG pathway IDs,
 so aggregate KO abundance to KEGG pathways before DAA. Annotation changes
 labels, not the unit of analysis. The two procedures test different hypotheses;
 overlap is descriptive agreement, not independent validation. This example
-uses LinDA consistently with the general workflow tutorial.
+uses LinDA consistently with the general workflow tutorial. Restrict the
+comparison to the shared tested universe: gene-set size filters and pathway
+filters can otherwise make an untested pathway look like a method-specific
+discovery. P-values retain their original analysis-wide adjustment.
 
 ```{r compare-gsea-daa, eval=FALSE}
 # Compare KEGG pathways to KEGG pathways, not individual KO identifiers.
@@ -295,10 +368,14 @@ daa_results <- pathway_daa(
   daa_method = "LinDA"
 )
 
-# Compare GSEA and DAA results
+# Compare only pathways that both procedures actually tested.
+# Keep each analysis's original multiple-testing adjustment.
+common_pathways <- intersect(annotated_results$pathway_id, daa_results$feature)
+gsea_common <- annotated_results[annotated_results$pathway_id %in% common_pathways, , drop = FALSE]
+daa_common <- daa_results[daa_results$feature %in% common_pathways, , drop = FALSE]
 comparison <- compare_gsea_daa(
-  gsea_results = annotated_results,
-  daa_results = daa_results,
+  gsea_results = gsea_common,
+  daa_results = daa_common,
   plot_type = "venn",
   p_threshold = 0.05
 )
@@ -310,23 +387,17 @@ comparison$plot
 comparison$results
 ```
 
-## Conclusion
+## Interpretation
 
-Gene Set Enrichment Analysis provides a complementary approach to Differential Abundance Analysis for interpreting PICRUSt2 predicted functional data. By focusing on pathways rather than individual features, GSEA can help identify biologically meaningful patterns that might be missed by traditional methods.
-
-### Key Recommendations
-
-1. **Use `camera` method (default)** for most analyses - it provides more reliable p-values by accounting for inter-gene correlations
-
-2. **Adjust for covariates** when you have confounding factors like age, sex, or BMI in your study design
-
-3. **Use `fry` method** when you need faster computation for large gene set collections
-
-4. **Use preranked methods (`fgsea`)** only when you need compatibility with existing workflows, and interpret p-values with caution
+Use a prespecified contrast and a method whose input assumptions fit the
+study. Camera, fry, and preranked tests ask different questions, so do not
+select the method with the most significant pathways. The same predicted
+abundance data underlie DAA and GSEA; overlap is descriptive agreement.
+Report the tested feature universe, pathway-size filters, method, score type,
+and adjusted p-value threshold. These outputs do not validate actual pathway
+activity or propagate PICRUSt2 prediction uncertainty.
 
 ### References
 
 - Wu, D., & Smyth, G. K. (2012). Camera: a competitive gene set test accounting for inter-gene correlation. *Nucleic Acids Research*, 40(17), e133.
 - Wu, D., et al. (2010). ROAST: rotation gene set tests for complex microarray experiments. *Bioinformatics*, 26(17), 2176-2182.
-
-The ggpicrust2 package now offers a comprehensive suite of tools for both DAA and GSEA analyses, making it easier to gain insights from microbiome functional prediction data.

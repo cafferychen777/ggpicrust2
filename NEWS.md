@@ -2,6 +2,24 @@
 
 ## Documentation and diagnostics
 
+* Restored the documentation website build and deployment from maintained
+  sources, with generated HTML kept out of the source branch.
+
+* GSEA/DAA scatter plots now use the method-specific score label instead of
+  labeling camera/fry signed p-value scores as normalized enrichment scores.
+
+* Audited all help examples, README workflows, and both vignettes against
+  executable examples and underlying data transformations. Examples now use
+  available metadata columns and self-contained inputs; README points to
+  canonical walkthroughs instead of duplicating drifting workflows.
+* Clarified method-specific GSEA scores, contrasts, null hypotheses, leading-edge
+  plots, shared tested universes, and the descriptive transformations in PCA,
+  heatmaps, and ridge plots. Annotation adds labels and does not aggregate
+  abundance or convert KO-level p-values to pathway-level evidence.
+* Corrected the contribution tutorial: KEGG filters can select member KOs,
+  but the returned contribution table remains KO-level. Added a synthetic
+  example with consistent taxonomy and sample IDs.
+
 * Fixed the stepwise tutorial's `pathway_errorbar()` call (#207): supply
   group labels named by sample ID, set KEGG pathway annotation parameters,
   and skip significance plots when no pathways pass the threshold. Both

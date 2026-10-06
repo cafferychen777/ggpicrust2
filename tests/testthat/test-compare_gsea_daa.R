@@ -336,3 +336,32 @@ test_that("compare_gsea_daa rejects incompatible scatter directions", {
     "not comparable"
   )
 })
+
+
+test_that("scatter labels preserve the GSEA score meaning", {
+  gsea <- data.frame(
+    pathway_id = c("ko00010", "ko00020"), NES = c(3, -2),
+    p.adjust = c(0.01, 0.02), group1 = "Treatment", group2 = "Control",
+    score_type = "signed_log10_pvalue",
+    score_label = "Signed -log10(p-value)"
+  )
+  daa <- data.frame(
+    feature = gsea$pathway_id, log2_fold_change = c(1, -1),
+    p_adjust = c(0.01, 0.02), group1 = "Control", group2 = "Treatment"
+  )
+  result <- compare_gsea_daa(gsea, daa, plot_type = "scatter")
+  expect_equal(result$plot$labels$x, "Signed -log10(p-value)")
+  expect_equal(result$results$scatter_data$NES, gsea$NES)
+
+  gsea$score_label <- NULL
+  result <- compare_gsea_daa(gsea, daa, plot_type = "scatter")
+  expect_equal(result$plot$labels$x, "Signed -log10(p-value)")
+
+  gsea$score_type <- "NES"
+  result <- compare_gsea_daa(gsea, daa, plot_type = "scatter")
+  expect_equal(result$plot$labels$x, "Normalized Enrichment Score (NES)")
+
+  gsea$score_type[2] <- "signed_log10_pvalue"
+  expect_error(compare_gsea_daa(gsea, daa, plot_type = "scatter"),
+               "multiple score types")
+})

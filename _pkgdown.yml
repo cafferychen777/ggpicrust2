@@ -1,4 +1,4 @@
-url: https://cafferyang.com/ggpicrust2/
+url: https://cafferychen777.github.io/ggpicrust2/
 
 template:
   bootstrap: 5
@@ -39,6 +39,7 @@ reference:
   - title: Taxa Contribution
     contents:
       - read_contrib_file
+      - read_pathway_contrib_file
       - read_strat_file
       - aggregate_taxa_contributions
       - taxa_contribution_bar

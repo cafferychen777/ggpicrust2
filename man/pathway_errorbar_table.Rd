@@ -84,6 +84,12 @@ standard deviation, and log2 fold change statistics for pathways,
 similar to the data used in pathway_errorbar plots but returned as a 
 data frame instead of a plot.
 }
+\details{
+Relative abundances use all supplied feature rows as each sample's
+denominator. Filtering the input matrix first changes the summaries.
+The table's log2 fold change is a descriptive group-mean ratio with a
+pseudocount, not a covariate-adjusted DAA model coefficient.
+}
 \examples{
 \dontrun{
 # Load example data

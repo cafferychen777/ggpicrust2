@@ -28,6 +28,11 @@ using different methods in `pathway_daa` from the `ggpicrust2` package. It creat
 different features identified by each method, and the features themselves.
 }
 \details{
+Each list element is one discovery set. Split multi-test output such as
+ALDEx2 by its \code{method} column before comparison; otherwise the tests'
+discoveries are pooled within that element. This function does not rerun
+testing or adjust p-values again.
+
 For multi-group DAA output, each discovery is compared as a
 \code{feature + group-pair} unit. The group pair is treated as unordered for
 this set-level comparison, because the function compares whether methods
