@@ -328,6 +328,14 @@ test_that("pathway_errorbar validates display parameters at the API boundary", {
   )
 })
 
+test_that("pathway_errorbar explains column-name misuse of Group", {
+  td <- create_errorbar_test_data()
+  expect_error(
+    pathway_errorbar(td$abundance, td$daa_results_df, Group = "Environment"),
+    "got 1 labels for 10 samples.*not a metadata column name.*setNames"
+  )
+})
+
 test_that("pathway_errorbar aligns Group by names when provided", {
   td <- create_errorbar_test_data(
     n_features = 4,
@@ -338,18 +346,27 @@ test_that("pathway_errorbar aligns Group by names when provided", {
   # Intentionally shuffle Group order but keep sample names.
   shuffled_group <- td$Group[c(10, 9, 8, 7, 6, 5, 4, 3, 2, 1)]
 
-  expect_error(
-    pathway_errorbar(
-      abundance = td$abundance,
-      daa_results_df = td$daa_results_df,
-      Group = shuffled_group,
-      ko_to_kegg = TRUE,
-      order = "pathway_class",
-      p_values_threshold = 0.05,
-      x_lab = "pathway_name"
-    ),
-    NA
+  plot <- pathway_errorbar(
+    abundance = td$abundance,
+    daa_results_df = td$daa_results_df,
+    Group = shuffled_group,
+    ko_to_kegg = TRUE,
+    order = "pathway_class",
+    p_values_threshold = 0.05,
+    x_lab = "pathway_name"
   )
+
+  # Check the plotted numbers, not just whether shuffled metadata can draw.
+  relative <- sweep(td$abundance, 2, colSums(td$abundance), "/")
+  plotted <- plot[[2]]$data
+  expect_true(all(c("name", "group", "mean", "sd") %in% names(plotted)))
+  for (i in seq_len(nrow(plotted))) {
+    feature <- as.character(plotted$name[i])
+    group <- as.character(plotted$group[i])
+    values <- relative[feature, td$Group == group]
+    expect_equal(plotted$mean[i], mean(values), tolerance = 1e-12)
+    expect_equal(plotted$sd[i], stats::sd(values), tolerance = 1e-12)
+  }
 })
 
 test_that("pathway_errorbar handles p_value_bar parameter correctly", {

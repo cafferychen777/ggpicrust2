@@ -79,7 +79,7 @@ gsea_results <- pathway_gsea(
   method = "camera",
   min_size = 5,
   max_size = 500,
-  p.adjust = "BH"
+  p_adjust_method = "BH"
 )
 
 # View the top results
@@ -143,7 +143,7 @@ gsea_results_fgsea <- pathway_gsea(
   nperm = 1000,
   min_size = 10,
   max_size = 500,
-  p.adjust = "BH",
+  p_adjust_method = "BH",
   seed = 42
 )
 
@@ -279,28 +279,26 @@ The ridge plot shows:
 
 ## Comparing GSEA and DAA Results
 
-It can be informative to compare the results from GSEA with those from Differential Abundance Analysis (DAA):
+Compare results at the same identifier level: GSEA returns KEGG pathway IDs,
+so aggregate KO abundance to KEGG pathways before DAA. Annotation changes
+labels, not the unit of analysis. The two procedures test different hypotheses;
+overlap is descriptive agreement, not independent validation. This example
+uses LinDA consistently with the general workflow tutorial.
 
 ```{r compare-gsea-daa, eval=FALSE}
-# Run DAA analysis
+# Compare KEGG pathways to KEGG pathways, not individual KO identifiers.
+kegg_pathway_abundance <- ko2kegg_abundance(data = ko_abundance)
 daa_results <- pathway_daa(
-  abundance = abundance_data,
+  abundance = kegg_pathway_abundance,
   metadata = metadata,
   group = "Environment",
-  daa_method = "ALDEx2"
-)
-
-# Annotate DAA results
-annotated_daa_results <- pathway_annotation(
-  pathway = "KO",
-  daa_results_df = daa_results,
-  ko_to_kegg = TRUE
+  daa_method = "LinDA"
 )
 
 # Compare GSEA and DAA results
 comparison <- compare_gsea_daa(
   gsea_results = annotated_results,
-  daa_results = annotated_daa_results,
+  daa_results = daa_results,
   plot_type = "venn",
   p_threshold = 0.05
 )

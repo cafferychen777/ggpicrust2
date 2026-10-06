@@ -35,7 +35,8 @@ same order as the columns in abundance matrix. Alternatively, if
 metadata is provided, this should match the order of samples in metadata.
 Values must be non-missing and non-empty after alignment, and must
 include the selected DAA result's \code{group1} and \code{group2}
-labels.}
+labels. Without metadata, a vector named with sample IDs is aligned
+to abundance columns. Prefer this to an unchecked unnamed vector.}
 
 \item{ko_to_kegg}{Logical value indicating whether to use KO to KEGG 
 conversion. Default is FALSE.}
@@ -97,26 +98,21 @@ daa_results_df <- pathway_daa(
   abundance = kegg_abundance,
   metadata = metadata,
   group = "Environment",
-  daa_method = "ALDEx2"
+  daa_method = "LinDA"
 )
 
-# Filter for specific method
-daa_sub_method_results_df <- daa_results_df[
-  daa_results_df$method == "ALDEx2_Welch's t test", 
-]
-
 # Annotate results
-daa_annotated_sub_method_results_df <- pathway_annotation(
+daa_annotated_results_df <- pathway_annotation(
   pathway = "KO",
-  daa_results_df = daa_sub_method_results_df,
+  daa_results_df = daa_results_df,
   ko_to_kegg = TRUE
 )
 
 # Generate abundance statistics table
 abundance_stats_table <- pathway_errorbar_table(
   abundance = kegg_abundance,
-  daa_results_df = daa_annotated_sub_method_results_df,
-  Group = metadata$Environment,
+  daa_results_df = daa_annotated_results_df,
+  Group = setNames(metadata$Environment, metadata$sample_name),
   ko_to_kegg = TRUE,
   p_values_threshold = 0.05
 )

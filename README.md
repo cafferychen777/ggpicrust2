@@ -386,125 +386,13 @@ results_file_input[[1]]$plot
 results_file_input[[1]]$results
 ```
 
-### If an error occurs with ggpicrust2, please use the following workflow.
+### Stepwise workflow
 
-``` r
-library(readr)
-library(ggpicrust2)
-library(tibble)
-library(tidyverse)
-library(ggprism)
-library(patchwork)
-
-# If you want to analyze KEGG pathway abundance instead of KO within the pathway, turn ko_to_kegg to TRUE.
-# KEGG pathways typically have more explainable descriptions.
-
-# Load metadata as a tibble
-# data(metadata)
-metadata <- read_delim("path/to/your/metadata.txt", delim = "\t", escape_double = FALSE, trim_ws = TRUE)
-
-# Load KEGG pathway abundance
-# data(kegg_abundance)
-kegg_abundance <- ko2kegg_abundance("path/to/your/pred_metagenome_unstrat.tsv")
-
-# Perform pathway differential abundance analysis (DAA) using ALDEx2 method.
-# Please change group to "your_group_column" if you are not using example dataset.
-# From v2.5.14 ALDEx2 results include effect_size, diff_btw, log2_fold_change,
-# rab_all, and overlap columns by default (via ALDEx2::aldex.effect()), matching
-# the other DAA methods that return log2 fold changes by default. Pass
-# include_effect_size = FALSE to skip that step.
-daa_results_df <- pathway_daa(abundance = kegg_abundance, metadata = metadata, group = "Environment", daa_method = "ALDEx2", select = NULL, reference = NULL)
-
-# Filter results for ALDEx2_Wilcoxon rank test method
-# Please check the unique(daa_results_df$method) and choose one
-daa_sub_method_results_df <- daa_results_df[daa_results_df$method == "ALDEx2_Wilcoxon rank test", ]
-
-# Ranking by |log2_fold_change| is generally more biologically informative than
-# ranking by p-value, especially for large datasets where small effects can
-# reach statistical significance without being biologically meaningful.
-top_hits <- daa_sub_method_results_df[order(-abs(daa_sub_method_results_df$log2_fold_change)), ]
-
-# Annotate pathway results using KO to KEGG conversion
-daa_annotated_sub_method_results_df <- pathway_annotation(pathway = "KO", daa_results_df = daa_sub_method_results_df, ko_to_kegg = TRUE)
-
-# Generate pathway error bar plot
-# Please change Group to metadata$your_group_column if you are not using example dataset
-p <- pathway_errorbar(abundance = kegg_abundance, daa_results_df = daa_annotated_sub_method_results_df, Group = metadata$Environment, p_values_threshold = 0.05, order = "pathway_class", select = NULL, ko_to_kegg = TRUE, p_value_bar = TRUE, colors = NULL, x_lab = "pathway_name")
-
-# If you want to analyze EC, MetaCyc, and KO without conversions, turn ko_to_kegg to FALSE.
-
-# Load metadata as a tibble
-# data(metadata)
-metadata <- read_delim("path/to/your/metadata.txt", delim = "\t", escape_double = FALSE, trim_ws = TRUE)
-
-# Load KO abundance as a data.frame
-# data(ko_abundance)
-ko_abundance <- read.delim("path/to/your/pred_metagenome_unstrat.tsv")
-
-# Perform pathway DAA using ALDEx2 method
-# Please change column_to_rownames() to the feature column if you are not using example dataset
-# Please change group to "your_group_column" if you are not using example dataset
-# ALDEx2 effect size columns (effect_size, diff_btw, log2_fold_change, rab_all,
-# overlap) are included by default; see the section above.
-daa_results_df <- pathway_daa(abundance = ko_abundance %>% column_to_rownames("#NAME"), metadata = metadata, group = "Environment", daa_method = "ALDEx2", select = NULL, reference = NULL)
-
-# Filter results for ALDEx2_Wilcoxon rank test method
-daa_sub_method_results_df <- daa_results_df[daa_results_df$method == "ALDEx2_Wilcoxon rank test", ]
-
-# Annotate pathway results without KO to KEGG conversion
-daa_annotated_sub_method_results_df <- pathway_annotation(pathway = "KO", daa_results_df = daa_sub_method_results_df, ko_to_kegg = FALSE)
-
-# Generate pathway error bar plot
-# Please change column_to_rownames() to the feature column
-# Please change Group to metadata$your_group_column if you are not using example dataset
-p <- pathway_errorbar(abundance = ko_abundance %>% column_to_rownames("#NAME"), daa_results_df = daa_annotated_sub_method_results_df, Group = metadata$Environment, p_values_threshold = 0.05, order = "group",
-select = daa_annotated_sub_method_results_df %>% arrange(p_adjust) %>% slice(1:20) %>% dplyr::select(feature) %>% pull(),
-ko_to_kegg = FALSE,
-p_value_bar = TRUE,
-colors = NULL,
-x_lab = "description")
-
-# Workflow for MetaCyc Pathway and EC
-
-# Load MetaCyc pathway abundance and metadata
-data("metacyc_abundance")
-data("metadata")
-
-# Perform pathway DAA using LinDA method
-# Please change column_to_rownames() to the feature column if you are not using example dataset
-# Please change group to "your_group_column" if you are not using example dataset
-metacyc_daa_results_df <- pathway_daa(abundance = metacyc_abundance %>% column_to_rownames("pathway"), metadata = metadata, group = "Environment", daa_method = "LinDA")
-
-# Annotate MetaCyc pathway results without KO to KEGG conversion
-metacyc_daa_annotated_results_df <- pathway_annotation(pathway = "MetaCyc", daa_results_df = metacyc_daa_results_df, ko_to_kegg = FALSE)
-
-# Generate pathway error bar plot
-# Please change column_to_rownames() to the feature column
-# Please change Group to metadata$your_group_column if you are not using example dataset
-pathway_errorbar(abundance = metacyc_abundance %>% column_to_rownames("pathway"), daa_results_df = metacyc_daa_annotated_results_df, Group = metadata$Environment, ko_to_kegg = FALSE, p_values_threshold = 0.05, order = "group", select = NULL, p_value_bar = TRUE, colors = NULL, x_lab = "description")
-
-# Generate pathway heatmap
-# Please change column_to_rownames() to the feature column if you are not using example dataset
-# Please change group to "your_group_column" if you are not using example dataset
-feature_with_p_0.05 <- metacyc_daa_results_df %>% filter(p_adjust < 0.05)
-pathway_heatmap(abundance = metacyc_abundance %>% filter(pathway %in% feature_with_p_0.05$feature) %>% column_to_rownames("pathway"), metadata = metadata, group = "Environment")
-
-# Generate pathway PCA plot
-# Please change column_to_rownames() to the feature column if you are not using example dataset
-# Please change group to "your_group_column" if you are not using example dataset
-pathway_pca(abundance = metacyc_abundance %>% column_to_rownames("pathway"), metadata = metadata, group = "Environment")
-
-# Run pathway DAA for multiple methods
-# Please change column_to_rownames() to the feature column if you are not using example dataset
-# Please change group to "your_group_column" if you are not using example dataset
-methods <- c("ALDEx2", "DESeq2", "edgeR")
-daa_results_list <- lapply(methods, function(method) {
-  pathway_daa(abundance = metacyc_abundance %>% column_to_rownames("pathway"), metadata = metadata, group = "Environment", daa_method = method)
-})
-
-# Compare results across different methods
-comparison_results <- compare_daa_results(daa_results_list = daa_results_list, method_names = c("ALDEx2_Welch's t test", "ALDEx2_Wilcoxon rank test", "DESeq2", "edgeR"))
-```
+See [Using ggpicrust2](vignettes/using_ggpicrust2.Rmd) for the complete
+stepwise workflow using the same LinDA settings as the one-command
+example above. It covers sample-ID alignment, KEGG annotations, ALDEx2
+test selection, and skipping plots when no pathways meet the adjusted
+p-value threshold.
 
 ## Output
 
@@ -677,41 +565,21 @@ metacyc_daa_annotated_results_df <- pathway_annotation(pathway = "MetaCyc", daa_
 
 ### pathway_errorbar()
 
-``` r
-data("ko_abundance")
-data("metadata")
-kegg_abundance <- ko2kegg_abundance(data = ko_abundance) # Or use data(kegg_abundance)
-# Please change group to "your_group_column" if you are not using example dataset
-daa_results_df <- pathway_daa(kegg_abundance, metadata = metadata, group = "Environment", daa_method = "LinDA")
-daa_annotated_results_df <- pathway_annotation(pathway = "KO", daa_results_df = daa_results_df, ko_to_kegg = TRUE)
-# Please change Group to metadata$your_group_column if you are not using example dataset
-p <- pathway_errorbar(abundance = kegg_abundance,
-           daa_results_df = daa_annotated_results_df,
-           Group = metadata$Environment,
-           ko_to_kegg = TRUE,
-           p_values_threshold = 0.05,
-           order = "pathway_class",
-           select = NULL,
-           p_value_bar = TRUE,
-           colors = NULL,
-           x_lab = "pathway_name")
+Use the [stepwise tutorial](vignettes/using_ggpicrust2.Rmd) for the
+complete analysis. Unlike `group = "Environment"` in the analysis
+functions, `Group` must contain one label per sample. Use a named vector
+so labels follow sample IDs even when metadata rows are in a different
+order:
 
-# If you want to analysis the EC. MetaCyc. KO without conversions.
-data("metacyc_abundance")
-data("metadata")
-metacyc_daa_results_df <- pathway_daa(abundance = metacyc_abundance %>% column_to_rownames("pathway"), metadata = metadata, group = "Environment", daa_method = "LinDA")
-metacyc_daa_annotated_results_df <- pathway_annotation(pathway = "MetaCyc", daa_results_df = metacyc_daa_results_df, ko_to_kegg = FALSE)
-p <- pathway_errorbar(abundance = metacyc_abundance %>% column_to_rownames("pathway"),
-           daa_results_df = metacyc_daa_annotated_results_df,
-           Group = metadata$Environment,
-           ko_to_kegg = FALSE,
-           p_values_threshold = 0.05,
-           order = "group",
-           select = NULL,
-           p_value_bar = TRUE,
-           colors = NULL,
-           x_lab = "description")
+``` r
+sample_groups <- setNames(metadata$Environment, metadata$sample_name)
 ```
+
+Pass `Group = sample_groups` to `pathway_errorbar()`. For KEGG pathway
+abundance, also set `ko_to_kegg = TRUE` and `x_lab = "pathway_name"`.
+For unconverted KO, EC, or MetaCyc features, use `ko_to_kegg = FALSE`
+and `x_lab = "description"`. Select one DAA method/group pair before
+plotting. See `?pathway_errorbar` for complete parameter documentation.
 
 ### pathway_heatmap()
 
@@ -832,18 +700,12 @@ colnames(metagenome2) <- paste0("sample", 1:10)
 metagenomes <- list(metagenome1, metagenome2)
 # Define names
 names <- c("metagenome1", "metagenome2")
-# Compare the same biological samples with paired inference
-results <- compare_metagenome_results(
-  metagenomes,
-  names,
-  daa_method = "paired Wilcoxon",
-  correlation_permutations = 999
-)
+# Call the function
+results <- compare_metagenome_results(metagenomes, names)
 # Print the correlation matrix
 print(results$correlation$cor_matrix)
-# Print raw and multiplicity-adjusted permutation p-values
+# Print the p-value matrix
 print(results$correlation$p_matrix)
-print(results$correlation$p_adjust_matrix)
 ```
 
 ### taxa contribution workflow
@@ -865,24 +727,16 @@ contrib_data <- read_contrib_file("pred_metagenome_contrib.tsv")
 # PICRUSt2 pathway contribution files are often gzipped and use MetaCyc IDs.
 path_contrib_data <- read_pathway_contrib_file("path_abun_contrib.tsv.gz")
 
-# Optional: use pathway-level DAA results to keep only significant pathways
-data("kegg_abundance")
-data("metadata")
-
-daa_results <- pathway_daa(
-  abundance = kegg_abundance,
-  metadata = metadata,
-  group = "Environment",
-  daa_method = "ALDEx2"
-)
+# Use metadata from the same samples as your contribution files.
+# Optional DAA filtering requires results with matching function identifiers.
+# KO contribution rows cannot be filtered by KEGG pathway DAA identifiers.
 
 # Aggregate contributions to genus level and keep top taxa
 taxa_contrib <- aggregate_taxa_contributions(
   contrib_data = contrib_data,
   taxonomy = your_taxonomy_table,
   tax_level = "Genus",
-  top_n = 10,
-  daa_results_df = daa_results
+  top_n = 10
 )
 
 # Visualize per-sample contributions
@@ -1074,7 +928,7 @@ daa_results <- pathway_daa(
   abundance = kegg_pathway_abundance,
   metadata = metadata,
   group = "Environment",
-  daa_method = "ALDEx2"
+  daa_method = "LinDA"
 )
 
 # Compare GSEA and DAA results
@@ -1124,34 +978,22 @@ head(annotated_results)
 
 ## FAQ
 
-### Issue 1: pathway_errorbar error
+### Issue 1: Group length mismatch or incorrect group summaries
 
-When using `pathway_errorbar` with the following parameters:
+`Group = "Environment"` passes a single string, not the samples’ group
+labels. Use
+`Group = setNames(metadata$Environment, metadata$sample_name)` and
+replace those column names for your data. The sample names must cover
+all abundance columns. An unnamed vector is interpreted in
+abundance-column order; simply using `metadata$Environment` can silently
+mislabel samples when the two tables have different orders, including in
+the bundled example data.
 
-``` r
-pathway_errorbar(abundance = abundance,
-                 daa_results_df = daa_results_df,
-                 Group = metadata$Environment,
-                 ko_to_kegg = TRUE,
-                 p_values_threshold = 0.05,
-                 order = "pathway_class",
-                 select = NULL,
-                 p_value_bar = TRUE,
-                 colors = NULL,
-                 x_lab = "pathway_name")
-```
-
-You may encounter an error:
-
-    Error in `ggplot_add()`:
-    ! Can't add `e2` to a <ggplot> object.
-    Run `rlang::last_trace()` to see where the error occurred.
-
-Make sure you have the `patchwork` package loaded:
-
-``` r
-library(patchwork)
-```
+The [stepwise tutorial](vignettes/using_ggpicrust2.Rmd) shows the
+complete workflow and checks. For errors constructing a plot, include
+`sessionInfo()` and the full error in an issue; loading additional
+plotting libraries does not resolve a group-length or sample-alignment
+error.
 
 ### Issue 2: guide_train.prism_offset_minor error
 
@@ -1192,103 +1034,40 @@ When encountering the following error:
 
     Error in grid.Call(C_textBounds, as.graphicsAnnot(xlabel),x$x, x$y, :
 
-Install the fonts required by the selected plotting theme, restart the R
-graphics device, and rerun the plot.
+Please having some required fonts installed. You can refer to this
+[thread](https://stackoverflow.com/questions/71362738/r-error-in-grid-callc-textbounds-as-graphicsannotxlabel-xx-xy-polygo).
 
-### Issue 6: Visualization becomes cluttered when there are more than 30 features of statistical significance.
+### Issue 6: More than 30 significant features clutter the plot
 
-When faced with this issue, consider the following solutions:
+Use `select` to display a subset of significant feature IDs, or increase
+`max_features` deliberately. For the objects created by the stepwise
+tutorial:
 
-**Solution 1: Utilize the ‘select’ parameter**
+``` r
+significant_results <- annotated_daa[
+  !is.na(annotated_daa$p_adjust) & annotated_daa$p_adjust < alpha, , drop = FALSE
+]
+top_features <- head(
+  significant_results$feature[order(significant_results$p_adjust)], 20
+)
+if (length(top_features) > 0) {
+  pathway_errorbar(
+    abundance = kegg_pathway_abundance,
+    daa_results_df = annotated_daa,
+    Group = sample_groups,
+    select = top_features,
+    ko_to_kegg = TRUE,
+    p_values_threshold = alpha,
+    x_lab = "pathway_name"
+  )
+}
+```
 
-The ‘select’ parameter allows you to specify which features you wish to
-visualize. Here’s an example of how you can apply this in your code:
+This only limits the display; it does not rerun testing, round p-values,
+or change the significance threshold. `head()` also works when fewer
+than 20 pathways are significant.
 
-    ggpicrust2::pathway_errorbar(
-      abundance = kegg_abundance,
-      daa_results_df = daa_results_df_annotated,
-      Group = metadata$Day,
-      p_values_threshold = 0.05,
-      order = "pathway_class",
-      select = c("ko05340", "ko00564", "ko00680", "ko00562", "ko03030", "ko00561", "ko00440", "ko00250", "ko00740", "ko04940", "ko00010", "ko00195", "ko00760", "ko00920", "ko00311", "ko00310", "ko04146", "ko00600", "ko04141", "ko04142", "ko00604", "ko04260", "ko00909", "ko04973", "ko00510", "ko04974"),
-      ko_to_kegg = TRUE,
-      p_value_bar = FALSE,
-      colors = NULL,
-      x_lab = "pathway_name"
-    )
-
-**Solution 2: Limit to the Top 20 features**
-
-If there are too many significant features to visualize effectively, you
-might consider limiting your visualization to the top 20 features with
-the smallest adjusted p-values:
-
-    daa_results_df_annotated <- daa_results_df_annotated[!is.na(daa_results_df_annotated$pathway_name),]
-
-    daa_results_df_annotated$p_adjust <- round(daa_results_df_annotated$p_adjust,5)
-
-    low_p_feature <- daa_results_df_annotated[order(daa_results_df_annotated$p_adjust), ]$feature[1:20]
-
-
-    p <- ggpicrust2::pathway_errorbar(
-      abundance = kegg_abundance,
-      daa_results_df = daa_results_df_annotated,
-      Group = metadata$Day,
-      p_values_threshold = 0.05,
-      order = "pathway_class",
-      select = low_p_feature,
-      ko_to_kegg = TRUE,
-      p_value_bar = FALSE,
-      colors = NULL,
-      x_lab = "pathway_name")
-
-### Issue 7: There are no statistically significant biomarkers
-
-If you are not finding any statistically significant biomarkers in your
-analysis, there could be several reasons for this:
-
-1.  **The true difference between your groups is small or
-    non-existent.** If the microbial communities or pathways you’re
-    comparing are truly similar, then it’s correct and expected that you
-    won’t find significant differences.
-
-2.  **Your sample size might be too small to detect the differences.**
-    Statistical power, the ability to detect differences if they exist,
-    increases with sample size.
-
-3.  **The variation within your groups might be too large.** If there’s
-    a lot of variation in microbial communities within a single group,
-    it can be hard to detect differences between groups.
-
-Here are a few suggestions:
-
-1.  **Increase your sample size**: If possible, adding more samples to
-    your analysis can increase your statistical power, making it easier
-    to detect significant differences.
-
-2.  **Decrease intra-group variation**: If there’s a lot of variation
-    within your groups, consider whether there are outliers or subgroups
-    that are driving this variation. You might need to clean your data,
-    or to stratify your analysis to account for these subgroups.
-
-3.  **Change your statistical method or adjust parameters**: Depending
-    on the nature of your data and your specific question, different
-    statistical methods might be more or less powerful. If you’re
-    currently using a parametric test, consider using a non-parametric
-    test, or vice versa. Also, consider whether adjusting the parameters
-    of your current test might help.
-
-Remember, not finding significant results is also a result and can be
-informative, as it might indicate that there are no substantial
-differences between the groups you’re studying. It’s important to
-interpret your results in the context of your specific study and not to
-force statistical significance where there isn’t any.
-
-With these strategies, you should be able to create a more readable and
-informative visualization, even when dealing with a large number of
-significant features.
-
-## Author’s Other Projects
+### Author’s Other Projects
 
 1.  [MicrobiomeStat](https://www.microbiomestat.wiki/): The
     MicrobiomeStat package is a dedicated R tool for exploring

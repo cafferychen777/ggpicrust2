@@ -1,3 +1,19 @@
+# ggpicrust2 (development version)
+
+## Documentation and diagnostics
+
+* Fixed the stepwise tutorial's `pathway_errorbar()` call (#207): supply
+  group labels named by sample ID, set KEGG pathway annotation parameters,
+  and skip significance plots when no pathways pass the threshold. Both
+  main workflows now use LinDA; the ALDEx2 alternative selects one test.
+* Consolidated duplicated README workflows into the main vignette, corrected
+  unsafe group-vector examples in plotting/table help, and removed FAQ code
+  that rounded p-values or indexed past the available significant features.
+* Corrected the GSEA tutorial's KO-versus-pathway comparison and clarified
+  identifier matching for optional taxa-contribution filtering.
+* Group-length errors now report the label/sample counts and explain how to
+  supply sample-ID-named labels instead of a metadata column name.
+
 # ggpicrust2 2.5.18
 
 ## Bug Fixes

@@ -28,24 +28,33 @@ knitr::opts_chunk$set(
 
 This vignette focuses on the general package workflow. For a deeper GSEA walkthrough, see the dedicated `gsea_analysis` vignette.
 
-## Installation
+## Installation and example data
+
+Install the package and the optional backends used by this tutorial:
 
 ```{r installation, eval = FALSE}
-# install.packages("devtools")
-devtools::install_github("cafferychen777/ggpicrust2")
+install.packages(c("ggpicrust2", "MicrobiomeStat", "BiocManager"))
+BiocManager::install(c("KEGGREST", "limma"))
+```
 
+```{r example-data, eval = FALSE}
 library(ggpicrust2)
 library(tibble)
+data("ko_abundance")
+data("metadata")
+alpha <- 0.05
 ```
+
+Both workflows below use the same data, LinDA method, and adjusted p-value
+threshold. LinDA accepts the continuous abundance estimates produced by
+`ko2kegg_abundance()`; count-based methods such as ALDEx2 require integer
+input and the package rounds non-integer input with a warning. Choose the
+method for its assumptions and your study design, not to obtain significance.
+KEGG pathway annotation requires internet access and `KEGGREST`.
 
 ## One-command workflow
 
-If you want a fast end-to-end run from abundance data to annotated differential abundance output, start with `ggpicrust2()`:
-
 ```{r one-command, eval = FALSE}
-data("ko_abundance")
-data("metadata")
-
 results <- ggpicrust2(
   data = ko_abundance,
   metadata = metadata,
@@ -55,23 +64,47 @@ results <- ggpicrust2(
   ko_to_kegg = TRUE,
   order = "pathway_class",
   p_values_bar = TRUE,
+  p_values_threshold = alpha,
   x_lab = "pathway_name"
 )
 
-# Access the main outputs
+# A method's plot is NULL when no pathways can be plotted.
 results[[1]]$plot
 head(results[[1]]$results)
 ```
 
-Use this route when you want a fast default analysis. Use the stepwise workflow below when you need more control over data preparation or visualization.
-
 ## Stepwise pathway workflow
+
+Run the installation and example-data setup above first. This workflow uses
+the same analysis settings as the one-command workflow.
 
 ### Convert KO abundance to KEGG pathway abundance
 
 ```{r ko-to-kegg, eval = FALSE}
 kegg_pathway_abundance <- ko2kegg_abundance(data = ko_abundance)
 head(kegg_pathway_abundance[, 1:3])
+```
+
+### Match group labels to sample identifiers
+
+`pathway_daa()`, `pathway_heatmap()`, and `pathway_pca()` accept `metadata`
+and a column name, such as `group = "Environment"`. In contrast,
+`pathway_errorbar()` has no metadata argument: its capitalized `Group`
+parameter requires one group label per abundance column, not a column name.
+
+The bundled metadata and abundance table have different sample orders.
+Name the group vector with sample IDs so that plotting aligns labels to the
+correct samples. For your own data, replace `sample_name` and `Environment`
+with your sample-ID and grouping columns. Do not pass an unnamed metadata
+column unless you have already verified its order against the abundance columns.
+
+```{r sample-groups, eval = FALSE}
+stopifnot(
+  !anyNA(metadata$sample_name),
+  !anyDuplicated(metadata$sample_name),
+  setequal(colnames(kegg_pathway_abundance), metadata$sample_name)
+)
+sample_groups <- setNames(metadata$Environment, metadata$sample_name)
 ```
 
 ### Run differential abundance analysis
@@ -81,7 +114,7 @@ daa_results <- pathway_daa(
   abundance = kegg_pathway_abundance,
   metadata = metadata,
   group = "Environment",
-  daa_method = "ALDEx2"
+  daa_method = "LinDA"
 )
 
 head(daa_results)
@@ -93,7 +126,8 @@ head(daa_results)
 annotated_daa <- pathway_annotation(
   pathway = "KO",
   daa_results_df = daa_results,
-  ko_to_kegg = TRUE
+  ko_to_kegg = TRUE,
+  p_adjust_threshold = alpha
 )
 
 head(annotated_daa)
@@ -101,17 +135,38 @@ head(annotated_daa)
 
 ### Visualize pathway-level results
 
+`ko_to_kegg = TRUE` is required here too: the rows are KEGG pathways and
+use `pathway_name` annotations. This flag does not reconvert the abundance
+matrix in the plotting function.
+
 ```{r errorbar, eval = FALSE}
-pathway_errorbar(
-  abundance = kegg_pathway_abundance,
-  daa_results_df = annotated_daa,
-  Group = "Environment"
-)
+sig_pathways <- unique(annotated_daa$feature[
+  !is.na(annotated_daa$p_adjust) & annotated_daa$p_adjust < alpha
+])
+
+p <- NULL
+if (length(sig_pathways) > 0) {
+  p <- pathway_errorbar(
+    abundance = kegg_pathway_abundance,
+    daa_results_df = annotated_daa,
+    Group = sample_groups,
+    ko_to_kegg = TRUE,
+    p_values_threshold = alpha,
+    order = "pathway_class",
+    x_lab = "pathway_name"
+  )
+} else {
+  message("No pathways pass the adjusted p-value threshold; skipping the error bar plot.")
+}
+p
 ```
 
-```{r heatmap-pca, eval = FALSE}
-sig_pathways <- annotated_daa$feature[annotated_daa$p_adjust < 0.05]
+No significant pathways is a valid analysis outcome. Keep the results table;
+do not increase the threshold or change methods just to produce a plot.
+Missing KEGG annotations can also prevent plotting even when significant
+results exist; check the annotation warnings separately.
 
+```{r heatmap-pca, eval = FALSE}
 if (length(sig_pathways) > 0) {
   pathway_heatmap(
     abundance = kegg_pathway_abundance[sig_pathways, , drop = FALSE],
@@ -126,6 +181,34 @@ pathway_pca(
   group = "Environment"
 )
 ```
+
+### Using ALDEx2 instead
+
+ALDEx2 is an optional Bioconductor dependency. For two groups it returns
+both Welch and Wilcoxon results, so select one test before annotation and
+plotting. Otherwise a pathway can occur twice with different p-values.
+Specify the test in advance. ALDEx2 uses Monte Carlo sampling, so set a seed
+for reproducibility; results can still differ across package versions.
+
+```{r aldex2-alternative, eval = FALSE}
+# Install once with BiocManager::install("ALDEx2").
+set.seed(207)
+aldex_results <- pathway_daa(
+  abundance = kegg_pathway_abundance,
+  metadata = metadata,
+  group = "Environment",
+  daa_method = "ALDEx2"
+)
+daa_results <- aldex_results[
+  aldex_results$method == "ALDEx2_Welch's t test", , drop = FALSE
+]
+```
+
+Then rerun the annotation and visualization steps with this `daa_results`.
+For more than two groups or multiple contrasts, inspect `method`, `group1`,
+and `group2` and select the supported test/contrast explicitly. An ALDEx2
+run can have no adjusted p-values below 0.05 even when LinDA finds some;
+these are different statistical procedures, not equivalent plotting modes.
 
 ## Taxa contribution workflow
 
@@ -151,8 +234,7 @@ taxa_contrib <- aggregate_taxa_contributions(
   contrib_data = contrib_data,
   taxonomy = your_taxonomy_table,
   tax_level = "Genus",
-  top_n = 10,
-  daa_results_df = daa_results
+  top_n = 10
 )
 
 head(taxa_contrib)
@@ -164,7 +246,11 @@ head(taxa_contrib)
 - pathway-level contribution data from `read_pathway_contrib_file()`
 - stratified abundance data from `read_strat_file()`
 
-Use `daa_results_df` or `pathway_ids` when you want to focus only on pathways that were significant in your pathway-level analysis.
+Optional `daa_results_df` or `pathway_ids` filtering requires matching
+identifiers and samples. KO-level contribution rows use KO IDs and must not
+be filtered with the KEGG pathway-level `daa_results` above; that conversion
+does not also convert the contribution file. For MetaCyc contributions, use
+DAA results for those same MetaCyc pathways.
 
 When you already have pathway-level contribution data and do not want to run differential abundance analysis, omit `daa_results_df` and aggregate directly. For PICRUSt2 pathway contribution output, use matching MetaCyc annotations rather than KEGG pathway annotations.
 
