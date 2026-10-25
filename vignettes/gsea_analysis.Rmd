@@ -44,26 +44,34 @@ Choose the hypothesis and input scale before comparing p-values.
 
 | Method | Null hypothesis / input | Covariates | Score |
 |--------|-------------------------|------------|-------|
-| `camera` (default) | Competitive gene-set test on a voom fit | Yes | Signed -log10(raw p-value) |
-| `fry` | Self-contained gene-set test on a voom fit | Yes | Signed -log10(raw p-value) |
+| `fry` (default) | Self-contained gene-set test on log-CPM abundance | Yes | Signed -log10(raw p-value) |
+| `camera` | Competitive gene-set test on log-CPM abundance | Yes | Signed -log10(raw p-value) |
 | `fgsea` | Preranked gene-set enrichment | No | Normalized enrichment score (NES) |
 | `clusterProfiler` | Preranked GSEA implementation | No | NES |
 
-By default, camera/fry run `limma::voom()` on non-negative,
-count-like input. Do not pass log-transformed or relative abundances as if they
-were counts. The default camera correlation setting is `inter.gene.cor = 0.01`;
-it is a supplied correlation adjustment, not an estimate for every set.
-When features in a set are strongly correlated, fixing their correlation at
-0.01 can underestimate the variance and produce anti-conservative p-values.
-The camera examples below therefore explicitly estimate within-set correlation
-with `inter.gene.cor = NA_real_`. This addresses that modeling assumption;
-it does not establish calibration for every predicted functional profile.
-For predicted or relative abundances, the explicit option
-`transformation = "logCPM"` instead uses
+Since version 2.6.0, `fry` is the default method. It asks whether the KOs in
+a set change in a consistent direction between groups. `camera` asks whether a
+set changes more than the other KOs. In a predicted metagenome, a shift in a
+dominant taxon moves many KOs together, so a competitive test rarely singles out
+a set even when its members change. Choose camera when relative enrichment is
+the question.
+
+By default (since version 2.6.0), camera/fry analyze
 `log2(1e6 * abundance / column_total + 0.5)` with abundance-trend variance
-moderation and no voom observation weights. It is invariant to positive
-per-sample rescaling, but retains compositional effects and does not account
-for upstream prediction uncertainty. The default remains `"voom"`.
+moderation, and camera estimates the inter-gene correlation separately for each
+set (`inter.gene.cor = NA`). Both choices follow from how PICRUSt2 builds its
+output. Each predicted KO abundance is a sum of taxon abundances multiplied by
+reference-genome copy numbers, so the table has no read-count units, and KOs
+carried by the same genomes move together. The log-CPM model gives the same
+result when a table is multiplied by a constant, and the estimated correlation
+prevents camera from treating correlated members of a set as independent
+evidence. Neither choice removes the uncertainty of the upstream prediction.
+
+The defaults before 2.6.0 remain available explicitly:
+`transformation = "voom"` for genuine read counts, and a fixed
+`inter.gene.cor` such as 0.01 when a small correlation is justified for the
+data. A fixed small correlation underestimates the variance of strongly
+correlated sets and makes camera anti-conservative.
 An optional named list, `gene_sets`, replaces the bundled reference sets;
 its member IDs must match the input feature IDs, and the same size filters
 and multiple-testing adjustment apply.
@@ -100,7 +108,6 @@ gsea_results <- pathway_gsea(
   group = "Environment",
   pathway_type = "KEGG",
   method = "camera",
-  inter.gene.cor = NA_real_,
   min_size = 5,
   max_size = 500,
   p_adjust_method = "BH"
@@ -121,12 +128,14 @@ sum(gsea_results$p.adjust < 0.05, na.rm = TRUE)
 unique(gsea_results[, c("method", "score_type", "score_label")])
 ```
 
-The KEGG reference contains shared KOs assigned to disease and eukaryotic
-pathway maps as well as microbial pathways. GSEA retains these maps, whereas
-`ko2kegg_abundance()` applies its prokaryote category filter by default.
-A disease name among the top results is therefore a label for a tested KO set,
-not evidence that the microbiome carries out a host disease pathway. Inspect
-its member KOs and coverage before giving it a biological interpretation.
+The KEGG reference also assigns bacterial KOs to host disease and other
+eukaryotic pathway maps. Since version 2.6.0, KEGG gene sets apply the same
+prokaryote filter as `ko2kegg_abundance()` by default, so GSEA and pathway DAA
+test the same maps: those that KEGG draws for prokaryotic genomes, without
+Organismal Systems and Human Diseases maps other than bacterial infection and
+antimicrobial resistance. With `filter_for_prokaryotes = FALSE`, a disease name among
+the top results is a label for a tested KO set, not evidence that the
+microbiome carries out a host disease pathway.
 
 ## Covariate Adjustment
 
@@ -141,15 +150,35 @@ gsea_results_adjusted <- pathway_gsea(
   group = "Environment",
   covariates = "Mouse_Sex",
   pathway_type = "KEGG",
-  method = "camera",
-  inter.gene.cor = NA_real_
+  method = "fry"
 )
 
 # The results now reflect the group effect after adjusting for confounders
 head(gsea_results_adjusted)
 ```
 
-## Fast Analysis with fry
+Sequencing depth can act as a confounder too. When one group was sequenced
+more deeply than the other and some samples have few reads, zeros and low
+counts fall unevenly between the groups, and fry on logCPM can report pathways
+that do not change. Supply the read depth of the amplicon data through
+`sequencing_depth`; its centered log is added to the design. Use the column
+sums of the ASV table given to PICRUSt2, not the column sums of the predicted
+table, which depend on community composition.
+
+```{r depth-gsea, eval=FALSE}
+# asv_counts: the ASV-by-sample count table used as PICRUSt2 input
+depth <- colSums(asv_counts)
+
+gsea_results_depth <- pathway_gsea(
+  abundance = abundance_data,
+  metadata = metadata,
+  group = "Environment",
+  covariates = "Mouse_Sex",
+  sequencing_depth = depth
+)
+```
+
+## Self-contained analysis with fry (default)
 
 Use `fry` for the self-contained null that genes in the set have no group effect.
 It does not test camera's competitive null, so discovery counts can differ
@@ -298,7 +327,7 @@ enrichment_plot
 ### Ridge Plot
 
 A ridge plot shows the distribution of member-KO group-mean abundance ratios.
-It does not reproduce covariate-adjusted model coefficients, voom-weighted
+It does not reproduce covariate-adjusted model coefficients, model-based
 effects, or a gene-set significance test. A pathway can contain KO ratios of
 both signs even when its test has one enrichment direction.
 

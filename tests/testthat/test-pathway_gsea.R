@@ -214,7 +214,8 @@ test_that("run_limma_gsea stops when voom fails", {
       gene_sets = list(set1 = rownames(test_data$abundance)[1:3]),
       method = "camera",
       min_size = 2,
-      max_size = 10
+      max_size = 10,
+      transformation = "voom"
     ),
     paste0(
       "limma::voom\\(\\) failed, so camera gene-set testing was not run.*",
@@ -1141,4 +1142,21 @@ test_that("prepare_gene_sets warns when `organism` is set to a non-default value
   )
   go_default <- suppressWarnings(prepare_gene_sets("GO", organism = "ko"))
   expect_identical(go_hsa, go_default)
+})
+
+test_that("KEGG gene sets apply the same prokaryote filter as ko2kegg_abundance", {
+  filtered <- prepare_gene_sets("KEGG")
+  unfiltered <- prepare_gene_sets("KEGG", filter_for_prokaryotes = FALSE)
+  expect_false("ko05016" %in% names(filtered))
+  expect_true("ko05016" %in% names(unfiltered))
+  expect_true(all(names(filtered) %in% names(unfiltered)))
+
+  ref <- load_reference_data("ko_to_kegg")
+  kept <- filter_kegg_reference_for_prokaryotes(filter_kegg_reference_to_pathways(ref))
+  expect_setequal(names(filtered), unique(kept$pathway_id))
+
+  x <- matrix(1, 10, 4, dimnames = list(sprintf("K%05d", 1:10), paste0("s", 1:4)))
+  metadata <- data.frame(sample = colnames(x), group = rep(c("A", "B"), each = 2))
+  expect_error(pathway_gsea(x, metadata, "group", gene_sets = list(a = rownames(x)),
+                            filter_for_prokaryotes = FALSE), "cannot be combined")
 })

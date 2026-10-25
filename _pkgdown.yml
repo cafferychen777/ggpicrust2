@@ -42,6 +42,7 @@ reference:
       - read_pathway_contrib_file
       - read_strat_file
       - aggregate_taxa_contributions
+      - compare_taxa_contributions
       - taxa_contribution_bar
       - taxa_contribution_heatmap
 

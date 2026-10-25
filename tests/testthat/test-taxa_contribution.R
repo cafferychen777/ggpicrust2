@@ -393,6 +393,25 @@ test_that("aggregate_taxa_contributions with DADA2 taxonomy uses genus labels", 
                     c("Lactobacillus", "Escherichia", "Roseburia", "Bacteroides")))
 })
 
+test_that("aggregate_taxa_contributions treats placeholder labels as Unclassified", {
+  td <- create_contrib_test_data()
+  contrib <- read_contrib_file(data = td$contrib_raw)
+  taxonomy <- td$taxonomy_dada2
+  taxonomy$Genus[1] <- "Unassigned"
+  taxonomy$Genus[2] <- " unclassified "
+  agg <- aggregate_taxa_contributions(
+    contrib,
+    taxonomy = taxonomy,
+    tax_level = "Genus",
+    top_n = 10
+  )
+
+  expect_false(any(tolower(trimws(agg$taxon_label)) %in%
+                     c("unassigned", "unclassified") &
+                     agg$taxon_label != "Unclassified"))
+  expect_true("Unclassified" %in% agg$taxon_label)
+})
+
 test_that("aggregate_taxa_contributions uses taxonomy row names as taxon IDs", {
   td <- create_contrib_test_data()
   contrib <- read_contrib_file(data = td$contrib_raw)

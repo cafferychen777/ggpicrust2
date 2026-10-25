@@ -11,12 +11,12 @@ run_limma_gsea(
   covariates = NULL,
   contrast = NULL,
   gene_sets,
-  method = "camera",
-  inter.gene.cor = 0.01,
+  method = "fry",
+  inter.gene.cor = NA_real_,
   min_size = 5,
   max_size = 500,
   p.adjust.method = "BH",
-  transformation = c("voom", "logCPM")
+  transformation = c("logCPM", "voom")
 )
 }
 \arguments{
@@ -33,9 +33,10 @@ run_limma_gsea(
 
 \item{gene_sets}{A named list of gene sets (pathway -> gene IDs)}
 
-\item{method}{Either "camera" or "fry"}
+\item{method}{Either "fry" (default) or "camera"}
 
-\item{inter.gene.cor}{Inter-gene correlation for camera (default 0.01)}
+\item{inter.gene.cor}{Inter-gene correlation for camera; \code{NA} (the
+default) estimates it for each set.}
 
 \item{min_size}{Minimum gene set size}
 

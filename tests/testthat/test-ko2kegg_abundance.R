@@ -271,6 +271,20 @@ test_that("prokaryote filter removes eukaryotic pathways and keeps microbial dis
   ))
   expect_true(any(grepl("^09171\\b", filtered_reference$level2)))
   expect_true(any(grepl("^09175\\b", filtered_reference$level2)))
+
+  # Eukaryotic maps outside 09150/09160 that KEGG never draws for prokaryotes
+  eukaryotic <- c("ko04150", "ko04310", "ko04010", "ko04114", "ko04217",
+                  "ko04510", "ko04075", "ko00941", "ko03040")
+  expect_false(any(eukaryotic %in% filtered_reference$pathway_id))
+  # Core prokaryotic maps, including lineage-specific ones
+  prokaryotic <- c("ko02010", "ko02020", "ko02024", "ko02030", "ko02040",
+                   "ko02060", "ko03070", "ko02025", "ko02026", "ko05111",
+                   "ko04112", "ko00290", "ko01501", "ko01502", "ko01503",
+                   "ko05130", "ko05131", "ko05132", "ko05152")
+  expect_true(all(prokaryotic %in% filtered_reference$pathway_id))
+  expect_true(all(filtered_reference$pathway_id %in%
+                    ggpicrust2:::kegg_prokaryotic_maps$pathway_id))
+  expect_length(unique(filtered_reference$pathway_id), 193)
 })
 
 test_that("ko2kegg_abundance applies pathway and prokaryote filters to output pathways", {

@@ -305,14 +305,14 @@ explains the input assumptions:
 
 - `camera` tests a competitive null with an inter-gene correlation
   adjustment.
-- `fry` tests a self-contained null; it is not an interchangeable faster
+- `fry` (the default since 2.6.0) tests a self-contained null; it is not an interchangeable faster
   camera.
 - `fgsea` and `clusterProfiler` use a ranked feature list and a
   different null.
 
-The camera/fry implementation uses voom on count-like abundance. A
-successful fit is not evidence that its uncertainty model is calibrated
-for every kind of predicted, normalized, or relative abundance.
+Since version 2.6.0, camera/fry analyze log-CPM abundance by default and
+camera estimates the inter-gene correlation of each set. Use
+`transformation = "voom"` only for genuine read counts.
 
 ### visualize_gsea()
 

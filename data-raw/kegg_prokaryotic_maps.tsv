@@ -1,0 +1,505 @@
+pathway_id	pathway_name	level1	level2	in_bundled_release117	in_current_rest	category_filter_keep	n_sampled_prokaryotes	frac_stratified_567	n_order_first_332	n_order_random_332	n_gut_62	n_anchor_15	n_archaea_71	eukaryote_controls	frac_map_KOs_in_picrust2_ref	kegg_draws_for_prokaryotes	default_filter_keep
+ko00010	Glycolysis / Gluconeogenesis	09100 Metabolism	09101 Carbohydrate metabolism	TRUE	TRUE	TRUE	572	0.9947	329	329	62	15	70	hsa,mmu,dme,cel,sce,ath	0.817	TRUE	TRUE
+ko00020	Citrate cycle (TCA cycle)	09100 Metabolism	09101 Carbohydrate metabolism	TRUE	TRUE	TRUE	555	0.9647	320	318	62	15	69	hsa,mmu,dme,cel,sce,ath	0.831	TRUE	TRUE
+ko00030	Pentose phosphate pathway	09100 Metabolism	09101 Carbohydrate metabolism	TRUE	TRUE	TRUE	567	0.9859	325	326	62	15	69	hsa,mmu,dme,cel,sce,ath	0.857	TRUE	TRUE
+ko00040	Pentose and glucuronate interconversions	09100 Metabolism	09101 Carbohydrate metabolism	TRUE	TRUE	TRUE	509	0.8854	289	285	59	14	44	hsa,mmu,dme,cel,sce,ath	0.646	TRUE	TRUE
+ko00051	Fructose and mannose metabolism	09100 Metabolism	09101 Carbohydrate metabolism	TRUE	TRUE	TRUE	564	0.9806	323	322	62	15	66	hsa,mmu,dme,cel,sce,ath	0.817	TRUE	TRUE
+ko00052	Galactose metabolism	09100 Metabolism	09101 Carbohydrate metabolism	TRUE	TRUE	TRUE	543	0.9436	315	308	61	15	66	hsa,mmu,dme,cel,sce,ath	0.765	TRUE	TRUE
+ko00053	Ascorbate and aldarate metabolism	09100 Metabolism	09101 Carbohydrate metabolism	TRUE	TRUE	TRUE	386	0.6684	222	226	38	13	11	hsa,mmu,dme,cel,sce,ath	0.73	TRUE	TRUE
+ko00061	Fatty acid biosynthesis	09100 Metabolism	09103 Lipid metabolism	TRUE	TRUE	TRUE	527	0.9153	300	302	61	15	50	hsa,mmu,dme,cel,sce,ath	0.929	TRUE	TRUE
+ko00062	Fatty acid elongation	09100 Metabolism	09103 Lipid metabolism	TRUE	TRUE	TRUE	2	0.0035	2	1	1	0	0	hsa,mmu,dme,cel,sce,ath	0.48	TRUE	TRUE
+ko00071	Fatty acid degradation	09100 Metabolism	09103 Lipid metabolism	TRUE	TRUE	TRUE	461	0.7989	267	270	46	15	64	hsa,mmu,dme,cel,sce,ath	0.717	TRUE	TRUE
+ko00073	Cutin, suberine and wax biosynthesis	09100 Metabolism	09103 Lipid metabolism	TRUE	TRUE	TRUE	25	0.0441	16	18	0	1	0	ath	0.15	TRUE	TRUE
+ko00074	Mycolic acid biosynthesis	09100 Metabolism	09103 Lipid metabolism	TRUE	TRUE	TRUE	344	0.5944	203	199	34	14	0		0.444	TRUE	TRUE
+ko00100	Steroid biosynthesis	09100 Metabolism	09103 Lipid metabolism	TRUE	TRUE	TRUE	74	0.1305	46	48	1	1	3	hsa,mmu,dme,cel,sce,ath	0.618	TRUE	TRUE
+ko00120	Primary bile acid biosynthesis	09100 Metabolism	09103 Lipid metabolism	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	hsa,mmu	0.444	FALSE	FALSE
+ko00121	Secondary bile acid biosynthesis	09100 Metabolism	09103 Lipid metabolism	TRUE	TRUE	TRUE	50	0.0847	18	23	19	5	0		0.667	TRUE	TRUE
+ko00130	Ubiquinone and other terpenoid-quinone biosynthesis	09100 Metabolism	09108 Metabolism of cofactors and vitamins	TRUE	TRUE	TRUE	456	0.7901	267	262	41	15	49	hsa,mmu,dme,cel,sce,ath	0.766	TRUE	TRUE
+ko00140	Steroid hormone biosynthesis	09100 Metabolism	09103 Lipid metabolism	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	hsa,mmu	0.326	FALSE	FALSE
+ko00190	Oxidative phosphorylation	09100 Metabolism	09102 Energy metabolism	TRUE	TRUE	TRUE	566	0.9841	327	325	62	15	67	hsa,mmu,dme,cel,sce,ath	0.647	TRUE	TRUE
+ko00195	Photosynthesis	09100 Metabolism	09102 Energy metabolism	TRUE	TRUE	TRUE	32	0.0564	19	19	0	0	0	ath	0.937	TRUE	TRUE
+ko00196	Photosynthesis - antenna proteins	09100 Metabolism	09102 Energy metabolism	TRUE	TRUE	TRUE	31	0.0547	18	18	0	0	0	ath	0.881	TRUE	TRUE
+ko00220	Arginine biosynthesis	09100 Metabolism	09105 Amino acid metabolism	TRUE	TRUE	TRUE	546	0.9489	314	311	61	15	66	hsa,mmu,dme,cel,sce,ath	0.75	TRUE	TRUE
+ko00230	Purine metabolism	09100 Metabolism	09104 Nucleotide metabolism	TRUE	TRUE	TRUE	573	0.9965	331	331	62	15	71	hsa,mmu,dme,cel,sce,ath	0.67	TRUE	TRUE
+ko00232	Caffeine metabolism	09100 Metabolism	09110 Biosynthesis of other secondary metabolites	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	hsa,mmu,dme,cel,ath	0.25	FALSE	FALSE
+ko00240	Pyrimidine metabolism	09100 Metabolism	09104 Nucleotide metabolism	TRUE	TRUE	TRUE	572	0.9947	331	330	62	15	71	hsa,mmu,dme,cel,sce,ath	0.807	TRUE	TRUE
+ko00250	Alanine, aspartate and glutamate metabolism	09100 Metabolism	09105 Amino acid metabolism	TRUE	TRUE	TRUE	557	0.9683	321	320	62	15	69	hsa,mmu,dme,cel,sce,ath	0.886	TRUE	TRUE
+ko00253	Tetracycline biosynthesis	09100 Metabolism	09109 Metabolism of terpenoids and polyketides	TRUE	TRUE	TRUE	7	0.0123	5	3	0	1	0		0.882	TRUE	TRUE
+ko00254	Aflatoxin biosynthesis	09100 Metabolism	09110 Biosynthesis of other secondary metabolites	TRUE	TRUE	TRUE	0	0	0	0	0	0	0		0.1	FALSE	FALSE
+ko00260	Glycine, serine and threonine metabolism	09100 Metabolism	09105 Amino acid metabolism	TRUE	TRUE	TRUE	564	0.9806	324	323	62	15	67	hsa,mmu,dme,cel,sce,ath	0.827	TRUE	TRUE
+ko00261	Monobactam biosynthesis	09100 Metabolism	09110 Biosynthesis of other secondary metabolites	TRUE	TRUE	TRUE	501	0.8695	286	281	56	15	48	sce,ath	1	TRUE	TRUE
+ko00270	Cysteine and methionine metabolism	09100 Metabolism	09105 Amino acid metabolism	TRUE	TRUE	TRUE	563	0.9788	324	321	62	15	67	hsa,mmu,dme,cel,sce,ath	0.695	TRUE	TRUE
+ko00280	Valine, leucine and isoleucine degradation	09100 Metabolism	09105 Amino acid metabolism	TRUE	TRUE	TRUE	550	0.9559	320	317	58	15	68	hsa,mmu,dme,cel,sce,ath	0.901	TRUE	TRUE
+ko00290	Valine, leucine and isoleucine biosynthesis	09100 Metabolism	09105 Amino acid metabolism	TRUE	TRUE	TRUE	519	0.9012	298	297	57	15	62	hsa,mmu,dme,cel,sce,ath	0.895	TRUE	TRUE
+ko00300	Lysine biosynthesis	09100 Metabolism	09105 Amino acid metabolism	TRUE	TRUE	TRUE	546	0.9489	311	311	61	15	61	sce,ath	0.878	TRUE	TRUE
+ko00310	Lysine degradation	09100 Metabolism	09105 Amino acid metabolism	TRUE	TRUE	TRUE	461	0.7989	273	267	42	14	45	hsa,mmu,dme,cel,sce,ath	0.535	TRUE	TRUE
+ko00311	Penicillin and cephalosporin biosynthesis	09100 Metabolism	09110 Biosynthesis of other secondary metabolites	TRUE	TRUE	TRUE	84	0.1464	57	50	2	3	0		0.812	TRUE	TRUE
+ko00330	Arginine and proline metabolism	09100 Metabolism	09105 Amino acid metabolism	TRUE	TRUE	TRUE	539	0.9365	309	307	62	15	66	hsa,mmu,dme,cel,sce,ath	0.67	TRUE	TRUE
+ko00331	Clavulanic acid biosynthesis	09100 Metabolism	09110 Biosynthesis of other secondary metabolites	TRUE	TRUE	TRUE	1	0	0	0	0	1	0		0.8	TRUE	TRUE
+ko00332	Carbapenem biosynthesis	09100 Metabolism	09110 Biosynthesis of other secondary metabolites	TRUE	TRUE	TRUE	379	0.6543	214	209	44	13	7	sce	1	TRUE	TRUE
+ko00333	Prodigiosin biosynthesis	09100 Metabolism	09110 Biosynthesis of other secondary metabolites	TRUE	TRUE	TRUE	18	0.0317	12	13	0	1	0		0.143	TRUE	TRUE
+ko00340	Histidine metabolism	09100 Metabolism	09105 Amino acid metabolism	TRUE	TRUE	TRUE	501	0.8695	285	287	54	14	54	hsa,mmu,dme,cel,sce,ath	0.809	TRUE	TRUE
+ko00350	Tyrosine metabolism	09100 Metabolism	09105 Amino acid metabolism	TRUE	TRUE	TRUE	474	0.8219	268	269	54	14	52	hsa,mmu,dme,cel,sce,ath	0.718	TRUE	TRUE
+ko00360	Phenylalanine metabolism	09100 Metabolism	09105 Amino acid metabolism	TRUE	TRUE	TRUE	481	0.8342	275	272	53	15	52	hsa,mmu,dme,cel,sce,ath	0.813	TRUE	TRUE
+ko00361	Chlorocyclohexane and chlorobenzene degradation	09100 Metabolism	09111 Xenobiotics biodegradation and metabolism	TRUE	TRUE	TRUE	193	0.3298	107	118	7	10	8		0.927	TRUE	TRUE
+ko00362	Benzoate degradation	09100 Metabolism	09111 Xenobiotics biodegradation and metabolism	TRUE	TRUE	TRUE	415	0.7178	233	242	49	15	46		0.836	TRUE	TRUE
+ko00363	Bisphenol degradation	09100 Metabolism	09111 Xenobiotics biodegradation and metabolism	TRUE	TRUE	TRUE	2	0.0035	2	2	0	0	0		1	TRUE	TRUE
+ko00364	Fluorobenzoate degradation	09100 Metabolism	09111 Xenobiotics biodegradation and metabolism	TRUE	TRUE	TRUE	149	0.2504	83	86	5	10	6		0.667	TRUE	TRUE
+ko00365	Furfural degradation	09100 Metabolism	09111 Xenobiotics biodegradation and metabolism	TRUE	TRUE	TRUE	2	0.0035	0	2	0	0	0		1	TRUE	TRUE
+ko00380	Tryptophan metabolism	09100 Metabolism	09105 Amino acid metabolism	TRUE	TRUE	TRUE	449	0.7778	258	255	46	15	43	hsa,mmu,dme,cel,sce,ath	0.519	TRUE	TRUE
+ko00400	Phenylalanine, tyrosine and tryptophan biosynthesis	09100 Metabolism	09105 Amino acid metabolism	TRUE	TRUE	TRUE	541	0.94	313	312	58	15	67	hsa,mmu,dme,cel,sce,ath	0.851	TRUE	TRUE
+ko00401	Novobiocin biosynthesis	09100 Metabolism	09110 Biosynthesis of other secondary metabolites	TRUE	TRUE	TRUE	459	0.7954	264	262	48	15	47		0.9	TRUE	TRUE
+ko00402	Benzoxazinoid biosynthesis	09100 Metabolism	09110 Biosynthesis of other secondary metabolites	TRUE	TRUE	TRUE	0	0	0	0	0	0	0		0.125	FALSE	FALSE
+ko00403	Indole diterpene alkaloid biosynthesis	09100 Metabolism	09110 Biosynthesis of other secondary metabolites	TRUE	TRUE	TRUE	0	0	0	0	0	0	0		0	FALSE	FALSE
+ko00404	Staurosporine biosynthesis	09100 Metabolism	09110 Biosynthesis of other secondary metabolites	TRUE	TRUE	TRUE	5	0.0071	3	1	0	1	0		0.075	TRUE	TRUE
+ko00405	Phenazine biosynthesis	09100 Metabolism	09110 Biosynthesis of other secondary metabolites	TRUE	TRUE	TRUE	68	0.1164	37	43	1	3	4		0.562	TRUE	TRUE
+ko00410	beta-Alanine metabolism	09100 Metabolism	09106 Metabolism of other amino acids	TRUE	TRUE	TRUE	476	0.8254	271	277	50	15	53	hsa,mmu,dme,cel,sce,ath	0.783	TRUE	TRUE
+ko00430	Taurine and hypotaurine metabolism	09100 Metabolism	09106 Metabolism of other amino acids	TRUE	TRUE	TRUE	422	0.7302	238	230	54	15	12	hsa,mmu,dme,cel,sce,ath	0.862	TRUE	TRUE
+ko00440	Phosphonate and phosphinate metabolism	09100 Metabolism	09106 Metabolism of other amino acids	TRUE	TRUE	TRUE	111	0.1887	59	55	19	7	3	hsa,mmu,dme,cel,sce,ath	0.66	TRUE	TRUE
+ko00450	Selenocompound metabolism	09100 Metabolism	09106 Metabolism of other amino acids	TRUE	TRUE	TRUE	565	0.9824	327	324	62	15	69	hsa,mmu,dme,cel,sce,ath	0.833	TRUE	TRUE
+ko00460	Cyanoamino acid metabolism	09100 Metabolism	09106 Metabolism of other amino acids	TRUE	TRUE	TRUE	448	0.776	251	252	56	15	31	sce,ath	0.486	TRUE	TRUE
+ko00470	D-Amino acid metabolism	09100 Metabolism	09106 Metabolism of other amino acids	TRUE	TRUE	TRUE	529	0.9189	299	296	62	15	49	hsa,mmu,dme,cel,sce,ath	0.6	TRUE	TRUE
+ko00480	Glutathione metabolism	09100 Metabolism	09106 Metabolism of other amino acids	TRUE	TRUE	TRUE	532	0.9242	305	300	60	15	47	hsa,mmu,dme,cel,sce,ath	0.526	TRUE	TRUE
+ko00500	Starch and sucrose metabolism	09100 Metabolism	09101 Carbohydrate metabolism	TRUE	TRUE	TRUE	548	0.9524	315	311	61	15	61	hsa,mmu,dme,cel,sce,ath	0.794	TRUE	TRUE
+ko00510	N-Glycan biosynthesis	09100 Metabolism	09107 Glycan biosynthesis and metabolism	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	hsa,mmu,dme,cel,sce,ath	0.28	FALSE	FALSE
+ko00511	Other glycan degradation	09100 Metabolism	09107 Glycan biosynthesis and metabolism	TRUE	TRUE	TRUE	240	0.4145	135	129	35	9	13	hsa,mmu,dme,cel,sce,ath	0.773	TRUE	TRUE
+ko00512	Mucin type O-glycan biosynthesis	09100 Metabolism	09107 Glycan biosynthesis and metabolism	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	hsa,mmu,dme,cel	0	FALSE	FALSE
+ko00513	Various types of N-glycan biosynthesis	09100 Metabolism	09107 Glycan biosynthesis and metabolism	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	hsa,mmu,dme,cel,sce,ath	0.25	FALSE	FALSE
+ko00514	Other types of O-glycan biosynthesis	09100 Metabolism	09107 Glycan biosynthesis and metabolism	TRUE	TRUE	TRUE	78	0.1358	47	46	2	3	1	hsa,mmu,dme,cel,sce,ath	0.29	TRUE	TRUE
+ko00515	Mannose type O-glycan biosynthesis	09100 Metabolism	09107 Glycan biosynthesis and metabolism	TRUE	TRUE	TRUE	78	0.1358	47	46	2	3	1	hsa,mmu,dme,cel,sce	0.143	TRUE	TRUE
+ko00520	Amino sugar and nucleotide sugar metabolism	09100 Metabolism	09107 Glycan biosynthesis and metabolism	TRUE	TRUE	TRUE	566	0.9841	325	324	62	15	69	hsa,mmu,dme,cel,sce,ath	0.831	TRUE	TRUE
+ko00521	Streptomycin biosynthesis	09100 Metabolism	09110 Biosynthesis of other secondary metabolites	TRUE	TRUE	TRUE	527	0.9153	309	300	55	15	65		0.81	TRUE	TRUE
+ko00522	Biosynthesis of 12-, 14- and 16-membered macrolides	09100 Metabolism	09109 Metabolism of terpenoids and polyketides	TRUE	TRUE	TRUE	2	0.0035	2	1	0	0	0		0.61	TRUE	TRUE
+ko00523	Polyketide sugar unit biosynthesis	09100 Metabolism	09109 Metabolism of terpenoids and polyketides	TRUE	TRUE	TRUE	397	0.6861	221	224	42	12	35		0.525	TRUE	TRUE
+ko00524	Neomycin, kanamycin and gentamicin biosynthesis	09100 Metabolism	09110 Biosynthesis of other secondary metabolites	TRUE	TRUE	TRUE	8	0.0141	7	4	2	0	0	hsa,mmu	0.305	TRUE	TRUE
+ko00525	Acarbose and validamycin biosynthesis	09100 Metabolism	09110 Biosynthesis of other secondary metabolites	TRUE	TRUE	TRUE	357	0.6173	198	205	39	10	27		0.074	TRUE	TRUE
+ko00531	Glycosaminoglycan degradation	09100 Metabolism	09107 Glycan biosynthesis and metabolism	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	hsa,mmu,dme,cel,ath	0.867	FALSE	FALSE
+ko00532	Glycosaminoglycan biosynthesis - chondroitin sulfate / dermatan sulfate	09100 Metabolism	09107 Glycan biosynthesis and metabolism	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	hsa,mmu,dme,cel	0.389	FALSE	FALSE
+ko00533	Glycosaminoglycan biosynthesis - keratan sulfate	09100 Metabolism	09107 Glycan biosynthesis and metabolism	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	hsa,mmu,cel	0.143	FALSE	FALSE
+ko00534	Glycosaminoglycan biosynthesis - heparan sulfate / heparin	09100 Metabolism	09107 Glycan biosynthesis and metabolism	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	hsa,mmu,dme,cel	0.318	FALSE	FALSE
+ko00540	Lipopolysaccharide biosynthesis	09100 Metabolism	09107 Glycan biosynthesis and metabolism	TRUE	TRUE	TRUE	301	0.5185	176	174	26	11	0	ath	0.86	TRUE	TRUE
+ko00541	Biosynthesis of various nucleotide sugars	09100 Metabolism	09107 Glycan biosynthesis and metabolism	TRUE	TRUE	TRUE	546	0.9489	314	309	60	15	63	hsa,mmu,dme,cel,sce,ath	0.615	TRUE	TRUE
+ko00542	O-Antigen repeat unit biosynthesis	09100 Metabolism	09107 Glycan biosynthesis and metabolism	TRUE	TRUE	TRUE	257	0.4444	147	155	28	9	0		0.086	TRUE	TRUE
+ko00543	Exopolysaccharide biosynthesis	09100 Metabolism	09107 Glycan biosynthesis and metabolism	TRUE	TRUE	TRUE	464	0.8042	263	262	61	15	29	ath	0.575	TRUE	TRUE
+ko00550	Peptidoglycan biosynthesis	09100 Metabolism	09107 Glycan biosynthesis and metabolism	TRUE	TRUE	TRUE	490	0.8501	277	276	60	15	0		0.855	TRUE	TRUE
+ko00552	Teichoic acid biosynthesis	09100 Metabolism	09107 Glycan biosynthesis and metabolism	TRUE	TRUE	TRUE	498	0.8642	285	281	61	14	28		0.39	TRUE	TRUE
+ko00561	Glycerolipid metabolism	09100 Metabolism	09103 Lipid metabolism	TRUE	TRUE	TRUE	495	0.8589	279	277	59	15	19	hsa,mmu,dme,cel,sce,ath	0.536	TRUE	TRUE
+ko00562	Inositol phosphate metabolism	09100 Metabolism	09101 Carbohydrate metabolism	TRUE	TRUE	TRUE	475	0.8236	276	278	43	14	60	hsa,mmu,dme,cel,sce,ath	0.418	TRUE	TRUE
+ko00563	Glycosylphosphatidylinositol (GPI)-anchor biosynthesis	09100 Metabolism	09107 Glycan biosynthesis and metabolism	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	hsa,mmu,dme,cel,sce,ath	0.143	FALSE	FALSE
+ko00564	Glycerophospholipid metabolism	09100 Metabolism	09103 Lipid metabolism	TRUE	TRUE	TRUE	552	0.9594	316	314	62	15	66	hsa,mmu,dme,cel,sce,ath	0.661	TRUE	TRUE
+ko00565	Ether lipid metabolism	09100 Metabolism	09103 Lipid metabolism	TRUE	TRUE	TRUE	70	0.1129	30	36	9	10	0	hsa,mmu,dme,cel,sce,ath	0.516	TRUE	TRUE
+ko00566	Sulfoquinovose metabolism	09100 Metabolism	09101 Carbohydrate metabolism	TRUE	TRUE	TRUE	142	0.2451	85	84	6	4	8	ath	0.306	TRUE	TRUE
+ko00571	Lipoarabinomannan (LAM) biosynthesis	09100 Metabolism	09107 Glycan biosynthesis and metabolism	TRUE	TRUE	TRUE	1	0.0018	1	0	0	1	0		0.857	TRUE	TRUE
+ko00572	Arabinogalactan biosynthesis - Mycobacterium	09100 Metabolism	09107 Glycan biosynthesis and metabolism	TRUE	TRUE	TRUE	60	0.1041	37	34	5	3	0		0.846	TRUE	TRUE
+ko00590	Arachidonic acid metabolism	09100 Metabolism	09103 Lipid metabolism	TRUE	TRUE	TRUE	8	0.0141	4	6	0	0	0	hsa,mmu,dme,cel,sce,ath	0.412	TRUE	TRUE
+ko00591	Linoleic acid metabolism	09100 Metabolism	09103 Lipid metabolism	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	hsa,mmu,ath	0.333	FALSE	FALSE
+ko00592	alpha-Linolenic acid metabolism	09100 Metabolism	09103 Lipid metabolism	TRUE	TRUE	TRUE	236	0.4021	134	142	10	15	13	hsa,mmu,dme,cel,sce,ath	0.538	TRUE	TRUE
+ko00600	Sphingolipid metabolism	09100 Metabolism	09103 Lipid metabolism	TRUE	TRUE	TRUE	293	0.5044	164	166	34	12	6	hsa,mmu,dme,cel,sce,ath	0.474	TRUE	TRUE
+ko00601	Glycosphingolipid biosynthesis - lacto and neolacto series	09100 Metabolism	09107 Glycan biosynthesis and metabolism	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	hsa,mmu,dme,cel,ath	0.179	FALSE	FALSE
+ko00603	Glycosphingolipid biosynthesis - globo and isoglobo series	09100 Metabolism	09107 Glycan biosynthesis and metabolism	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	hsa,mmu,dme,cel,ath	0.25	FALSE	FALSE
+ko00604	Glycosphingolipid biosynthesis - ganglio series	09100 Metabolism	09107 Glycan biosynthesis and metabolism	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	hsa,mmu,dme,cel,ath	0.143	FALSE	FALSE
+ko00620	Pyruvate metabolism	09100 Metabolism	09101 Carbohydrate metabolism	TRUE	TRUE	TRUE	569	0.9894	327	327	62	15	70	hsa,mmu,dme,cel,sce,ath	0.763	TRUE	TRUE
+ko00621	Dioxin degradation	09100 Metabolism	09111 Xenobiotics biodegradation and metabolism	TRUE	TRUE	TRUE	51	0.0882	26	31	5	5	1		0.806	TRUE	TRUE
+ko00622	Xylene degradation	09100 Metabolism	09111 Xenobiotics biodegradation and metabolism	TRUE	TRUE	TRUE	143	0.2487	83	83	12	7	7		1	TRUE	TRUE
+ko00623	Toluene degradation	09100 Metabolism	09111 Xenobiotics biodegradation and metabolism	TRUE	TRUE	TRUE	167	0.2822	93	103	5	11	6		0.935	TRUE	TRUE
+ko00624	Polycyclic aromatic hydrocarbon degradation	09100 Metabolism	09111 Xenobiotics biodegradation and metabolism	TRUE	TRUE	TRUE	20	0.0335	11	13	0	1	0		0.953	TRUE	TRUE
+ko00625	Chloroalkane and chloroalkene degradation	09100 Metabolism	09111 Xenobiotics biodegradation and metabolism	TRUE	TRUE	TRUE	390	0.6737	214	226	43	14	25		0.651	TRUE	TRUE
+ko00626	Naphthalene degradation	09100 Metabolism	09111 Xenobiotics biodegradation and metabolism	TRUE	TRUE	TRUE	324	0.5573	182	186	33	14	22		0.931	TRUE	TRUE
+ko00627	Aminobenzoate degradation	09100 Metabolism	09111 Xenobiotics biodegradation and metabolism	TRUE	TRUE	TRUE	342	0.5891	200	208	22	14	40		0.67	TRUE	TRUE
+ko00630	Glyoxylate and dicarboxylate metabolism	09100 Metabolism	09101 Carbohydrate metabolism	TRUE	TRUE	TRUE	559	0.9718	323	320	62	15	69	hsa,mmu,dme,cel,sce,ath	0.824	TRUE	TRUE
+ko00633	Nitrotoluene degradation	09100 Metabolism	09111 Xenobiotics biodegradation and metabolism	TRUE	TRUE	TRUE	234	0.3986	125	134	14	11	30		0.826	TRUE	TRUE
+ko00640	Propanoate metabolism	09100 Metabolism	09101 Carbohydrate metabolism	TRUE	TRUE	TRUE	555	0.9647	320	317	61	15	68	hsa,mmu,dme,cel,sce,ath	0.808	TRUE	TRUE
+ko00642	Ethylbenzene degradation	09100 Metabolism	09111 Xenobiotics biodegradation and metabolism	TRUE	TRUE	TRUE	6	0.0106	5	3	0	0	0		1	TRUE	TRUE
+ko00643	Styrene degradation	09100 Metabolism	09111 Xenobiotics biodegradation and metabolism	TRUE	TRUE	TRUE	237	0.4092	137	139	17	11	9		0.8	TRUE	TRUE
+ko00650	Butanoate metabolism	09100 Metabolism	09101 Carbohydrate metabolism	TRUE	TRUE	TRUE	534	0.9277	308	305	61	15	66	hsa,mmu,dme,cel,sce,ath	0.835	TRUE	TRUE
+ko00660	C5-Branched dibasic acid metabolism	09100 Metabolism	09101 Carbohydrate metabolism	TRUE	TRUE	TRUE	473	0.8219	269	274	49	13	52	hsa,mmu,sce,ath	0.862	TRUE	TRUE
+ko00670	One carbon pool by folate	09100 Metabolism	09108 Metabolism of cofactors and vitamins	TRUE	TRUE	TRUE	568	0.9877	328	325	62	15	68	hsa,mmu,dme,cel,sce,ath	0.785	TRUE	TRUE
+ko00680	Methane metabolism	09100 Metabolism	09102 Energy metabolism	TRUE	TRUE	TRUE	569	0.9894	329	327	62	15	69	sce	0.853	TRUE	TRUE
+ko00710	Carbon fixation by Calvin cycle	09100 Metabolism	09102 Energy metabolism	TRUE	TRUE	TRUE	564	0.9806	323	322	62	15	66	sce,ath	0.892	TRUE	TRUE
+ko00720	Other carbon fixation pathways	09100 Metabolism	09102 Energy metabolism	TRUE	TRUE	TRUE	568	0.9877	327	327	62	15	70		0.825	TRUE	TRUE
+ko00730	Thiamine metabolism	09100 Metabolism	09108 Metabolism of cofactors and vitamins	TRUE	TRUE	TRUE	556	0.9665	319	316	62	15	66	hsa,mmu,dme,cel,sce,ath	0.778	TRUE	TRUE
+ko00740	Riboflavin metabolism	09100 Metabolism	09108 Metabolism of cofactors and vitamins	TRUE	TRUE	TRUE	534	0.9277	305	303	62	15	64	hsa,mmu,dme,cel,sce,ath	0.655	TRUE	TRUE
+ko00750	Vitamin B6 metabolism	09100 Metabolism	09108 Metabolism of cofactors and vitamins	TRUE	TRUE	TRUE	496	0.8607	283	278	58	15	44	hsa,mmu,dme,cel,sce,ath	0.917	TRUE	TRUE
+ko00760	Nicotinate and nicotinamide metabolism	09100 Metabolism	09108 Metabolism of cofactors and vitamins	TRUE	TRUE	TRUE	546	0.9489	313	308	62	15	64	hsa,mmu,dme,cel,sce,ath	0.653	TRUE	TRUE
+ko00770	Pantothenate and CoA biosynthesis	09100 Metabolism	09108 Metabolism of cofactors and vitamins	TRUE	TRUE	TRUE	541	0.94	309	305	62	15	62	hsa,mmu,dme,cel,sce,ath	0.867	TRUE	TRUE
+ko00780	Biotin metabolism	09100 Metabolism	09108 Metabolism of cofactors and vitamins	TRUE	TRUE	TRUE	526	0.9136	300	299	61	15	54	hsa,mmu,dme,cel,sce,ath	0.917	TRUE	TRUE
+ko00785	Lipoic acid metabolism	09100 Metabolism	09108 Metabolism of cofactors and vitamins	TRUE	TRUE	TRUE	462	0.8007	273	275	36	14	42	hsa,mmu,dme,cel,sce,ath	0.774	TRUE	TRUE
+ko00790	Folate biosynthesis	09100 Metabolism	09108 Metabolism of cofactors and vitamins	TRUE	TRUE	TRUE	555	0.9647	317	315	62	15	63	hsa,mmu,dme,cel,sce,ath	0.774	TRUE	TRUE
+ko00791	Atrazine degradation	09100 Metabolism	09111 Xenobiotics biodegradation and metabolism	TRUE	TRUE	TRUE	68	0.1199	36	46	2	1	1	sce	0.6	TRUE	TRUE
+ko00830	Retinol metabolism	09100 Metabolism	09108 Metabolism of cofactors and vitamins	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	hsa,mmu,dme,cel	0.42	FALSE	FALSE
+ko00860	Porphyrin metabolism	09100 Metabolism	09108 Metabolism of cofactors and vitamins	TRUE	TRUE	TRUE	525	0.9118	303	302	54	15	67	hsa,mmu,dme,cel,sce,ath	0.725	TRUE	TRUE
+ko00900	Terpenoid backbone biosynthesis	09100 Metabolism	09109 Metabolism of terpenoids and polyketides	TRUE	TRUE	TRUE	542	0.9418	310	309	62	15	65	hsa,mmu,dme,cel,sce,ath	0.703	TRUE	TRUE
+ko00901	Indole alkaloid biosynthesis	09100 Metabolism	09110 Biosynthesis of other secondary metabolites	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	ath	0.035	FALSE	FALSE
+ko00902	Monoterpenoid biosynthesis	09100 Metabolism	09109 Metabolism of terpenoids and polyketides	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	ath	0.047	FALSE	FALSE
+ko00903	Limonene degradation	09100 Metabolism	09109 Metabolism of terpenoids and polyketides	TRUE	TRUE	TRUE	29	0.0511	17	17	1	3	0		0.778	TRUE	TRUE
+ko00904	Diterpenoid biosynthesis	09100 Metabolism	09109 Metabolism of terpenoids and polyketides	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	ath	0.014	FALSE	FALSE
+ko00905	Brassinosteroid biosynthesis	09100 Metabolism	09109 Metabolism of terpenoids and polyketides	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	ath	0.167	FALSE	FALSE
+ko00906	Carotenoid biosynthesis	09100 Metabolism	09109 Metabolism of terpenoids and polyketides	TRUE	TRUE	TRUE	222	0.388	138	134	7	6	10	ath	0.541	TRUE	TRUE
+ko00907	Pinene, camphor and geraniol degradation	09100 Metabolism	09109 Metabolism of terpenoids and polyketides	TRUE	TRUE	TRUE	253	0.4321	146	155	6	14	14		0.68	TRUE	TRUE
+ko00908	Zeatin biosynthesis	09100 Metabolism	09109 Metabolism of terpenoids and polyketides	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	ath	0.2	FALSE	FALSE
+ko00909	Sesquiterpenoid and triterpenoid biosynthesis	09100 Metabolism	09109 Metabolism of terpenoids and polyketides	TRUE	TRUE	TRUE	117	0.2046	74	75	2	2	3	sce,ath	0.187	TRUE	TRUE
+ko00910	Nitrogen metabolism	09100 Metabolism	09102 Energy metabolism	TRUE	TRUE	TRUE	528	0.9171	305	301	60	15	65	hsa,mmu,dme,cel,sce,ath	0.729	TRUE	TRUE
+ko00920	Sulfur metabolism	09100 Metabolism	09102 Energy metabolism	TRUE	TRUE	TRUE	521	0.9065	299	299	59	14	64	hsa,mmu,dme,cel,sce,ath	0.718	TRUE	TRUE
+ko00930	Caprolactam degradation	09100 Metabolism	09111 Xenobiotics biodegradation and metabolism	TRUE	TRUE	TRUE	159	0.2663	86	92	4	13	0		0.773	TRUE	TRUE
+ko00940	Phenylpropanoid biosynthesis	09100 Metabolism	09110 Biosynthesis of other secondary metabolites	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	ath	0.364	FALSE	FALSE
+ko00941	Flavonoid biosynthesis	09100 Metabolism	09110 Biosynthesis of other secondary metabolites	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	ath	0.296	FALSE	FALSE
+ko00942	Anthocyanin biosynthesis	09100 Metabolism	09110 Biosynthesis of other secondary metabolites	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	ath	0.062	FALSE	FALSE
+ko00943	Isoflavonoid biosynthesis	09100 Metabolism	09110 Biosynthesis of other secondary metabolites	TRUE	TRUE	TRUE	0	0	0	0	0	0	0		0.056	FALSE	FALSE
+ko00944	Flavone and flavonol biosynthesis	09100 Metabolism	09110 Biosynthesis of other secondary metabolites	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	ath	0.067	FALSE	FALSE
+ko00945	Stilbenoid, diarylheptanoid and gingerol biosynthesis	09100 Metabolism	09110 Biosynthesis of other secondary metabolites	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	ath	0.154	FALSE	FALSE
+ko00946	Degradation of flavonoids	09100 Metabolism	09110 Biosynthesis of other secondary metabolites	TRUE	TRUE	TRUE	260	0.4497	146	148	33	9	11		0.143	TRUE	TRUE
+ko00950	Isoquinoline alkaloid biosynthesis	09100 Metabolism	09110 Biosynthesis of other secondary metabolites	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	ath	0.286	FALSE	FALSE
+ko00960	Tropane, piperidine and pyridine alkaloid biosynthesis	09100 Metabolism	09110 Biosynthesis of other secondary metabolites	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	ath	0.41	FALSE	FALSE
+ko00965	Betalain biosynthesis	09100 Metabolism	09110 Biosynthesis of other secondary metabolites	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	ath	0.375	FALSE	FALSE
+ko00966	Glucosinolate biosynthesis	09100 Metabolism	09110 Biosynthesis of other secondary metabolites	TRUE	TRUE	TRUE	452	0.7848	257	256	54	14	0	ath	0.095	TRUE	TRUE
+ko00970	Aminoacyl-tRNA biosynthesis	09120 Genetic Information Processing	09122 Translation	TRUE	TRUE	TRUE	575	1	332	332	62	15	71	hsa,mmu,dme,cel,sce,ath	0.606	TRUE	TRUE
+ko00975	Biosynthesis of various siderophores	09100 Metabolism	09110 Biosynthesis of other secondary metabolites	TRUE	TRUE	TRUE	77	0.1287	40	37	5	6	2		0.171	TRUE	TRUE
+ko00980	Metabolism of xenobiotics by cytochrome P450	09100 Metabolism	09111 Xenobiotics biodegradation and metabolism	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	hsa,mmu,dme,cel	0.5	FALSE	FALSE
+ko00981	Insect hormone biosynthesis	09100 Metabolism	09109 Metabolism of terpenoids and polyketides	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	dme	0.278	FALSE	FALSE
+ko00982	Drug metabolism - cytochrome P450	09100 Metabolism	09111 Xenobiotics biodegradation and metabolism	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	hsa,mmu,dme,cel	0.52	FALSE	FALSE
+ko00983	Drug metabolism - other enzymes	09100 Metabolism	09111 Xenobiotics biodegradation and metabolism	TRUE	TRUE	TRUE	1	0.0018	1	0	0	1	0	hsa,mmu,dme,cel	0.781	TRUE	TRUE
+ko00984	Steroid degradation	09100 Metabolism	09111 Xenobiotics biodegradation and metabolism	TRUE	TRUE	TRUE	223	0.3792	128	138	6	14	13		0.442	TRUE	TRUE
+ko00996	Biosynthesis of various alkaloids	09100 Metabolism	09110 Biosynthesis of other secondary metabolites	TRUE	TRUE	TRUE	14	0.0247	9	9	0	1	0		0.133	TRUE	TRUE
+ko00997	Biosynthesis of various other secondary metabolites	09100 Metabolism	09110 Biosynthesis of other secondary metabolites	TRUE	TRUE	TRUE	14	0.0212	7	8	0	2	0		0.103	TRUE	TRUE
+ko00998	Biosynthesis of various antibiotics	09100 Metabolism	09110 Biosynthesis of other secondary metabolites	TRUE	TRUE	TRUE	58	0.1005	36	30	6	3	1		0.392	TRUE	TRUE
+ko00999	Biosynthesis of various plant secondary metabolites	09100 Metabolism	09110 Biosynthesis of other secondary metabolites	TRUE	TRUE	TRUE	396	0.6843	226	234	36	15	44	sce,ath	0.122	TRUE	TRUE
+ko01040	Biosynthesis of unsaturated fatty acids	09100 Metabolism	09103 Lipid metabolism	TRUE	TRUE	TRUE	185	0.3122	104	107	7	13	0	hsa,mmu,dme,cel,sce,ath	0.5	TRUE	TRUE
+ko01051	Biosynthesis of ansamycins	09100 Metabolism	09109 Metabolism of terpenoids and polyketides	TRUE	TRUE	TRUE	6	0.0088	3	3	0	1	0		1	TRUE	TRUE
+ko01052	Type I polyketide structures	09100 Metabolism	09109 Metabolism of terpenoids and polyketides	TRUE	TRUE	TRUE	6	0.0088	4	3	0	1	0		0.661	TRUE	TRUE
+ko01053	Biosynthesis of siderophore group nonribosomal peptides	09100 Metabolism	09109 Metabolism of terpenoids and polyketides	TRUE	TRUE	TRUE	61	0.0988	31	33	5	9	0		0.968	TRUE	TRUE
+ko01054	Nonribosomal peptide structures	09100 Metabolism	09109 Metabolism of terpenoids and polyketides	TRUE	TRUE	TRUE	77	0.1323	45	43	12	3	5		0.727	TRUE	TRUE
+ko01055	Biosynthesis of vancomycin group antibiotics	09100 Metabolism	09109 Metabolism of terpenoids and polyketides	TRUE	TRUE	TRUE	77	0.134	47	45	4	2	1		1	TRUE	TRUE
+ko01056	Biosynthesis of type II polyketide backbone	09100 Metabolism	09109 Metabolism of terpenoids and polyketides	TRUE	TRUE	TRUE	7	0.0123	6	3	0	1	0		1	TRUE	TRUE
+ko01057	Biosynthesis of type II polyketide products	09100 Metabolism	09109 Metabolism of terpenoids and polyketides	TRUE	TRUE	TRUE	9	0.0159	7	4	0	1	0		0.932	TRUE	TRUE
+ko01059	Biosynthesis of enediyne antibiotics	09100 Metabolism	09109 Metabolism of terpenoids and polyketides	TRUE	TRUE	TRUE	41	0.0705	26	26	0	2	0		0.054	TRUE	TRUE
+ko01100	Metabolic pathways	09100 Metabolism	Global and overview maps	FALSE	TRUE	FALSE	575	1	332	332	62	15	71	hsa,mmu,dme,cel,sce,ath	0.624	TRUE	FALSE
+ko01110	Biosynthesis of secondary metabolites	09100 Metabolism	Global and overview maps	FALSE	TRUE	FALSE	575	1	332	332	62	15	71	sce,ath	0.521	TRUE	FALSE
+ko01120	Microbial metabolism in diverse environments	09100 Metabolism	Global and overview maps	FALSE	TRUE	FALSE	575	1	332	332	62	15	71		0.752	TRUE	FALSE
+ko01200	Carbon metabolism	09100 Metabolism	Global and overview maps	FALSE	TRUE	FALSE	573	0.9965	330	330	62	15	70	hsa,mmu,dme,cel,sce,ath	0.873	TRUE	FALSE
+ko01210	2-Oxocarboxylic acid metabolism	09100 Metabolism	Global and overview maps	FALSE	TRUE	FALSE	560	0.9735	324	322	62	15	70	hsa,mmu,dme,cel,sce,ath	0.686	TRUE	FALSE
+ko01212	Fatty acid metabolism	09100 Metabolism	Global and overview maps	FALSE	TRUE	FALSE	524	0.9101	298	301	60	15	49	hsa,mmu,dme,cel,sce,ath	0.762	TRUE	FALSE
+ko01220	Degradation of aromatic compounds	09100 Metabolism	Global and overview maps	FALSE	TRUE	FALSE	434	0.7513	245	254	45	15	38		0.903	TRUE	FALSE
+ko01230	Biosynthesis of amino acids	09100 Metabolism	Global and overview maps	FALSE	TRUE	FALSE	574	0.9982	331	331	62	15	71	hsa,mmu,dme,cel,sce,ath	0.888	TRUE	FALSE
+ko01232	Nucleotide metabolism	09100 Metabolism	Global and overview maps	FALSE	TRUE	FALSE	572	0.9947	331	330	62	15	71	hsa,mmu,dme,cel,sce,ath	0.805	TRUE	FALSE
+ko01240	Biosynthesis of cofactors	09100 Metabolism	Global and overview maps	FALSE	TRUE	FALSE	575	1	332	332	62	15	71	hsa,mmu,dme,cel,sce,ath	0.817	TRUE	FALSE
+ko01250	Biosynthesis of nucleotide sugars	09100 Metabolism	Global and overview maps	FALSE	TRUE	FALSE	566	0.9841	325	325	62	15	70	hsa,mmu,dme,cel,sce,ath	0.67	TRUE	FALSE
+ko01310	Nitrogen cycle	09100 Metabolism	Global and overview maps	FALSE	TRUE	FALSE	265	0.4586	158	160	17	10	14	ath	0.692	TRUE	FALSE
+ko01320	Sulfur cycle	09100 Metabolism	Global and overview maps	FALSE	TRUE	FALSE	393	0.6808	227	229	31	13	45	hsa,mmu,dme,cel,sce,ath	0.692	TRUE	FALSE
+ko01501	beta-Lactam resistance	09160 Human Diseases	09175 Drug resistance: antimicrobial	TRUE	TRUE	TRUE	470	0.8148	266	264	59	15	0		0.875	TRUE	TRUE
+ko01502	Vancomycin resistance	09160 Human Diseases	09175 Drug resistance: antimicrobial	TRUE	TRUE	TRUE	506	0.8783	285	284	62	15	21		0.955	TRUE	TRUE
+ko01503	Cationic antimicrobial peptide (CAMP) resistance	09160 Human Diseases	09175 Drug resistance: antimicrobial	TRUE	TRUE	TRUE	454	0.7884	256	255	56	14	5		0.981	TRUE	TRUE
+ko01521	EGFR tyrosine kinase inhibitor resistance	09160 Human Diseases	09176 Drug resistance: antineoplastic	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.09	FALSE	FALSE
+ko01522	Endocrine resistance	09160 Human Diseases	09176 Drug resistance: antineoplastic	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.143	FALSE	FALSE
+ko01523	Antifolate resistance	09160 Human Diseases	09176 Drug resistance: antineoplastic	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.423	FALSE	FALSE
+ko01524	Platinum drug resistance	09160 Human Diseases	09176 Drug resistance: antineoplastic	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.217	FALSE	FALSE
+ko02010	ABC transporters	09130 Environmental Information Processing	09131 Membrane transport	TRUE	TRUE	TRUE	560	0.9735	319	319	62	15	62	hsa,mmu,dme,cel,sce,ath	0.831	TRUE	TRUE
+ko02020	Two-component system	09130 Environmental Information Processing	09132 Signal transduction	TRUE	TRUE	TRUE	568	0.9877	328	326	62	15	69		0.896	TRUE	TRUE
+ko02024	Quorum sensing	09140 Cellular Processes	09145 Cellular community - prokaryotes	TRUE	TRUE	TRUE	574	0.9982	332	331	62	15	71		0.608	TRUE	TRUE
+ko02025	Biofilm formation - Pseudomonas aeruginosa	09140 Cellular Processes	09145 Cellular community - prokaryotes	TRUE	TRUE	TRUE	2	0.0018	0	1	0	1	0		0.556	TRUE	TRUE
+ko02026	Biofilm formation - Escherichia coli	09140 Cellular Processes	09145 Cellular community - prokaryotes	TRUE	TRUE	TRUE	2	0.0018	1	0	1	2	0		0.705	TRUE	TRUE
+ko02030	Bacterial chemotaxis	09140 Cellular Processes	09142 Cell motility	TRUE	TRUE	TRUE	329	0.5679	197	199	20	11	18		1	TRUE	TRUE
+ko02040	Flagellar assembly	09140 Cellular Processes	09142 Cell motility	TRUE	TRUE	TRUE	357	0.6155	204	202	45	14	0		0.909	TRUE	TRUE
+ko02060	Phosphotransferase system (PTS)	09130 Environmental Information Processing	09131 Membrane transport	TRUE	TRUE	TRUE	327	0.5626	182	179	45	13	4		0.903	TRUE	TRUE
+ko03008	Ribosome biogenesis in eukaryotes	09120 Genetic Information Processing	09122 Translation	TRUE	TRUE	TRUE	222	0.3792	133	133	11	11	69	hsa,mmu,dme,cel,sce,ath	0.446	TRUE	TRUE
+ko03010	Ribosome	09120 Genetic Information Processing	09122 Translation	TRUE	TRUE	TRUE	575	1	332	332	62	15	71	hsa,mmu,dme,cel,sce,ath	0.692	TRUE	TRUE
+ko03013	Nucleocytoplasmic transport	09120 Genetic Information Processing	09122 Translation	TRUE	TRUE	TRUE	50	0.0882	32	30	2	0	50	hsa,mmu,dme,cel,sce,ath	0.265	TRUE	TRUE
+ko03015	mRNA surveillance pathway	09120 Genetic Information Processing	09122 Translation	TRUE	TRUE	TRUE	62	0.1093	40	38	2	0	62	hsa,mmu,dme,cel,sce,ath	0.46	TRUE	TRUE
+ko03018	RNA degradation	09120 Genetic Information Processing	09123 Folding, sorting and degradation	TRUE	TRUE	TRUE	574	0.9982	332	331	62	15	71	hsa,mmu,dme,cel,sce,ath	0.62	TRUE	TRUE
+ko03020	RNA polymerase	09120 Genetic Information Processing	09121 Transcription	TRUE	TRUE	TRUE	567	0.9859	328	325	62	15	70	hsa,mmu,dme,cel,sce,ath	0.561	TRUE	TRUE
+ko03022	Basal transcription factors	09120 Genetic Information Processing	09121 Transcription	TRUE	TRUE	TRUE	70	0.1235	46	46	2	0	70	hsa,mmu,dme,cel,sce,ath	0.306	TRUE	TRUE
+ko03030	DNA replication	09120 Genetic Information Processing	09124 Replication and repair	TRUE	TRUE	TRUE	568	0.9877	328	326	62	15	71	hsa,mmu,dme,cel,sce,ath	0.667	TRUE	TRUE
+ko03040	Spliceosome	09120 Genetic Information Processing	09121 Transcription	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	hsa,mmu,dme,cel,sce,ath	0.422	FALSE	FALSE
+ko03050	Proteasome	09120 Genetic Information Processing	09123 Folding, sorting and degradation	TRUE	TRUE	TRUE	114	0.1993	74	75	3	3	71	hsa,mmu,dme,cel,sce,ath	0.306	TRUE	TRUE
+ko03060	Protein export	09120 Genetic Information Processing	09123 Folding, sorting and degradation	TRUE	TRUE	TRUE	572	0.9947	330	330	62	15	70	hsa,mmu,dme,cel,sce,ath	0.612	TRUE	TRUE
+ko03070	Bacterial secretion system	09130 Environmental Information Processing	09131 Membrane transport	TRUE	TRUE	TRUE	568	0.9877	329	326	62	15	68		1	TRUE	TRUE
+ko03082	ATP-dependent chromatin remodeling	09120 Genetic Information Processing	09126 Chromosome	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	hsa,mmu,dme,cel,sce,ath	0.274	FALSE	FALSE
+ko03083	Polycomb repressive complex	09120 Genetic Information Processing	09126 Chromosome	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	hsa,mmu,dme,cel,sce,ath	0.308	FALSE	FALSE
+ko03230	Viral genome structure	09120 Genetic Information Processing	09125 Information processing in viruses	TRUE	TRUE	TRUE	0	0	0	0	0	0	0		0	FALSE	FALSE
+ko03240	Viral replication	09120 Genetic Information Processing	09125 Information processing in viruses	TRUE	TRUE	TRUE	0	0	0	0	0	0	0		0	FALSE	FALSE
+ko03250	Viral life cycle - HIV-1	09120 Genetic Information Processing	09125 Information processing in viruses	TRUE	TRUE	TRUE	157	0.2646	85	84	14	13	8	hsa,mmu,dme,cel,sce,ath	0.23	TRUE	TRUE
+ko03258	Virion - Bacteriophage lambda	09120 Genetic Information Processing	09125 Information processing in viruses	TRUE	TRUE	TRUE	13	0.0141	5	2	2	6	0		0	TRUE	TRUE
+ko03259	Virion - Bacteriophages T4 and T7	09120 Genetic Information Processing	09125 Information processing in viruses	TRUE	TRUE	TRUE	0	0	0	0	0	0	0		0	FALSE	FALSE
+ko03260	Virion - Human immunodeficiency virus	09120 Genetic Information Processing	09125 Information processing in viruses	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	hsa,mmu	0	FALSE	FALSE
+ko03261	Virion - Influenza virus	09120 Genetic Information Processing	09125 Information processing in viruses	TRUE	TRUE	TRUE	0	0	0	0	0	0	0		0	FALSE	FALSE
+ko03262	Virion - Coronavirus	09120 Genetic Information Processing	09125 Information processing in viruses	TRUE	TRUE	TRUE	0	0	0	0	0	0	0		0	FALSE	FALSE
+ko03263	Virion - Enterovirus	09120 Genetic Information Processing	09125 Information processing in viruses	TRUE	TRUE	TRUE	0	0	0	0	0	0	0		0	FALSE	FALSE
+ko03264	Virion - Flavivirus and Alphavirus	09120 Genetic Information Processing	09125 Information processing in viruses	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	hsa,mmu	0.043	FALSE	FALSE
+ko03265	Virion - Ebolavirus, Lyssavirus and Morbillivirus	09120 Genetic Information Processing	09125 Information processing in viruses	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	hsa,mmu,dme	0.027	FALSE	FALSE
+ko03266	Virion - Herpesvirus	09120 Genetic Information Processing	09125 Information processing in viruses	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	hsa,mmu,dme	0.062	FALSE	FALSE
+ko03267	Virion - Adenovirus	09120 Genetic Information Processing	09125 Information processing in viruses	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	hsa,mmu	0.105	FALSE	FALSE
+ko03268	Virion - Orthopoxvirus	09120 Genetic Information Processing	09125 Information processing in viruses	TRUE	TRUE	TRUE	0	0	0	0	0	0	0		0	FALSE	FALSE
+ko03271	Virion - Rotavirus	09120 Genetic Information Processing	09125 Information processing in viruses	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	hsa,mmu	0.077	FALSE	FALSE
+ko03272	Virion - Hepatitis viruses	09120 Genetic Information Processing	09125 Information processing in viruses	TRUE	TRUE	TRUE	7	0.0123	6	4	0	0	6	hsa,mmu,dme,cel,sce,ath	0.125	TRUE	TRUE
+ko03273	Virion - Lassa virus and SFTS virus	09120 Genetic Information Processing	09125 Information processing in viruses	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	hsa,mmu,dme,cel	0.032	FALSE	FALSE
+ko03320	PPAR signaling pathway	09150 Organismal Systems	09152 Endocrine system	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.429	FALSE	FALSE
+ko03410	Base excision repair	09120 Genetic Information Processing	09124 Replication and repair	TRUE	TRUE	TRUE	567	0.9859	329	326	62	15	71	hsa,mmu,dme,cel,sce,ath	0.642	TRUE	TRUE
+ko03420	Nucleotide excision repair	09120 Genetic Information Processing	09124 Replication and repair	TRUE	TRUE	TRUE	566	0.9841	325	325	62	15	68	hsa,mmu,dme,cel,sce,ath	0.508	TRUE	TRUE
+ko03430	Mismatch repair	09120 Genetic Information Processing	09124 Replication and repair	TRUE	TRUE	TRUE	567	0.9859	327	324	62	15	69	hsa,mmu,dme,cel,sce,ath	0.75	TRUE	TRUE
+ko03440	Homologous recombination	09120 Genetic Information Processing	09124 Replication and repair	TRUE	TRUE	TRUE	573	0.9965	330	330	62	15	70	hsa,mmu,dme,cel,sce,ath	0.583	TRUE	TRUE
+ko03450	Non-homologous end-joining	09120 Genetic Information Processing	09124 Replication and repair	TRUE	TRUE	TRUE	94	0.1623	48	57	3	4	2	hsa,mmu,dme,cel,sce,ath	0.263	TRUE	TRUE
+ko03460	Fanconi anemia pathway	09120 Genetic Information Processing	09124 Replication and repair	TRUE	TRUE	TRUE	8	0.0141	5	4	0	0	8	hsa,mmu,dme,cel,sce,ath	0.241	TRUE	TRUE
+ko04010	MAPK signaling pathway	09130 Environmental Information Processing	09132 Signal transduction	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	hsa,mmu	0.07	FALSE	FALSE
+ko04011	MAPK signaling pathway - yeast	09130 Environmental Information Processing	09132 Signal transduction	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	sce	0.176	FALSE	FALSE
+ko04012	ErbB signaling pathway	09130 Environmental Information Processing	09132 Signal transduction	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	hsa,mmu	0.13	FALSE	FALSE
+ko04013	MAPK signaling pathway - fly	09130 Environmental Information Processing	09132 Signal transduction	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	dme	0.165	FALSE	FALSE
+ko04014	Ras signaling pathway	09130 Environmental Information Processing	09132 Signal transduction	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	hsa,mmu	0.104	FALSE	FALSE
+ko04015	Rap1 signaling pathway	09130 Environmental Information Processing	09132 Signal transduction	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	hsa,mmu	0.093	FALSE	FALSE
+ko04016	MAPK signaling pathway - plant	09130 Environmental Information Processing	09132 Signal transduction	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	ath	0.167	FALSE	FALSE
+ko04020	Calcium signaling pathway	09130 Environmental Information Processing	09132 Signal transduction	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	hsa,mmu	0.111	FALSE	FALSE
+ko04022	cGMP-PKG signaling pathway	09130 Environmental Information Processing	09132 Signal transduction	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	hsa,mmu	0.215	FALSE	FALSE
+ko04024	cAMP signaling pathway	09130 Environmental Information Processing	09132 Signal transduction	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	hsa,mmu	0.134	FALSE	FALSE
+ko04060	Cytokine-cytokine receptor interaction	09130 Environmental Information Processing	09133 Signaling molecules and interaction	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	hsa,mmu	0.004	FALSE	FALSE
+ko04061	Viral protein interaction with cytokine and cytokine receptor	09130 Environmental Information Processing	09133 Signaling molecules and interaction	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	hsa,mmu	0	FALSE	FALSE
+ko04062	Chemokine signaling pathway	09150 Organismal Systems	09151 Immune system	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.056	FALSE	FALSE
+ko04064	NF-kappa B signaling pathway	09130 Environmental Information Processing	09132 Signal transduction	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	hsa,mmu	0.102	FALSE	FALSE
+ko04066	HIF-1 signaling pathway	09130 Environmental Information Processing	09132 Signal transduction	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	hsa,mmu	0.221	FALSE	FALSE
+ko04068	FoxO signaling pathway	09130 Environmental Information Processing	09132 Signal transduction	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	hsa,mmu,dme,cel	0.175	FALSE	FALSE
+ko04070	Phosphatidylinositol signaling system	09130 Environmental Information Processing	09132 Signal transduction	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	hsa,mmu,dme,cel,sce,ath	0.291	FALSE	FALSE
+ko04071	Sphingolipid signaling pathway	09130 Environmental Information Processing	09132 Signal transduction	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	hsa,mmu	0.214	FALSE	FALSE
+ko04072	Phospholipase D signaling pathway	09130 Environmental Information Processing	09132 Signal transduction	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	hsa,mmu	0.176	FALSE	FALSE
+ko04075	Plant hormone signal transduction	09130 Environmental Information Processing	09132 Signal transduction	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	ath	0.206	FALSE	FALSE
+ko04080	Neuroactive ligand-receptor interaction	09130 Environmental Information Processing	09133 Signaling molecules and interaction	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	hsa,mmu,dme,cel	0.027	FALSE	FALSE
+ko04081	Hormone signaling	09130 Environmental Information Processing	09133 Signaling molecules and interaction	TRUE	TRUE	TRUE	1	0.0018	0	1	0	0	1	hsa,mmu,dme,cel,sce,ath	0.056	TRUE	TRUE
+ko04082	Neuroactive ligand signaling	09130 Environmental Information Processing	09133 Signaling molecules and interaction	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	hsa,mmu,dme,cel,sce,ath	0.079	FALSE	FALSE
+ko04110	Cell cycle	09140 Cellular Processes	09143 Cell growth and death	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	hsa,mmu	0.226	FALSE	FALSE
+ko04111	Cell cycle - yeast	09140 Cellular Processes	09143 Cell growth and death	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	sce	0.183	FALSE	FALSE
+ko04112	Cell cycle - Caulobacter	09140 Cellular Processes	09143 Cell growth and death	TRUE	TRUE	TRUE	1	0.0018	1	0	0	1	0		1	TRUE	TRUE
+ko04113	Meiosis - yeast	09140 Cellular Processes	09143 Cell growth and death	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	sce	0.214	FALSE	FALSE
+ko04114	Oocyte meiosis	09140 Cellular Processes	09143 Cell growth and death	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	hsa,mmu	0.288	FALSE	FALSE
+ko04115	p53 signaling pathway	09140 Cellular Processes	09143 Cell growth and death	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	hsa,mmu	0.174	FALSE	FALSE
+ko04120	Ubiquitin mediated proteolysis	09120 Genetic Information Processing	09123 Folding, sorting and degradation	TRUE	TRUE	TRUE	3	0.0053	2	2	0	0	3	hsa,mmu,dme,cel,sce,ath	0.211	TRUE	TRUE
+ko04122	Sulfur relay system	09120 Genetic Information Processing	09123 Folding, sorting and degradation	TRUE	TRUE	TRUE	544	0.9453	316	310	56	15	63	hsa,mmu,dme,cel,sce,ath	0.724	TRUE	TRUE
+ko04130	SNARE interactions in vesicular transport	09120 Genetic Information Processing	09123 Folding, sorting and degradation	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	hsa,mmu,dme,cel,sce,ath	0.086	FALSE	FALSE
+ko04136	Autophagy - other	09140 Cellular Processes	09141 Transport and catabolism	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	hsa,mmu,dme,cel,sce,ath	0.217	FALSE	FALSE
+ko04137	Mitophagy - animal	09140 Cellular Processes	09141 Transport and catabolism	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	hsa,mmu,dme,cel	0.2	FALSE	FALSE
+ko04138	Autophagy - yeast	09140 Cellular Processes	09141 Transport and catabolism	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	sce	0.171	FALSE	FALSE
+ko04139	Mitophagy - yeast	09140 Cellular Processes	09141 Transport and catabolism	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	sce	0.206	FALSE	FALSE
+ko04140	Autophagy - animal	09140 Cellular Processes	09141 Transport and catabolism	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	hsa,mmu,dme,cel	0.242	FALSE	FALSE
+ko04141	Protein processing in endoplasmic reticulum	09120 Genetic Information Processing	09123 Folding, sorting and degradation	TRUE	TRUE	TRUE	295	0.5185	173	174	33	2	69	hsa,mmu,dme,cel,sce,ath	0.276	TRUE	TRUE
+ko04142	Lysosome	09140 Cellular Processes	09141 Transport and catabolism	TRUE	TRUE	TRUE	146	0.254	85	84	17	4	2	hsa,mmu,dme,cel,sce,ath	0.394	TRUE	TRUE
+ko04144	Endocytosis	09140 Cellular Processes	09141 Transport and catabolism	TRUE	TRUE	TRUE	17	0.03	6	14	0	0	2	hsa,mmu,dme,cel,sce,ath	0.178	TRUE	TRUE
+ko04145	Phagosome	09140 Cellular Processes	09141 Transport and catabolism	TRUE	TRUE	TRUE	6	0.0106	4	2	0	0	6	hsa,mmu,dme,cel,sce,ath	0.295	TRUE	TRUE
+ko04146	Peroxisome	09140 Cellular Processes	09141 Transport and catabolism	TRUE	TRUE	TRUE	463	0.8025	265	264	50	15	52	hsa,mmu,dme,cel,sce,ath	0.581	TRUE	TRUE
+ko04148	Efferocytosis	09140 Cellular Processes	09141 Transport and catabolism	TRUE	TRUE	TRUE	57	0.097	32	28	3	5	0	hsa,mmu,dme,cel,sce,ath	0.183	TRUE	TRUE
+ko04149	Peroxisome - yeast	09140 Cellular Processes	09141 Transport and catabolism	FALSE	TRUE	TRUE	0	0	0	0	0	0	0	sce	0.413	FALSE	FALSE
+ko04150	mTOR signaling pathway	09130 Environmental Information Processing	09132 Signal transduction	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	hsa,mmu,dme,cel	0.179	FALSE	FALSE
+ko04151	PI3K-Akt signaling pathway	09130 Environmental Information Processing	09132 Signal transduction	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	hsa,mmu	0.116	FALSE	FALSE
+ko04152	AMPK signaling pathway	09130 Environmental Information Processing	09132 Signal transduction	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	hsa,mmu	0.318	FALSE	FALSE
+ko04156	Integrated stress response (ISR) signaling pathway	09140 Cellular Processes	09143 Cell growth and death	FALSE	TRUE	TRUE	572	0.9947	332	329	62	15	71	hsa,mmu,dme,cel,sce,ath	0.289	TRUE	TRUE
+ko04210	Apoptosis	09140 Cellular Processes	09143 Cell growth and death	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	hsa,mmu	0.161	FALSE	FALSE
+ko04211	Longevity regulating pathway	09150 Organismal Systems	09149 Aging	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.176	FALSE	FALSE
+ko04212	Longevity regulating pathway - worm	09150 Organismal Systems	09149 Aging	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	cel	0.25	FALSE	FALSE
+ko04213	Longevity regulating pathway - multiple species	09150 Organismal Systems	09149 Aging	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu,dme,cel,sce	0.241	FALSE	FALSE
+ko04214	Apoptosis - fly	09140 Cellular Processes	09143 Cell growth and death	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	dme	0.179	FALSE	FALSE
+ko04215	Apoptosis - multiple species	09140 Cellular Processes	09143 Cell growth and death	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	hsa,mmu,dme,cel	0.05	FALSE	FALSE
+ko04216	Ferroptosis	09140 Cellular Processes	09143 Cell growth and death	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	hsa,mmu	0.303	FALSE	FALSE
+ko04217	Necroptosis	09140 Cellular Processes	09143 Cell growth and death	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	hsa,mmu	0.167	FALSE	FALSE
+ko04218	Cellular senescence	09140 Cellular Processes	09143 Cell growth and death	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	hsa,mmu	0.171	FALSE	FALSE
+ko04260	Cardiac muscle contraction	09150 Organismal Systems	09153 Circulatory system	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.358	FALSE	FALSE
+ko04261	Adrenergic signaling in cardiomyocytes	09150 Organismal Systems	09153 Circulatory system	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.242	FALSE	FALSE
+ko04270	Vascular smooth muscle contraction	09150 Organismal Systems	09153 Circulatory system	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.188	FALSE	FALSE
+ko04310	Wnt signaling pathway	09130 Environmental Information Processing	09132 Signal transduction	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	hsa,mmu,dme,cel	0.127	FALSE	FALSE
+ko04320	Dorso-ventral axis formation	09150 Organismal Systems	09158 Development and regeneration	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	dme	0.321	FALSE	FALSE
+ko04330	Notch signaling pathway	09130 Environmental Information Processing	09132 Signal transduction	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	hsa,mmu,dme,cel	0.278	FALSE	FALSE
+ko04340	Hedgehog signaling pathway	09130 Environmental Information Processing	09132 Signal transduction	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	hsa,mmu	0.067	FALSE	FALSE
+ko04341	Hedgehog signaling pathway - fly	09130 Environmental Information Processing	09132 Signal transduction	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	dme	0.115	FALSE	FALSE
+ko04350	TGF-beta signaling pathway	09130 Environmental Information Processing	09132 Signal transduction	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	hsa,mmu,dme,cel	0.092	FALSE	FALSE
+ko04360	Axon guidance	09150 Organismal Systems	09158 Development and regeneration	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.094	FALSE	FALSE
+ko04361	Axon regeneration	09150 Organismal Systems	09158 Development and regeneration	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	cel	0.254	FALSE	FALSE
+ko04370	VEGF signaling pathway	09130 Environmental Information Processing	09132 Signal transduction	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	hsa,mmu	0.128	FALSE	FALSE
+ko04371	Apelin signaling pathway	09130 Environmental Information Processing	09132 Signal transduction	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	hsa,mmu	0.181	FALSE	FALSE
+ko04380	Osteoclast differentiation	09150 Organismal Systems	09158 Development and regeneration	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.096	FALSE	FALSE
+ko04382	Cornified envelope formation	09150 Organismal Systems	09158 Development and regeneration	TRUE	TRUE	FALSE	102	0.1764	55	59	14	3	0	hsa,mmu,dme,cel,sce,ath	0.322	TRUE	FALSE
+ko04390	Hippo signaling pathway	09130 Environmental Information Processing	09132 Signal transduction	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	hsa,mmu	0.104	FALSE	FALSE
+ko04391	Hippo signaling pathway - fly	09130 Environmental Information Processing	09132 Signal transduction	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	dme	0.208	FALSE	FALSE
+ko04392	Hippo signaling pathway - multiple species	09130 Environmental Information Processing	09132 Signal transduction	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	hsa,mmu,dme,cel,sce	0.12	FALSE	FALSE
+ko04510	Focal adhesion	09140 Cellular Processes	09144 Cellular community - eukaryotes	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	hsa,mmu	0.178	FALSE	FALSE
+ko04512	ECM-receptor interaction	09130 Environmental Information Processing	09133 Signaling molecules and interaction	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	hsa,mmu,dme,cel	0.182	FALSE	FALSE
+ko04514	Cell adhesion molecule (CAM) interaction	09130 Environmental Information Processing	09133 Signaling molecules and interaction	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	hsa,mmu	0.108	FALSE	FALSE
+ko04517	IgSF CAM signaling	09130 Environmental Information Processing	09133 Signaling molecules and interaction	TRUE	TRUE	TRUE	3	0.0053	3	1	0	0	1	hsa,mmu,dme,cel,sce,ath	0.085	TRUE	TRUE
+ko04518	Integrin signaling	09130 Environmental Information Processing	09133 Signaling molecules and interaction	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	hsa,mmu,dme,cel,sce,ath	0.136	FALSE	FALSE
+ko04519	Cadherin signaling	09130 Environmental Information Processing	09133 Signaling molecules and interaction	FALSE	TRUE	TRUE	0	0	0	0	0	0	0	hsa,mmu,dme,cel,sce,ath	0.162	FALSE	FALSE
+ko04520	Adherens junction	09140 Cellular Processes	09144 Cellular community - eukaryotes	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	hsa,mmu	0.193	FALSE	FALSE
+ko04530	Tight junction	09140 Cellular Processes	09144 Cellular community - eukaryotes	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	hsa,mmu	0.236	FALSE	FALSE
+ko04540	Gap junction	09140 Cellular Processes	09144 Cellular community - eukaryotes	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	hsa,mmu	0.233	FALSE	FALSE
+ko04550	Signaling pathways regulating pluripotency of stem cells	09140 Cellular Processes	09144 Cellular community - eukaryotes	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	hsa,mmu	0.079	FALSE	FALSE
+ko04610	Complement and coagulation cascades	09150 Organismal Systems	09151 Immune system	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.183	FALSE	FALSE
+ko04611	Platelet activation	09150 Organismal Systems	09151 Immune system	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.187	FALSE	FALSE
+ko04612	Antigen processing and presentation	09150 Organismal Systems	09151 Immune system	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.146	FALSE	FALSE
+ko04613	Neutrophil extracellular trap formation	09150 Organismal Systems	09151 Immune system	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.244	FALSE	FALSE
+ko04614	Renin-angiotensin system	09150 Organismal Systems	09152 Endocrine system	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.364	FALSE	FALSE
+ko04620	Toll-like receptor signaling pathway	09150 Organismal Systems	09151 Immune system	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu,dme,cel,sce,ath	0.088	FALSE	FALSE
+ko04621	NOD-like receptor signaling pathway	09150 Organismal Systems	09151 Immune system	TRUE	TRUE	FALSE	1	0.0018	1	0	0	0	0	hsa,mmu	0.131	TRUE	FALSE
+ko04622	RIG-I-like receptor signaling pathway	09150 Organismal Systems	09151 Immune system	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.073	FALSE	FALSE
+ko04623	Cytosolic DNA-sensing pathway	09150 Organismal Systems	09151 Immune system	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.176	FALSE	FALSE
+ko04624	Toll and Imd signaling pathway	09150 Organismal Systems	09151 Immune system	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	dme	0.14	FALSE	FALSE
+ko04625	C-type lectin receptor signaling pathway	09150 Organismal Systems	09151 Immune system	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.098	FALSE	FALSE
+ko04626	Plant-pathogen interaction	09150 Organismal Systems	09159 Environmental adaptation	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	ath	0.31	FALSE	FALSE
+ko04630	JAK-STAT signaling pathway	09130 Environmental Information Processing	09132 Signal transduction	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	hsa,mmu	0.042	FALSE	FALSE
+ko04640	Hematopoietic cell lineage	09150 Organismal Systems	09151 Immune system	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.062	FALSE	FALSE
+ko04650	Natural killer cell mediated cytotoxicity	09150 Organismal Systems	09151 Immune system	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.071	FALSE	FALSE
+ko04657	IL-17 signaling pathway	09150 Organismal Systems	09151 Immune system	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.138	FALSE	FALSE
+ko04658	Th1 and Th2 cell differentiation	09150 Organismal Systems	09151 Immune system	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.075	FALSE	FALSE
+ko04659	Th17 cell differentiation	09150 Organismal Systems	09151 Immune system	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.069	FALSE	FALSE
+ko04660	T cell receptor signaling pathway	09150 Organismal Systems	09151 Immune system	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.141	FALSE	FALSE
+ko04662	B cell receptor signaling pathway	09150 Organismal Systems	09151 Immune system	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.133	FALSE	FALSE
+ko04664	Fc epsilon RI signaling pathway	09150 Organismal Systems	09151 Immune system	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.149	FALSE	FALSE
+ko04666	Fc gamma R-mediated phagocytosis	09150 Organismal Systems	09151 Immune system	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.219	FALSE	FALSE
+ko04668	TNF signaling pathway	09130 Environmental Information Processing	09132 Signal transduction	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	hsa,mmu	0.072	FALSE	FALSE
+ko04670	Leukocyte transendothelial migration	09150 Organismal Systems	09151 Immune system	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.147	FALSE	FALSE
+ko04672	Intestinal immune network for IgA production	09150 Organismal Systems	09151 Immune system	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.027	FALSE	FALSE
+ko04710	Circadian rhythm	09150 Organismal Systems	09159 Environmental adaptation	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.179	FALSE	FALSE
+ko04711	Circadian rhythm - fly	09150 Organismal Systems	09159 Environmental adaptation	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	dme	0.231	FALSE	FALSE
+ko04712	Circadian rhythm - plant	09150 Organismal Systems	09159 Environmental adaptation	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	ath	0.143	FALSE	FALSE
+ko04713	Circadian entrainment	09150 Organismal Systems	09159 Environmental adaptation	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.152	FALSE	FALSE
+ko04714	Thermogenesis	09150 Organismal Systems	09159 Environmental adaptation	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.388	FALSE	FALSE
+ko04720	Long-term potentiation	09150 Organismal Systems	09156 Nervous system	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.256	FALSE	FALSE
+ko04721	Synaptic vesicle cycle	09150 Organismal Systems	09156 Nervous system	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.2	FALSE	FALSE
+ko04722	Neurotrophin signaling pathway	09150 Organismal Systems	09156 Nervous system	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.156	FALSE	FALSE
+ko04723	Retrograde endocannabinoid signaling	09150 Organismal Systems	09156 Nervous system	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.244	FALSE	FALSE
+ko04724	Glutamatergic synapse	09150 Organismal Systems	09156 Nervous system	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.144	FALSE	FALSE
+ko04725	Cholinergic synapse	09150 Organismal Systems	09156 Nervous system	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.1	FALSE	FALSE
+ko04726	Serotonergic synapse	09150 Organismal Systems	09156 Nervous system	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.118	FALSE	FALSE
+ko04727	GABAergic synapse	09150 Organismal Systems	09156 Nervous system	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.13	FALSE	FALSE
+ko04728	Dopaminergic synapse	09150 Organismal Systems	09156 Nervous system	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.179	FALSE	FALSE
+ko04730	Long-term depression	09150 Organismal Systems	09156 Nervous system	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.222	FALSE	FALSE
+ko04740	Olfactory transduction	09150 Organismal Systems	09157 Sensory system	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.44	FALSE	FALSE
+ko04742	Taste transduction	09150 Organismal Systems	09157 Sensory system	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.073	FALSE	FALSE
+ko04744	Phototransduction	09150 Organismal Systems	09157 Sensory system	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.333	FALSE	FALSE
+ko04745	Phototransduction - fly	09150 Organismal Systems	09157 Sensory system	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	dme	0.278	FALSE	FALSE
+ko04750	Inflammatory mediator regulation of TRP channels	09150 Organismal Systems	09157 Sensory system	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.132	FALSE	FALSE
+ko04810	Regulation of actin cytoskeleton	09140 Cellular Processes	09142 Cell motility	TRUE	TRUE	TRUE	0	0	0	0	0	0	0	hsa,mmu	0.179	FALSE	FALSE
+ko04814	Motor proteins	09140 Cellular Processes	09142 Cell motility	TRUE	TRUE	TRUE	1	0.0018	1	0	0	0	1	hsa,mmu,dme,cel,sce,ath	0.327	TRUE	TRUE
+ko04820	Cytoskeleton in muscle cells	09140 Cellular Processes	09142 Cell motility	TRUE	TRUE	TRUE	12	0.0212	9	7	0	0	2	hsa,mmu,dme,cel,sce,ath	0.301	TRUE	TRUE
+ko04910	Insulin signaling pathway	09150 Organismal Systems	09152 Endocrine system	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.295	FALSE	FALSE
+ko04911	Insulin secretion	09150 Organismal Systems	09152 Endocrine system	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.132	FALSE	FALSE
+ko04912	GnRH signaling pathway	09150 Organismal Systems	09152 Endocrine system	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.203	FALSE	FALSE
+ko04913	Ovarian steroidogenesis	09150 Organismal Systems	09152 Endocrine system	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.175	FALSE	FALSE
+ko04914	Progesterone-mediated oocyte maturation	09150 Organismal Systems	09152 Endocrine system	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.215	FALSE	FALSE
+ko04915	Estrogen signaling pathway	09150 Organismal Systems	09152 Endocrine system	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.167	FALSE	FALSE
+ko04916	Melanogenesis	09150 Organismal Systems	09152 Endocrine system	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.164	FALSE	FALSE
+ko04917	Prolactin signaling pathway	09150 Organismal Systems	09152 Endocrine system	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.088	FALSE	FALSE
+ko04918	Thyroid hormone synthesis	09150 Organismal Systems	09152 Endocrine system	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.264	FALSE	FALSE
+ko04919	Thyroid hormone signaling pathway	09150 Organismal Systems	09152 Endocrine system	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.264	FALSE	FALSE
+ko04920	Adipocytokine signaling pathway	09150 Organismal Systems	09152 Endocrine system	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.222	FALSE	FALSE
+ko04921	Oxytocin signaling pathway	09150 Organismal Systems	09152 Endocrine system	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.205	FALSE	FALSE
+ko04922	Glucagon signaling pathway	09150 Organismal Systems	09152 Endocrine system	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.491	FALSE	FALSE
+ko04923	Regulation of lipolysis in adipocytes	09150 Organismal Systems	09152 Endocrine system	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.191	FALSE	FALSE
+ko04924	Renin secretion	09150 Organismal Systems	09152 Endocrine system	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.2	FALSE	FALSE
+ko04925	Aldosterone synthesis and secretion	09150 Organismal Systems	09152 Endocrine system	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.185	FALSE	FALSE
+ko04926	Relaxin signaling pathway	09150 Organismal Systems	09152 Endocrine system	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.104	FALSE	FALSE
+ko04927	Cortisol synthesis and secretion	09150 Organismal Systems	09152 Endocrine system	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.093	FALSE	FALSE
+ko04928	Parathyroid hormone synthesis, secretion and action	09150 Organismal Systems	09152 Endocrine system	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.157	FALSE	FALSE
+ko04929	GnRH secretion	09150 Organismal Systems	09152 Endocrine system	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.137	FALSE	FALSE
+ko04930	Type II diabetes mellitus	09160 Human Diseases	09167 Endocrine and metabolic disease	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.135	FALSE	FALSE
+ko04931	Insulin resistance	09160 Human Diseases	09167 Endocrine and metabolic disease	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.284	FALSE	FALSE
+ko04932	Non-alcoholic fatty liver disease	09160 Human Diseases	09167 Endocrine and metabolic disease	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.236	FALSE	FALSE
+ko04933	AGE-RAGE signaling pathway in diabetic complications	09160 Human Diseases	09167 Endocrine and metabolic disease	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.066	FALSE	FALSE
+ko04934	Cushing syndrome	09160 Human Diseases	09167 Endocrine and metabolic disease	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.156	FALSE	FALSE
+ko04935	Growth hormone synthesis, secretion and action	09150 Organismal Systems	09152 Endocrine system	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.109	FALSE	FALSE
+ko04936	Alcoholic liver disease	09160 Human Diseases	09167 Endocrine and metabolic disease	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.248	FALSE	FALSE
+ko04940	Type I diabetes mellitus	09160 Human Diseases	09167 Endocrine and metabolic disease	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.12	FALSE	FALSE
+ko04950	Maturity onset diabetes of the young	09160 Human Diseases	09167 Endocrine and metabolic disease	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0	FALSE	FALSE
+ko04960	Aldosterone-regulated sodium reabsorption	09150 Organismal Systems	09155 Excretory system	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.192	FALSE	FALSE
+ko04961	Endocrine and other factor-regulated calcium reabsorption	09150 Organismal Systems	09155 Excretory system	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.242	FALSE	FALSE
+ko04962	Vasopressin-regulated water reabsorption	09150 Organismal Systems	09155 Excretory system	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.182	FALSE	FALSE
+ko04964	Proximal tubule bicarbonate reclamation	09150 Organismal Systems	09155 Excretory system	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.429	FALSE	FALSE
+ko04966	Collecting duct acid secretion	09150 Organismal Systems	09155 Excretory system	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.353	FALSE	FALSE
+ko04970	Salivary secretion	09150 Organismal Systems	09154 Digestive system	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.281	FALSE	FALSE
+ko04971	Gastric acid secretion	09150 Organismal Systems	09154 Digestive system	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.2	FALSE	FALSE
+ko04972	Pancreatic secretion	09150 Organismal Systems	09154 Digestive system	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.29	FALSE	FALSE
+ko04973	Carbohydrate digestion and absorption	09150 Organismal Systems	09154 Digestive system	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.273	FALSE	FALSE
+ko04974	Protein digestion and absorption	09150 Organismal Systems	09154 Digestive system	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.439	FALSE	FALSE
+ko04975	Fat digestion and absorption	09150 Organismal Systems	09154 Digestive system	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.393	FALSE	FALSE
+ko04976	Bile secretion	09150 Organismal Systems	09154 Digestive system	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.306	FALSE	FALSE
+ko04977	Vitamin digestion and absorption	09150 Organismal Systems	09154 Digestive system	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu,dme,cel	0.28	FALSE	FALSE
+ko04978	Mineral absorption	09150 Organismal Systems	09154 Digestive system	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.333	FALSE	FALSE
+ko04979	Cholesterol metabolism	09150 Organismal Systems	09154 Digestive system	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.22	FALSE	FALSE
+ko04980	Cobalamin transport and metabolism	09150 Organismal Systems	09154 Digestive system	TRUE	TRUE	FALSE	299	0.5168	183	179	19	10	23	hsa,mmu,dme,cel	0.412	TRUE	FALSE
+ko04981	Folate transport and metabolism	09150 Organismal Systems	09154 Digestive system	TRUE	TRUE	FALSE	515	0.8942	288	289	62	15	47	hsa,mmu,dme,cel,sce,ath	0.583	TRUE	FALSE
+ko05010	Alzheimer disease	09160 Human Diseases	09164 Neurodegenerative disease	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.287	FALSE	FALSE
+ko05012	Parkinson disease	09160 Human Diseases	09164 Neurodegenerative disease	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.407	FALSE	FALSE
+ko05014	Amyotrophic lateral sclerosis	09160 Human Diseases	09164 Neurodegenerative disease	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.343	FALSE	FALSE
+ko05016	Huntington disease	09160 Human Diseases	09164 Neurodegenerative disease	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.367	FALSE	FALSE
+ko05017	Spinocerebellar ataxia	09160 Human Diseases	09164 Neurodegenerative disease	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.259	FALSE	FALSE
+ko05020	Prion disease	09160 Human Diseases	09164 Neurodegenerative disease	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.325	FALSE	FALSE
+ko05022	Pathways of neurodegeneration - multiple diseases	09160 Human Diseases	09164 Neurodegenerative disease	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.285	FALSE	FALSE
+ko05030	Cocaine addiction	09160 Human Diseases	09165 Substance dependence	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.154	FALSE	FALSE
+ko05031	Amphetamine addiction	09160 Human Diseases	09165 Substance dependence	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.239	FALSE	FALSE
+ko05032	Morphine addiction	09160 Human Diseases	09165 Substance dependence	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.109	FALSE	FALSE
+ko05033	Nicotine addiction	09160 Human Diseases	09165 Substance dependence	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.037	FALSE	FALSE
+ko05034	Alcoholism	09160 Human Diseases	09165 Substance dependence	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.221	FALSE	FALSE
+ko05100	Bacterial invasion of epithelial cells	09160 Human Diseases	09171 Infectious disease: bacterial	TRUE	TRUE	TRUE	13	0.0159	4	3	2	5	1	hsa,mmu,dme,cel,sce,ath	0.289	TRUE	TRUE
+ko05110	Vibrio cholerae infection	09160 Human Diseases	09171 Infectious disease: bacterial	TRUE	TRUE	TRUE	1	0.0018	1	0	0	1	0	hsa	0.551	TRUE	TRUE
+ko05111	Biofilm formation - Vibrio cholerae	09140 Cellular Processes	09145 Cellular community - prokaryotes	TRUE	TRUE	TRUE	2	0.0035	1	1	0	1	0		0.708	TRUE	TRUE
+ko05120	Epithelial cell signaling in Helicobacter pylori infection	09160 Human Diseases	09171 Infectious disease: bacterial	TRUE	TRUE	TRUE	1	0.0018	1	0	1	1	0	hsa	0.495	TRUE	TRUE
+ko05130	Pathogenic Escherichia coli infection	09160 Human Diseases	09171 Infectious disease: bacterial	TRUE	TRUE	TRUE	1	0	0	0	0	1	0	hsa	0.276	TRUE	TRUE
+ko05131	Shigellosis	09160 Human Diseases	09171 Infectious disease: bacterial	TRUE	TRUE	TRUE	2	0.0018	0	1	0	1	0	hsa	0.259	TRUE	TRUE
+ko05132	Salmonella infection	09160 Human Diseases	09171 Infectious disease: bacterial	TRUE	TRUE	TRUE	1	0	0	0	0	1	0	hsa,mmu	0.249	TRUE	TRUE
+ko05133	Pertussis	09160 Human Diseases	09171 Infectious disease: bacterial	TRUE	TRUE	TRUE	1	0	0	0	0	1	0	hsa,mmu	0.405	TRUE	TRUE
+ko05134	Legionellosis	09160 Human Diseases	09171 Infectious disease: bacterial	TRUE	TRUE	TRUE	1	0	0	0	0	1	0	hsa,mmu	0.464	TRUE	TRUE
+ko05135	Yersinia infection	09160 Human Diseases	09171 Infectious disease: bacterial	TRUE	TRUE	TRUE	2	0.0018	1	0	0	1	0	hsa,mmu	0.156	TRUE	TRUE
+ko05140	Leishmaniasis	09160 Human Diseases	09174 Infectious disease: parasitic	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.153	FALSE	FALSE
+ko05142	Chagas disease	09160 Human Diseases	09174 Infectious disease: parasitic	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.118	FALSE	FALSE
+ko05143	African trypanosomiasis	09160 Human Diseases	09174 Infectious disease: parasitic	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.22	FALSE	FALSE
+ko05144	Malaria	09160 Human Diseases	09174 Infectious disease: parasitic	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.119	FALSE	FALSE
+ko05145	Toxoplasmosis	09160 Human Diseases	09174 Infectious disease: parasitic	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.137	FALSE	FALSE
+ko05146	Amoebiasis	09160 Human Diseases	09174 Infectious disease: parasitic	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.172	FALSE	FALSE
+ko05150	Staphylococcus aureus infection	09160 Human Diseases	09171 Infectious disease: bacterial	TRUE	TRUE	TRUE	1	0.0018	0	0	1	1	0	hsa,mmu	0.432	TRUE	TRUE
+ko05152	Tuberculosis	09160 Human Diseases	09171 Infectious disease: bacterial	TRUE	TRUE	TRUE	1	0.0018	1	0	0	1	0	hsa,mmu	0.229	TRUE	TRUE
+ko05160	Hepatitis C	09160 Human Diseases	09172 Infectious disease: viral	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.143	FALSE	FALSE
+ko05161	Hepatitis B	09160 Human Diseases	09172 Infectious disease: viral	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.114	FALSE	FALSE
+ko05162	Measles	09160 Human Diseases	09172 Infectious disease: viral	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.111	FALSE	FALSE
+ko05163	Human cytomegalovirus infection	09160 Human Diseases	09172 Infectious disease: viral	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.093	FALSE	FALSE
+ko05164	Influenza A	09160 Human Diseases	09172 Infectious disease: viral	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.188	FALSE	FALSE
+ko05165	Human papillomavirus infection	09160 Human Diseases	09172 Infectious disease: viral	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.212	FALSE	FALSE
+ko05166	Human T-cell leukemia virus 1 infection	09160 Human Diseases	09172 Infectious disease: viral	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.141	FALSE	FALSE
+ko05167	Kaposi sarcoma-associated herpesvirus infection	09160 Human Diseases	09172 Infectious disease: viral	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.118	FALSE	FALSE
+ko05168	Herpes simplex virus 1 infection	09160 Human Diseases	09172 Infectious disease: viral	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.133	FALSE	FALSE
+ko05169	Epstein-Barr virus infection	09160 Human Diseases	09172 Infectious disease: viral	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.156	FALSE	FALSE
+ko05170	Human immunodeficiency virus 1 infection	09160 Human Diseases	09172 Infectious disease: viral	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.11	FALSE	FALSE
+ko05171	Coronavirus disease - COVID-19	09160 Human Diseases	09172 Infectious disease: viral	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.397	FALSE	FALSE
+ko05200	Pathways in cancer	09160 Human Diseases	09161 Cancer: overview	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.115	FALSE	FALSE
+ko05202	Transcriptional misregulation in cancer	09160 Human Diseases	09161 Cancer: overview	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.13	FALSE	FALSE
+ko05203	Viral carcinogenesis	09160 Human Diseases	09161 Cancer: overview	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.184	FALSE	FALSE
+ko05204	Chemical carcinogenesis - DNA adducts	09160 Human Diseases	09161 Cancer: overview	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.448	FALSE	FALSE
+ko05205	Proteoglycans in cancer	09160 Human Diseases	09161 Cancer: overview	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.187	FALSE	FALSE
+ko05206	MicroRNAs in cancer	09160 Human Diseases	09161 Cancer: overview	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.144	FALSE	FALSE
+ko05207	Chemical carcinogenesis - receptor activation	09160 Human Diseases	09161 Cancer: overview	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.142	FALSE	FALSE
+ko05208	Chemical carcinogenesis - reactive oxygen species	09160 Human Diseases	09161 Cancer: overview	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.366	FALSE	FALSE
+ko05210	Colorectal cancer	09160 Human Diseases	09162 Cancer: specific types	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.111	FALSE	FALSE
+ko05211	Renal cell carcinoma	09160 Human Diseases	09162 Cancer: specific types	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.125	FALSE	FALSE
+ko05212	Pancreatic cancer	09160 Human Diseases	09162 Cancer: specific types	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.159	FALSE	FALSE
+ko05213	Endometrial cancer	09160 Human Diseases	09162 Cancer: specific types	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.156	FALSE	FALSE
+ko05214	Glioma	09160 Human Diseases	09162 Cancer: specific types	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.167	FALSE	FALSE
+ko05215	Prostate cancer	09160 Human Diseases	09162 Cancer: specific types	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.195	FALSE	FALSE
+ko05216	Thyroid cancer	09160 Human Diseases	09162 Cancer: specific types	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.147	FALSE	FALSE
+ko05217	Basal cell carcinoma	09160 Human Diseases	09162 Cancer: specific types	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.062	FALSE	FALSE
+ko05218	Melanoma	09160 Human Diseases	09162 Cancer: specific types	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.08	FALSE	FALSE
+ko05219	Bladder cancer	09160 Human Diseases	09162 Cancer: specific types	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.158	FALSE	FALSE
+ko05220	Chronic myeloid leukemia	09160 Human Diseases	09162 Cancer: specific types	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.127	FALSE	FALSE
+ko05221	Acute myeloid leukemia	09160 Human Diseases	09162 Cancer: specific types	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.105	FALSE	FALSE
+ko05222	Small cell lung cancer	09160 Human Diseases	09162 Cancer: specific types	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.162	FALSE	FALSE
+ko05223	Non-small cell lung cancer	09160 Human Diseases	09162 Cancer: specific types	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.15	FALSE	FALSE
+ko05224	Breast cancer	09160 Human Diseases	09162 Cancer: specific types	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.114	FALSE	FALSE
+ko05225	Hepatocellular carcinoma	09160 Human Diseases	09162 Cancer: specific types	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.198	FALSE	FALSE
+ko05226	Gastric cancer	09160 Human Diseases	09162 Cancer: specific types	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.148	FALSE	FALSE
+ko05230	Central carbon metabolism in cancer	09160 Human Diseases	09161 Cancer: overview	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.327	FALSE	FALSE
+ko05231	Choline metabolism in cancer	09160 Human Diseases	09161 Cancer: overview	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.279	FALSE	FALSE
+ko05235	PD-L1 expression and PD-1 checkpoint pathway in cancer	09160 Human Diseases	09161 Cancer: overview	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.096	FALSE	FALSE
+ko05310	Asthma	09160 Human Diseases	09163 Immune disease	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.05	FALSE	FALSE
+ko05320	Autoimmune thyroid disease	09160 Human Diseases	09163 Immune disease	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.04	FALSE	FALSE
+ko05321	Inflammatory bowel disease	09160 Human Diseases	09163 Immune disease	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.019	FALSE	FALSE
+ko05322	Systemic lupus erythematosus	09160 Human Diseases	09163 Immune disease	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.222	FALSE	FALSE
+ko05323	Rheumatoid arthritis	09160 Human Diseases	09163 Immune disease	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.179	FALSE	FALSE
+ko05330	Allograft rejection	09160 Human Diseases	09163 Immune disease	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.045	FALSE	FALSE
+ko05332	Graft-versus-host disease	09160 Human Diseases	09163 Immune disease	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0	FALSE	FALSE
+ko05340	Primary immunodeficiency	09160 Human Diseases	09163 Immune disease	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.108	FALSE	FALSE
+ko05410	Hypertrophic cardiomyopathy	09160 Human Diseases	09166 Cardiovascular disease	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.241	FALSE	FALSE
+ko05412	Arrhythmogenic right ventricular cardiomyopathy	09160 Human Diseases	09166 Cardiovascular disease	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.158	FALSE	FALSE
+ko05414	Dilated cardiomyopathy	09160 Human Diseases	09166 Cardiovascular disease	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.221	FALSE	FALSE
+ko05415	Diabetic cardiomyopathy	09160 Human Diseases	09166 Cardiovascular disease	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.375	FALSE	FALSE
+ko05416	Viral myocarditis	09160 Human Diseases	09166 Cardiovascular disease	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.17	FALSE	FALSE
+ko05417	Lipid and atherosclerosis	09160 Human Diseases	09166 Cardiovascular disease	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.181	FALSE	FALSE
+ko05418	Fluid shear stress and atherosclerosis	09160 Human Diseases	09166 Cardiovascular disease	TRUE	TRUE	FALSE	0	0	0	0	0	0	0	hsa,mmu	0.202	FALSE	FALSE
+ko09113	Global maps only	09100 Metabolism	09112 Not included in regular maps	TRUE	FALSE	TRUE	0	0	0	0	0	0	0		0.5	FALSE	FALSE

@@ -1,3 +1,65 @@
+# ggpicrust2 2.6.0
+
+## Breaking changes
+
+* `pathway_gsea(method = "camera"|"fry")` now defaults to
+  `transformation = "logCPM"`, and camera now defaults to
+  `inter.gene.cor = NA`, which estimates the correlation separately for each
+  set. PICRUSt2 abundances are taxon abundances multiplied by reference-genome
+  copy numbers. They are not read counts, and KOs carried by the same genomes
+  are strongly correlated. Under the previous defaults, multiplying a table by
+  a constant changed voom-based results, and the fixed correlation of 0.01
+  made camera anti-conservative for correlated sets. The previous behavior
+  remains available with `transformation = "voom", inter.gene.cor = 0.01`.
+* `pathway_gsea()` now defaults to `method = "fry"` instead of `"camera"`.
+  fry asks whether the KOs in a set change in a consistent direction; camera
+  asks whether a set changes more than the other KOs. Because a shift in one
+  dominant taxon moves many predicted KOs together, the competitive camera test
+  rarely singles out a set in predicted metagenomes. Use `method = "camera"`
+  for relative enrichment.
+* Supplying `transformation` together with a preranked method (`fgsea`,
+  `GSEA`, `clusterProfiler`) is an error, whatever its value.
+* `inter.gene.cor = NA` (logical) is accepted as well as `NA_real_`.
+* KEGG gene sets in `pathway_gsea()` and `prepare_gene_sets()` now apply the
+  same prokaryote filter as `ko2kegg_abundance()` (`filter_for_prokaryotes =
+  TRUE`), so gene-set tests and pathway DAA use the same 193 maps instead of
+  488. Organismal Systems and Human Diseases maps, such as ko05016
+  (Huntington disease), are excluded unless `filter_for_prokaryotes = FALSE`.
+* The prokaryote filter now also requires that KEGG draws an
+  organism-specific version of a map for at least one of 575 bacterial and
+  archaeal genomes sampled across all KEGG prokaryotic orders. This removes
+  116 eukaryotic maps that the category rule kept, including signal
+  transduction (ko04150 mTOR, ko04310 Wnt), cell growth and death (ko04114
+  Oocyte meiosis, ko04217 Necroptosis), cell junction (ko04510 Focal
+  adhesion), glycan and plant secondary metabolism maps. Bacterial infection
+  and antimicrobial resistance maps are kept. The list of map IDs is built by
+  `data-raw/kegg_prokaryotic_maps.R` from KEGG REST organism pathway lists.
+* `aggregate_taxa_contributions()` now reports contributions without a label
+  at `tax_level` as a separate "Unclassified" category. It is no longer ranked
+  among the top taxa or merged into "Other". Placeholder labels such as
+  "Unassigned", "unclassified" or "Unknown" are treated as missing.
+
+## New features
+
+* `compare_taxa_contributions()` compares how two contribution profiles, such
+  as a PICRUSt2 prediction and a stratified shotgun profile, allocate the same
+  function to taxa within each sample. Unassigned mass stays in each
+  denominator, and the total variation distance is reported as a lower and
+  upper bound over every possible placement of that mass.
+* `pathway_gsea()` gains `sequencing_depth` for camera and fry: a metadata
+  column or a named vector of read depths (for PICRUSt2 output, the column sums
+  of the ASV table). Its centered log is added to the design as
+  `log_sequencing_depth`. With logCPM input, a difference in depth between
+  groups at low depth can make fry report false pathways; adjusting for depth
+  removes this. The predicted table's own column sums depend on community
+  composition and should not be used as the depth.
+
+## Documentation
+
+* The KO-to-KEGG reference documentation now states its source (KEGG BRITE
+  Release 117.0, 2026-01-01) and its actual size: 63,810 KO-pathway rows,
+  488 pathway maps (14,538 KOs), and 193 maps after the prokaryote filter.
+
 # ggpicrust2 2.5.19
 
 ## Analysis options

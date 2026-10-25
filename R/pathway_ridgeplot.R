@@ -72,7 +72,7 @@
 #' data("ko_abundance")
 #' data("metadata")
 #'
-#' # Run GSEA (using camera method - recommended)
+#' # Run GSEA with the competitive camera test
 #' gsea_results <- pathway_gsea(
 #'   abundance = ko_abundance %>% column_to_rownames("#NAME"),
 #'   metadata = metadata,

@@ -28,8 +28,12 @@ format (separate columns for each rank).}
 \code{"Kingdom"}, \code{"Phylum"}, \code{"Class"}, \code{"Order"},
 \code{"Family"}, \code{"Genus"}, \code{"Species"}. Default \code{"Genus"}.}
 
-\item{top_n}{Integer. Number of top taxa to keep by total contribution;
-remaining are lumped as "Other". Default 10.}
+\item{top_n}{Integer. Number of top assigned taxa to keep by total
+contribution; remaining assigned taxa are lumped as "Other". Contributions
+without a label at \code{tax_level} stay in a separate "Unclassified"
+category and are never merged into "Other". Labels such as
+"Unassigned", "unclassified" or "Unknown" are treated as missing.
+Default 10.}
 
 \item{daa_results_df}{Optional data.frame from \code{\link{pathway_daa}},
 used to filter contributions to significant pathways.}

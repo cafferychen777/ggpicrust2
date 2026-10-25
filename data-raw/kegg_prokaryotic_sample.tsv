@@ -1,0 +1,576 @@
+org	name	kingdom	clade	order	sample_tags
+eco	Escherichia coli K-12 MG1655	Bacteria	Enterobacteria	Enterobacteriaceae	order_first,gut_genus,map_anchor
+sfs	Shigella flexneri Shi06HN006 (serotype Yv)	Bacteria	Enterobacteria	Enterobacteriaceae	order_random
+ype	Yersinia pestis CO92 (biovar Orientalis)	Bacteria	Enterobacteria	other Enterobacterales	order_first
+ddc	Dickeya parazeae	Bacteria	Enterobacteria	other Enterobacterales	order_random
+hin	Haemophilus influenzae Rd KW20 (serotype d)	Bacteria	other Gammaproteobacteria	Pasteurellales	order_first,gut_genus
+msep	Mergibacter septicus	Bacteria	other Gammaproteobacteria	Pasteurellales	order_random
+xfa	Xylella fastidiosa 9a5c	Bacteria	other Gammaproteobacteria	Lysobacterales	order_first
+xhd	Xanthomonas hydrangeae	Bacteria	other Gammaproteobacteria	Lysobacterales	order_random
+vch	Vibrio cholerae O1 El Tor N16961	Bacteria	other Gammaproteobacteria	Vibrionales	order_first,map_anchor
+vnp	Vibrio neptunius	Bacteria	other Gammaproteobacteria	Vibrionales	order_random
+pre	Metapseudomonas resinovorans	Bacteria	other Gammaproteobacteria	Pseudomonadales	order_first
+pkm	Pseudomonas kermanshahensis	Bacteria	other Gammaproteobacteria	Pseudomonadales	order_random
+par	Psychrobacter arcticus	Bacteria	other Gammaproteobacteria	Moraxellales	order_first
+acum	Acinetobacter cumulans	Bacteria	other Gammaproteobacteria	Moraxellales	order_random
+son	Shewanella oneidensis	Bacteria	other Gammaproteobacteria	Alteromonadales	order_first
+amaa	Alteromonas mediterranea DE1	Bacteria	other Gammaproteobacteria	Alteromonadales	order_random
+cja	Cellvibrio japonicus	Bacteria	other Gammaproteobacteria	Cellvibrionales	order_first
+maga	Microbulbifer agarilyticus	Bacteria	other Gammaproteobacteria	Cellvibrionales	order_random
+cbu	Coxiella burnetii RSA 493	Bacteria	other Gammaproteobacteria	Legionellales	order_first
+cbs	Coxiella burnetii RSA 331	Bacteria	other Gammaproteobacteria	Legionellales	order_random
+mca	Methylococcus capsulatus	Bacteria	other Gammaproteobacteria	Methylococcales	order_first
+misz	Methylomagnum ishizawai	Bacteria	other Gammaproteobacteria	Methylococcales	order_random
+ftu	Francisella tularensis subsp. tularensis SCHU S4	Bacteria	other Gammaproteobacteria	Thiotrichales	order_first
+fta	Francisella tularensis subsp. holarctica FTNF002-00	Bacteria	other Gammaproteobacteria	Thiotrichales	order_random
+noc	Nitrosococcus oceani	Bacteria	other Gammaproteobacteria	Chromatiales	order_first
+hhc	Ectothiorhodospira haloalkaliphila	Bacteria	other Gammaproteobacteria	Chromatiales	order_random
+tee	Tenderia electrophaga	Bacteria	other Gammaproteobacteria	Tenderiales	order_first,order_random
+woc	Woeseia oceani	Bacteria	other Gammaproteobacteria	Woeseiales	order_first,order_random
+ttc	Thiohalobacter thiocyanaticus	Bacteria	other Gammaproteobacteria	Thiohalobacterales	order_first
+thic	Thiohalobacter sp. COW1	Bacteria	other Gammaproteobacteria	Thiohalobacterales	order_random
+hch	Hahella chejuensis	Bacteria	other Gammaproteobacteria	Oceanospirillales	order_first
+cobb	Cobetia sp. 4B	Bacteria	other Gammaproteobacteria	Oceanospirillales	order_random
+ple	Candidatus Portiera aleyrodidarum BT-B-HRs	Bacteria	other Gammaproteobacteria	Johnevansiales	order_first
+eme	Johnevansia muelleri	Bacteria	other Gammaproteobacteria	Johnevansiales	order_random
+aha	Aeromonas hydrophila subsp. hydrophila ATCC 7966	Bacteria	other Gammaproteobacteria	Aeromonadales	order_first
+acav	Aeromonas caviae	Bacteria	other Gammaproteobacteria	Aeromonadales	order_random
+kko	Kangiella koreensis	Bacteria	other Gammaproteobacteria	Kangiellales	order_first
+kam	Kangiella aquimarina	Bacteria	other Gammaproteobacteria	Kangiellales	order_random
+dno	Dichelobacter nodosus	Bacteria	other Gammaproteobacteria	Cardiobacteriales	order_first
+sutr	Suttonella sp. R2A3	Bacteria	other Gammaproteobacteria	Cardiobacteriales	order_random
+gap	Gilliamella apicola	Bacteria	other Gammaproteobacteria	Orbales	order_first,order_random
+sdf	Steroidobacter denitrificans	Bacteria	other Gammaproteobacteria	Steroidobacterales	order_first,order_random
+sok	Solimonas sp. K1W22B-7	Bacteria	other Gammaproteobacteria	Nevskiales	order_first,order_random
+gbi	Immundisolibacter cernigliae	Bacteria	other Gammaproteobacteria	Immundisolibacterales	order_first,order_random
+slim	Sulfuricaulis limicola	Bacteria	other Gammaproteobacteria	Acidiferrobacterales	order_first
+aty	Acidiferrobacter thiooxydans	Bacteria	other Gammaproteobacteria	Acidiferrobacterales	order_random
+saln	Salinisphaera sp. LB1	Bacteria	other Gammaproteobacteria	Salinisphaerales	order_first,order_random
+gbac	Candidatus Comchoanobacter bicostacola	Bacteria	other Gammaproteobacteria	Comchoanobacterales	order_first,order_random
+tsn	Candidatus Pseudothioglobus singularis	Bacteria	other Gammaproteobacteria	unclassified Gammaproteobacteria	order_first
+rev	Candidatus Reidiella endopervernicosa	Bacteria	other Gammaproteobacteria	unclassified Gammaproteobacteria	order_random
+nme	Neisseria meningitidis MC58 (serogroup B)	Bacteria	Betaproteobacteria	Neisseriales	order_first
+cfon	Chitinibacter fontanus	Bacteria	Betaproteobacteria	Neisseriales	order_random
+rso	Ralstonia pseudosolanacearum GMI1000	Bacteria	Betaproteobacteria	Burkholderiales	order_first
+bpsm	Burkholderia pseudomallei MSHR511	Bacteria	Betaproteobacteria	Burkholderiales	order_random
+neu	Nitrosomonas europaea	Bacteria	Betaproteobacteria	Nitrosomonadales	order_first
+tsw	Thiobacillus sedimenti	Bacteria	Betaproteobacteria	Nitrosomonadales	order_random
+dsu	Azospira oryzae	Bacteria	Betaproteobacteria	Rhodocyclales	order_first
+daj	Dechloromonas aquae	Bacteria	Betaproteobacteria	Rhodocyclales	order_random
+fmy	Ferrovum myxofaciens	Bacteria	Betaproteobacteria	Ferrovales	order_first,order_random
+app	Candidatus Accumulibacter phosphatis	Bacteria	Betaproteobacteria	unclassified Betaproteobacteria	order_first
+kbt	Candidatus Kinetoplastidibacterium blastocrithidiae TCC012E	Bacteria	Betaproteobacteria	unclassified Betaproteobacteria	order_random
+rpr	Rickettsia prowazekii Madrid E	Bacteria	Alphaproteobacteria	Rickettsiales	order_first
+wend	Wolbachia endosymbiont of Frankliniella intonsa	Bacteria	Alphaproteobacteria	Rickettsiales	order_random
+paca	Candidatus Odyssella acanthamoebae	Bacteria	Alphaproteobacteria	Holosporales	order_first
+hec	Candidatus Hydrogenosomobacter endosymbioticus	Bacteria	Alphaproteobacteria	Holosporales	order_random
+mlo	Mesorhizobium japonicum MAFF 303099	Bacteria	Alphaproteobacteria	Hyphomicrobiales	order_first
+mews	Mesorhizobium sp. WSM4904	Bacteria	Alphaproteobacteria	Hyphomicrobiales	order_random
+ccr	Caulobacter vibrioides CB15	Bacteria	Alphaproteobacteria	Caulobacterales	order_first,map_anchor
+bsta	Brevundimonas staleyi	Bacteria	Alphaproteobacteria	Caulobacterales	order_random
+sil	Ruegeria pomeroyi	Bacteria	Alphaproteobacteria	Rhodobacterales	order_first
+jov	Jannaschia ovalis	Bacteria	Alphaproteobacteria	Rhodobacterales	order_random
+mmr	Maricaulis maris	Bacteria	Alphaproteobacteria	Maricaulales	order_first
+oax	Oceanicaulis alexandrii	Bacteria	Alphaproteobacteria	Maricaulales	order_random
+hne	Hyphomonas neptunium	Bacteria	Alphaproteobacteria	Hyphomonadales	order_first
+cbot	Candidatus Viadribacter manganicus	Bacteria	Alphaproteobacteria	Hyphomonadales	order_random
+zmo	Zymomonas mobilis subsp. mobilis ZM4	Bacteria	Alphaproteobacteria	Sphingomonadales	order_first
+porc	Porphyrobacter sp. CACIAM 03H1	Bacteria	Alphaproteobacteria	Sphingomonadales	order_random
+gox	Gluconobacter oxydans 621H	Bacteria	Alphaproteobacteria	Acetobacterales	order_first
+kre	Komagataeibacter rhaeticus	Bacteria	Alphaproteobacteria	Acetobacterales	order_random
+shum	Allostella humosa	Bacteria	Alphaproteobacteria	Rhodospirillales	order_first
+tlu	Thalassospira lucentensis	Bacteria	Alphaproteobacteria	Rhodospirillales	order_random
+tmo	Tistrella mobilis	Bacteria	Alphaproteobacteria	Geminicoccales	order_first
+mvp	Marinivivus vitaminiproducens	Bacteria	Alphaproteobacteria	Geminicoccales	order_random
+pbr	Parvularcula bermudensis	Bacteria	Alphaproteobacteria	Parvularculales	order_first
+hfo	Hyphococcus formosus	Bacteria	Alphaproteobacteria	Parvularculales	order_random
+pub	Candidatus Pelagibacter ubique	Bacteria	Alphaproteobacteria	Pelagibacterales	order_first
+apm	Alpha proteobacterium HIMB5	Bacteria	Alphaproteobacteria	Pelagibacterales	order_random
+ecog	Paremcibacter congregatus	Bacteria	Alphaproteobacteria	Emcibacterales	order_first,order_random
+apb	Candidatus Puniceispirillum marinum	Bacteria	Alphaproteobacteria	Puniceispirillales	order_first
+pond	Candidatus Ponderosibacter sp. Uisw_141_02	Bacteria	Alphaproteobacteria	Puniceispirillales	order_random
+snea	Sneathiella marina	Bacteria	Alphaproteobacteria	Sneathiellales	order_first,order_random
+koz	Kordiimonas sp. SCSIO 12610	Bacteria	Alphaproteobacteria	Kordiimonadales	order_first
+tmk	Temperatibacter marinus	Bacteria	Alphaproteobacteria	Kordiimonadales	order_random
+minw	Minwuia sp. contig_746	Bacteria	Alphaproteobacteria	Minwuiales	order_first,order_random
+afr	Acidithiobacillus ferrooxidans ATCC 23270	Bacteria	other Pseudomonadota	Acidithiobacillales	order_first,order_random
+maes	Mariprofundus aestuarium	Bacteria	other Pseudomonadota	Mariprofundales	order_first
+mfn	Mariprofundus ferrinatatus	Bacteria	other Pseudomonadota	Mariprofundales	order_random
+htl	Hydrogenophilus thermoluteolus	Bacteria	other Pseudomonadota	Hydrogenophilales	order_first,order_random
+mgm	Magnetococcus marinus	Bacteria	other Pseudomonadota	Magnetococcales	order_first,order_random
+hpy	Helicobacter pylori 26695	Bacteria	Campylobacterota	Campylobacterales	order_first,gut_genus,map_anchor
+slh	Sulfurovum lithotrophicum	Bacteria	Campylobacterota	Campylobacterales	order_random
+nis	Nitratiruptor sp. SB155-2	Bacteria	Campylobacterota	Nautiliales	order_first
+nih	Nitratiruptor sp. YY08-10	Bacteria	Campylobacterota	Nautiliales	order_random
+hmr	Hippea maritima	Bacteria	Campylobacterota	Desulfurellales	order_first,order_random
+gsu	Geobacter sulfurreducens PCA	Bacteria	Thermodesulfobacteriota	Geobacterales	order_first
+gpi	Geobacter pickeringii	Bacteria	Thermodesulfobacteriota	Geobacterales	order_random
+gsb	Geoalkalibacter subterraneus	Bacteria	Thermodesulfobacteriota	Desulfuromonadales	order_first,order_random
+dds	Desulfovibrio desulfuricans ATCC 27774	Bacteria	Thermodesulfobacteriota	Desulfovibrionales	order_first,gut_genus
+daf	Desulfocurvibacter africanus subsp. africanus	Bacteria	Thermodesulfobacteriota	Desulfovibrionales	order_random
+dps	Desulfotalea psychrophila	Bacteria	Thermodesulfobacteriota	Desulfobulbales	order_first
+dak	Desulfurivibrio alkaliphilus	Bacteria	Thermodesulfobacteriota	Desulfobulbales	order_random
+dol	Desulfosudis oleivorans	Bacteria	Thermodesulfobacteriota	Desulfobacterales	order_first
+dml	Desulfococcus multivorans	Bacteria	Thermodesulfobacteriota	Desulfobacterales	order_random
+sat	Syntrophus aciditrophicus	Bacteria	Thermodesulfobacteriota	Syntrophales	order_first,order_random
+dao	Desulfobacca acetoxidans	Bacteria	Thermodesulfobacteriota	Desulfobaccales	order_first,order_random
+dti	Desulfomonile tiedjei	Bacteria	Thermodesulfobacteriota	Desulfomonilales	order_first,order_random
+sfu	Syntrophobacter fumaroxidans	Bacteria	Thermodesulfobacteriota	Syntrophobacterales	order_first,order_random
+dbr	Desulfarculus baarsii	Bacteria	Thermodesulfobacteriota	Desulfarculales	order_first,order_random
+tid	Thermodesulfatator indicus	Bacteria	Thermodesulfobacteriota	Thermodesulfobacteriales	order_first
+tav	Thermosulfuriphilus ammonigenes	Bacteria	Thermodesulfobacteriota	Thermodesulfobacteriales	order_random
+daw	Candidatus Desulfofervidus auxilii	Bacteria	Thermodesulfobacteriota	Desulfofervidales	order_first,order_random
+mzl	Candidatus Mycalebacterium zealandia	Bacteria	Thermodesulfobacteriota	Nemesobacterales	order_first,order_random
+ade	Anaeromyxobacter dehalogenans 2CP-C	Bacteria	Myxococcota	Myxococcales	order_first
+mfb	Myxococcus fulvus	Bacteria	Myxococcota	Myxococcales	order_random
+scl	Sorangium cellulosum So ce56	Bacteria	Myxococcota	Polyangiales	order_first
+pauu	Polyangium aurulentum	Bacteria	Myxococcota	Polyangiales	order_random
+hoh	Haliangium ochraceum	Bacteria	Myxococcota	Haliangiales	order_first,order_random
+nann	Nannocystis punicea	Bacteria	Myxococcota	Nannocystales	order_first
+npb	Nannocystis pusilla	Bacteria	Myxococcota	Nannocystales	order_random
+bba	Bdellovibrio bacteriovorus HD100	Bacteria	Bdellovibrionota	Bdellovibrionales	order_first
+bdz	Bdellovibrio sp. ZAP7	Bacteria	Bdellovibrionota	Bdellovibrionales	order_random
+bmx	Halobacteriovorax marinus	Bacteria	Bdellovibrionota	Bacteriovoracales	order_first
+bavx	Bacteriovorax sp. As-1	Bacteria	Bdellovibrionota	Bacteriovoracales	order_random
+sbf	Fluviispira sanaruensis	Bacteria	Bdellovibrionota	Silvanigrellales	order_first
+saqi	Silvanigrella aquatica	Bacteria	Bdellovibrionota	Silvanigrellales	order_random
+tro	Thermomicrobium roseum	Bacteria	Thermomicrobiota	Thermomicrobiales	order_first,order_random
+sti	Sphaerobacter thermophilus	Bacteria	Thermomicrobiota	Sphaerobacterales	order_first,order_random
+tnr	Thermodesulfobium narugense	Bacteria	Thermodesulfobiota	Thermodesulfobiales	order_first,order_random
+ctr	Chlamydia trachomatis D/UW-3/CX	Bacteria	Chlamydiota	Chlamydiales	order_first
+cpj	Chlamydia pneumoniae J138	Bacteria	Chlamydiota	Chlamydiales	order_random
+pcu	Candidatus Protochlamydia amoebophila	Bacteria	Chlamydiota	Parachlamydiales	order_first
+sng	Simkania negevensis	Bacteria	Chlamydiota	Parachlamydiales	order_random
+ote	Opitutus terrae	Bacteria	Verrucomicrobiota	Opitutales	order_first
+vbh	Nibricoccus aquaticus HZ-65	Bacteria	Verrucomicrobiota	Opitutales	order_random
+caa	Coraliomargarita akajimensis	Bacteria	Verrucomicrobiota	Puniceicoccales	order_first
+calg	Coraliomargarita algicola	Bacteria	Verrucomicrobiota	Puniceicoccales	order_random
+amu	Akkermansia muciniphila	Bacteria	Verrucomicrobiota	Verrucomicrobiales	order_first,gut_genus
+lui	Luteolibacter sp. LG18	Bacteria	Verrucomicrobiota	Verrucomicrobiales	order_random
+fpes	Fontisphaera persica	Bacteria	Verrucomicrobiota	Limisphaerales	order_first,order_random
+min	Methylacidiphilum infernorum	Bacteria	Verrucomicrobiota	Methylacidiphilales	order_first
+mcao	Methylacidiphilum caldifontis	Bacteria	Verrucomicrobiota	Methylacidiphilales	order_random
+xii	Candidatus Xiphinematobacter sp. Idaho Grape	Bacteria	Verrucomicrobiota	unclassified Verrucomicrobia	order_first
+vba	Verrucomicrobia bacterium IMCC26134	Bacteria	Verrucomicrobiota	unclassified Verrucomicrobia	order_random
+rba	Rhodopirellula baltica	Bacteria	Planctomycetota	Pirellulales	order_first
+bgok	Bythopirellula goksoeyrii	Bacteria	Planctomycetota	Pirellulales	order_random
+plm	Planctopirus limnophila	Bacteria	Planctomycetota	Planctomycetales	order_first
+plio	Planctomicrobium limosum	Bacteria	Planctomycetota	Planctomycetales	order_random
+ges	Gemmata sp. SH-PL17	Bacteria	Planctomycetota	Gemmatales	order_first
+tsph	Telmatocola sphagniphila	Bacteria	Planctomycetota	Gemmatales	order_random
+ipa	Isosphaera pallida	Bacteria	Planctomycetota	Isosphaerales	order_first,order_random
+knv	Kolteria novifilia	Bacteria	Planctomycetota	Kolteriales	order_first,order_random
+pbap	Engelhardtia mirabilis	Bacteria	Planctomycetota	unclassified Planctomycetia	order_first,order_random
+kst	Candidatus Kuenenia stuttgartensis	Bacteria	Planctomycetota	Brocadiales	order_first
+jet	Candidatus Jettenia sp.	Bacteria	Planctomycetota	Brocadiales	order_random
+phm	Phycisphaera mikurensis	Bacteria	Planctomycetota	Phycisphaerales	order_first
+mcad	Mucisphaera calidilacus	Bacteria	Planctomycetota	Phycisphaerales	order_random
+pbu	Sedimentisphaera cyanobacteriorum L21-RPul-D3	Bacteria	Planctomycetota	Sedimentisphaerales	order_first
+pbp	Sedimentisphaera salicampi	Bacteria	Planctomycetota	Sedimentisphaerales	order_random
+hbs	Humisphaera borealis	Bacteria	Planctomycetota	Tepidisphaerales	order_first,order_random
+uam	Candidatus Uabimicrobium amorphum	Bacteria	Planctomycetota	Uabimicrobiales	order_first,order_random
+vbl	Kiritimatiella glycovorans	Bacteria	Kiritimatiellota	Kiritimatiellales	order_first,order_random
+taer	Tichowtungia aerotolerans	Bacteria	Kiritimatiellota	Tichowtungiales	order_first,order_random
+lpro	Lentisphaera profundi	Bacteria	Lentisphaerota	Lentisphaerales	order_first,order_random
+vbc	Victivallales bacterium CCUG 44730	Bacteria	Lentisphaerota	Victivallales	order_first,order_random
+lbv	Lentisphaerota bacterium zth2	Bacteria	Lentisphaerota	unclassified Lentisphaerota	order_first,order_random
+vai	Candidatus Velamenicoccus archaeovorus	Bacteria	Omnitrophota	unclassified Omnitrophota	order_first,order_random
+bbu	Borreliella burgdorferi B31	Bacteria	Spirochaetota	Spirochaetales	order_first
+slr	Salinispira pacifica	Bacteria	Spirochaetota	Spirochaetales	order_random
+tpa	Treponema pallidum subsp. pallidum Nichols	Bacteria	Spirochaetota	Treponematales	order_first,gut_genus
+tph	Treponema pallidum subsp. pallidum Chicago	Bacteria	Spirochaetota	Treponematales	order_random
+sta	Winmispira thermophila DSM 6192	Bacteria	Spirochaetota	Winmispirales	order_first,order_random
+bhy	Brachyspira hyodysenteriae WA1	Bacteria	Spirochaetota	Brachyspirales	order_first
+bpo	Brachyspira pilosicoli 95/1000	Bacteria	Spirochaetota	Brachyspirales	order_random
+taqu	Thermospira aquatica	Bacteria	Spirochaetota	Brevinematales	order_first,order_random
+lil	Leptospira interrogans serovar Lai 56601	Bacteria	Spirochaetota	Leptospirales	order_first
+lkm	Leptospira kmetyi	Bacteria	Spirochaetota	Leptospirales	order_random
+aba	Candidatus Koribacter versatilis	Bacteria	Acidobacteriota	Terriglobales	order_first
+orp	Occallatibacter riparius	Bacteria	Acidobacteriota	Terriglobales	order_random
+sus	Candidatus Solibacter usitatus	Bacteria	Acidobacteriota	Bryobacterales	order_first,order_random
+ctm	Chloracidobacterium thermophilum	Bacteria	Acidobacteriota	Chloracidobacteriales	order_first
+chlo	Chloracidobacterium sp. MS 40/45	Bacteria	Acidobacteriota	Chloracidobacteriales	order_random
+abac	Luteitalea pratensis	Bacteria	Acidobacteriota	Vicinamibacterales	order_first,order_random
+thyd	Thermotomaculum hydrothermale	Bacteria	Acidobacteriota	Thermotomaculales	order_first,order_random
+scor	Sulfidibacter corallicola	Bacteria	Acidobacteriota	Acanthopleuribacterales	order_first,order_random
+gex	Geothrix oryzae	Bacteria	Acidobacteriota	Holophagales	order_first,order_random
+emi	Elusimicrobium minutum	Bacteria	Elusimicrobiota	Elusimicrobiales	order_first,order_random
+epo	Endomicrobium proavitum	Bacteria	Elusimicrobiota	Endomicrobiales	order_first
+rsd	Candidatus Endomicrobiellum trichonymphae Rs-D17 genomovar Ri2008	Bacteria	Elusimicrobiota	Endomicrobiales	order_random
+fsu	Fibrobacter succinogenes	Bacteria	Fibrobacterota	Fibrobacterales	order_first,order_random
+gau	Gemmatimonas aurantiaca	Bacteria	Gemmatimonadota	Gemmatimonadales	order_first
+ggr	Gemmatimonas groenlandica	Bacteria	Gemmatimonadota	Gemmatimonadales	order_random
+gmt	Gaopeijia maritima	Bacteria	Gemmatimonadota	Gaopeijiales	order_first,order_random
+bth	Bacteroides thetaiotaomicron VPI-5482	Bacteria	Bacteroidota	Bacteroidales	order_first,gut_genus
+mica	Microbacter sp. GSS18	Bacteria	Bacteroidota	Bacteroidales	order_random
+dori	Draconibacterium orientale	Bacteria	Bacteroidota	Marinilabiliales	order_first
+mbas	Labilibaculum antarcticum	Bacteria	Bacteroidota	Marinilabiliales	order_random
+cpi	Chitinophaga pinensis	Bacteria	Bacteroidota	Chitinophagales	order_first
+chit	Chitinophaga sp. XS-30	Bacteria	Bacteroidota	Chitinophagales	order_random
+hhy	Haliscomenobacter hydrossis	Bacteria	Bacteroidota	Saprospirales	order_first
+aup	Aureispira anguillae	Bacteria	Bacteroidota	Saprospirales	order_random
+phe	Pedobacter heparinus	Bacteria	Bacteroidota	Sphingobacteriales	order_first
+ssiy	Sphingobacterium siyangense	Bacteria	Bacteroidota	Sphingobacteriales	order_random
+cmr	Cyclobacterium marinum	Bacteria	Bacteroidota	Cytophagales	order_first
+fua	Fulvivirga ulvae	Bacteria	Bacteroidota	Cytophagales	order_random
+gfo	Christiangramia forsetii	Bacteria	Bacteroidota	Flavobacteriales	order_first
+cil	Chryseobacterium indoltheticum	Bacteria	Bacteroidota	Flavobacteriales	order_random
+bus	Candidatus Bostrichicola ureolyticus	Bacteria	Bacteroidota	unclassified Bacteroidetes	order_first,order_random
+cte	Chlorobaculum tepidum	Bacteria	Chlorobiota	Chlorobiales	order_first
+prow	Prosthecochloris sp. SCSIO W1101	Bacteria	Chlorobiota	Chlorobiales	order_random
+rmr	Rhodothermus marinus DSM 4252	Bacteria	Rhodothermota	Rhodothermales	order_first
+sru	Salinibacter ruber DSM 13855	Bacteria	Rhodothermota	Rhodothermales	order_random
+ial	Ignavibacterium album	Bacteria	Ignavibacteriota	Ignavibacteriales	order_first,order_random
+cprv	Cyclonatronum proteinivorum	Bacteria	Balneolota	Balneolales	order_first,order_random
+caci	Candidatus Cloacimonas acidaminivorans	Bacteria	Cloacimonadota	Cloacimonadales	order_first,order_random
+fml	Fidelibacter multiformis	Bacteria	Fidelibacterota	Fidelibacterales	order_first,order_random
+aae	Aquifex aeolicus	Bacteria	Aquificota	Aquificales	order_first
+hya	Hydrogenobaculum sp. Y04AAS1	Bacteria	Aquificota	Aquificales	order_random
+tam	Thermovibrio ammonificans	Bacteria	Aquificota	Desulfurobacteriales	order_first
+dte	Desulfurobacterium thermolithotrophum	Bacteria	Aquificota	Desulfurobacteriales	order_random
+ttk	Thermosulfidibacter takaii	Bacteria	Thermosulfidibacterota	Thermosulfidibacterales	order_first,order_random
+cpo	Coprothermobacter proteolyticus	Bacteria	Coprothermobacterota	Coprothermobacterales	order_first,order_random
+cex	Caldisericum exile	Bacteria	Caldisericota	Caldisericales	order_first,order_random
+din	Desulfurispirillum indicum	Bacteria	Chrysiogenota	Chrysiogenales	order_first,order_random
+ddf	Deferribacter desulfuricans	Bacteria	Deferribacterota	Deferribacterales	order_first
+dap	Denitrovibrio acetiphilus	Bacteria	Deferribacterota	Deferribacterales	order_random
+caby	Caldithrix abyssi	Bacteria	Calditrichota	Calditrichales	order_first,order_random
+dth	Dictyoglomus thermophilum	Bacteria	Dictyoglomota	Dictyoglomales	order_first,order_random
+tye	Thermodesulfovibrio yellowstonii	Bacteria	Nitrospirota	Thermodesulfovibrionales	order_first,order_random
+nde	Nitrospira defluvii	Bacteria	Nitrospirota	Nitrospirales	order_first
+nja	Nitrospira japonica	Bacteria	Nitrospirota	Nitrospirales	order_random
+nli	Candidatus Nitronauta litoralis	Bacteria	Nitrospinota	Nitrospinales	order_first
+nva	Candidatus Nitrohelix vancouverensis	Bacteria	Nitrospinota	Nitrospinales	order_random
+alam	Atribacter laminatus	Bacteria	Atribacterota	Atribacterales	order_first
+atho	Atrimonas thermophila	Bacteria	Atribacterota	Atribacterales	order_random
+zth	Zhurongbacter thermophilus	Bacteria	Zhurongbacterota	unclassified Zhurongbacterota	order_first,order_random
+aacr	Arboribacterium acericorticis	Bacteria	Abditibacteriota	Abditibacteriales	order_first,order_random
+bsed	Bradymonas sediminis	Bacteria	Deltaproteobacteria	Bradymonadales	order_first,order_random
+dhr	Dissulfurimicrobium hydrothermale	Bacteria	Deltaproteobacteria	unclassified Deltaproteobacteria	order_first,order_random
+bsu	Bacillus subtilis subsp. subtilis 168	Bacteria	Bacilli	Bacillaceae	order_first
+bcl	Shouchella clausii	Bacteria	Bacilli	Bacillaceae	order_random
+fpn	Fictibacillus phosphorivorans	Bacteria	Bacilli	other Caryophanales	order_first
+pliq	Planococcus liqunii	Bacteria	Bacilli	other Caryophanales	order_random
+hyi	Hydrogenibacillus sp. N12	Bacteria	Bacilli	Thermicanales	order_first,order_random
+lla	Lactococcus lactis subsp. lactis Il1403	Bacteria	Bacilli	Lactobacillales	order_first
+snt	Streptococcus pneumoniae Taiwan19F-14 (serotype 19F)	Bacteria	Bacilli	Lactobacillales	order_random
+cac	Clostridium acetobutylicum ATCC 824	Bacteria	Clostridia	Eubacteriales	order_first,gut_genus
+slp	Syntrophothermus lipocalidus	Bacteria	Clostridia	Eubacteriales	order_random
+cth	Acetivibrio thermocellus ATCC 27405	Bacteria	Clostridia	Acetivibrionales	order_first
+ctx	Acetivibrio thermocellus DSM 1313	Bacteria	Clostridia	Acetivibrionales	order_random
+bpb	Butyrivibrio proteoclasticus	Bacteria	Clostridia	Lachnospirales	order_first
+ere	Agathobacter rectalis ATCC 33656	Bacteria	Clostridia	Lachnospirales	order_random,gut_genus
+wuk	Wukongibacter sp. M2B1	Bacteria	Clostridia	Peptostreptococcales	order_first
+pbq	Peptostreptococcaceae bacterium oral taxon 929	Bacteria	Clostridia	Peptostreptococcales	order_random
+cmiu	Christensenella minuta	Bacteria	Clostridia	Christensenellales	order_first,order_random,gut_genus
+dau	Candidatus Desulforudis audaxviator	Bacteria	Clostridia	Thermoanaerobacterales	order_first
+dtf	Desulfosceptrum tomskiensis	Bacteria	Clostridia	Thermoanaerobacterales	order_random
+mas	Mahella australiensis	Bacteria	Clostridia	Mahellales	order_first,order_random
+mta	Moorella thermoacetica ATCC 39073	Bacteria	Clostridia	Neomoorellales	order_first
+ncj	Neomoorella carbonis	Bacteria	Clostridia	Neomoorellales	order_random
+tep	Tepidanaerobacter acetatoxydans Re1	Bacteria	Clostridia	Thermosediminibacterales	order_first,order_random
+nth	Natranaerobius thermophilus	Bacteria	Clostridia	Natranaerobiales	order_first
+ncd	Natranaerofaba carboxydovora	Bacteria	Clostridia	Natranaerobiales	order_random
+hor	Halothermothrix orenii	Bacteria	Clostridia	Halanaerobiales	order_first
+hals	Halocella sp. SP3-1	Bacteria	Clostridia	Halanaerobiales	order_random
+kme	Koleobacter methoxysyntrophicus	Bacteria	Clostridia	Koleobacterales	order_first,order_random
+mpec	Monoglobus pectinilyticus	Bacteria	Clostridia	Monoglobales	order_first,order_random
+ips	Candidatus Improbicoccus pseudotrichonymphae	Bacteria	Clostridia	unclassified Clostridia	order_first
+ptrh	Candidatus Paraimprobicoccus trichonymphae	Bacteria	Clostridia	unclassified Clostridia	order_random
+fma	Finegoldia magna	Bacteria	other Bacillota	Tissierellales	order_first
+hku	Helcococcus kunzii	Bacteria	other Bacillota	Tissierellales	order_random
+sedz	Sedimentibacter sp. zth1	Bacteria	other Bacillota	other Tissierellia	order_first
+ecou	Ezakiella coagulans	Bacteria	other Bacillota	other Tissierellia	order_random
+vpr	Veillonella parvula	Bacteria	other Bacillota	Veillonellales	order_first,gut_genus
+vnk	Veillonella nakazawae	Bacteria	other Bacillota	Veillonellales	order_random
+ssg	Selenomonas sputigena	Bacteria	other Bacillota	Selenomonadales	order_first
+sova	Sporomusa ovata	Bacteria	other Bacillota	Selenomonadales	order_random
+afn	Acidaminococcus fermentans	Bacteria	other Bacillota	Acidaminococcales	order_first
+psuc	Phascolarctobacterium succinatutens	Bacteria	other Bacillota	Acidaminococcales	order_random
+erh	Erysipelothrix rhusiopathiae Fujisawa	Bacteria	other Bacillota	Erysipelotrichales	order_first
+euc	Faecalitalea cylindroides	Bacteria	other Bacillota	Erysipelotrichales	order_random
+lpil	Limnochorda pilosa	Bacteria	other Bacillota	Limnochordales	order_first
+csub	Carboxydichorda subterranea	Bacteria	other Bacillota	Limnochordales	order_random
+calk	Candidatus Contubernalis alkaliaceticus	Bacteria	other Bacillota	Dethiobacterales	order_first,order_random
+fcz	Candidatus Fermentithermobacillus carboniphilus	Bacteria	other Bacillota	Fermentithermobacillales	order_first,order_random
+csc	Caldicellulosiruptor saccharolyticus	Bacteria	other Bacillota	Caldicellulosiruptorales	order_first
+cow	Caldicellulosiruptor owensensis	Bacteria	other Bacillota	Caldicellulosiruptorales	order_random
+ett	Endosymbiont 'TC1' of Trimyema compressum	Bacteria	other Bacillota	unclassified Bacillota	order_first
+fbs	Firmicutes bacterium ASF500	Bacteria	other Bacillota	unclassified Bacillota	order_random
+mmy	Mycoplasma mycoides subsp. mycoides SC PG1	Bacteria	Mycoplasmatota	Mycoplasmatales	order_first
+mhf	Mycoplasma haemofelis Ohio2	Bacteria	Mycoplasmatota	Mycoplasmatales	order_random
+poy	Onion yellows phytoplasma OY-M	Bacteria	Mycoplasmatota	Acholeplasmatales	order_first
+mbp	Candidatus Phytoplasma zeae	Bacteria	Mycoplasmatota	Acholeplasmatales	order_random
+mfl	Mesoplasma florum L1	Bacteria	Mycoplasmatota	Entomoplasmatales	order_first
+sck	Spiroplasma citri	Bacteria	Mycoplasmatota	Entomoplasmatales	order_random
+xcl	Candidatus Xianfuyuplasma coldseepsis	Bacteria	Mycoplasmatota	Izemoplasmatales	order_first
+mbj	Candidatus Izimoplasma sp. HR1	Bacteria	Mycoplasmatota	Izemoplasmatales	order_random
+mmo	Mycoplasma mobile	Bacteria	Mycoplasmatota	Mycoplasmoidales	order_first
+mhom	Metamycoplasma hominis ATCC 27545	Bacteria	Mycoplasmatota	Mycoplasmoidales	order_random
+tbm	Tenericutes bacterium MO-XQ	Bacteria	Mycoplasmatota	unclassified Mycoplasmatota	order_first
+tbz	Tenericutes bacterium MZ-XQ	Bacteria	Mycoplasmatota	unclassified Mycoplasmatota	order_random
+mtu	Mycobacterium tuberculosis H37Rv	Bacteria	Actinomycetota	Mycobacteriales	order_first,map_anchor
+mab	Mycobacteroides abscessus ATCC 19977	Bacteria	Actinomycetota	Mycobacteriales	order_random
+sco	Streptomyces coelicolor	Bacteria	Actinomycetota	Kitasatosporales	order_first,map_anchor
+sdv	Streptomyces davaonensis	Bacteria	Actinomycetota	Kitasatosporales	order_random
+twh	Tropheryma whipplei Twist	Bacteria	Actinomycetota	Micrococcales	order_first
+rsua	Ruania suaedae	Bacteria	Actinomycetota	Micrococcales	order_random
+gez	Georgenia wutianyii	Bacteria	Actinomycetota	Allobogoriellales	order_first
+gyu	Georgenia yuyongxinii	Bacteria	Actinomycetota	Allobogoriellales	order_random
+pac	Cutibacterium acnes KPA171202	Bacteria	Actinomycetota	Propionibacteriales	order_first,gut_genus
+psim	Pimelobacter simplex	Bacteria	Actinomycetota	Propionibacteriales	order_random
+tfu	Thermobifida fusca	Bacteria	Actinomycetota	Streptosporangiales	order_first
+nocm	Nocardiopsis sp. M1B1	Bacteria	Actinomycetota	Streptosporangiales	order_random
+fra	Frankia casuarinae	Bacteria	Actinomycetota	Frankiales	order_first
+fal	Frankia alni	Bacteria	Actinomycetota	Frankiales	order_random
+ace	Acidothermus cellulolyticus	Bacteria	Actinomycetota	Acidothermales	order_first,order_random
+nml	Nakamurella multipartita	Bacteria	Actinomycetota	Nakamurellales	order_first
+nak	Nakamurella antarctica	Bacteria	Actinomycetota	Nakamurellales	order_random
+gob	Geodermatophilus obscurus	Bacteria	Actinomycetota	Geodermatophilales	order_first
+bmon	Blastococcus montanus	Bacteria	Actinomycetota	Geodermatophilales	order_random
+kra	Kineococcus radiotolerans	Bacteria	Actinomycetota	Kineosporiales	order_first,order_random
+sen	Saccharopolyspora erythraea	Bacteria	Actinomycetota	Pseudonocardiales	order_first
+paut	Pseudonocardia autotrophica	Bacteria	Actinomycetota	Pseudonocardiales	order_random
+stp	Salinispora tropica	Bacteria	Actinomycetota	Micromonosporales	order_first
+acte	Actinoplanes sp. OR16	Bacteria	Actinomycetota	Micromonosporales	order_random
+cai	Catenulispora acidiphila	Bacteria	Actinomycetota	Catenulisporales	order_first,order_random
+sna	Stackebrandtia nassauensis	Bacteria	Actinomycetota	Glycomycetales	order_first
+gly	Glycomyces sp. TRM65418	Bacteria	Actinomycetota	Glycomycetales	order_random
+ahe	Arcanobacterium haemolyticum	Bacteria	Actinomycetota	Actinomycetales	order_first
+asla	Actinomyces slackii	Bacteria	Actinomycetota	Actinomycetales	order_random
+blo	Bifidobacterium longum NCC2705	Bacteria	Actinomycetota	Bifidobacteriales	order_first,gut_genus
+aom	Alloscardovia omnicolens	Bacteria	Actinomycetota	Bifidobacteriales	order_random
+aey	Actinopolyspora erythraea	Bacteria	Actinomycetota	Actinopolysporales	order_first,order_random
+plan	Candidatus Planktophila lacus	Bacteria	Actinomycetota	Nanopelagicales	order_first
+nhi	Candidatus Nanopelagicus hibericus	Bacteria	Actinomycetota	Nanopelagicales	order_random
+eke	Epidermidibacterium keratini	Bacteria	Actinomycetota	Sporichthyales	order_first,order_random
+jtl	Jatrophihabitans telluris	Bacteria	Actinomycetota	Jatrophihabitantales	order_first
+jat	Jatrophihabitans sp. GAS493	Bacteria	Actinomycetota	Jatrophihabitantales	order_random
+abai	Actinobacteria bacterium	Bacteria	Actinomycetota	unclassified Actinomycetes	order_first,order_random
+fvg	Fannyhessea vaginae	Bacteria	Actinomycetota	Coriobacteriales	order_first
+atb	Atopobium sp. oral taxon 416	Bacteria	Actinomycetota	Coriobacteriales	order_random
+ccu	Cryptobacterium curtum	Bacteria	Actinomycetota	Eggerthellales	order_first
+ddt	Denitrobacterium detoxificans	Bacteria	Actinomycetota	Eggerthellales	order_random
+erz	Egibacter rhizosphaerae	Bacteria	Actinomycetota	Egibacterales	order_first,order_random
+euz	Euzebya pacifica	Bacteria	Actinomycetota	Euzebyales	order_first,order_random
+rxy	Rubrobacter xylanophilus	Bacteria	Actinomycetota	Rubrobacterales	order_first
+rmar	Rubrobacter marinus	Bacteria	Actinomycetota	Rubrobacterales	order_random
+bsol	Baekduia soli	Bacteria	Actinomycetota	Solirubrobacterales	order_first
+sbae	Capillimicrobium parvum	Bacteria	Actinomycetota	Solirubrobacterales	order_random
+talu	Thermoleophilum album	Bacteria	Actinomycetota	Thermoleophilales	order_first,order_random
+afo	Acidimicrobium ferrooxidans	Bacteria	Actinomycetota	Acidimicrobiales	order_first,order_random
+syn	Synechocystis sp. PCC 6803	Bacteria	Cyanobacteriota	Synechococcales	order_first
+syt	Synechocystis sp. PCC 6803 GT-I	Bacteria	Cyanobacteriota	Synechococcales	order_random
+cmp	Chamaesiphon minutus	Bacteria	Cyanobacteriota	Gomontiellales	order_first,order_random
+tvn	Thermostichus vulcanus	Bacteria	Cyanobacteriota	Thermostichales	order_first,order_random
+slw	Parathermosynechococcus lividus	Bacteria	Cyanobacteriota	Acaryochloridales	order_first
+amr	Acaryochloris marina	Bacteria	Cyanobacteriota	Acaryochloridales	order_random
+tsz	Trichothermofontia sichuanensis	Bacteria	Cyanobacteriota	Leptolyngbyales	order_first
+lsk	Leptothermofonsia sichuanensis	Bacteria	Cyanobacteriota	Leptolyngbyales	order_random
+hhg	Halomicronema hongdechloris	Bacteria	Cyanobacteriota	Nodosilineales	order_first,order_random
+pseu	Thalassoporum mexicanum	Bacteria	Cyanobacteriota	Pseudanabaenales	order_first
+synp	Pseudanabaenococcus habilitatus	Bacteria	Cyanobacteriota	Pseudanabaenales	order_random
+theu	Thermoleptolyngbya sichuanensis	Bacteria	Cyanobacteriota	Oculatellales	order_first
+tog	Thermoleptolyngbya oregonensis	Bacteria	Cyanobacteriota	Oculatellales	order_random
+chon	Chondrocystis sp. NIES-4102	Bacteria	Cyanobacteriota	Chroococcales	order_first
+lep	Leptolyngbya sp. PCC 7376	Bacteria	Cyanobacteriota	Chroococcales	order_random
+ter	Trichodesmium erythraeum	Bacteria	Cyanobacteriota	Oscillatoriales	order_first
+pyh	[Phormidium] yuhuli	Bacteria	Cyanobacteriota	Oscillatoriales	order_random
+mic	Allocoleopsis franciscana	Bacteria	Cyanobacteriota	Coleofasciculales	order_first
+mpro	Moorena producens	Bacteria	Cyanobacteriota	Coleofasciculales	order_random
+gei	Geitlerinema sp. PCC 7407	Bacteria	Cyanobacteriota	Geitlerinematales	order_first,order_random
+gvi	Gloeobacter violaceus	Bacteria	Cyanobacteriota	Gloeobacterales	order_first
+glj	Gloeobacter kilaueensis	Bacteria	Cyanobacteriota	Gloeobacterales	order_random
+ana	Nostoc sp. PCC 7120	Bacteria	Cyanobacteriota	Nostocales	order_first
+ncf	Nostoc cf. commune	Bacteria	Cyanobacteriota	Nostocales	order_random
+cthe	Chroococcidiopsis thermalis	Bacteria	Cyanobacteriota	Chroococcidiopsidales	order_first
+gdu	Gloeocapsopsis dulcis	Bacteria	Cyanobacteriota	Chroococcidiopsidales	order_random
+plp	Pleurocapsa sp. PCC 7327	Bacteria	Cyanobacteriota	Pleurocapsales	order_first
+scs	Stanieria cyanosphaera	Bacteria	Cyanobacteriota	Pleurocapsales	order_random
+glt	Gloeomargarita lithophora	Bacteria	Cyanobacteriota	Gloeomargaritales	order_first
+gcy	Gloeomargaritales cyanobacterium VI4D9	Bacteria	Cyanobacteriota	Gloeomargaritales	order_random
+dtb	Desertifilum tharense	Bacteria	Cyanobacteriota	Desertifilales	order_first,order_random
+ceo	Cyanobacterium endosymbiont of Epithemia turgida	Bacteria	Cyanobacteriota	unclassified Cyanobacteria	order_first,order_random
+mbf	Candidatus Melainabacteria bacterium MEL.A1	Bacteria	Melainabacteria	unclassified Melainabacteria	order_first,order_random
+det	Dehalococcoides mccartyi 195	Bacteria	Chloroflexota	Dehalococcoidales	order_first
+dev	Dehalococcoides mccartyi VS	Bacteria	Chloroflexota	Dehalococcoidales	order_random
+lmaj	Candidatus Lucifugimonas marina	Bacteria	Chloroflexota	Lucifugimonadales	order_first,order_random
+rrs	Roseiflexus sp. RS-1	Bacteria	Chloroflexota	Chloroflexales	order_first
+cag	Chloroflexus aggregans	Bacteria	Chloroflexota	Chloroflexales	order_random
+hau	Herpetosiphon aurantiacus	Bacteria	Chloroflexota	Herpetosiphonales	order_first,order_random
+call	Candidatus Chlorohelix allophototropha	Bacteria	Chloroflexota	Chloroheliales	order_first,order_random
+ttr	Thermobaculum terrenum	Bacteria	Chloroflexota	Thermobaculales	order_first,order_random
+atm	Anaerolinea thermophila	Bacteria	Chloroflexota	Anaerolineales	order_first
+lek	Leptolinea sp. HRD-7	Bacteria	Chloroflexota	Anaerolineales	order_random
+cap	Caldilinea aerophila	Bacteria	Chloroflexota	Caldilineales	order_first,order_random
+pbf	Promineifilum breve	Bacteria	Chloroflexota	Promineifilales	order_first,order_random
+kbs	Ktedonosporobacter rubrisoli	Bacteria	Chloroflexota	Ktedonobacterales	order_first,order_random
+kbb	Ktedonobacteria bacterium brp13	Bacteria	Chloroflexota	unclassified Ktedonobacteria	order_first,order_random
+tbh	Tepidiforma bonchosmolovskayae	Bacteria	Chloroflexota	Tepidiformales	order_first
+tfla	Tepidiforma flava	Bacteria	Chloroflexota	Tepidiformales	order_random
+thug	Thermoflexus hugenholtzii	Bacteria	Chloroflexota	Thermoflexales	order_first,order_random
+pmet	Phototrophicus methaneseepsis	Bacteria	Chloroflexota	Phototrophicales	order_first,order_random
+ccz	Chthonomonas calidirosea	Bacteria	Armatimonadota	Chthonomonadales	order_first,order_random
+fgi	Fimbriimonas ginsengisoli	Bacteria	Armatimonadota	Fimbriimonadales	order_first,order_random
+ccot	Capsulimonas corticalis	Bacteria	Armatimonadota	Capsulimonadales	order_first,order_random
+npy	Candidatus Nitrosymbiomonas proteolyticus	Bacteria	Armatimonadota	unclassified Armatimonadota	order_first,order_random
+vab	Vulcanimicrobium alpinum	Bacteria	Vulcanimicrobiota	Vulcanimicrobiales	order_first,order_random
+sox	Nanosynbacter lyticus	Bacteria	Minisyncoccota	Nanosynbacterales	order_first
+nanh	Candidatus Nanosynbacter sp. HMT-352	Bacteria	Minisyncoccota	Nanosynbacterales	order_random
+marw	Minisyncoccus archaeiphilus	Bacteria	Minisyncoccota	Minisyncoccales	order_first,order_random
+dra	Deinococcus radiodurans	Bacteria	Deinococcota	Deinococcales	order_first
+dmr	Deinococcus maricopensis	Bacteria	Deinococcota	Deinococcales	order_random
+tra	Truepera radiovictrix	Bacteria	Deinococcota	Trueperales	order_first,order_random
+tth	Thermus thermophilus HB27	Bacteria	Deinococcota	Thermales	order_first
+tbf	Thermus brevis	Bacteria	Deinococcota	Thermales	order_random
+tai	Thermanaerovibrio acidaminovorans	Bacteria	Synergistota	Synergistales	order_first
+tli	Thermovirga lienii	Bacteria	Synergistota	Synergistales	order_random
+tma	Thermotoga maritima MSB8	Bacteria	Thermotogota	Thermotogales	order_first
+tfe	Thermosipho ferrireducens	Bacteria	Thermotogota	Thermotogales	order_random
+ocy	Tepiditoga spiralis	Bacteria	Thermotogota	Petrotogales	order_first,order_random
+kol	Kosmotoga olearia	Bacteria	Thermotogota	Kosmotogales	order_first,order_random
+asac	Athalassotoga saccharophila	Bacteria	Thermotogota	Mesoaciditogales	order_first,order_random
+fnu	Fusobacterium nucleatum subsp. nucleatum ATCC 25586	Bacteria	Fusobacteriota	Fusobacteriales	order_first,gut_genus
+sns	Sneathia vaginalis	Bacteria	Fusobacteriota	Fusobacteriales	order_random
+saal	Saccharimonas aalborgensis	Bacteria	Bacteria incertae sedis	Saccharimonadales	order_first
+sepb	Candidatus Southlakia epibionticum	Bacteria	Bacteria incertae sedis	Saccharimonadales	order_random
+nbj	Candidatus Nanogingivalaceae bacterium JCVI_28_bin.11	Bacteria	Bacteria incertae sedis	Nanogingivales	order_first,order_random
+mvl	Candidatus Minimicrobia vallesae	Bacteria	Bacteria incertae sedis	unclassified Saccharimonadota	order_first
+mnd	Candidatus Minimicrobia naudis	Bacteria	Bacteria incertae sedis	unclassified Saccharimonadota	order_random
+prf	Candidatus Peribacter riflensis	Bacteria	Bacteria incertae sedis	Peribacterales	order_first,order_random
+bana	Bipolaricaulis sanaerobius	Bacteria	Bacteria incertae sedis	Bipolaricaulales	order_first,order_random
+aprd	Candidatus Absconditicoccus praedator	Bacteria	Bacteria incertae sedis	Absconditabacterales	order_first,order_random
+srb	Candidate division SR1 bacterium RAAC1_SR1_1	Bacteria	Bacteria incertae sedis	unclassified Absconditibacteriota	order_first
+srg	Candidate division SR1 bacterium Aalborg_AAW-1	Bacteria	Bacteria incertae sedis	unclassified Absconditibacteriota	order_random
+mox	Methylomirabilis oxygeniifera	Bacteria	Bacteria incertae sedis	Methylomirabilales	order_first,order_random
+schv	Candidatus Sumerlaea chitinivorans	Bacteria	Bacteria incertae sedis	Sumerlaeales	order_first,order_random
+fsh	Fervidibacter sacchari	Bacteria	Bacteria incertae sedis	Fervidibacterales	order_first,order_random
+dpb	Candidatus Babela massiliensis	Bacteria	Bacteria incertae sedis	Babeliales	order_first,order_random
+vpm	Vermiphilus pyriformis	Bacteria	Bacteria incertae sedis	unclassified Bacteria incertae sedis	order_first
+wba	Candidatus Woesebacteria bacterium GW2011_GWF1_31_35	Bacteria	Bacteria incertae sedis	unclassified Bacteria incertae sedis	order_random
+baab	Bacterium AB1	Bacteria	other Bacteria	unclassified Bacteria	order_first,order_random
+mja	Methanocaldococcus jannaschii	Archaea	Methanobacteriota	Methanococcales	order_first
+mig	Methanotorris igneus	Archaea	Methanobacteriota	Methanococcales	order_random
+mth	Methanothermobacter thermautotrophicus	Archaea	Methanobacteriota	Methanobacteriales	order_first
+mmil	Methanobrevibacter millerae	Archaea	Methanobacteriota	Methanobacteriales	order_random
+mka	Methanopyrus kandleri	Archaea	Methanobacteriota	Methanopyrales	order_first,order_random
+afu	Archaeoglobus fulgidus DSM 4304	Archaea	Methanobacteriota	Archaeoglobales	order_first
+gac	Geoglobus acetivorans	Archaea	Methanobacteriota	Archaeoglobales	order_random
+pfu	Pyrococcus furiosus DSM 3638	Archaea	Methanobacteriota	Thermococcales	order_first
+thm	Thermococcus cleftensis	Archaea	Methanobacteriota	Thermococcales	order_random
+mba	Methanosarcina barkeri Fusaro	Archaea	Methanobacteriota	Methanosarcinales	order_first
+mpy	Methanolobus psychrophilus	Archaea	Methanobacteriota	Methanosarcinales	order_random
+mtp	Methanothrix thermoacetophila	Archaea	Methanobacteriota	Methanotrichales	order_first
+mhi	Methanothrix harundinacea	Archaea	Methanobacteriota	Methanotrichales	order_random
+mhu	Methanospirillum hungatei	Archaea	Methanobacteriota	Methanomicrobiales	order_first
+mlaa	Methanospirillum lacunae	Archaea	Methanobacteriota	Methanomicrobiales	order_random
+mpd	Methanocella paludicola	Archaea	Methanobacteriota	Methanocellales	order_first
+mez	Methanocella conradii	Archaea	Methanobacteriota	Methanocellales	order_random
+mjk	Candidatus Methanospirare jalkutatii	Archaea	Methanobacteriota	Methanophagales	order_first,order_random
+hal	Halobacterium salinarum NRC-1	Archaea	Methanobacteriota	Halobacteriales	order_first
+nge	Natronobacterium gregoryi	Archaea	Methanobacteriota	Halobacteriales	order_random
+nac	Nanohaloarchaea archaeon SG9	Archaea	Methanobacteriota	unclassified Nanohaloarchaea	order_first,order_random
+melu	Candidatus Methanoliparum sp. LAM-1	Archaea	Methanobacteriota	Methanoliparales	order_first,order_random
+meam	Methanonatronarchaeum sp. AMET6-2	Archaea	Methanobacteriota	Methanonatronarchaeales	order_first
+meae	Methanonatronarchaeum sp. AMET-Sl	Archaea	Methanobacteriota	Methanonatronarchaeales	order_random
+tac	Thermoplasma acidophilum	Archaea	Thermoplasmatota	Thermoplasmatales	order_first
+tvo	Thermoplasma volcanium	Archaea	Thermoplasmatota	Thermoplasmatales	order_random
+max	Methanomethylophilus alvi	Archaea	Thermoplasmatota	Methanomassiliicoccales	order_first
+mer	Candidatus Methanomassiliicoccus intestinalis Issoire-Mx1	Archaea	Thermoplasmatota	Methanomassiliicoccales	order_random
+marc	Methanogenic archaeon ISO4-H5	Archaea	Thermoplasmatota	unclassified Thermoplasmatota	order_first
+acf	Candidatus Aciduliprofundum sp. MAR08-339	Archaea	Thermoplasmatota	unclassified Thermoplasmatota	order_random
+smr	Staphylothermus marinus	Archaea	Thermoproteota	Desulfurococcales	order_first,order_random
+sto	Sulfurisphaera tokodaii	Archaea	Thermoproteota	Sulfolobales	order_first
+aman	Acidianus manzaensis	Archaea	Thermoproteota	Sulfolobales	order_random
+pai	Pyrobaculum aerophilum	Archaea	Thermoproteota	Thermoproteales	order_first
+pyr	Pyrobaculum ferrireducens	Archaea	Thermoproteota	Thermoproteales	order_random
+tpe	Thermofilum pendens	Archaea	Thermoproteota	Thermofilales	order_first
+tcb	Thermofilum adornatum 1505	Archaea	Thermoproteota	Thermofilales	order_random
+asc	Acidilobus saccharovorans	Archaea	Thermoproteota	Acidilobales	order_first
+acia	Acidilobus sp. 7A	Archaea	Thermoproteota	Acidilobales	order_random
+ffo	Fervidicoccus fontis	Archaea	Thermoproteota	Fervidicoccales	order_first,order_random
+kcr	Candidatus Korarchaeum cryptofilum	Archaea	Thermoproteota	Korarchaeales	order_first,order_random
+mvj	Candidatus Methanosuratincola verstraetei	Archaea	Thermoproteota	Methanosuratincolales	order_first,order_random
+tmik	Tardisphaera miroshnichenkoae	Archaea	Thermoproteota	Tardisphaerales	order_first,order_random
+nmr	Nitrosopumilus maritimus	Archaea	Nitrososphaerota	Nitrosopumilales	order_first
+niw	Candidatus Nitrosopumilus sp. SW	Archaea	Nitrososphaerota	Nitrosopumilales	order_random
+nga	Candidatus Nitrososphaera gargensis	Archaea	Nitrososphaerota	Nitrososphaerales	order_first
+nev	Candidatus Nitrososphaera evergladensis	Archaea	Nitrososphaerota	Nitrososphaerales	order_random
+ncv	Candidatus Nitrosocaldus cavascurensis	Archaea	Nitrososphaerota	Nitrosocaldales	order_first,order_random
+ndv	Nitrosotalea devaniterrae	Archaea	Nitrososphaerota	Nitrosotaleales	order_first,order_random
+csy	Cenarchaeum symbiosum	Archaea	Nitrososphaerota	Cenarchaeales	order_first,order_random
+csu	Candidatus Caldarchaeum subterraneum	Archaea	Nitrososphaerota	Caldarchaeales	order_first,order_random
+ccai	Conexivisphaera calida	Archaea	Nitrososphaerota	Conexivisphaerales	order_first,order_random
+nbv	Candidatus Nitrosopelagicus brevis	Archaea	Nitrososphaerota	unclassified Nitrososphaerota	order_first
+niu	Candidatus Nitrosotenuis sp. DW1	Archaea	Nitrososphaerota	unclassified Nitrososphaerota	order_random
+barc	Candidatus Bathyarchaeota archaeon BA1	Archaea	Bathyarchaeota	unclassified Bathyarchaeota	order_first
+barb	Candidatus Bathyarchaeota archaeon BA2	Archaea	Bathyarchaeota	unclassified Bathyarchaeota	order_random
+neq	Nanoarchaeum equitans	Archaea	Nanobdellota	Nanoarchaeales	order_first,order_random
+naer	Nanobdella aerobiophila	Archaea	Nanobdellota	Nanobdellales	order_first,order_random
+marh	Candidatus Mancarchaeum acidiphilum Mia14	Archaea	Microcaldota	Mancarchaeum	order_first,order_random
+flt	Candidatus Fermentimicrarchaeum limneticum	Archaea	Microcaldota	Fermentimicrarchaeales	order_first,order_random
+miy	Candidatus Micrarchaeum sp. A_DKE	Archaea	Microcaldota	Micrarchaeales	order_first,order_random
+marv	Microcaldota archaeon	Archaea	Microcaldota	other Microcaldota	order_first,order_random
+ncon	Candidatus Nanohalobium constans	Archaea	Nanohalarchaeota	Nanohalobiales	order_first,order_random
+nocc	Candidatus Nanohalococcus occultus	Archaea	Nanohalarchaeota	other Nanohalarchaeota	order_first,order_random
+war	Candidatus Woesearchaeota archaeon NC_groundwater_85_Ag_S-0.1um_31_13	Archaea	Woesearchaeota	unclassified Woesearchaeota	order_first,order_random
+loki	Candidatus Lokiarchaeum sp. GC14_75	Archaea	Promethearchaeota	Promethearchaeales	order_first
+psyt	Promethearchaeum syntrophicum	Archaea	Promethearchaeota	Promethearchaeales	order_random
+oyw	Candidatus Odinarchaeum yellowstonii	Archaea	Odinarchaeota	Odinarchaeales	order_first,order_random
+agw	Archaeon GW2011_AR10	Archaea	other Archaea	unclassified Archaea	order_first,order_random
+bvu	Phocaeicola vulgatus	Bacteria	Bacteroidota	Bacteroidales	gut_genus
+pmz	Prevotella melaninogenica	Bacteria	Bacteroidota	Bacteroidales	gut_genus
+pcoi	Segatella copri	Bacteria	Bacteroidota	Bacteroidales	gut_genus
+pru	Xylanibacter ruminicola	Bacteria	Bacteroidota	Bacteroidales	gut_genus
+afd	Alistipes finegoldii	Bacteria	Bacteroidota	Bacteroidales	gut_genus
+pdi	Parabacteroides distasonis	Bacteria	Bacteroidota	Bacteroidales	gut_genus
+osp	Odoribacter splanchnicus	Bacteria	Bacteroidota	Bacteroidales	gut_genus
+buy	Butyricimonas faecalis	Bacteria	Bacteroidota	Bacteroidales	gut_genus
+fpr	Faecalibacterium prausnitzii L2-6	Bacteria	Clostridia	Eubacteriales	gut_genus
+rho	Roseburia hominis	Bacteria	Clostridia	Lachnospirales	gut_genus
+rob	Blautia obeum	Bacteria	Clostridia	Lachnospirales	gut_genus
+rch	Ruminococcus champanellensis	Bacteria	Clostridia	Eubacteriales	gut_genus
+rgn	Mediterraneibacter gnavus	Bacteria	Clostridia	Lachnospirales	gut_genus
+esr	Eubacterium siraeum V10Sc8a	Bacteria	Clostridia	Eubacteriales	gut_genus
+coo	Coprococcus sp. ART55/1	Bacteria	Clostridia	Lachnospirales	gut_genus
+dlo	Dorea longicatena	Bacteria	Clostridia	Lachnospirales	gut_genus
+bprl	Anaerostipes hadrus	Bacteria	Clostridia	Lachnospirales	gut_genus
+cdf	Clostridioides difficile 630	Bacteria	Clostridia	Peptostreptococcales	gut_genus
+cbol	Enterocloster bolteae	Bacteria	Clostridia	Lachnospirales	gut_genus
+ova	Oscillibacter valericigenes	Bacteria	Clostridia	Eubacteriales	gut_genus
+caer	Collinsella aerofaciens	Bacteria	Actinomycetota	Coriobacteriales	gut_genus
+ele	Eggerthella lenta	Bacteria	Actinomycetota	Eggerthellales	gut_genus
+ljo	Lactobacillus johnsonii NCC 533	Bacteria	Bacilli	Lactobacillales	gut_genus
+lre	Limosilactobacillus reuteri subsp. reuteri DSM 20016	Bacteria	Bacilli	Lactobacillales	gut_genus
+lsl	Ligilactobacillus salivarius UCC118	Bacteria	Bacilli	Lactobacillales	gut_genus
+lpl	Lactiplantibacillus plantarum WCFS1	Bacteria	Bacilli	Lactobacillales	gut_genus
+efa	Enterococcus faecalis V583	Bacteria	Bacilli	Lactobacillales	gut_genus
+spy	Streptococcus pyogenes M1 GAS (serotype M1)	Bacteria	Bacilli	Lactobacillales	gut_genus
+dpn	Dialister pneumosintes	Bacteria	other Bacillota	Veillonellales	gut_genus
+mhg	Megamonas hypermegale	Bacteria	other Bacillota	Selenomonadales	gut_genus
+med	Megasphaera elsdenii	Bacteria	other Bacillota	Veillonellales	gut_genus
+pfac	Phascolarctobacterium faecium	Bacteria	other Bacillota	Acidaminococcales	gut_genus
+kpn	Klebsiella pneumoniae subsp. pneumoniae MGH 78578 (serotype K52)	Bacteria	Enterobacteria	Enterobacteriaceae	gut_genus
+enc	Enterobacter cloacae subsp. cloacae ATCC 13047	Bacteria	Enterobacteria	Enterobacteriaceae	gut_genus
+cro	Citrobacter rodentium	Bacteria	Enterobacteria	Enterobacteriaceae	gut_genus
+bws	Bilophila wadsworthia	Bacteria	Thermodesulfobacteriota	Desulfovibrionales	gut_genus
+sutt	Sutterella megalosphaeroides	Bacteria	Betaproteobacteria	Burkholderiales	gut_genus
+cje	Campylobacter jejuni subsp. jejuni NCTC 11168 = ATCC 700819	Bacteria	Campylobacterota	Campylobacterales	gut_genus
+mru	Methanobrevibacter ruminantium	Archaea	Methanobacteriota	Methanobacteriales	gut_genus
+mst	Methanosphaera stadtmanae	Archaea	Methanobacteriota	Methanobacteriales	gut_genus
+sphm	Sphingomonas sp. MM-1	Bacteria	Alphaproteobacteria	Sphingomonadales	gut_genus
+tur	Turicibacter sp. H121	Bacteria	other Bacillota	Erysipelotrichales	gut_genus
+cmit	Catenibacterium mitsuokai	Bacteria	other Bacillota	Erysipelotrichales	gut_genus
+sau	Staphylococcus aureus subsp. aureus N315 (MRSA/VSSA)	Bacteria	Bacilli	other Caryophanales	gut_genus,map_anchor
+peb	Peptostreptococcus equinus	Bacteria	Clostridia	Peptostreptococcales	gut_genus
+pmic	Parvimonas micra	Bacteria	other Bacillota	Tissierellales	gut_genus
+pgi	Porphyromonas gingivalis W83	Bacteria	Bacteroidota	Bacteroidales	gut_genus
+got	Gemella sp. oral taxon 928	Bacteria	Bacilli	other Caryophanales	gut_genus
+pae	Pseudomonas aeruginosa PAO1	Bacteria	other Gammaproteobacteria	Pseudomonadales	map_anchor
+ece	Escherichia coli O157:H7 EDL933 (EHEC)	Bacteria	Enterobacteria	Enterobacteriaceae	map_anchor
+stm	Salmonella enterica subsp. enterica serovar Typhimurium LT2	Bacteria	Enterobacteria	Enterobacteriaceae	map_anchor
+sfl	Shigella flexneri 301 (serotype 2a)	Bacteria	Enterobacteria	Enterobacteriaceae	map_anchor
+yen	Yersinia enterocolitica subsp. enterocolitica 8081 (serotype 0:8)	Bacteria	Enterobacteria	other Enterobacterales	map_anchor
+bpe	Bordetella pertussis Tohama I	Bacteria	Betaproteobacteria	Burkholderiales	map_anchor
+lpn	Legionella pneumophila subsp. pneumophila Philadelphia 1 (serogroup 1)	Bacteria	other Gammaproteobacteria	Legionellales	map_anchor
+sclf	Streptomyces clavuligerus	Bacteria	Actinomycetota	Kitasatosporales	map_anchor

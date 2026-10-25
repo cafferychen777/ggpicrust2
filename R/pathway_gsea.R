@@ -246,10 +246,12 @@ validate_complete_design_variables <- function(metadata, group, covariates = NUL
 #'   "KEGG", "MetaCyc", or "GO"
 #' @param method A single character string specifying the GSEA method:
 #'   \itemize{
-#'     \item \code{"camera"}: Competitive gene set test using limma's camera function (default).
-#'           Uses an inter-gene correlation adjustment under a competitive null.
-#'     \item \code{"fry"}: Fast approximation to rotation gene set testing using limma's fry function.
-#'           Self-contained test that is computationally efficient.
+#'     \item \code{"fry"} (default): Self-contained rotation gene set test
+#'           using limma's fry function. Tests whether the KOs in a set change
+#'           in a consistent direction between groups.
+#'     \item \code{"camera"}: Competitive gene set test using limma's camera
+#'           function. Tests whether a set changes more than the other KOs,
+#'           with an inter-gene correlation adjustment.
 #'     \item \code{"fgsea"}: Fast preranked GSEA implementation. Note: preranked methods may produce
 #'           unreliable p-values due to not accounting for inter-gene correlations (Wu et al., 2012).
 #'     \item \code{"GSEA"} or \code{"clusterProfiler"}: clusterProfiler's GSEA implementation.
@@ -283,25 +285,50 @@ validate_complete_design_variables <- function(metadata, group, covariates = NUL
 #'   exactly two aligned group levels must be present and their factor-level
 #'   order is used. Multi-group preranked analyses must specify
 #'   \code{comparison} explicitly.
-#' @param inter.gene.cor Numeric value specifying the inter-gene correlation for camera method.
-#'   Default is 0.01. Use NA to estimate correlation from data for each gene set.
-#' @param transformation Transformation for camera/fry: \code{"voom"} (the
-#'   historical default) uses count-dependent observation weights;
-#'   \code{"logCPM"} uses \code{log2(1e6 * abundance / column_total + 0.5)}
-#'   and abundance-trend variance moderation without voom weights. The latter
-#'   is invariant to positive per-sample rescaling and can be used for predicted
-#'   or relative abundances whose units are not observed read counts. It is a
-#'   different statistical model, not a fallback after a voom failure or a
-#'   guarantee of calibration. Requires positive sample totals. This parameter
-#'   does not apply to preranked methods. Neither transformation accounts for
+#' @param inter.gene.cor Numeric value specifying the inter-gene correlation
+#'   for the camera method. The default \code{NA} estimates the correlation from
+#'   the data separately for each gene set. Predicted functional profiles are
+#'   linear combinations of reference-genome content, so features in the same
+#'   set are often strongly correlated; a small fixed value such as 0.01 (the
+#'   default before version 2.6.0) can then underestimate the variance and
+#'   produce anti-conservative p-values. Supply a fixed value only when it is
+#'   justified for the data.
+#' @param transformation Transformation for camera/fry. \code{"logCPM"} (the
+#'   default) uses \code{log2(1e6 * abundance / column_total + 0.5)} with
+#'   abundance-trend variance moderation and no voom weights. It is invariant
+#'   to positive per-sample rescaling, which suits predicted or relative
+#'   abundances whose units are not observed read counts. Requires positive
+#'   sample totals. \code{"voom"} (the default before version 2.6.0) uses
+#'   count-dependent observation weights and is appropriate only for genuine
+#'   read counts; its results change when the same table is multiplied by a
+#'   constant. This parameter applies only to camera/fry; supplying it with a
+#'   preranked method is an error. Neither transformation accounts for
 #'   uncertainty from the upstream functional prediction. Results also depend
 #'   on the measured feature universe and, for camera, the correlation model.
 #' @param gene_sets Optional named list of feature identifiers for explicitly
 #'   defined gene sets. When supplied, replaces the bundled sets for all methods;
 #'   size filtering and multiple-testing adjustment still apply. Identifiers must
 #'   match the normalized abundance row names. \code{pathway_type} still controls
-#'   input identifier handling. Do not combine custom sets with \code{organism}
-#'   or \code{go_category}; these are bundled-reference selection arguments.
+#'   input identifier handling. Do not combine custom sets with \code{organism},
+#'   \code{go_category} or \code{filter_for_prokaryotes}; these are
+#'   bundled-reference selection arguments.
+#' @param filter_for_prokaryotes Logical. For KEGG gene sets, TRUE (default)
+#'   keeps maps that KEGG draws for prokaryotic genomes and removes Organismal
+#'   Systems and Human Diseases maps, except bacterial infection and
+#'   antimicrobial resistance, so that the tested pathways match
+#'   those kept by \code{\link{ko2kegg_abundance}}. Ignored when
+#'   \code{gene_sets} is supplied and for MetaCyc and GO.
+#' @param sequencing_depth Optional read depth of the data the profile was
+#'   derived from, for camera and fry only. Either the name of a metadata
+#'   column or a numeric vector named by sample ID. For PICRUSt2 output, use
+#'   the column sums of the ASV (or OTU) count table given to PICRUSt2, not the
+#'   column sums of the predicted table, which depend on community
+#'   composition. The centered natural log of the depth is added to the design
+#'   as the covariate \code{log_sequencing_depth}. Supply it when depth differs
+#'   between groups and some samples are shallowly sequenced: with logCPM,
+#'   zeros and low counts then fall unevenly between groups, and fry can
+#'   report false pathways under the null. Default \code{NULL} (no depth
+#'   adjustment).
 #' @param rank_method A single character string specifying the ranking statistic for preranked methods
 #'   (fgsea, GSEA, clusterProfiler): "signal2noise", "t_test", "log2_ratio", or "diff_abundance"
 #' @param nperm An integer specifying the number of permutations (for clusterProfiler method only).
@@ -345,19 +372,28 @@ validate_complete_design_variables <- function(metadata, group, covariates = NUL
 #' @details
 #' \strong{Method Selection:}
 #'
-#' The \code{camera} method (default):
+#' The \code{fry} method (default):
 #' \itemize{
-#'   \item Uses an inter-gene correlation adjustment (default 0.01)
-#'   \item It supports covariate adjustment through the design matrix
-#'   \item It performs a competitive test (genes in set vs. genes not in set)
+#'   \item Performs a self-contained test: do the KOs in the set change in a
+#'     consistent direction between groups?
+#'   \item Uses sample rotations, so the correlation among KOs in a set is
+#'     accounted for without a fixed correlation assumption
+#'   \item Supports covariate adjustment through the design matrix
 #' }
 #'
-#' The \code{fry} method is a fast alternative that:
+#' The \code{camera} method:
 #' \itemize{
-#'   \item Performs a self-contained test (are genes in the set differentially expressed?)
-#'   \item Is computationally very efficient for large numbers of gene sets
-#'   \item Also supports covariate adjustment
+#'   \item Performs a competitive test: does the set change more than the
+#'     other KOs?
+#'   \item Adjusts for inter-gene correlation estimated separately for each set (default)
+#'   \item Supports covariate adjustment through the design matrix
 #' }
+#'
+#' In a predicted metagenome, a shift in a dominant taxon moves many KOs
+#' together, so a competitive test has little power to single out a set even
+#' when its members change. Use camera when the question is relative
+#' enrichment; use fry (the default since version 2.6.0) when the question is
+#' whether a set changes.
 #'
 #' Preranked methods use a ranked-feature null rather than camera's competitive
 #' model with a correlation adjustment. The hypotheses and input assumptions
@@ -394,32 +430,41 @@ validate_complete_design_variables <- function(metadata, group, covariates = NUL
 #' rownames(abundance_data) <- abundance_data[, "#NAME"]
 #' abundance_data <- abundance_data[, -1]
 #'
-#' # Method 1: Using camera (recommended) - accounts for inter-gene correlations
+#' # Method 1: fry (default), a self-contained test of each set
 #' gsea_results <- pathway_gsea(
 #'   abundance = abundance_data,
 #'   metadata = metadata,
 #'   group = "Environment",
 #'   pathway_type = "KEGG",
-#'   method = "camera"
+#'   method = "fry"
 #' )
 #'
-#' # Method 2: Using camera with covariate adjustment
+#' # Method 2: fry with covariate adjustment
 #' gsea_results_adj <- pathway_gsea(
 #'   abundance = abundance_data,
 #'   metadata = metadata,
 #'   group = "Environment",
 #'   covariates = "Mouse_Sex",
 #'   pathway_type = "KEGG",
-#'   method = "camera"
+#'   method = "fry"
 #' )
 #'
-#' # Method 3: Using fry for fast self-contained testing
-#' gsea_results_fry <- pathway_gsea(
+#' # fry adjusted for 16S read depth, e.g. from the DADA2 sequence table
+#' # given to PICRUSt2: depth <- colSums(asv_counts)
+#' # gsea_results_depth <- pathway_gsea(
+#' #   abundance = abundance_data,
+#' #   metadata = metadata,
+#' #   group = "Environment",
+#' #   sequencing_depth = depth
+#' # )
+#'
+#' # Method 3: camera, a competitive test of relative enrichment
+#' gsea_results_camera <- pathway_gsea(
 #'   abundance = abundance_data,
 #'   metadata = metadata,
 #'   group = "Environment",
 #'   pathway_type = "KEGG",
-#'   method = "fry"
+#'   method = "camera"
 #' )
 #'
 #' # Method 4: A different null, using a prespecified preranked comparison
@@ -440,10 +485,10 @@ pathway_gsea <- function(abundance,
                         metadata,
                         group,
                         pathway_type = "KEGG",
-                        method = "camera",
+                        method = "fry",
                         covariates = NULL,
                         contrast = NULL,
-                        inter.gene.cor = 0.01,
+                        inter.gene.cor = NA_real_,
                         rank_method = "signal2noise",
                         nperm = 1000,
                         min_size = 5,
@@ -454,11 +499,16 @@ pathway_gsea <- function(abundance,
                         organism = "ko",
                         p.adjust = NULL,
                         comparison = NULL,
-                        transformation = c("voom", "logCPM"),
-                        gene_sets = NULL) {
+                        transformation = c("logCPM", "voom"),
+                        gene_sets = NULL,
+                        filter_for_prokaryotes = TRUE,
+                        sequencing_depth = NULL) {
+  transformation_supplied <- !missing(transformation)
   transformation <- match.arg(transformation)
-  if (!is.null(gene_sets) && (!missing(organism) || !missing(go_category))) {
-    stop("Custom 'gene_sets' cannot be combined with 'organism' or 'go_category'.", call. = FALSE)
+  if (!is.null(gene_sets) && (!missing(organism) || !missing(go_category) ||
+                              !missing(filter_for_prokaryotes))) {
+    stop("Custom 'gene_sets' cannot be combined with 'organism', 'go_category' ",
+         "or 'filter_for_prokaryotes'.", call. = FALSE)
   }
   p_adjust_method <- resolve_deprecated_p_adjust_method(
     p_adjust_method,
@@ -483,7 +533,7 @@ pathway_gsea <- function(abundance,
   valid_methods <- c("camera", "fry", "fgsea", "GSEA", "clusterProfiler")
   validate_choice(method, valid_methods, "method")
 
-  if (!method %in% c("camera", "fry") && transformation != "voom") {
+  if (!method %in% c("camera", "fry") && transformation_supplied) {
     stop("'transformation' applies only to camera/fry, not preranked methods.", call. = FALSE)
   }
   preranked_methods <- c("fgsea", "GSEA", "clusterProfiler")
@@ -539,8 +589,21 @@ pathway_gsea <- function(abundance,
     }
   }
 
+  if (!is.null(sequencing_depth)) {
+    if (method %in% preranked_methods) {
+      stop("'sequencing_depth' is only supported for 'camera' and 'fry' methods.",
+           call. = FALSE)
+    }
+    validate_sequencing_depth_argument(sequencing_depth, metadata, group, covariates)
+  }
+
   # Validate inter.gene.cor for camera (correlation range: -1 to 1)
   if (method == "camera" && !is.null(inter.gene.cor)) {
+    # Accept a plain logical NA as the documented "estimate" request
+    if (length(inter.gene.cor) == 1 && is.logical(inter.gene.cor) &&
+        is.na(inter.gene.cor)) {
+      inter.gene.cor <- NA_real_
+    }
     if (!is.numeric(inter.gene.cor) || length(inter.gene.cor) != 1 ||
         (!is.na(inter.gene.cor) &&
          (!is.finite(inter.gene.cor) || inter.gene.cor < -1 ||
@@ -604,12 +667,20 @@ pathway_gsea <- function(abundance,
     validate_gsea_group_after_alignment(metadata, group)
   }
   if (method %in% c("camera", "fry")) {
+    if (!is.null(sequencing_depth)) {
+      depth_design <- add_sequencing_depth_covariate(
+        metadata, colnames(abundance_mat), sequencing_depth, covariates
+      )
+      metadata <- depth_design$metadata
+      covariates <- depth_design$covariates
+    }
     validate_complete_design_variables(metadata, group, covariates)
   }
   
   # Prepare gene sets
   if (is.null(gene_sets)) {
-    gene_sets <- prepare_gene_sets(pathway_type, organism = organism, go_category = go_category)
+    gene_sets <- prepare_gene_sets(pathway_type, organism = organism, go_category = go_category,
+                                   filter_for_prokaryotes = filter_for_prokaryotes)
   }
   gene_sets <- validate_gene_sets(gene_sets, "pathway_gsea() gene_sets")
 
@@ -796,10 +867,17 @@ validate_metacyc_gsea_feature_ids <- function(feature_names) {
 #' @param go_category A single character string specifying the GO category to use.
 #'   "all" (default) uses all categories. Valid values are determined by
 #'   the reference data; see \code{table(ko_to_go_reference$category)}.
+#' @param filter_for_prokaryotes Logical. For \code{pathway_type = "KEGG"},
+#'   TRUE (default) keeps maps that KEGG draws for prokaryotic genomes and
+#'   removes Organismal Systems and Human Diseases maps, except bacterial
+#'   infection and antimicrobial resistance, using the same rule as
+#'   \code{\link{ko2kegg_abundance}}. Ignored for MetaCyc and GO.
 #'
 #' @return A list of pathway gene sets
 #' @export
-prepare_gene_sets <- function(pathway_type = "KEGG", organism = "ko", go_category = "all") {
+prepare_gene_sets <- function(pathway_type = "KEGG", organism = "ko", go_category = "all",
+                              filter_for_prokaryotes = TRUE) {
+  filter_for_prokaryotes <- normalize_logical_flag(filter_for_prokaryotes, "filter_for_prokaryotes")
 
   # Validate pathway_type
   valid_types <- c("KEGG", "MetaCyc", "GO")
@@ -837,6 +915,9 @@ prepare_gene_sets <- function(pathway_type = "KEGG", organism = "ko", go_categor
     # Load KEGG reference using unified loader
     ko_to_kegg_reference <- load_reference_data("ko_to_kegg")
     ko_to_kegg_reference <- filter_kegg_reference_to_pathways(ko_to_kegg_reference)
+    if (filter_for_prokaryotes) {
+      ko_to_kegg_reference <- filter_kegg_reference_for_prokaryotes(ko_to_kegg_reference)
+    }
 
     # Create gene sets: list where each element is a pathway containing KO IDs
     gene_sets <- split(ko_to_kegg_reference$ko_id, ko_to_kegg_reference$pathway_id)
@@ -1272,8 +1353,9 @@ run_fgsea <- function(ranked_list,
 #' @param contrast Contrast specification for camera/fry. See
 #'   \code{\link{pathway_gsea}} for the public contract.
 #' @param gene_sets A named list of gene sets (pathway -> gene IDs)
-#' @param method Either "camera" or "fry"
-#' @param inter.gene.cor Inter-gene correlation for camera (default 0.01)
+#' @param method Either "fry" (default) or "camera"
+#' @param inter.gene.cor Inter-gene correlation for camera; \code{NA} (the
+#'   default) estimates it for each set.
 #' @param min_size Minimum gene set size
 #' @param max_size Maximum gene set size
 #' @param p.adjust.method P-value adjustment method
@@ -1288,12 +1370,12 @@ run_limma_gsea <- function(abundance_mat,
                            covariates = NULL,
                            contrast = NULL,
                            gene_sets,
-                           method = "camera",
-                           inter.gene.cor = 0.01,
+                           method = "fry",
+                           inter.gene.cor = NA_real_,
                            min_size = 5,
                            max_size = 500,
                            p.adjust.method = "BH",
-                           transformation = c("voom", "logCPM")) {
+                           transformation = c("logCPM", "voom")) {
   transformation <- match.arg(transformation)
   # Samples are already aligned by the caller (pathway_gsea)
   abundance_mat <- as.matrix(abundance_mat)
@@ -1375,7 +1457,7 @@ run_limma_gsea <- function(abundance_mat,
       index = gene_set_indices,
       design = design,
       contrast = contrast_coef,
-      trend = transformation == "logCPM"
+      trend.var = transformation == "logCPM"
     )
   }
 
@@ -1425,6 +1507,78 @@ run_limma_gsea <- function(abundance_mat,
   }
 
   return(formatted_results)
+}
+
+# Column added to the design when `sequencing_depth` is supplied.
+sequencing_depth_column <- "log_sequencing_depth"
+
+validate_sequencing_depth_argument <- function(sequencing_depth, metadata,
+                                               group, covariates = NULL) {
+  if (is.character(sequencing_depth)) {
+    if (length(sequencing_depth) != 1 || is.na(sequencing_depth) ||
+        !nzchar(sequencing_depth)) {
+      stop("'sequencing_depth' must be a single metadata column name or a ",
+           "named numeric vector.", call. = FALSE)
+    }
+    if (!sequencing_depth %in% colnames(metadata)) {
+      stop("'sequencing_depth' column '", sequencing_depth,
+           "' not found in metadata.", call. = FALSE)
+    }
+    if (identical(sequencing_depth, group) ||
+        sequencing_depth %in% covariates) {
+      stop("'sequencing_depth' must not also be the group or a covariate; ",
+           "it is log-transformed and added to the design automatically.",
+           call. = FALSE)
+    }
+  } else if (is.numeric(sequencing_depth)) {
+    if (is.null(names(sequencing_depth)) ||
+        anyNA(names(sequencing_depth)) ||
+        any(!nzchar(names(sequencing_depth))) ||
+        anyDuplicated(names(sequencing_depth))) {
+      stop("A numeric 'sequencing_depth' must be named by unique sample IDs.",
+           call. = FALSE)
+    }
+  } else {
+    stop("'sequencing_depth' must be a single metadata column name or a ",
+         "named numeric vector.", call. = FALSE)
+  }
+  if (sequencing_depth_column %in% colnames(metadata)) {
+    stop("metadata already contains a column named '", sequencing_depth_column,
+         "'; rename it before supplying 'sequencing_depth'.", call. = FALSE)
+  }
+  invisible(TRUE)
+}
+
+# Add the centered log sequencing depth to aligned metadata as a covariate.
+# Depth is the read count of the input that the profile was derived from
+# (for PICRUSt2, the column sums of the ASV table), not the column sums of
+# the predicted table, which depend on community composition.
+add_sequencing_depth_covariate <- function(metadata, sample_ids,
+                                           sequencing_depth, covariates = NULL) {
+  depth <- if (is.character(sequencing_depth)) {
+    metadata[[sequencing_depth]]
+  } else {
+    missing_ids <- setdiff(sample_ids, names(sequencing_depth))
+    if (length(missing_ids) > 0) {
+      stop("'sequencing_depth' has no value for ", length(missing_ids),
+           " sample(s), e.g. ", paste(utils::head(missing_ids, 3), collapse = ", "),
+           ".", call. = FALSE)
+    }
+    unname(sequencing_depth[sample_ids])
+  }
+  if (!is.numeric(depth) || anyNA(depth) || any(!is.finite(depth)) ||
+      any(depth <= 0)) {
+    stop("'sequencing_depth' values must be positive, finite and non-missing ",
+         "for every analysed sample.", call. = FALSE)
+  }
+  log_depth <- log(depth)
+  if (stats::var(log_depth) == 0) {
+    stop("'sequencing_depth' is constant across samples and cannot be used ",
+         "as a covariate.", call. = FALSE)
+  }
+  metadata[[sequencing_depth_column]] <- log_depth - mean(log_depth)
+  list(metadata = metadata,
+       covariates = c(covariates, sequencing_depth_column))
 }
 
 #' Build design matrix for limma analysis

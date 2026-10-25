@@ -92,7 +92,9 @@ test_that("prepare_gene_sets creates valid gene sets from reference data", {
   gene_sets <- prepare_gene_sets("KEGG")
 
   expect_type(gene_sets, "list")
-  expect_gt(length(gene_sets), 400)
+  # Default KEGG sets are prokaryote-filtered; unfiltered maps are a superset
+  expect_length(gene_sets, 193)
+  expect_gt(length(prepare_gene_sets("KEGG", filter_for_prokaryotes = FALSE)), 400)
   expect_false("ko01001" %in% names(gene_sets))
   expect_false("ko99980" %in% names(gene_sets))
 

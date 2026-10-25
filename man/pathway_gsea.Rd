@@ -9,10 +9,10 @@ pathway_gsea(
   metadata,
   group,
   pathway_type = "KEGG",
-  method = "camera",
+  method = "fry",
   covariates = NULL,
   contrast = NULL,
-  inter.gene.cor = 0.01,
+  inter.gene.cor = NA_real_,
   rank_method = "signal2noise",
   nperm = 1000,
   min_size = 5,
@@ -23,8 +23,10 @@ pathway_gsea(
   organism = "ko",
   p.adjust = NULL,
   comparison = NULL,
-  transformation = c("voom", "logCPM"),
-  gene_sets = NULL
+  transformation = c("logCPM", "voom"),
+  gene_sets = NULL,
+  filter_for_prokaryotes = TRUE,
+  sequencing_depth = NULL
 )
 }
 \arguments{
@@ -56,10 +58,12 @@ contains the grouping variable}
 
 \item{method}{A single character string specifying the GSEA method:
 \itemize{
-  \item \code{"camera"}: Competitive gene set test using limma's camera function (default).
-        Uses an inter-gene correlation adjustment under a competitive null.
-  \item \code{"fry"}: Fast approximation to rotation gene set testing using limma's fry function.
-        Self-contained test that is computationally efficient.
+  \item \code{"fry"} (default): Self-contained rotation gene set test
+        using limma's fry function. Tests whether the KOs in a set change
+        in a consistent direction between groups.
+  \item \code{"camera"}: Competitive gene set test using limma's camera
+        function. Tests whether a set changes more than the other KOs,
+        with an inter-gene correlation adjustment.
   \item \code{"fgsea"}: Fast preranked GSEA implementation. Note: preranked methods may produce
         unreliable p-values due to not accounting for inter-gene correlations (Wu et al., 2012).
   \item \code{"GSEA"} or \code{"clusterProfiler"}: clusterProfiler's GSEA implementation.
@@ -86,8 +90,14 @@ numeric vector must have length equal to the number of design columns.
 Named numeric vectors are matched and reordered by design column names;
 unnamed numeric vectors are interpreted in design column order.}
 
-\item{inter.gene.cor}{Numeric value specifying the inter-gene correlation for camera method.
-Default is 0.01. Use NA to estimate correlation from data for each gene set.}
+\item{inter.gene.cor}{Numeric value specifying the inter-gene correlation
+for the camera method. The default \code{NA} estimates the correlation from
+the data separately for each gene set. Predicted functional profiles are
+linear combinations of reference-genome content, so features in the same
+set are often strongly correlated; a small fixed value such as 0.01 (the
+default before version 2.6.0) can then underestimate the variance and
+produce anti-conservative p-values. Supply a fixed value only when it is
+justified for the data.}
 
 \item{rank_method}{A single character string specifying the ranking statistic for preranked methods
 (fgsea, GSEA, clusterProfiler): "signal2noise", "t_test", "log2_ratio", or "diff_abundance"}
@@ -130,15 +140,16 @@ exactly two aligned group levels must be present and their factor-level
 order is used. Multi-group preranked analyses must specify
 \code{comparison} explicitly.}
 
-\item{transformation}{Transformation for camera/fry: \code{"voom"} (the
-historical default) uses count-dependent observation weights;
-\code{"logCPM"} uses \code{log2(1e6 * abundance / column_total + 0.5)}
-and abundance-trend variance moderation without voom weights. The latter
-is invariant to positive per-sample rescaling and can be used for predicted
-or relative abundances whose units are not observed read counts. It is a
-different statistical model, not a fallback after a voom failure or a
-guarantee of calibration. Requires positive sample totals. This parameter
-does not apply to preranked methods. Neither transformation accounts for
+\item{transformation}{Transformation for camera/fry. \code{"logCPM"} (the
+default) uses \code{log2(1e6 * abundance / column_total + 0.5)} with
+abundance-trend variance moderation and no voom weights. It is invariant
+to positive per-sample rescaling, which suits predicted or relative
+abundances whose units are not observed read counts. Requires positive
+sample totals. \code{"voom"} (the default before version 2.6.0) uses
+count-dependent observation weights and is appropriate only for genuine
+read counts; its results change when the same table is multiplied by a
+constant. This parameter applies only to camera/fry; supplying it with a
+preranked method is an error. Neither transformation accounts for
 uncertainty from the upstream functional prediction. Results also depend
 on the measured feature universe and, for camera, the correlation model.}
 
@@ -146,8 +157,28 @@ on the measured feature universe and, for camera, the correlation model.}
 defined gene sets. When supplied, replaces the bundled sets for all methods;
 size filtering and multiple-testing adjustment still apply. Identifiers must
 match the normalized abundance row names. \code{pathway_type} still controls
-input identifier handling. Do not combine custom sets with \code{organism}
-or \code{go_category}; these are bundled-reference selection arguments.}
+input identifier handling. Do not combine custom sets with \code{organism},
+\code{go_category} or \code{filter_for_prokaryotes}; these are
+bundled-reference selection arguments.}
+
+\item{filter_for_prokaryotes}{Logical. For KEGG gene sets, TRUE (default)
+keeps maps that KEGG draws for prokaryotic genomes and removes Organismal
+Systems and Human Diseases maps, except bacterial infection and
+antimicrobial resistance, so that the tested pathways match
+those kept by \code{\link{ko2kegg_abundance}}. Ignored when
+\code{gene_sets} is supplied and for MetaCyc and GO.}
+
+\item{sequencing_depth}{Optional read depth of the data the profile was
+derived from, for camera and fry only. Either the name of a metadata
+column or a numeric vector named by sample ID. For PICRUSt2 output, use
+the column sums of the ASV (or OTU) count table given to PICRUSt2, not the
+column sums of the predicted table, which depend on community
+composition. The centered natural log of the depth is added to the design
+as the covariate \code{log_sequencing_depth}. Supply it when depth differs
+between groups and some samples are shallowly sequenced: with logCPM,
+zeros and low counts then fall unevenly between groups, and fry can
+report false pathways under the null. Default \code{NULL} (no depth
+adjustment).}
 }
 \value{
 A data frame containing GSEA results with columns:
@@ -175,19 +206,28 @@ to identify enriched pathways between different conditions.
 \details{
 \strong{Method Selection:}
 
-The \code{camera} method (default):
+The \code{fry} method (default):
 \itemize{
-  \item Uses an inter-gene correlation adjustment (default 0.01)
-  \item It supports covariate adjustment through the design matrix
-  \item It performs a competitive test (genes in set vs. genes not in set)
+  \item Performs a self-contained test: do the KOs in the set change in a
+    consistent direction between groups?
+  \item Uses sample rotations, so the correlation among KOs in a set is
+    accounted for without a fixed correlation assumption
+  \item Supports covariate adjustment through the design matrix
 }
 
-The \code{fry} method is a fast alternative that:
+The \code{camera} method:
 \itemize{
-  \item Performs a self-contained test (are genes in the set differentially expressed?)
-  \item Is computationally very efficient for large numbers of gene sets
-  \item Also supports covariate adjustment
+  \item Performs a competitive test: does the set change more than the
+    other KOs?
+  \item Adjusts for inter-gene correlation estimated separately for each set (default)
+  \item Supports covariate adjustment through the design matrix
 }
+
+In a predicted metagenome, a shift in a dominant taxon moves many KOs
+together, so a competitive test has little power to single out a set even
+when its members change. Use camera when the question is relative
+enrichment; use fry (the default since version 2.6.0) when the question is
+whether a set changes.
 
 Preranked methods use a ranked-feature null rather than camera's competitive
 model with a correlation adjustment. The hypotheses and input assumptions
@@ -215,32 +255,41 @@ abundance_data <- as.data.frame(ko_abundance)
 rownames(abundance_data) <- abundance_data[, "#NAME"]
 abundance_data <- abundance_data[, -1]
 
-# Method 1: Using camera (recommended) - accounts for inter-gene correlations
+# Method 1: fry (default), a self-contained test of each set
 gsea_results <- pathway_gsea(
   abundance = abundance_data,
   metadata = metadata,
   group = "Environment",
   pathway_type = "KEGG",
-  method = "camera"
+  method = "fry"
 )
 
-# Method 2: Using camera with covariate adjustment
+# Method 2: fry with covariate adjustment
 gsea_results_adj <- pathway_gsea(
   abundance = abundance_data,
   metadata = metadata,
   group = "Environment",
   covariates = "Mouse_Sex",
   pathway_type = "KEGG",
-  method = "camera"
+  method = "fry"
 )
 
-# Method 3: Using fry for fast self-contained testing
-gsea_results_fry <- pathway_gsea(
+# fry adjusted for 16S read depth, e.g. from the DADA2 sequence table
+# given to PICRUSt2: depth <- colSums(asv_counts)
+# gsea_results_depth <- pathway_gsea(
+#   abundance = abundance_data,
+#   metadata = metadata,
+#   group = "Environment",
+#   sequencing_depth = depth
+# )
+
+# Method 3: camera, a competitive test of relative enrichment
+gsea_results_camera <- pathway_gsea(
   abundance = abundance_data,
   metadata = metadata,
   group = "Environment",
   pathway_type = "KEGG",
-  method = "fry"
+  method = "camera"
 )
 
 # Method 4: A different null, using a prespecified preranked comparison

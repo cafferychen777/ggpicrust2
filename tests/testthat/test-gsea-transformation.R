@@ -26,18 +26,21 @@ test_that("logCPM public analyses match direct limma and per-sample rescaling", 
       metadata, "group", method = method, covariates = "z", transformation = "logCPM",
       inter.gene.cor = NA_real_, gene_sets = sets))
     expect_equal(scaled$pvalue[match(actual$pathway_id, scaled$pathway_id)], actual$pvalue, tolerance = 1e-11)
-    legacy <- suppressMessages(pathway_gsea(x, metadata, "group", method = method, covariates = "z", gene_sets = sets))
+    # Defaults are logCPM input with estimated camera correlation
+    default_call <- suppressMessages(pathway_gsea(x, metadata, "group", method = method,
+      covariates = "z", gene_sets = sets))
+    expect_equal(default_call, actual)
+    # The pre-2.6.0 configuration remains available explicitly
+    voom_call <- suppressMessages(pathway_gsea(x, metadata, "group", method = method,
+      covariates = "z", transformation = "voom", inter.gene.cor = 0.01, gene_sets = sets))
     voom_fit <- limma::voom(x, design, plot = FALSE)
-    native_legacy <- if (method == "camera") {
-      limma::camera(voom_fit, indices, design, contrast = contrast)
+    native_voom <- if (method == "camera") {
+      limma::camera(voom_fit, indices, design, contrast = contrast, inter.gene.cor = 0.01)
     } else {
       limma::fry(voom_fit, indices, design, contrast = contrast)
     }
-    expect_equal(legacy$pvalue, native_legacy[legacy$pathway_id, "PValue"],
+    expect_equal(voom_call$pvalue, native_voom[voom_call$pathway_id, "PValue"],
                  tolerance = 1e-12)
-    explicit <- suppressMessages(pathway_gsea(x, metadata, "group", method = method,
-      covariates = "z", transformation = "voom", gene_sets = sets))
-    expect_equal(legacy, explicit)
   }
 })
 
@@ -73,8 +76,35 @@ test_that("logCPM rejects zero-total samples and unsupported analysis modes", {
   expect_error(pathway_gsea(x + 1, metadata, "group", method = "fgsea", transformation = "logCPM"),
                "only to camera/fry")
   expect_error(pathway_gsea(x, metadata, "group", transformation = "invalid"), "arg")
+  expect_error(pathway_gsea(x + 1, metadata, "group", method = "fgsea", transformation = "voom"),
+               "only to camera/fry")
   expect_error(pathway_gsea(x + 1, metadata, "group", gene_sets = list(target = rownames(x)),
                             go_category = "all"), "cannot be combined")
   expect_error(suppressMessages(pathway_gsea(x + 1, metadata, "group", gene_sets = list(rownames(x)))),
                "nam")
+})
+
+test_that("camera accepts a logical NA as a request to estimate correlation", {
+  skip_if_not_installed("limma")
+  set.seed(11)
+  x <- matrix(rexp(120 * 8), 120, dimnames = list(sprintf("K%05d", 1:120), paste0("s", 1:8)))
+  metadata <- data.frame(sample = colnames(x), group = rep(c("A", "B"), each = 4))
+  sets <- split(rownames(x), rep(paste0("set", 1:6), each = 20))
+  logical_na <- suppressMessages(pathway_gsea(x, metadata, "group", gene_sets = sets,
+                                              method = "camera", inter.gene.cor = NA))
+  camera_default <- suppressMessages(pathway_gsea(x, metadata, "group", gene_sets = sets,
+                                                  method = "camera"))
+  expect_equal(logical_na, camera_default)
+})
+
+test_that("fry is the default gene-set method", {
+  skip_if_not_installed("limma")
+  set.seed(12)
+  x <- matrix(rexp(120 * 8), 120, dimnames = list(sprintf("K%05d", 1:120), paste0("s", 1:8)))
+  metadata <- data.frame(sample = colnames(x), group = rep(c("A", "B"), each = 4))
+  sets <- split(rownames(x), rep(paste0("set", 1:6), each = 20))
+  default_call <- suppressMessages(pathway_gsea(x, metadata, "group", gene_sets = sets))
+  fry_call <- suppressMessages(pathway_gsea(x, metadata, "group", gene_sets = sets, method = "fry"))
+  expect_equal(unique(default_call$method), "fry")
+  expect_equal(default_call, fry_call)
 })

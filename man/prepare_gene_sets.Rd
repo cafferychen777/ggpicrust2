@@ -4,7 +4,12 @@
 \alias{prepare_gene_sets}
 \title{Prepare gene sets for GSEA}
 \usage{
-prepare_gene_sets(pathway_type = "KEGG", organism = "ko", go_category = "all")
+prepare_gene_sets(
+  pathway_type = "KEGG",
+  organism = "ko",
+  go_category = "all",
+  filter_for_prokaryotes = TRUE
+)
 }
 \arguments{
 \item{pathway_type}{A single character string specifying the pathway type:
@@ -17,6 +22,12 @@ Retained for signature compatibility only.}
 \item{go_category}{A single character string specifying the GO category to use.
 "all" (default) uses all categories. Valid values are determined by
 the reference data; see \code{table(ko_to_go_reference$category)}.}
+
+\item{filter_for_prokaryotes}{Logical. For \code{pathway_type = "KEGG"},
+TRUE (default) keeps maps that KEGG draws for prokaryotic genomes and
+removes Organismal Systems and Human Diseases maps, except bacterial
+infection and antimicrobial resistance, using the same rule as
+\code{\link{ko2kegg_abundance}}. Ignored for MetaCyc and GO.}
 }
 \value{
 A list of pathway gene sets

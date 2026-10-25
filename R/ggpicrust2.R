@@ -22,9 +22,11 @@
 #' - "Lefser": Linear discriminant analysis effect size using the lefser package
 #' @param ko_to_kegg Logical or logical-like string controlling conversion of
 #'   KO abundance to KEGG pathway abundance.
-#' @param filter_for_prokaryotes Logical. If TRUE (default), filters out KEGG pathways
-#'   that are specific to eukaryotes (e.g., human diseases, organismal systems) when
-#'   ko_to_kegg = TRUE. Set to FALSE to include all KEGG pathways.
+#' @param filter_for_prokaryotes Logical. If TRUE (default) and ko_to_kegg = TRUE,
+#'   keeps only KEGG maps that KEGG draws for prokaryotic genomes and removes
+#'   Organismal Systems and Human Diseases maps, except bacterial infection and
+#'   antimicrobial resistance (see \code{\link{ko2kegg_abundance}}). Set to FALSE
+#'   to include all KEGG pathways.
 #' @param p_adjust_method A character specifying the method for p-value adjustment,
 #'   default is "BH".
 #' @param p.adjust Deprecated alias for \code{p_adjust_method}. Do not supply

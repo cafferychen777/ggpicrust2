@@ -25,9 +25,15 @@ KEGG database (\url{https://www.kegg.jp/})
 ko_to_kegg_reference
 }
 \description{
-A comprehensive mapping between KEGG Orthology (KO) identifiers and KEGG pathways.
-This dataset contains mappings covering 532 pathways and 23,466 unique KO IDs,
-filtered to include only real KEGG pathway maps (5-digit IDs).
+A mapping between KEGG Orthology (KO) identifiers and KEGG pathways, built
+from KEGG BRITE Release 117.0 (2026-01-01). It has 63,810 KO-pathway rows,
+567 pathway identifiers and 28,040 unique KO IDs. Analyses use only the
+488 true pathway maps (37,639 memberships, 14,538 KOs); BRITE and
+"not in pathway" buckets (level 1 09180 and 09190) are always removed.
+The default prokaryote filter keeps 193 of these maps (14,107 memberships,
+10,059 KOs): maps that KEGG draws for at least one sampled prokaryotic
+genome, excluding Organismal Systems and Human Diseases maps other than
+bacterial infection and antimicrobial resistance.
 }
 \details{
 This reference data is used by the \code{\link{ko2kegg_abundance}} function to convert

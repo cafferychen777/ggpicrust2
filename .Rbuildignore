@@ -31,6 +31,7 @@
 ^DISCUSSION_.*\.md$
 ^doc$
 ^docs$
+^draft_reply_to_NP_editor\.md$
 ^FINAL_.*\.md$
 ^ggpicrust\.R$
 ^ggpicrust2.*\.tar\.gz$
@@ -42,10 +43,13 @@
 ^JESSICA_.*\.txt$
 ^JESSICA_EMAIL.*\.txt$
 ^LICENSE\.md$
+^manuscript$
 ^Meta$
+^nature_protocols_.*$
 ^Package version$
 ^PENDING_ISSUES_PRIORITY\.md$
 ^presubmission_summary\.(pdf|tex|txt)$
+^prothinking\.txt$
 ^pkgdown$
 ^README\.html$
 ^README\.knit\.md$

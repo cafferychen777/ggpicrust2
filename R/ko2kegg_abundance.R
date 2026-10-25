@@ -16,16 +16,12 @@
 #'     \item \code{"abundance"}: (Default) Upper-half mean aggregation matching the unstructured pathway abundance rule used by the PICRUSt2 pathway pipeline. This is a KO-to-KEGG pathway aggregation approximation, not a replacement for the full PICRUSt2 pathway pipeline with MinPath and structured MetaCyc pathway inference.
 #'     \item \code{"sum"}: Simple summation of all KO abundances. This is the legacy method and may double-count KOs belonging to multiple pathways.
 #'   }
-#' @param filter_for_prokaryotes Logical. If TRUE (default), filters out KEGG pathways
-#'   that are not relevant to prokaryotic (bacterial/archaeal) analysis. The function
-#'   always removes non-pathway KEGG buckets before this filter is applied. The
-#'   prokaryote filter removes pathways in categories such as:
-#'   \itemize{
-#'     \item Human diseases (cancer, neurodegenerative diseases, addiction, etc.)
-#'     \item Organismal systems (immune system, nervous system, endocrine system, etc.)
-#'   }
+#' @param filter_for_prokaryotes Logical. If TRUE (default), keeps only KEGG maps
+#'   that KEGG draws for at least one prokaryotic (bacterial or archaeal) genome
+#'   and that are not Organismal Systems or Human Diseases maps. The function
+#'   always removes non-pathway KEGG buckets before this filter is applied.
 #'   Bacterial infection pathways and antimicrobial resistance pathways are retained.
-#'   Set to FALSE to include all KEGG pathways (for eukaryotic analysis or custom filtering).
+#'   See the Pathway Filtering section. Set to FALSE to include all KEGG pathways (for eukaryotic analysis or custom filtering).
 #' @param progress Logical. Whether to show a progress bar while aggregating
 #'   pathways. Defaults to \code{interactive()} so non-interactive scripts and
 #'   tests stay quiet.
@@ -79,25 +75,25 @@
 #' from all domains of life, and many human/animal-specific pathways would appear in bacterial
 #' analysis simply because some KOs are shared across organisms.
 #'
-#' The following KEGG Level 2 categories are excluded:
+#' Two rules are applied. First, a map is kept only if KEGG provides an
+#' organism-specific version of it for at least one of 575 bacterial and
+#' archaeal genomes sampled across all 332 KEGG prokaryotic orders (the first
+#' listed and one random genome per order, common gut genera, and the
+#' reference organisms named by lineage-specific maps). This removes
+#' eukaryotic signalling, cell-cycle, cell-death, cell-junction, glycan and
+#' plant or animal secondary-metabolism maps, such as ko04150 (mTOR signaling)
+#' and ko04217 (Necroptosis). Maps such as ko04142 (Lysosome) remain, because
+#' KEGG draws them for prokaryotes whose genomes carry their glycosidases and
+#' sulfatases. Second, the following KEGG Level 1 categories are excluded:
 #' \itemize{
-#'   \item Cancer pathways (overview and specific types)
-#'   \item Neurodegenerative diseases (Alzheimer's, Parkinson's, etc.)
-#'   \item Substance dependence (addiction pathways)
-#'   \item Cardiovascular diseases
-#'   \item Endocrine and metabolic diseases
-#'   \item Immune diseases
-#'   \item Organismal systems (immune, nervous, endocrine, digestive, etc.)
+#'   \item Human Diseases (cancer, neurodegenerative, substance dependence,
+#'     cardiovascular, endocrine and metabolic, and immune diseases)
+#'   \item Organismal Systems (immune, nervous, endocrine, digestive, etc.)
 #' }
 #'
-#' The following are RETAINED even with filtering:
-#' \itemize{
-#'   \item Infectious disease: bacterial (Salmonella, E. coli, Tuberculosis, etc.)
-#'   \item Drug resistance: antimicrobial (antibiotic resistance)
-#'   \item All Metabolism pathways
-#'   \item Genetic/Environmental Information Processing
-#'   \item Cellular Processes
-#' }
+#' Bacterial infection (09171) and antimicrobial drug resistance (09175) maps
+#' are retained; KEGG draws each bacterial infection map for its pathogen.
+#' With the bundled reference, the filter keeps 193 of the 488 pathway maps.
 #'
 #' @examples
 #' \dontrun{
@@ -310,9 +306,14 @@ filter_kegg_reference_to_pathways <- function(ko_to_kegg_reference) {
 
 #' Filter KO-to-KEGG reference data for prokaryotic analyses
 #'
+#' Organismal Systems (09150) and Human Diseases (09160) maps are removed,
+#' except bacterial infection (09171) and antimicrobial resistance (09175).
 #' KEGG hierarchy labels in the bundled reference include BRITE numeric
 #' prefixes (for example, "09160 Human Diseases"). Match on those stable
-#' hierarchy IDs instead of exact free-text labels.
+#' hierarchy IDs instead of exact free-text labels. A map is also kept only if
+#' it is listed in the internal \code{kegg_prokaryotic_maps} data, the maps
+#' that KEGG draws for at least one sampled prokaryotic genome (built by
+#' \file{data-raw/kegg_prokaryotic_maps.R}).
 #'
 #' @param ko_to_kegg_reference KO-to-KEGG reference data frame
 #' @return Filtered data frame
@@ -325,9 +326,12 @@ filter_kegg_reference_for_prokaryotes <- function(ko_to_kegg_reference) {
   is_human_disease <- grepl("^09160\\b", level1)
   retained_human_disease <- grepl("^(09171|09175)\\b", level2)
   excluded_human_disease <- is_human_disease & !retained_human_disease
+  drawn_for_prokaryotes <- ko_to_kegg_reference$pathway_id %in%
+    kegg_prokaryotic_maps$pathway_id
 
   keep <- !(is_organismal_system |
-              excluded_human_disease)
+              excluded_human_disease) &
+    drawn_for_prokaryotes
 
   ko_to_kegg_reference[keep, , drop = FALSE]
 }

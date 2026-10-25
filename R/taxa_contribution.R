@@ -191,8 +191,12 @@ read_strat_file <- function(file = NULL, data = NULL) {
 #' @param tax_level Character. Taxonomic rank for aggregation. One of
 #'   \code{"Kingdom"}, \code{"Phylum"}, \code{"Class"}, \code{"Order"},
 #'   \code{"Family"}, \code{"Genus"}, \code{"Species"}. Default \code{"Genus"}.
-#' @param top_n Integer. Number of top taxa to keep by total contribution;
-#'   remaining are lumped as "Other". Default 10.
+#' @param top_n Integer. Number of top assigned taxa to keep by total
+#'   contribution; remaining assigned taxa are lumped as "Other". Contributions
+#'   without a label at \code{tax_level} stay in a separate "Unclassified"
+#'   category and are never merged into "Other". Labels such as
+#'   "Unassigned", "unclassified" or "Unknown" are treated as missing.
+#'   Default 10.
 #' @param daa_results_df Optional data.frame from \code{\link{pathway_daa}},
 #'   used to filter contributions to significant pathways.
 #' @param pathway_ids Optional character vector of pathway IDs to filter.
@@ -331,11 +335,16 @@ aggregate_taxa_contributions <- function(contrib_data,
   # absent), so a mean over observed rows can over-rank a taxon with one
   # large contribution and under-rank a taxon that explains more total
   # functional abundance across samples/functions.
+  # Unassigned mass is reported as its own category, not ranked or lumped:
+  # merging it into "Other" would hide how much of a function the taxonomy
+  # cannot place.
   taxa_totals <- stats::aggregate(contribution ~ taxon_label, data = agg, FUN = sum)
+  taxa_totals <- taxa_totals[taxa_totals$taxon_label != "Unclassified", , drop = FALSE]
   taxa_totals <- taxa_totals[order(-taxa_totals$contribution), ]
   top_taxa <- utils::head(taxa_totals$taxon_label, top_n)
 
-  agg$taxon_label <- ifelse(agg$taxon_label %in% top_taxa, agg$taxon_label, "Other")
+  keep_label <- agg$taxon_label %in% c(top_taxa, "Unclassified")
+  agg$taxon_label <- ifelse(keep_label, agg$taxon_label, "Other")
 
   # Re-aggregate after lumping
   agg <- stats::aggregate(
@@ -351,6 +360,148 @@ aggregate_taxa_contributions <- function(contrib_data,
 # =============================================================================
 # Internal helpers
 # =============================================================================
+
+#' Compare two taxon allocations of the same function with unassigned mass
+#'
+#' Compares how two contribution profiles allocate the same functional total
+#' to taxa within each sample, for example a PICRUSt2 prediction and a
+#' stratified shotgun profile, or one prediction at two taxonomic support
+#' thresholds. Unassigned contributions are kept in each denominator rather
+#' than renormalized away. Because unassigned mass could belong to any taxon,
+#' the total variation (TV) distance between the two allocations is reported
+#' as an interval.
+#'
+#' @param x,y Data frames with columns \code{sample}, \code{taxon_label} and
+#'   \code{contribution}, such as the output of
+#'   \code{\link{aggregate_taxa_contributions}}. A \code{function_id} column is
+#'   used when \code{function_ids} is supplied. Taxon labels must denote the
+#'   same categories in both inputs; the function does not harmonize
+#'   taxonomies. Neither input may contain the lumped "Other" category,
+#'   because it pools different taxa; aggregate with a \code{top_n} large
+#'   enough to keep every assigned taxon.
+#' @param function_ids Optional character vector. When supplied, only these
+#'   functions are summed into the per-sample total, in both inputs.
+#' @param unassigned_label Label of unassigned contributions. Default
+#'   \code{"Unclassified"}, as produced by
+#'   \code{\link{aggregate_taxa_contributions}}.
+#'
+#' @return A data frame with one row per sample present in both inputs:
+#'   \code{sample}, \code{x_total}, \code{y_total}, \code{x_unassigned},
+#'   \code{y_unassigned} (unassigned shares), \code{tv_lower},
+#'   \code{tv_upper} and \code{tv_unassigned_as_category}. Samples with a zero
+#'   total in either input have \code{NA} distances.
+#'
+#' @details
+#' Let \eqn{p} and \eqn{q} be the assigned shares and \eqn{u_x}, \eqn{u_y}
+#' the unassigned shares, so that each allocation sums to one. The smallest
+#' achievable TV distance fills opposing deficits with unassigned mass:
+#' \eqn{\max(0, \sum (p - q)_+ - u_y, \sum (q - p)_+ - u_x)}. The largest
+#' places unassigned mass in categories absent from the other allocation:
+#' \eqn{\min(1, 1 - \sum \min(p, q))}. \code{tv_unassigned_as_category}
+#' treats "unassigned" as one shared category, which lies between the two.
+#' A narrow interval means the comparison is decided by assigned mass; a wide
+#' one means it depends on where unassigned contributions really belong.
+#' The bounds describe missing allocation, not misclassification.
+#'
+#' @examples
+#' x <- data.frame(sample = "S1", taxon_label = c("A", "B", "Unclassified"),
+#'                 contribution = c(5, 3, 2))
+#' y <- data.frame(sample = "S1", taxon_label = c("A", "B"),
+#'                 contribution = c(5, 5))
+#' compare_taxa_contributions(x, y)
+#'
+#' @export
+compare_taxa_contributions <- function(x, y, function_ids = NULL,
+                                       unassigned_label = "Unclassified") {
+  if (!is.character(unassigned_label) || length(unassigned_label) != 1 ||
+      is.na(unassigned_label) || !nzchar(unassigned_label)) {
+    stop("'unassigned_label' must be a single non-empty character value.",
+         call. = FALSE)
+  }
+  x <- prepare_allocation_input(x, "x", function_ids, unassigned_label)
+  y <- prepare_allocation_input(y, "y", function_ids, unassigned_label)
+
+  samples <- intersect(names(x), names(y))
+  if (length(samples) == 0) {
+    stop("'x' and 'y' share no samples.", call. = FALSE)
+  }
+
+  rows <- lapply(samples, function(sample_id) {
+    allocation_bounds(x[[sample_id]], y[[sample_id]], unassigned_label, sample_id)
+  })
+  do.call(rbind, rows)
+}
+
+#' Split a contribution table into per-sample totals by taxon label
+#' @noRd
+prepare_allocation_input <- function(data, name, function_ids, unassigned_label) {
+  validate_dataframe(data,
+                     required_cols = c("sample", "taxon_label", "contribution"),
+                     param_name = name)
+  if (!is.null(function_ids)) {
+    if (!"function_id" %in% colnames(data)) {
+      stop(sprintf("'%s' needs a function_id column when 'function_ids' is supplied.",
+                   name), call. = FALSE)
+    }
+    data <- data[data$function_id %in% function_ids, , drop = FALSE]
+    if (nrow(data) == 0) {
+      stop(sprintf("None of 'function_ids' occur in '%s'.", name), call. = FALSE)
+    }
+  }
+  validate_contrib_key_columns(data, c("sample", "taxon_label"), name)
+  values <- data$contribution
+  if (!is.numeric(values) || any(!is.finite(values)) || any(values < 0)) {
+    stop(sprintf("'%s$contribution' must be finite and non-negative.", name),
+         call. = FALSE)
+  }
+  if (any(data$taxon_label == "Other")) {
+    stop(sprintf(paste0(
+      "'%s' contains the lumped 'Other' category, which pools different taxa. ",
+      "Aggregate with a top_n large enough to keep every assigned taxon."),
+      name), call. = FALSE)
+  }
+  lapply(split(data, as.character(data$sample)), function(d) {
+    tapply(d$contribution, as.character(d$taxon_label), sum)
+  })
+}
+
+#' TV-distance interval between two allocations with unassigned mass
+#' @noRd
+allocation_bounds <- function(x_totals, y_totals, unassigned_label, sample_id) {
+  x_total <- sum(x_totals)
+  y_total <- sum(y_totals)
+  x_unassigned <- if (x_total > 0) sum(x_totals[names(x_totals) == unassigned_label]) / x_total else NA_real_
+  y_unassigned <- if (y_total > 0) sum(y_totals[names(y_totals) == unassigned_label]) / y_total else NA_real_
+  out <- data.frame(sample = sample_id, x_total = x_total, y_total = y_total,
+                    x_unassigned = x_unassigned, y_unassigned = y_unassigned,
+                    tv_lower = NA_real_, tv_upper = NA_real_,
+                    tv_unassigned_as_category = NA_real_,
+                    stringsAsFactors = FALSE)
+  if (x_total <= 0 || y_total <= 0) {
+    return(out)
+  }
+
+  assigned <- function(totals, total) {
+    shares <- totals[names(totals) != unassigned_label] / total
+    shares
+  }
+  p_assigned <- assigned(x_totals, x_total)
+  q_assigned <- assigned(y_totals, y_total)
+  categories <- union(names(p_assigned), names(q_assigned))
+  p <- q <- stats::setNames(numeric(length(categories)), categories)
+  p[names(p_assigned)] <- p_assigned
+  q[names(q_assigned)] <- q_assigned
+
+  # Unassigned mass can fill opposing deficits, so the gaps shrink by it
+  positive_gap <- sum(pmax(p - q, 0))
+  negative_gap <- sum(pmax(q - p, 0))
+  out$tv_lower <- max(0, positive_gap - y_unassigned, negative_gap - x_unassigned)
+  # Unassigned mass placed in categories absent from the other side
+  out$tv_upper <- min(1, 1 - sum(pmin(p, q)))
+  out$tv_unassigned_as_category <-
+    (sum(abs(p - q)) + abs(x_unassigned - y_unassigned)) / 2
+  out
+}
 
 #' Resolve mutually exclusive file/data contribution input
 #'
@@ -928,8 +1079,12 @@ apply_taxonomy <- function(contrib_data, taxonomy, tax_level) {
     )
   }
   contrib_data$taxon_label <- tax_map$taxon_label[match_idx]
+  # Placeholder labels written by common exporters (for example DADA2 tables
+  # saved with na = "Unassigned") denote missing ranks, not taxa.
+  label_key <- tolower(trimws(contrib_data$taxon_label))
   contrib_data$taxon_label[
-    is.na(contrib_data$taxon_label) | trimws(contrib_data$taxon_label) == ""
+    is.na(label_key) |
+      label_key %in% c("", "na", "unassigned", "unclassified", "unknown")
   ] <- "Unclassified"
 
   contrib_data
