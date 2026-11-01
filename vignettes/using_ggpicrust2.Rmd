@@ -103,6 +103,20 @@ correct samples. For your own data, replace `sample_name` and `Environment`
 with your sample-ID and grouping columns. Do not pass an unnamed metadata
 column unless you have already verified its order against the abundance columns.
 
+These metadata-aware functions retain only sample IDs present in both inputs.
+Unmatched IDs now produce a warning even when routine progress messages are
+disabled. This can change replicate counts; investigate the reported IDs before
+interpreting results. If both tables are intended to contain exactly the same
+samples, check both directions explicitly:
+
+```{r sample-mismatches, eval = FALSE}
+setdiff(colnames(kegg_pathway_abundance), metadata$sample_name)
+setdiff(metadata$sample_name, colnames(kegg_pathway_abundance))
+```
+
+Both should be empty for a fully matched dataset. Do not silently rename or
+discard mismatched IDs; check the source tables and any upstream sample filters.
+
 ```{r sample-groups, eval = FALSE}
 stopifnot(
   !anyNA(metadata$sample_name),
@@ -185,6 +199,38 @@ pathway_pca(
   metadata = metadata,
   group = "Environment"
 )
+```
+
+### More than two groups with LinDA
+
+With a categorical group and an intercept, LinDA fits all included groups and
+returns each non-reference group versus the reference. Selecting pathways that
+pass a threshold in any of these contrasts is not an omnibus test. For an
+ANOVA-type joint test of the group coefficients, the official CRAN
+`MicrobiomeStat` package provides `linda.wald.test()` on a full `linda()` fit;
+the result table returned by `pathway_daa()` does not retain that fit object.
+See the [upstream Wald-test documentation](https://cran.r-project.org/web/packages/MicrobiomeStat/refman/MicrobiomeStat.html#linda.wald.test).
+Check that the installed backend exports this function, since some GitHub
+variants do not include it.
+
+For four independent groups, jointly test the three group coefficients with
+the intercept excluded, then adjust the resulting one p-value per pathway
+across all tested pathways. Do not first subset to pathways selected by the
+individual contrasts. A significant joint test indicates a difference somewhere
+among the groups; it does not supply a single signed fold change or establish a
+dose trend. Repeated measures or shared experimental units require an appropriate
+model rather than treating all observations as independent replicates.
+
+`pathway_heatmap()` displays a within-pathway z-score for each sample, not a
+LinDA coefficient or p-value. Keep pathway IDs as the analysis keys: two IDs
+can share a description, so deduplicating descriptions can discard pathways.
+To inspect the samples actually drawn, save the returned plot and count its
+unique sample/group pairs:
+
+```{r heatmap-sample-counts, eval = FALSE}
+p <- pathway_heatmap(kegg_pathway_abundance, metadata, "Environment")
+plotted_samples <- unique(p$data[c("Sample", "Environment")])
+table(plotted_samples$Environment)
 ```
 
 ### Using ALDEx2 instead

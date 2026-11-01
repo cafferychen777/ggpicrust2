@@ -299,13 +299,25 @@ align_samples <- function(abundance, metadata, sample_col = NULL, verbose = TRUE
   missing_in_abundance <- setdiff(metadata_samples, abundance_samples)
   missing_in_metadata <- setdiff(abundance_samples, metadata_samples)
 
-  if (verbose && (length(missing_in_abundance) > 0 || length(missing_in_metadata) > 0)) {
-    message(sprintf(
-      "Aligned %d samples (dropped %d from metadata, %d from abundance)",
-      length(common_samples),
-      length(missing_in_abundance),
-      length(missing_in_metadata)
-    ))
+  if (length(missing_in_abundance) > 0 || length(missing_in_metadata) > 0) {
+    # Sample loss changes replication and must remain visible even when a
+    # caller suppresses routine progress messages with verbose = FALSE.
+    describe_ids <- function(ids) {
+      if (length(ids) == 0) return("none")
+      paste0(paste(utils::head(ids, 5), collapse = ", "),
+             if (length(ids) > 5) ", ..." else "")
+    }
+    warning(
+      sprintf(
+        "Sample alignment retained %d shared samples; dropped %d metadata row(s) and %d abundance column(s).",
+        length(common_samples), length(missing_in_abundance),
+        length(missing_in_metadata)
+      ),
+      "\n  Metadata IDs absent from abundance: ", describe_ids(missing_in_abundance),
+      "\n  Abundance IDs absent from metadata: ", describe_ids(missing_in_metadata),
+      "\nCheck sample identifiers and replicate counts before interpreting results.",
+      call. = FALSE
+    )
   }
 
   # Align data: subset and reorder to common samples

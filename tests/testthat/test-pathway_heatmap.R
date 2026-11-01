@@ -80,6 +80,37 @@ test_that("pathway_heatmap accepts finite transformed zero-sum sample columns", 
   expect_setequal(as.character(unique(p$data$Sample)), colnames(abundance))
 })
 
+test_that("pathway_heatmap retains samples absent from selected pathways", {
+  abundance <- matrix(
+    seq_len(30 * 12),
+    nrow = 30,
+    dimnames = list(paste0("Pathway", 1:30), c("64", paste0("S", 2:12)))
+  )
+  abundance[1:20, "64"] <- 0
+  metadata <- data.frame(
+    sample = colnames(abundance),
+    group = rep(c("Control", "Low", "Medium", "High"), each = 3),
+    stringsAsFactors = FALSE
+  )
+  expect_true(all(colSums(abundance) > 0))
+
+  selected <- abundance[1:20, , drop = FALSE]
+  expect_equal(sum(selected[, "64"]), 0)
+  p <- pathway_heatmap(selected, metadata, "group", cluster_rows = FALSE)
+
+  plotted_samples <- unique(p$data[c("Sample", "group")])
+  expect_setequal(as.character(plotted_samples$Sample), colnames(abundance))
+  expect_equal(as.integer(table(plotted_samples$group)), rep(3L, 4))
+  expect_true(all(is.finite(p$data$Value)))
+  zero_sample <- p$data[as.character(p$data$Sample) == "64", ]
+  expect_equal(nrow(zero_sample), nrow(selected))
+  expected_z <- -rowMeans(selected) / apply(selected, 1, stats::sd)
+  expect_equal(
+    zero_sample$Value,
+    unname(expected_z[as.character(zero_sample$rowname)])
+  )
+})
+
 test_that("pathway_heatmap rejects missing and non-finite abundance values", {
   td <- create_heatmap_test_data()
 
@@ -122,14 +153,17 @@ test_that("pathway_heatmap revalidates grouping variables after sample alignment
     batch = c("X", "X", "X", "X", "Y"),
     stringsAsFactors = FALSE
   )
-  expect_error(
-    pathway_heatmap(
-      abundance = abundance,
-      metadata = metadata_secondary_collapses,
-      group = "group",
-      secondary_groups = "batch"
+  expect_warning(
+    expect_error(
+      pathway_heatmap(
+        abundance = abundance,
+        metadata = metadata_secondary_collapses,
+        group = "group",
+        secondary_groups = "batch"
+      ),
+      "must contain at least 2 group"
     ),
-    "must contain at least 2 group"
+    "Metadata IDs absent from abundance: S5"
   )
 
   metadata_group_na <- data.frame(
