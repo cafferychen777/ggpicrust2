@@ -1,3 +1,10 @@
+# ggpicrust2 (development version)
+
+* Sample alignment now warns whenever unmatched identifiers remove samples,
+  including in `pathway_daa()` where routine alignment messages are disabled.
+  The warning reports the retained count and unmatched IDs from both inputs
+  so lost replicates can be investigated (Discussion #208).
+
 # ggpicrust2 2.6.0
 
 ## Breaking changes

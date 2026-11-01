@@ -39,6 +39,21 @@ test_that("pathway_daa works with basic inputs", {
   expect_true(all(result$p_values >= 0 & result$p_values <= 1))
 })
 
+test_that("pathway_daa warns when alignment removes a replicate", {
+  skip_if_not_installed("limma")
+  skip_if_not_installed("edgeR")
+  td <- create_daa_test_data(n_samples = 6)
+  td$metadata$sample[3] <- "sample3_typo"
+
+  expect_warning(
+    result <- pathway_daa(td$abundance, td$metadata, "group", daa_method = "limma voom"),
+    "Sample alignment retained 5 shared samples"
+  )
+  expected <- pathway_daa(td$abundance[, -3, drop = FALSE], td$metadata[-3, ],
+                          "group", daa_method = "limma voom")
+  expect_equal(result, expected)
+})
+
 test_that("pathway_daa validates inputs correctly", {
   skip_if_not_installed("ALDEx2")
   abundance <- data.frame(

@@ -363,3 +363,42 @@ test_that("align_samples is idempotent on already-aligned inputs", {
   expect_identical(first$sample_col, second$sample_col)
   expect_identical(first$n_samples,  second$n_samples)
 })
+
+test_that("sample loss is reported even when alignment progress is disabled", {
+  abund <- matrix(seq_len(24), nrow = 2,
+                  dimnames = list(c("f1", "f2"), paste0("S", 1:12)))
+  meta <- data.frame(sample = colnames(abund),
+                     group = rep(c("A", "B", "C", "D"), each = 3))
+  meta$sample[3] <- "S3_typo"
+
+  expect_warning(
+    aligned <- align_samples(abund, meta, verbose = FALSE),
+    "retained 11 shared samples.*dropped 1 metadata row.*1 abundance column"
+  )
+  expect_warning(
+    align_samples(abund, meta, verbose = FALSE),
+    "Metadata IDs absent from abundance: S3_typo"
+  )
+  expect_warning(
+    align_samples(abund, meta, verbose = FALSE),
+    "Abundance IDs absent from metadata: S3"
+  )
+  expect_equal(as.integer(table(aligned$metadata$group)), c(2L, 3L, 3L, 3L))
+  expect_identical(colnames(aligned$abundance), aligned$metadata$sample)
+  expect_silent(align_samples(aligned$abundance, aligned$metadata, verbose = FALSE))
+})
+
+test_that("one-sided sample mismatches identify the input losing samples", {
+  abund <- matrix(seq_len(12), nrow = 2,
+                  dimnames = list(c("f1", "f2"), paste0("S", 1:6)))
+  meta <- data.frame(sample = colnames(abund), group = rep(c("A", "B"), each = 3))
+  expect_warning(
+    align_samples(abund, meta[-3, ], verbose = FALSE),
+    "dropped 0 metadata row.*1 abundance column"
+  )
+  expect_warning(
+    align_samples(abund[, -3], meta, verbose = FALSE),
+    "dropped 1 metadata row.*0 abundance column"
+  )
+  expect_silent(align_samples(abund, meta[6:1, ], verbose = FALSE))
+})

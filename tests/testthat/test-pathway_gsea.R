@@ -397,14 +397,17 @@ test_that("pathway_gsea revalidates groups and design variables after alignment"
     group = c("A", "A", "A", "A", "B", "B"),
     stringsAsFactors = FALSE
   )
-  expect_error(
-    pathway_gsea(
-      abundance = abundance,
-      metadata = metadata_single_after_align,
-      group = "group",
-      method = "camera"
+  expect_warning(
+    expect_error(
+      pathway_gsea(
+        abundance = abundance,
+        metadata = metadata_single_after_align,
+        group = "group",
+        method = "camera"
+      ),
+      "after sample alignment"
     ),
-    "after sample alignment"
+    "Metadata IDs absent from abundance: S5, S6"
   )
 
   metadata_group_na <- data.frame(

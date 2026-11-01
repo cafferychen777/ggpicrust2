@@ -865,14 +865,17 @@ test_that("taxa_contribution_bar validates aligned group labels", {
     stringsAsFactors = FALSE
   )
 
-  expect_error(
-    taxa_contribution_bar(
-      agg,
-      metadata,
-      group = "group",
-      show_percentage = FALSE
+  expect_warning(
+    expect_error(
+      taxa_contribution_bar(
+        agg,
+        metadata,
+        group = "group",
+        show_percentage = FALSE
+      ),
+      "non-missing, non-empty group labels.*S2"
     ),
-    "non-missing, non-empty group labels.*S2"
+    "Metadata IDs absent from abundance: S3"
   )
 })
 
